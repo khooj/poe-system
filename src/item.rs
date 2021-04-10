@@ -1,3 +1,7 @@
+use anyhow::anyhow;
+use std::convert::TryFrom;
+
+#[derive(Clone)]
 enum Rarity {
     Normal,
     Magic,
@@ -5,6 +9,7 @@ enum Rarity {
     Unique,
 }
 
+#[derive(Clone)]
 enum Category {
     Flasks,
     Jewellery,
@@ -16,6 +21,7 @@ enum Category {
     Other,
 }
 
+#[derive(Clone)]
 enum Class {
     LifeFlask,
     ManaFlask,
@@ -244,13 +250,28 @@ enum BodyArmour {
     SacrificialGarb,
 }
 
-struct Item {
+#[derive(Clone)]
+pub struct Item {
     rarity: Rarity,
     name: String,
     category: Category,
     class: Class,
     // base_type: Base,
 }
+
+impl Item {
+    pub fn empty() -> Item {
+        Item {
+            rarity: Rarity::Normal,
+            name: "empty".to_owned(),
+            category: Category::Armor,
+            class: Class::AbyssJewel,
+        }
+    }
+}
+
+pub struct PoeItem(String);
+
 // Rarity: Unique
 // Bones of Ullr
 // Silk Slippers
@@ -261,7 +282,7 @@ struct Item {
 // Level: 22
 // Int: 42
 // --------
-// Sockets: B-B B 
+// Sockets: B-B B
 // --------
 // Item Level: 33
 // --------
@@ -276,7 +297,6 @@ struct Item {
 // the living fear to tread.
 // --------
 // Note: ~price 1 chance
-
 
 // Rarity: Gem
 // Stormblast Mine
@@ -310,7 +330,6 @@ struct Item {
 // --------
 // Note: ~price 1 alch
 
-
 // Rarity: Rare
 // Demon Strike
 // Sniper Bow
@@ -325,7 +344,7 @@ struct Item {
 // Level: 44
 // Dex: 143
 // --------
-// Sockets: G G-R-G-B-B 
+// Sockets: G G-R-G-B-B
 // --------
 // Item Level: 50
 // --------
