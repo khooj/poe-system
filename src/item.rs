@@ -83,8 +83,7 @@ enum Class {
     HeistTarget,
 }
 
-enum Base {
-    // Boots
+enum BootsBase {
     // str
     IronGreaves,
     SteelGreaves,
@@ -126,12 +125,131 @@ enum Base {
     DreamquestSlippers,
 }
 
+enum BodyArmour {
+    // str
+    PlateVest,
+    Chestplate,
+    CopperPlate,
+    WarPlate,
+    FullPlate,
+    ArenaPlate,
+    LordlyPlate,
+    BronzePlate,
+    BattlePlate,
+    SunPlate,
+    ColosseumPlate,
+    MajesticPlace,
+    GoldenPlate,
+    CrusaderPlate,
+    AstralPlate,
+    GladiatorPlate,
+    GloriousPlate,
+
+    // dex
+    ShabbyJerkin,
+    StrappedLeather,
+    BuckskinTunic,
+    WildLeather,
+    FullLeather,
+    SunLeather,
+    ThiefsGarb,
+    EelskinTunic,
+    FrontierLeather,
+    GloriousLeather,
+    CoronalLeather,
+    CutthroatsGarb,
+    SharkskinTunic,
+    DestinyLeather,
+    ExquisiteLeather,
+    ZodiacLeather,
+    AssassinsGarb,
+
+    // int
+    SimpleRobe,
+    SilkenVest,
+    ScholarsRobe,
+    SilkenGarb,
+    MageVestmest,
+    SilkRobe,
+    CabalistRegalia,
+    SagesRobe,
+    SilkenWrap,
+    ConjurerVestment,
+    SpidersilkRobbe,
+    DestroyerRegalia,
+    SavantsRobe,
+    NecromancerSilks,
+    OccultistsVestment,
+    WidowsilkRobe,
+    VaalRegalia,
+
+    // str/dex
+    ScaleVest,
+    LightBrigandine,
+    ScaleDoublet,
+    InfantryBrigandine,
+    FullScaleArmour,
+    SoldiersBrigandine,
+    FieldLamellar,
+    WyrmscaleDoublet,
+    HussarBrigandine,
+    FullWyrmscale,
+    CommandersBrigandine,
+    BattleLamellar,
+    DragonscaleDoublet,
+    DesertBrigandine,
+    FullDragonscale,
+    GeneralsBrigandine,
+    TriumphantLamellar,
+
+    // str/int
+    ChainmailVest,
+    ChainmailTunic,
+    RingmailCoat,
+    ChainmailDoublet,
+    FullRingmail,
+    FullChainmail,
+    HolyChainmail,
+    LatticedRingmail,
+    CrusaderChainmail,
+    OrnateRingmail,
+    ChainHauberk,
+    DevoutChainmail,
+    LoricatedRingmail,
+    ConquestChainmail,
+    ElegantRingmail,
+    SaintsHauberk,
+    SaintlyChainmail,
+
+    // int/dex
+    PaddedVest,
+    OiledVest,
+    PaddedJacket,
+    OiledCoat,
+    ScarletRaiment,
+    WaxedGarb,
+    BoneArmour,
+    QuiltedJacket,
+    SleekCoat,
+    CrimsonRaiment,
+    LacqueredGarb,
+    CryptArmour,
+    SentinetJacket,
+    VarnishedCoat,
+    BloodRaiment,
+    SadistGarb,
+    CarnalArmour,
+
+    // str/dex/int
+    SacrificialGarb,
+}
+
 struct Item {
     rarity: Rarity,
     name: String,
     category: Category,
     class: Class,
-    base_type: Base,
+    // base_type: Base,
 }
 // Rarity: Unique
 // Bones of Ullr
