@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use std::convert::TryFrom;
 
+#[allow(unused)]
 #[derive(Clone)]
 enum Rarity {
     Normal,
@@ -9,6 +10,7 @@ enum Rarity {
     Unique,
 }
 
+#[allow(unused)]
 #[derive(Clone)]
 enum Category {
     Flasks,
@@ -21,6 +23,7 @@ enum Category {
     Other,
 }
 
+#[allow(unused)]
 #[derive(Clone)]
 enum Class {
     LifeFlask,
@@ -89,6 +92,7 @@ enum Class {
     HeistTarget,
 }
 
+#[allow(unused)]
 enum BootsBase {
     // str
     IronGreaves,
@@ -131,6 +135,7 @@ enum BootsBase {
     DreamquestSlippers,
 }
 
+#[allow(unused)]
 enum BodyArmour {
     // str
     PlateVest,
