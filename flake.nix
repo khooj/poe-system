@@ -41,6 +41,7 @@
 
             shellHook = ''
               export PATH=$PATH:$HOME/.cargo/bin
+              export DATABASE_URL="sqlite:main.db"
             '';
           };
       });
