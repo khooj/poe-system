@@ -58,12 +58,9 @@ async fn wait_for(d: u64) {
 }
 
 impl Client {
-    pub fn new() -> Client {
+    pub fn new(user_agent: &str) -> Client {
         let client_builder = reqwest::ClientBuilder::new();
-        let client = client_builder
-            .user_agent("OAuth latest-stashes/0.1.0 (contact: bladoff@gmail.com)")
-            .build()
-            .unwrap();
+        let client = client_builder.user_agent(user_agent).build().unwrap();
         Client {
             client,
             limiter: None,

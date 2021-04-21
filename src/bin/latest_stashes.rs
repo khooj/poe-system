@@ -1,5 +1,5 @@
-use poe_system::implementations::public_stash_retriever::{Client};
-use poe_system::ports::public_stash_retriever::{Retriever, Error};
+use poe_system::implementations::public_stash_retriever::Client;
+use poe_system::ports::public_stash_retriever::{Error, Retriever};
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
 
@@ -14,7 +14,9 @@ async fn main() -> Result<(), std::io::Error> {
     }
 
     let mut stashes_info = Vec::with_capacity(110_000);
-    let mut client: Box<dyn Retriever> = Box::new(Client::new());
+    let mut client: Box<dyn Retriever> = Box::new(Client::new(
+        "OAuth latest-stashes/0.1.0 (contact: bladoff@gmail.com)",
+    ));
     let mut id: Option<String> = None;
     let f = OpenOptions::new()
         .write(true)
