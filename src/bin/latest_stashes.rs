@@ -2,6 +2,7 @@ use poe_system::implementations::public_stash_retriever::Client;
 use poe_system::ports::public_stash_retriever::{Error, Retriever};
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
+use log::info;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -34,7 +35,7 @@ async fn main() -> Result<(), std::io::Error> {
             },
         };
 
-        println!("next stash id: {}", resp.next_change_id);
+        info!("next stash id: {}", resp.next_change_id);
 
         if resp.stashes.len() == 0 {
             break;
@@ -42,16 +43,16 @@ async fn main() -> Result<(), std::io::Error> {
 
         stashes_info.append(&mut resp.stashes);
         id = Some(resp.next_change_id);
-        println!("now stashes info len: {}", stashes_info.len());
+        info!("now stashes info len: {}", stashes_info.len());
 
         if stashes_info.len() >= 100_000 {
-            println!("writing {} entries", stashes_info.len());
+            info!("writing {} entries", stashes_info.len());
             serde_json::to_writer(&mut buf, &stashes_info)?;
             stashes_info.clear();
         }
     }
 
-    println!("flushing");
+    info!("flushing");
     serde_json::to_writer(&mut buf, &stashes_info)?;
     buf.flush()
 }
