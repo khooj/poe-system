@@ -1,38 +1,19 @@
-use crate::ports::incoming::{PublicStashData, PublicStashRetriever};
-use anyhow::anyhow;
+use crate::ports::incoming::{PublicStashData, Retriever, Error};
 use async_trait::async_trait;
 use governor::{
-    clock::{DefaultClock, QuantaInstant},
+    clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},
     Quota, RateLimiter,
 };
-use serde::Deserialize;
-use serde_json::{to_writer, Value};
 use std::str::FromStr;
 use std::{
     convert::TryFrom,
     time::{Duration, Instant},
 };
 use std::{
-    env::args,
-    fs::{File, OpenOptions},
-};
-use std::{
-    io::{BufWriter, Write},
     num::NonZeroU32,
 };
-use thiserror::Error;
 use tokio::time::Instant as TokioInstant;
-
-#[derive(Debug, Error)]
-pub enum MyError {
-    #[error("limited for {0} seconds")]
-    RateLimited(u32),
-    #[error("client error {0}")]
-    ClientError(#[from] reqwest::Error),
-    #[error("next cycle")]
-    NextCycle,
-}
 
 #[derive(Debug)]
 struct Limits {
@@ -106,10 +87,8 @@ impl Client {
 }
 
 #[async_trait]
-impl PublicStashRetriever for Client {
-    type Error = MyError;
-
-    async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Self::Error> {
+impl Retriever for Client {
+    async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error> {
         while let Some(rl) = &self.limiter {
             let result = rl.check();
 
@@ -165,7 +144,7 @@ impl PublicStashRetriever for Client {
                     let lims = parse_header(limiting);
                     wait_for(lims.penalty_time as u64).await;
                 }
-                return Err(MyError::NextCycle);
+                return Err(Error::NextCycle);
             }
         };
 

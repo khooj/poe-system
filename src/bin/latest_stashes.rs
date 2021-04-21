@@ -1,5 +1,5 @@
-use poe_system::implementations::incoming::public_stash_retriever::{Client, MyError};
-use poe_system::ports::incoming::PublicStashRetriever;
+use poe_system::implementations::incoming::public_stash_retriever::{Client};
+use poe_system::ports::incoming::{Retriever, Error};
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
 
@@ -14,7 +14,7 @@ async fn main() -> Result<(), std::io::Error> {
     }
 
     let mut stashes_info = Vec::with_capacity(110_000);
-    let mut client: Box<dyn PublicStashRetriever<Error = MyError>> = Box::new(Client::new());
+    let mut client: Box<dyn Retriever> = Box::new(Client::new());
     let mut id: Option<String> = None;
     let f = OpenOptions::new()
         .write(true)
@@ -27,7 +27,7 @@ async fn main() -> Result<(), std::io::Error> {
         let mut resp = match client.get_latest_stash(id.as_deref()).await {
             Ok(r) => r,
             Err(e) => match e {
-                MyError::NextCycle => continue,
+                Error::NextCycle => continue,
                 _ => panic!("{}", e),
             },
         };

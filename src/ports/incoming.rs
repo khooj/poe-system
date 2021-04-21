@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use async_trait::async_trait;
+use thiserror::Error;
 
 #[derive(Deserialize, Serialize)]
 pub struct Item {
@@ -29,11 +30,17 @@ pub struct PublicStashData {
     pub stashes: Vec<PublicStashChange>,
 }
 
-#[async_trait]
-pub trait PublicStashRetriever {
-    type Error;
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("client error {0}")]
+    ClientError(#[from] reqwest::Error),
+    #[error("next cycle")]
+    NextCycle,
+}
 
-    async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Self::Error>;
+#[async_trait]
+pub trait Retriever {
+    async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error>;
 }
 
 #[cfg(test)]
