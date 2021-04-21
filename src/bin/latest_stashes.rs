@@ -1,5 +1,5 @@
-use poe_system::implementations::incoming::public_stash_retriever::{Client};
-use poe_system::ports::incoming::{Retriever, Error};
+use poe_system::implementations::public_stash_retriever::{Client};
+use poe_system::ports::public_stash_retriever::{Retriever, Error};
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
 

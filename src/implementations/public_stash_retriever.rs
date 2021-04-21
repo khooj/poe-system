@@ -1,4 +1,4 @@
-use crate::ports::incoming::{PublicStashData, Retriever, Error};
+use crate::ports::public_stash_retriever::{PublicStashData, Retriever, Error};
 use async_trait::async_trait;
 use governor::{
     clock::DefaultClock,
