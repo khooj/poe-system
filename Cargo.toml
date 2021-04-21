@@ -20,3 +20,5 @@ thiserror = "1.0.24"
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite", "macros", "migrate" ] }
 #waiter_di = "1.6.2"
 async-trait = "0.1.50"
+log = "0.4"
+env_logger = "0.8.3"

@@ -1,17 +1,16 @@
-use crate::ports::public_stash_retriever::{PublicStashData, Retriever, Error};
+use crate::ports::public_stash_retriever::{Error, PublicStashData, Retriever};
 use async_trait::async_trait;
 use governor::{
     clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},
     Quota, RateLimiter,
 };
+use log::info;
+use std::num::NonZeroU32;
 use std::str::FromStr;
 use std::{
     convert::TryFrom,
     time::{Duration, Instant},
-};
-use std::{
-    num::NonZeroU32,
 };
 use tokio::time::Instant as TokioInstant;
 
@@ -54,7 +53,7 @@ pub struct Client {
 
 async fn wait_for(d: u64) {
     let until = Instant::now() + Duration::from_millis(d);
-    println!("waiting for 500ms");
+    info!("waiting for {}", d);
     tokio::time::sleep_until(TokioInstant::from_std(until)).await;
 }
 
@@ -74,7 +73,7 @@ impl Client {
 
     fn reinit_limiter(&mut self, limiting: &str) {
         let limits = parse_header(&limiting);
-        println!("encountered new limits: {:?}", limits);
+        info!("encountered new limits: {:?}", limits);
         let hit =
             NonZeroU32::try_from(limits.hit_count).map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
         let quota = Quota::with_period(Duration::from_secs(limits.watching_time as u64))
@@ -112,11 +111,11 @@ impl Retriever for Client {
         let mut limiting = "1:1:60";
 
         if let Some(l) = resp.headers().get("X-Rate-Limit-Client") {
-            println!("limits header found");
+            info!("limits header found");
             limiting = match l.to_str() {
                 Ok(l) => l,
                 Err(e) => {
-                    println!("cant to_str header {}, using default", e);
+                    info!("cant to_str header {}, using default", e);
                     "1:1:60"
                 }
             };
@@ -134,7 +133,7 @@ impl Retriever for Client {
             .headers()
             .get("X-Rate-Limit-Client-State")
             .map_or("1:1:0", |v| v.to_str().map_or("1:1:0", |x| x));
-        println!("current limits state: {:?}", parse_header(limiting_state));
+        info!("current limits state: {:?}", parse_header(limiting_state));
 
         let st = resp.error_for_status_ref();
         match st {
