@@ -13,6 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::time::Instant as TokioInstant;
+use waiter_di::{component, provides, wrapper};
 
 #[derive(Debug)]
 struct Limits {
@@ -57,17 +58,18 @@ async fn wait_for(d: u64) {
     tokio::time::sleep_until(TokioInstant::from_std(until)).await;
 }
 
-impl Client {
-    pub fn new(user_agent: &str) -> Client {
-        let client_builder = reqwest::ClientBuilder::new();
-        let client = client_builder.user_agent(user_agent).build().unwrap();
-        Client {
-            client,
-            limiter: None,
-            latest_limiter: None,
-        }
+#[provides]
+pub fn new_client(user_agent: String) -> Client {
+    let client_builder = reqwest::ClientBuilder::new();
+    let client = client_builder.user_agent(user_agent).build().unwrap();
+    Client {
+        client,
+        limiter: None,
+        latest_limiter: None,
     }
+}
 
+impl Client {
     fn reinit_limiter(&mut self, limiting: &str) {
         let limits = parse_header(&limiting);
         info!("encountered new limits: {:?}", limits);
@@ -83,6 +85,7 @@ impl Client {
 }
 
 #[async_trait]
+#[provides]
 impl Retriever for Client {
     async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error> {
         while let Some(rl) = &self.limiter {
@@ -147,5 +150,19 @@ impl Retriever for Client {
         let body = resp.json::<PublicStashData>().await?;
 
         Ok(body)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::ports::public_stash_retriever::Retriever;
+    use waiter_di::{profiles, Container, Provider};
+    use std::env::set_var;
+
+    #[test]
+    fn check_di() {
+        set_var("user_agent", "test");
+        let mut container = Container::<profiles::Default>::new();
+        let _ = Provider::<dyn Retriever>::get(&mut container);
     }
 }
