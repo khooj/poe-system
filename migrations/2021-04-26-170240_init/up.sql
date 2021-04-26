@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS latest_stash_id (id TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS latest_stash_id (id TEXT PRIMARY KEY NOT NULL);
 CREATE TABLE IF NOT EXISTS items (
     id TEXT PRIMARY KEY NOT NULL,
     base_type TEXT NOT NULL,
@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS items (
     talisman_tier INTEGER,
     verified BOOLEAN,
     icon TEXT,
-    influences SHIT,
     delve BOOLEAN,
     fractured BOOLEAN,
     synthesised BOOLEAN,
@@ -45,9 +44,13 @@ CREATE TABLE IF NOT EXISTS items (
     veiled BOOLEAN,
     descr_text TEXT,
     prophecy_text TEXT,
-    replica TEXT,
+    replica BOOLEAN,
     socket INTEGER,
-    colour TEXT
+    colour TEXT,
+    crusader BOOLEAN,
+    hunter BOOLEAN,
+    warlord BOOLEAN,
+    redeemer BOOLEAN
 );
 -- utility, implicit, explicit, crafted, enchant, fractured, cosmetic, veiled,
 -- explicit_hybrid
@@ -55,6 +58,7 @@ CREATE TABLE IF NOT EXISTS mods (
     item_id TEXT NOT NULL,
     type INTEGER NOT NULL,
     mod TEXT NOT NULL,
+    PRIMARY KEY(item_id, mod),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 CREATE INDEX mods_item_id ON mods(item_id);
@@ -75,6 +79,7 @@ CREATE TABLE IF NOT EXISTS properties (
     type INTEGER,
     progress REAL,
     suffix TEXT,
+    PRIMARY KEY(item_id, name),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 CREATE INDEX properties_item_id ON properties(item_id);
@@ -89,12 +94,14 @@ CREATE TABLE IF NOT EXISTS sockets (
     s_group INTEGER NOT NULL,
     attr TEXT,
     s_colour TEXT,
+    PRIMARY KEY(item_id, s_group),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 CREATE TABLE IF NOT EXISTS ultimatum_mods (
     item_id TEXT NOT NULL,
     type TEXT NOT NULL,
     tier INTEGER NOT NULL,
+    PRIMARY KEY(item_id, type),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 CREATE INDEX ultimatum_mods_item_id ON ultimatum_mods(item_id);
@@ -104,13 +111,15 @@ CREATE TABLE IF NOT EXISTS incubated_item (
     level INTEGER NOT NULL,
     progress INTEGER NOT NULL,
     total INTEGER NOT NULL,
+    PRIMARY KEY(item_id, name),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 CREATE TABLE IF NOT EXISTS hybrids (
     id TEXT,
-    item_id TEXT,
+    item_id TEXT NOT NULL,
     is_vaal_gem BOOLEAN,
     base_type_name TEXT NOT NULL,
     sec_descr_text TEXT,
+    PRIMARY KEY(id, item_id),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );

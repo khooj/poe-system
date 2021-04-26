@@ -1,4 +1,4 @@
-use crate::ports::public_stash_retriever::{Error, PublicStashData, Retriever};
+use crate::ports::outbound::public_stash_retriever::{Error, PublicStashData, Retriever};
 use async_trait::async_trait;
 use governor::{
     clock::DefaultClock,
@@ -13,7 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::time::Instant as TokioInstant;
-use waiter_di::{component, provides, wrapper};
+use waiter_di::provides;
 
 #[derive(Debug)]
 struct Limits {
@@ -155,9 +155,9 @@ impl Retriever for Client {
 
 #[cfg(test)]
 mod test {
-    use crate::ports::public_stash_retriever::Retriever;
-    use waiter_di::{profiles, Container, Provider};
+    use crate::ports::outbound::public_stash_retriever::Retriever;
     use std::env::set_var;
+    use waiter_di::{profiles, Container, Provider};
 
     #[test]
     fn check_di() {

@@ -1,1 +1,1 @@
-pub mod public_stash_retriever;
+pub mod outbound;

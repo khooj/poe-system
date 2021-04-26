@@ -261,16 +261,17 @@ pub struct Item {
     name: String,
     category: Category,
     class: Class,
-    // base_type: Base,
+    base_type: String,
 }
 
 impl Item {
     pub fn empty() -> Item {
         Item {
             rarity: Rarity::Normal,
-            name: "empty".to_owned(),
+            name: String::new(),
             category: Category::Armor,
             class: Class::AbyssJewel,
+            base_type: String::new(),
         }
     }
 }

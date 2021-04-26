@@ -26,7 +26,9 @@
           mkShell {
             name = "rust";
             buildInputs = [
+              sqlite
               postgresql
+              mysql
               ruststable
               openssl
               pkg-config
@@ -37,11 +39,11 @@
               gnumake
               fswatch
               python3
+              jq
             ];
 
             shellHook = ''
               export PATH=$PATH:$HOME/.cargo/bin
-              export DATABASE_URL="sqlite:main.db"
             '';
           };
       });
