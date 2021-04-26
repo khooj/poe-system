@@ -1,18 +1,23 @@
+use crate::domain::item::Item as DomainItem;
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
+use diesel::Queryable;
+use dotenv::dotenv;
+use std::env;
 use thiserror::Error;
-use sqlx::query_as;
-use crate::domain::item::{Item as DomainItem};
 
+#[derive(Queryable)]
 pub struct RawItem {
     id: String,
     base_type: String,
     category: Option<String>,
-    prefixes: Option<i64>,
-    suffixes: Option<i64>,
+    prefixes: Option<i32>,
+    suffixes: Option<i32>,
     account_id: String,
     stash_id: String,
     league: Option<String>,
     name: String,
-    item_lvl: i64,
+    item_lvl: i32,
     identified: bool,
     inventory_id: Option<String>,
     type_line: String,
@@ -20,18 +25,18 @@ pub struct RawItem {
     corrupted: Option<bool>,
     duplicated: Option<bool>,
     elder: Option<bool>,
-    frame_type: i64,
-    h: i64,
-    w: i64,
-    x: Option<i64>,
-    y: Option<i64>,
+    frame_type: i32,
+    h: i32,
+    w: i32,
+    x: Option<i32>,
+    y: Option<i32>,
     is_relic: Option<bool>,
     note: Option<String>,
     shaper: Option<bool>,
-    stack_size: Option<i64>,
-    max_stack_size: Option<i64>,
+    stack_size: Option<i32>,
+    max_stack_size: Option<i32>,
     support: Option<bool>,
-    talisman_tier: Option<i64>,
+    talisman_tier: Option<i32>,
     verified: Option<bool>,
     icon: Option<String>,
     delve: Option<bool>,
@@ -43,7 +48,7 @@ pub struct RawItem {
     descr_text: Option<String>,
     prophecy_text: Option<String>,
     replica: Option<bool>,
-    socket: Option<i64>,
+    socket: Option<i32>,
     colour: Option<String>,
     crusader: Option<bool>,
     hunter: Option<bool>,
@@ -59,8 +64,6 @@ pub struct RawItem {
     // hybrids: Vec<Hybrid>,
 }
 
-#[derive(sqlx::Type)]
-#[repr(i64)]
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -146,42 +149,25 @@ pub struct Hybrid {
 
 #[derive(Error, Debug)]
 pub enum RepositoryError {
-    #[error("sqlx error")]
-    SqlxError(#[from] sqlx::Error),
+    #[error("orm error")]
+    OrmError(#[from] diesel::result::ConnectionError),
+    #[error("query error")]
+    QueryError(#[from] diesel::result::Error),
     #[error("t")]
     Ttt,
 }
 
-pub struct SqlxItemRepository {
+pub struct DieselItemRepository {}
 
-}
+use crate::schema::items::dsl::*;
+impl DieselItemRepository {
+    pub async fn get_item(search_name: &str) -> Result<DomainItem, RepositoryError> {
+        dotenv().ok();
 
-impl SqlxItemRepository {
-    pub async fn get_item(name: &str) -> Result<DomainItem, RepositoryError> {
-        let mut pool = sqlx::SqlitePool::connect_lazy("sqlite:main.db")?;
-        let rawItem = query_as!(
-            RawItem,
-            r#"
-            SELECT * FROM items WHERE name = ?
-            "#,
-            name
-        ).fetch_one(&pool)
-        .await?;
-        let mods = query_as!(
-            Mod,
-            r#"
-            SELECT item_id, type as "type:_", mod FROM mods WHERE item_id = ?
-            "#,
-            rawItem.id)
-        .fetch_all(&pool)
-        .await?;
-        let props = query_as!(
-            Property,
-            r#"
-            SELECT * FROM properties WHERE item_id = ?"#,
-            rawItem.id)
-        .fetch_all(&pool)
-        .await?;
+        let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let conn = SqliteConnection::establish(&db_url)?;
+
+        let result = items.filter(name.eq(&search_name)).limit(5).load::<RawItem>(&conn)?;
 
         Err(RepositoryError::Ttt)
     }
