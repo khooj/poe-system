@@ -23,4 +23,4 @@ log = "0.4"
 env_logger = "0.8.3"
 syn = { version = "1.0.48", features = ["full"]}
 dotenv = "0.15.0"
-diesel = { version = "1.4.4", features = ["sqlite", "64-column-tables"] }
+diesel = { version = "1.4.4", features = ["sqlite", "64-column-tables", "extras"] }

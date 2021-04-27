@@ -157,18 +157,50 @@ pub enum RepositoryError {
     Ttt,
 }
 
-pub struct DieselItemRepository {}
+use crate::schema::items;
+
+#[derive(Insertable)]
+#[table_name = "items"]
+pub struct NewItem<'a> {
+    pub id: &'a str,
+    pub name: &'a str,
+}
+
+pub struct DieselItemRepository {
+    db_url: String,
+    conn: SqliteConnection,
+}
 
 use crate::schema::items::dsl::*;
 impl DieselItemRepository {
-    pub async fn get_item(search_name: &str) -> Result<DomainItem, RepositoryError> {
+    pub fn new() -> Result<DieselItemRepository, RepositoryError> {
         dotenv().ok();
 
         let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let conn = SqliteConnection::establish(&db_url)?;
+        Ok(DieselItemRepository { db_url, conn })
+    }
 
-        let result = items.filter(name.eq(&search_name)).limit(5).load::<RawItem>(&conn)?;
+    pub fn get_item(&self, search_name: &str) -> Result<DomainItem, RepositoryError> {
+        let result = items
+            .filter(name.eq(&search_name))
+            .limit(5)
+            .load::<RawItem>(&self.conn)?;
 
-        Err(RepositoryError::Ttt)
+        Ok(DomainItem::empty())
+    }
+
+    pub fn insert_item(&self, item: &DomainItem) -> Result<(), RepositoryError> {
+        let new_item = NewItem {
+            id: &item.id,
+            name: &item.name,
+        };
+
+        diesel::insert_into(items::table)
+            .values(&new_item)
+            .execute(&self.conn)
+            .expect("not ok");
+
+        Ok(())
     }
 }

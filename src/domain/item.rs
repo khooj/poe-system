@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 
 #[allow(unused)]
 #[derive(Clone)]
-enum Rarity {
+pub enum Rarity {
     Normal,
     Magic,
     Rare,
@@ -12,7 +12,7 @@ enum Rarity {
 
 #[allow(unused)]
 #[derive(Clone)]
-enum Category {
+pub enum Category {
     Flasks,
     Jewellery,
     OneHandedWeapon,
@@ -25,7 +25,7 @@ enum Category {
 
 #[allow(unused)]
 #[derive(Clone)]
-enum Class {
+pub enum Class {
     LifeFlask,
     ManaFlask,
     HybridFlask,
@@ -257,16 +257,18 @@ enum BodyArmour {
 
 #[derive(Clone)]
 pub struct Item {
-    rarity: Rarity,
-    name: String,
-    category: Category,
-    class: Class,
-    base_type: String,
+    pub id: String,
+    pub rarity: Rarity,
+    pub name: String,
+    pub category: Category,
+    pub class: Class,
+    pub base_type: String,
 }
 
 impl Item {
     pub fn empty() -> Item {
         Item {
+            id: String::new(),
             rarity: Rarity::Normal,
             name: String::new(),
             category: Category::Armor,
