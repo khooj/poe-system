@@ -1,11 +1,74 @@
 use crate::domain::item::Item as DomainItem;
+use crate::ports::outbound::public_stash_retriever::{Extended, Item, PublicStashData};
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use diesel::Queryable;
 use dotenv::dotenv;
+use std::convert::From;
 use std::env;
 use thiserror::Error;
+use uuid::Uuid;
 
+struct SplittedItem(
+    NewItem,
+    // Vec<Mod>,
+    // Vec<Subcategory>,
+    // Vec<Property>,
+    // Vec<Socket>,
+    // Vec<UltimatumMod>,
+    // Option<IncubatedItem>,
+    // Option<Hybrid>,
+);
+
+impl From<Item> for SplittedItem {
+    fn from(item: Item) -> Self {
+        let raw = NewItem {
+            account_id: String::new(),
+            stash_id: String::new(),
+            verified: item.verified,
+            w: item.w,
+            h: item.h,
+            icon: item.icon,
+            support: item.support,
+            stack_size: item.stack_size,
+            max_stack_size: item.max_stack_size,
+            league: item.league,
+            id: item
+                .id
+                .map_or(Uuid::new_v4().to_hyphenated().to_string(), |v| v),
+            elder: item.elder,
+            shaper: item.shaper,
+            abyss_jewel: item.abyss_jewel,
+            delve: item.delve,
+            fractured: item.fractured,
+            synthesised: item.synthesised,
+            name: item.name,
+            type_line: item.type_line,
+            base_type: item.base_type,
+            identified: item.identified,
+            item_lvl: item.item_level,
+            note: item.note,
+            duplicated: item.duplicated,
+            split: item.split,
+            corrupted: item.corrupted,
+            talisman_tier: item.talisman_tier,
+            sec_descr_text: item.sec_descr_text,
+            veiled: item.veiled,
+            descr_text: item.descr_text,
+            prophecy_text: item.prophecy_text,
+            is_relic: item.is_relic,
+            replica: item.replica,
+            frame_type: item.frame_type,
+            x_coordinate: item.x,
+            y_coordinate: item.y,
+            inventory_id: item.inventory_id,
+            socket: item.socket,
+            colour: item.colour,
+        };
+        SplittedItem(raw)
+    }
+}
+/*
 #[derive(Queryable)]
 pub struct RawItem {
     id: String,
@@ -17,7 +80,7 @@ pub struct RawItem {
     stash_id: String,
     league: Option<String>,
     name: String,
-    item_lvl: i32,
+    item_lvl: Option<i32>,
     identified: bool,
     inventory_id: Option<String>,
     type_line: String,
@@ -25,7 +88,7 @@ pub struct RawItem {
     corrupted: Option<bool>,
     duplicated: Option<bool>,
     elder: Option<bool>,
-    frame_type: i32,
+    frame_type: Option<i32>,
     h: i32,
     w: i32,
     x: Option<i32>,
@@ -37,8 +100,8 @@ pub struct RawItem {
     max_stack_size: Option<i32>,
     support: Option<bool>,
     talisman_tier: Option<i32>,
-    verified: Option<bool>,
-    icon: Option<String>,
+    verified: bool,
+    icon: String,
     delve: Option<bool>,
     fractured: Option<bool>,
     synthesised: Option<bool>,
@@ -87,7 +150,6 @@ pub struct Subcategory {
     subcategory: String,
 }
 
-#[repr(C)]
 pub enum PropertyType {
     Properties = 0,
     Requirements,
@@ -97,7 +159,6 @@ pub enum PropertyType {
     Hybrid,
 }
 
-#[repr(C)]
 pub enum ValueType {
     WhitePhysical = 0,
     BlueModified = 1,
@@ -146,6 +207,7 @@ pub struct Hybrid {
     base_type_name: String,
     sec_descr_text: Option<String>,
 }
+*/
 
 #[derive(Error, Debug)]
 pub enum RepositoryError {
@@ -153,54 +215,118 @@ pub enum RepositoryError {
     OrmError(#[from] diesel::result::ConnectionError),
     #[error("query error")]
     QueryError(#[from] diesel::result::Error),
+    #[error("not found")]
+    NotFound,
     #[error("t")]
     Ttt,
 }
 
-use crate::schema::items;
+use crate::schema::{items, latest_stash_id};
 
 #[derive(Insertable)]
 #[table_name = "items"]
-pub struct NewItem<'a> {
-    pub id: &'a str,
-    pub name: &'a str,
+pub struct NewItem {
+    pub id: String,
+    pub base_type: String,
+    pub account_id: String,
+    pub stash_id: String,
+    pub league: Option<String>,
+    pub name: String,
+    pub item_lvl: Option<i32>,
+    pub identified: bool,
+    pub inventory_id: Option<String>,
+    pub type_line: String,
+    pub abyss_jewel: Option<bool>,
+    pub corrupted: Option<bool>,
+    pub duplicated: Option<bool>,
+    pub elder: Option<bool>,
+    pub frame_type: Option<i32>,
+    pub h: i32,
+    pub w: i32,
+    pub x_coordinate: Option<i32>,
+    pub y_coordinate: Option<i32>,
+    pub is_relic: Option<bool>,
+    pub note: Option<String>,
+    pub shaper: Option<bool>,
+    pub stack_size: Option<i32>,
+    pub max_stack_size: Option<i32>,
+    pub support: Option<bool>,
+    pub talisman_tier: Option<i32>,
+    pub verified: bool,
+    pub icon: String,
+    pub delve: Option<bool>,
+    pub fractured: Option<bool>,
+    pub synthesised: Option<bool>,
+    pub split: Option<bool>,
+    pub sec_descr_text: Option<String>,
+    pub veiled: Option<bool>,
+    pub descr_text: Option<String>,
+    pub prophecy_text: Option<String>,
+    pub replica: Option<bool>,
+    pub socket: Option<i32>,
+    pub colour: Option<String>,
+}
+
+#[derive(Queryable)]
+pub struct LatestStashId {
+    latest_stash_id: String,
 }
 
 pub struct DieselItemRepository {
-    db_url: String,
     conn: SqliteConnection,
 }
 
-use crate::schema::items::dsl::*;
+use crate::schema::items::dsl as items_dsl;
+use crate::schema::latest_stash_id::dsl as stash_dsl;
 impl DieselItemRepository {
     pub fn new() -> Result<DieselItemRepository, RepositoryError> {
         dotenv().ok();
 
         let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let conn = SqliteConnection::establish(&db_url)?;
-        Ok(DieselItemRepository { db_url, conn })
+        Ok(DieselItemRepository { conn })
     }
 
-    pub fn get_item(&self, search_name: &str) -> Result<DomainItem, RepositoryError> {
-        let result = items
-            .filter(name.eq(&search_name))
-            .limit(5)
-            .load::<RawItem>(&self.conn)?;
-
-        Ok(DomainItem::empty())
+    pub fn get_stash_id(&self) -> Result<LatestStashId, RepositoryError> {
+        let v = stash_dsl::latest_stash_id.load::<LatestStashId>(&self.conn)?;
+        if v.len() > 0 {
+            Ok(v.into_iter().nth(1).unwrap())
+        } else {
+            Err(RepositoryError::NotFound)
+        }
     }
 
-    pub fn insert_item(&self, item: &DomainItem) -> Result<(), RepositoryError> {
-        let new_item = NewItem {
-            id: &item.id,
-            name: &item.name,
-        };
+    pub fn insert_raw_item(&self, public_data: PublicStashData) -> Result<(), RepositoryError> {
+        self.conn.transaction::<_, diesel::result::Error, _>(|| {
+            let new_item_info: Vec<SplittedItem> = public_data
+                .stashes
+                .iter()
+                .map(|v| {
+                    v.items
+                        .iter()
+                        .map(|i| {
+                            let mut item = SplittedItem::from(i.clone());
+                            item.0.account_id = v.account_name.as_ref().cloned().unwrap();
+                            item.0.stash_id = v.stash.as_ref().cloned().unwrap();
+                            item
+                        })
+                        .collect::<Vec<SplittedItem>>()
+                })
+                .flatten()
+                .collect();
 
-        diesel::insert_into(items::table)
-            .values(&new_item)
-            .execute(&self.conn)
-            .expect("not ok");
+            let insert_items: Vec<&NewItem> = new_item_info.iter().map(|v| &v.0).collect();
 
+            diesel::update(latest_stash_id::table)
+                .set(stash_dsl::id.eq(&public_data.next_change_id))
+                .execute(&self.conn)?;
+
+            diesel::insert_into(items::table)
+                .values(insert_items)
+                .execute(&self.conn)?;
+
+            Ok(())
+        })?;
         Ok(())
     }
 }

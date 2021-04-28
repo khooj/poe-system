@@ -1,3 +1,5 @@
+DROP TABLE influences;
+DROP TABLE extended;
 DROP TABLE hybrids;
 DROP TABLE incubated_item;
 DROP INDEX ultimatum_mods_item_id;

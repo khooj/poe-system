@@ -1,4 +1,13 @@
 table! {
+    extended (item_id) {
+        item_id -> Nullable<Text>,
+        category -> Text,
+        prefixes -> Nullable<Integer>,
+        suffixes -> Nullable<Integer>,
+    }
+}
+
+table! {
     hybrids (id, item_id) {
         id -> Nullable<Text>,
         item_id -> Text,
@@ -19,17 +28,24 @@ table! {
 }
 
 table! {
+    influences (item_id) {
+        item_id -> Nullable<Text>,
+        warlord -> Nullable<Bool>,
+        crusader -> Nullable<Bool>,
+        redeemer -> Nullable<Bool>,
+        hunter -> Nullable<Bool>,
+    }
+}
+
+table! {
     items (id) {
         id -> Text,
         base_type -> Text,
-        category -> Nullable<Text>,
-        prefixes -> Nullable<Integer>,
-        suffixes -> Nullable<Integer>,
         account_id -> Text,
         stash_id -> Text,
         league -> Nullable<Text>,
         name -> Text,
-        item_lvl -> Integer,
+        item_lvl -> Nullable<Integer>,
         identified -> Bool,
         inventory_id -> Nullable<Text>,
         type_line -> Text,
@@ -37,11 +53,11 @@ table! {
         corrupted -> Nullable<Bool>,
         duplicated -> Nullable<Bool>,
         elder -> Nullable<Bool>,
-        frame_type -> Integer,
+        frame_type -> Nullable<Integer>,
         h -> Integer,
         w -> Integer,
-        x -> Nullable<Integer>,
-        y -> Nullable<Integer>,
+        x_coordinate -> Nullable<Integer>,
+        y_coordinate -> Nullable<Integer>,
         is_relic -> Nullable<Bool>,
         note -> Nullable<Text>,
         shaper -> Nullable<Bool>,
@@ -49,8 +65,8 @@ table! {
         max_stack_size -> Nullable<Integer>,
         support -> Nullable<Bool>,
         talisman_tier -> Nullable<Integer>,
-        verified -> Nullable<Bool>,
-        icon -> Nullable<Text>,
+        verified -> Bool,
+        icon -> Text,
         delve -> Nullable<Bool>,
         fractured -> Nullable<Bool>,
         synthesised -> Nullable<Bool>,
@@ -62,10 +78,6 @@ table! {
         replica -> Nullable<Bool>,
         socket -> Nullable<Integer>,
         colour -> Nullable<Text>,
-        crusader -> Nullable<Bool>,
-        hunter -> Nullable<Bool>,
-        warlord -> Nullable<Bool>,
-        redeemer -> Nullable<Bool>,
     }
 }
 
@@ -116,7 +128,7 @@ table! {
 }
 
 table! {
-    subcategories (item_id) {
+    subcategories (item_id, subcategory) {
         item_id -> Text,
         subcategory -> Text,
     }
@@ -131,8 +143,10 @@ table! {
     }
 }
 
+joinable!(extended -> items (item_id));
 joinable!(hybrids -> items (item_id));
 joinable!(incubated_item -> items (item_id));
+joinable!(influences -> items (item_id));
 joinable!(mods -> items (item_id));
 joinable!(properties -> items (item_id));
 joinable!(socketed_items -> items (item_id));
@@ -141,8 +155,10 @@ joinable!(subcategories -> items (item_id));
 joinable!(ultimatum_mods -> items (item_id));
 
 allow_tables_to_appear_in_same_query!(
+    extended,
     hybrids,
     incubated_item,
+    influences,
     items,
     latest_stash_id,
     mods,

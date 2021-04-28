@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemSocket {
     pub group: u32,
@@ -11,7 +11,7 @@ pub struct ItemSocket {
     pub s_colour: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemProperty {
     pub name: String,
@@ -23,11 +23,18 @@ pub struct ItemProperty {
     pub suffix: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Influences {}
+pub struct Influences {
+    pub shaper: Option<bool>,
+    pub elder: Option<bool>,
+    pub hunter: Option<bool>,
+    pub crusader: Option<bool>,
+    pub warlord: Option<bool>,
+    pub redeemer: Option<bool>,
+}
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UltimatumMod {
     #[serde(rename = "type")]
@@ -35,7 +42,7 @@ pub struct UltimatumMod {
     pub tier: u32,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct IncubatedItem {
     pub name: String,
@@ -44,7 +51,7 @@ pub struct IncubatedItem {
     pub total: u32,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Hybrid {
     pub is_vaal_gem: Option<bool>,
@@ -54,7 +61,22 @@ pub struct Hybrid {
     pub sec_descr_text: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+fn default_subcategories() -> Option<Vec<String>> {
+    Some(vec![])
+}
+
+fn default_int<T>() -> Option<T>
+where
+    T: num::Integer + std::default::Default,
+{
+    Some(T::default())
+}
+
+fn default_bool() -> Option<bool> {
+    Some(false)
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Extended {
     pub category: String,
@@ -63,12 +85,12 @@ pub struct Extended {
     pub suffixes: Option<u32>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
     pub verified: bool,
-    pub w: u32,
-    pub h: u32,
+    pub w: i32,
+    pub h: i32,
     pub icon: String,
     pub support: Option<bool>,
     pub stack_size: Option<i32>,
@@ -117,14 +139,18 @@ pub struct Item {
     pub is_relic: Option<bool>,
     pub replica: Option<bool>,
     pub incubated_item: Option<IncubatedItem>,
-    pub frame_type: Option<u32>,
+    pub frame_type: Option<i32>,
     pub hybrid: Option<Hybrid>,
     pub extended: Option<Extended>,
-    pub x: Option<u32>,
-    pub y: Option<u32>,
+    pub x: Option<i32>,
+    pub y: Option<i32>,
     pub inventory_id: Option<String>,
-    pub socket: Option<u32>,
+    pub socket: Option<i32>,
     pub colour: Option<String>,
+}
+
+fn default_str() -> Option<String> {
+    Some(String::new())
 }
 
 #[derive(Deserialize, Serialize)]
@@ -132,8 +158,10 @@ pub struct Item {
 pub struct PublicStashChange {
     pub id: String,
     pub public: bool,
+    #[serde(default = "default_str")]
     pub account_name: Option<String>,
     pub last_character_name: Option<String>,
+    #[serde(default = "default_str")]
     pub stash: Option<String>,
     pub stash_type: String,
     pub league: Option<String>,

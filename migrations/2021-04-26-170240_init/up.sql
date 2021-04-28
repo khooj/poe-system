@@ -3,18 +3,13 @@ CREATE TABLE IF NOT EXISTS items (
     id TEXT PRIMARY KEY NOT NULL,
     base_type TEXT NOT NULL,
     -- extended object
-    -- subcategories is separate table
-    category TEXT,
-    prefixes INTEGER,
-    suffixes INTEGER,
-    -- end extended object
     -- from parent json model
     account_id TEXT NOT NULL,
     stash_id TEXT NOT NULL,
     league TEXT,
     -- end parent json model
     name TEXT NOT NULL,
-    item_lvl INTEGER NOT NULL,
+    item_lvl INTEGER,
     identified BOOLEAN NOT NULL,
     inventory_id TEXT,
     type_line TEXT NOT NULL,
@@ -22,11 +17,11 @@ CREATE TABLE IF NOT EXISTS items (
     corrupted BOOLEAN,
     duplicated BOOLEAN,
     elder BOOLEAN,
-    frame_type INTEGER NOT NULL,
+    frame_type INTEGER,
     h INTEGER NOT NULL,
     w INTEGER NOT NULL,
-    x INTEGER,
-    y INTEGER,
+    x_coordinate INTEGER,
+    y_coordinate INTEGER,
     is_relic BOOLEAN,
     note TEXT,
     shaper BOOLEAN,
@@ -34,8 +29,8 @@ CREATE TABLE IF NOT EXISTS items (
     max_stack_size INTEGER,
     support BOOLEAN,
     talisman_tier INTEGER,
-    verified BOOLEAN,
-    icon TEXT,
+    verified BOOLEAN NOT NULL,
+    icon TEXT NOT NULL,
     delve BOOLEAN,
     fractured BOOLEAN,
     synthesised BOOLEAN,
@@ -46,11 +41,7 @@ CREATE TABLE IF NOT EXISTS items (
     prophecy_text TEXT,
     replica BOOLEAN,
     socket INTEGER,
-    colour TEXT,
-    crusader BOOLEAN,
-    hunter BOOLEAN,
-    warlord BOOLEAN,
-    redeemer BOOLEAN
+    colour TEXT
 );
 -- utility, implicit, explicit, crafted, enchant, fractured, cosmetic, veiled,
 -- explicit_hybrid
@@ -65,7 +56,7 @@ CREATE INDEX mods_item_id ON mods(item_id);
 CREATE TABLE IF NOT EXISTS subcategories (
     item_id TEXT NOT NULL,
     subcategory TEXT NOT NULL,
-    PRIMARY KEY(item_id),
+    PRIMARY KEY(item_id, subcategory),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 -- properties, requirements, additional_properties, next_level_requirements,
@@ -121,5 +112,20 @@ CREATE TABLE IF NOT EXISTS hybrids (
     base_type_name TEXT NOT NULL,
     sec_descr_text TEXT,
     PRIMARY KEY(id, item_id),
+    FOREIGN KEY(item_id) REFERENCES items(id)
+);
+CREATE TABLE IF NOT EXISTS extended (
+    item_id TEXT PRIMARY KEY,
+    category TEXT NOT NULL,
+    prefixes INTEGER,
+    suffixes INTEGER,
+    FOREIGN KEY(item_id) REFERENCES items(id)
+);
+CREATE TABLE IF NOT EXISTS influences (
+    item_id TEXT PRIMARY KEY,
+    warlord BOOLEAN,
+    crusader BOOLEAN,
+    redeemer BOOLEAN,
+    hunter BOOLEAN,
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
