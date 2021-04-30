@@ -129,7 +129,6 @@ mod tests {
     fn parse_pob() -> Result<(), anyhow::Error> {
         let pob = Pob::try_from(TESTPOB)?;
         let doc = pob.as_document()?;
-        println!("{}", pob.original);
         Ok(())
     }
 

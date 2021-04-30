@@ -170,7 +170,6 @@ pub struct PublicStashChange {
 
 #[derive(Deserialize, Serialize)]
 pub struct PublicStashData {
-    #[serde(rename = "nextChangeId")]
     pub next_change_id: String,
     pub stashes: Vec<PublicStashChange>,
 }

@@ -1,9 +1,11 @@
 use crate::domain::item::Item as DomainItem;
 use crate::ports::outbound::public_stash_retriever::{Extended, Item, PublicStashData};
+use crate::ports::outbound::repository::{ItemRepository, LatestStashId, RepositoryError};
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use diesel::Queryable;
 use dotenv::dotenv;
+use log::{debug, info};
 use std::convert::From;
 use std::env;
 use thiserror::Error;
@@ -209,21 +211,9 @@ pub struct Hybrid {
 }
 */
 
-#[derive(Error, Debug)]
-pub enum RepositoryError {
-    #[error("orm error")]
-    OrmError(#[from] diesel::result::ConnectionError),
-    #[error("query error")]
-    QueryError(#[from] diesel::result::Error),
-    #[error("not found")]
-    NotFound,
-    #[error("t")]
-    Ttt,
-}
-
 use crate::schema::{items, latest_stash_id};
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug)]
 #[table_name = "items"]
 pub struct NewItem {
     pub id: String,
@@ -267,9 +257,10 @@ pub struct NewItem {
     pub colour: Option<String>,
 }
 
-#[derive(Queryable)]
-pub struct LatestStashId {
-    latest_stash_id: String,
+#[derive(Insertable)]
+#[table_name = "latest_stash_id"]
+struct NewLatestStash {
+    id: String,
 }
 
 pub struct DieselItemRepository {
@@ -278,26 +269,25 @@ pub struct DieselItemRepository {
 
 use crate::schema::items::dsl as items_dsl;
 use crate::schema::latest_stash_id::dsl as stash_dsl;
+
 impl DieselItemRepository {
-    pub fn new() -> Result<DieselItemRepository, RepositoryError> {
-        dotenv().ok();
-
-        let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        let conn = SqliteConnection::establish(&db_url)?;
-        Ok(DieselItemRepository { conn })
+    pub fn new(connection: SqliteConnection) -> Result<DieselItemRepository, RepositoryError> {
+        Ok(DieselItemRepository { conn: connection })
     }
+}
 
-    pub fn get_stash_id(&self) -> Result<LatestStashId, RepositoryError> {
+impl ItemRepository for DieselItemRepository {
+    fn get_stash_id(&self) -> Result<LatestStashId, RepositoryError> {
         let v = stash_dsl::latest_stash_id.load::<LatestStashId>(&self.conn)?;
         if v.len() > 0 {
-            Ok(v.into_iter().nth(1).unwrap())
+            Ok(v.into_iter().nth(0).unwrap())
         } else {
             Err(RepositoryError::NotFound)
         }
     }
 
-    pub fn insert_raw_item(&self, public_data: PublicStashData) -> Result<(), RepositoryError> {
-        self.conn.transaction::<_, diesel::result::Error, _>(|| {
+    fn insert_raw_item(&self, public_data: PublicStashData) -> Result<(), RepositoryError> {
+        self.conn.transaction::<_, RepositoryError, _>(|| {
             let new_item_info: Vec<SplittedItem> = public_data
                 .stashes
                 .iter()
@@ -317,9 +307,21 @@ impl DieselItemRepository {
 
             let insert_items: Vec<&NewItem> = new_item_info.iter().map(|v| &v.0).collect();
 
-            diesel::update(latest_stash_id::table)
-                .set(stash_dsl::id.eq(&public_data.next_change_id))
-                .execute(&self.conn)?;
+            let latest_stash = NewLatestStash {
+                id: public_data.next_change_id,
+            };
+
+            // workaround for upsert functionality for sqlite https://github.com/diesel-rs/diesel/issues/1854
+            let vals = stash_dsl::latest_stash_id.load::<LatestStashId>(&self.conn)?;
+            if vals.len() == 0 {
+                diesel::insert_into(latest_stash_id::table)
+                    .values(&latest_stash)
+                    .execute(&self.conn)?;
+            } else {
+                diesel::update(latest_stash_id::table)
+                    .set(stash_dsl::id.eq(&latest_stash.id))
+                    .execute(&self.conn)?;
+            }
 
             diesel::insert_into(items::table)
                 .values(insert_items)
@@ -327,6 +329,37 @@ impl DieselItemRepository {
 
             Ok(())
         })?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::DieselItemRepository;
+    use crate::ports::outbound::public_stash_retriever::{Item, PublicStashData};
+    use crate::ports::outbound::repository::ItemRepository;
+    use diesel::prelude::*;
+    // use diesel_migrations::embed_migrations;
+    use std::env;
+
+    const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
+
+    embed_migrations!("migrations");
+
+    #[test]
+    fn insert_item() -> Result<(), anyhow::Error> {
+        // std::fs::remove_file("test.db")?;
+        let conn = SqliteConnection::establish(":memory:")?;
+        embedded_migrations::run(&conn)?;
+
+        let mut repo = DieselItemRepository::new(conn)?;
+        let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
+
+        let _ = repo.insert_raw_item(stash)?;
+
+        let latest_stash_id = repo.get_stash_id()?;
+        assert_eq!(latest_stash_id.latest_stash_id, "2949-5227-4536-5447-1849");
+
         Ok(())
     }
 }
