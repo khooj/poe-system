@@ -1,8 +1,10 @@
+use crate::implementations::{
+    item_repository::DieselItemRepository, public_stash_retriever::Client,
+};
 use crate::ports::outbound::{
     public_stash_retriever::{Error, PublicStashData, Retriever},
     repository::{ItemRepository, RepositoryError},
 };
-use crate::implementations::{item_repository::DieselItemRepository, public_stash_retriever::Client};
 use actix::prelude::*;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -27,30 +29,29 @@ impl Actor for StashReceiverActor {
 }
 
 #[derive(Message)]
-#[rtype(result = "Result<(), ActorError>")]
+#[rtype(result = "()")]
 pub struct StartReceiveMsg;
 
 impl Handler<StartReceiveMsg> for StashReceiverActor {
-    type Result = Result<(), ActorError>;
+    type Result = ();
 
     fn handle(&mut self, msg: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
-        println!("started 1");
-        let stash_id = self.repository.lock().unwrap().get_stash_id()?;
-        let mut id: Option<String> = None;
-        if !stash_id.latest_stash_id.is_empty() {
-            id = Some(stash_id.latest_stash_id.clone());
-        }
-        ctx.notify(GetStashMsg(id));
-        Ok(())
+        let stash_id = self
+            .repository
+            .lock()
+            .unwrap()
+            .get_stash_id()
+            .expect("cant get stash id from repo");
+        ctx.notify(GetStashMsg(stash_id.latest_stash_id));
     }
 }
 
 #[derive(Message)]
-#[rtype(result = "Result<(), ActorError>")]
+#[rtype(result = "()")]
 struct GetStashMsg(Option<String>);
 
 impl Handler<GetStashMsg> for StashReceiverActor {
-    type Result = ResponseActFuture<Self, Result<(), ActorError>>;
+    type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: GetStashMsg, ctx: &mut Self::Context) -> Self::Result {
         println!("started 2");
@@ -62,27 +63,30 @@ impl Handler<GetStashMsg> for StashReceiverActor {
                     .unwrap()
                     .get_latest_stash(id.as_deref())
                     .await
-                    .unwrap()
+                    .expect("cant get latest stash")
             }
             .into_actor(self)
             .map(|res, _act, ctx| {
                 ctx.notify(ReceivedStash(res));
-                Ok(())
             }),
         )
     }
 }
 
 #[derive(Message)]
-#[rtype(result = "Result<(), ActorError>")]
+#[rtype(result = "()")]
 struct ReceivedStash(PublicStashData);
 
 impl Handler<ReceivedStash> for StashReceiverActor {
-    type Result = Result<(), ActorError>;
+    type Result = ();
 
     fn handle(&mut self, msg: ReceivedStash, ctx: &mut Self::Context) -> Self::Result {
         println!("started 3");
-        Ok(self.repository.lock().unwrap().insert_raw_item(msg.0)?)
+        self.repository
+            .lock()
+            .unwrap()
+            .insert_raw_item(msg.0)
+            .expect("cant insert raw items");
     }
 }
 
@@ -114,10 +118,10 @@ mod test {
         let actor = actor.start();
 
         actor.try_send(StartReceiveMsg)?;
-        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         let stash_id = repo.lock().unwrap().get_stash_id()?;
-        assert_ne!(stash_id.latest_stash_id, "".to_owned());
+        assert_ne!(stash_id.latest_stash_id, None);
         Ok(())
     }
 }

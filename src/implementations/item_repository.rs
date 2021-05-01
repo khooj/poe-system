@@ -282,7 +282,9 @@ impl ItemRepository for DieselItemRepository {
         if v.len() > 0 {
             Ok(v.into_iter().nth(0).unwrap())
         } else {
-            Err(RepositoryError::NotFound)
+            Ok(LatestStashId {
+                latest_stash_id: None,
+            })
         }
     }
 
@@ -358,7 +360,7 @@ mod test {
         let _ = repo.insert_raw_item(stash)?;
 
         let latest_stash_id = repo.get_stash_id()?;
-        assert_eq!(latest_stash_id.latest_stash_id, "2949-5227-4536-5447-1849");
+        assert_eq!(latest_stash_id.latest_stash_id.unwrap(), "2949-5227-4536-5447-1849");
 
         Ok(())
     }

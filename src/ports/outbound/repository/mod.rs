@@ -4,7 +4,7 @@ use diesel::Queryable;
 
 #[derive(Queryable, Debug)]
 pub struct LatestStashId {
-    pub latest_stash_id: String,
+    pub latest_stash_id: Option<String>,
 }
 
 #[derive(Error, Debug)]

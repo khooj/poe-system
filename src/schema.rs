@@ -83,7 +83,7 @@ table! {
 
 table! {
     latest_stash_id (id) {
-        id -> Text,
+        id -> Nullable<Text>,
     }
 }
 
