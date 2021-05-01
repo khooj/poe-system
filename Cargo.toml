@@ -28,3 +28,4 @@ diesel = { version = "1.4.4", features = ["sqlite", "64-column-tables", "extras"
 diesel_migrations = "1.4.0"
 uuid = { version = "0.8.2", features = ["v4"] }
 num = "0.4.0"
+itertools = "0.10.0"

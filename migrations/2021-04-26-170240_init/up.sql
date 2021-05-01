@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS items (
     socket INTEGER,
     colour TEXT
 );
-CREATE INDEX item_account_stash ON items(account_id, stash_id);
+CREATE INDEX item_account_stash ON items(account_name, stash_id);
+CREATE INDEX item_account_id ON items(account_id);
 -- utility, implicit, explicit, crafted, enchant, fractured, cosmetic, veiled,
 -- explicit_hybrid
 CREATE TABLE IF NOT EXISTS mods (

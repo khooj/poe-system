@@ -5,9 +5,10 @@ use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use diesel::Queryable;
 use dotenv::dotenv;
+use itertools::Itertools;
 use log::{debug, info, warn};
-use std::convert::TryFrom;
 use std::env;
+use std::{collections::HashMap, convert::TryFrom};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -270,9 +271,9 @@ struct NewLatestStash {
 
 #[derive(Identifiable)]
 #[table_name = "items"]
-#[primary_key(account_id, stash_id)]
+#[primary_key(account_name, stash_id)]
 struct RemoveItems<'a> {
-    account_id: &'a String,
+    account_name: &'a String,
     stash_id: &'a String,
 }
 
@@ -299,8 +300,9 @@ impl ItemRepository for DieselItemRepository {
     }
 
     fn insert_raw_item(&self, public_data: PublicStashData) -> Result<(), RepositoryError> {
+        use itertools::Itertools;
         self.conn.transaction::<_, RepositoryError, _>(|| {
-            let new_item_info: Vec<SplittedItem> = public_data
+            let new_item_info: HashMap<String, Vec<SplittedItem>> = public_data
                 .stashes
                 .iter()
                 .map(|v| {
@@ -322,49 +324,55 @@ impl ItemRepository for DieselItemRepository {
                         .collect::<Vec<SplittedItem>>()
                 })
                 .flatten()
-                .collect();
+                .into_group_map_by(|el| el.0.account_id.clone());
 
-            // TODO: implement stash unlist
-            let insert_items: Vec<&NewItem> = new_item_info.iter().map(|v| &v.0).collect();
-            let delete_items: Vec<RemoveItems> = new_item_info
-                .iter()
-                .map(|v| RemoveItems {
-                    account_id: &v.0.account_id,
-                    stash_id: &v.0.stash_id,
-                })
-                .collect();
+            for (k, v) in &new_item_info {
+                if v.len() == 0 {
+                    diesel::delete(items_dsl::items.filter(items_dsl::account_id.eq(&k)))
+                        .execute(&self.conn)?;
+                } else {
+                    let insert_items: Vec<&NewItem> = v.iter().map(|v| &v.0).collect();
+                    let delete_items: Vec<RemoveItems> = v
+                        .iter()
+                        .map(|v| RemoveItems {
+                            account_name: &v.0.account_name,
+                            stash_id: &v.0.stash_id,
+                        })
+                        .collect();
 
-            let latest_stash = NewLatestStash {
-                id: public_data.next_change_id,
-            };
+                    let latest_stash = NewLatestStash {
+                        id: public_data.next_change_id.clone(),
+                    };
 
-            // workaround for upsert functionality for sqlite https://github.com/diesel-rs/diesel/issues/1854
-            let vals = stash_dsl::latest_stash_id.load::<LatestStashId>(&self.conn)?;
-            if vals.len() == 0 {
-                diesel::insert_into(latest_stash_id::table)
-                    .values(&latest_stash)
-                    .execute(&self.conn)?;
-            } else {
-                diesel::update(latest_stash_id::table)
-                    .set(stash_dsl::id.eq(&latest_stash.id))
-                    .execute(&self.conn)?;
+                    // workaround for upsert functionality for sqlite https://github.com/diesel-rs/diesel/issues/1854
+                    let vals = stash_dsl::latest_stash_id.load::<LatestStashId>(&self.conn)?;
+                    if vals.len() == 0 {
+                        diesel::insert_into(latest_stash_id::table)
+                            .values(&latest_stash)
+                            .execute(&self.conn)?;
+                    } else {
+                        diesel::update(latest_stash_id::table)
+                            .set(stash_dsl::id.eq(&latest_stash.id))
+                            .execute(&self.conn)?;
+                    }
+
+                    // TODO: somehow use Identifiable or smth else to simplify delete query
+                    for i in &delete_items {
+                        diesel::delete(
+                            items_dsl::items.filter(
+                                items_dsl::account_name
+                                    .eq(i.account_name)
+                                    .and(items_dsl::stash_id.eq(i.stash_id)),
+                            ),
+                        )
+                        .execute(&self.conn)?;
+                    }
+
+                    diesel::insert_into(items::table)
+                        .values(insert_items)
+                        .execute(&self.conn)?;
+                }
             }
-
-            // TODO: somehow use Identifiable or smth else to simplify delete query
-            for i in &delete_items {
-                diesel::delete(
-                    items_dsl::items.filter(
-                        items_dsl::account_id
-                            .eq(i.account_id)
-                            .and(items_dsl::stash_id.eq(i.stash_id)),
-                    ),
-                )
-                .execute(&self.conn)?;
-            }
-
-            diesel::insert_into(items::table)
-                .values(insert_items)
-                .execute(&self.conn)?;
 
             Ok(())
         })?;
