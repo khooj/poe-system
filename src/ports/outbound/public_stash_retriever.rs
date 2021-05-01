@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemSocket {
     pub group: u32,
@@ -11,7 +11,7 @@ pub struct ItemSocket {
     pub s_colour: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemProperty {
     pub name: String,
@@ -23,7 +23,7 @@ pub struct ItemProperty {
     pub suffix: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Influences {
     pub shaper: Option<bool>,
@@ -34,7 +34,7 @@ pub struct Influences {
     pub redeemer: Option<bool>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UltimatumMod {
     #[serde(rename = "type")]
@@ -42,7 +42,7 @@ pub struct UltimatumMod {
     pub tier: u32,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct IncubatedItem {
     pub name: String,
@@ -51,7 +51,7 @@ pub struct IncubatedItem {
     pub total: u32,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Hybrid {
     pub is_vaal_gem: Option<bool>,
@@ -76,7 +76,7 @@ fn default_bool() -> Option<bool> {
     Some(false)
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Extended {
     pub category: String,
@@ -85,7 +85,7 @@ pub struct Extended {
     pub suffixes: Option<u32>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
     pub verified: bool,

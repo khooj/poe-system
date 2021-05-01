@@ -1,10 +1,18 @@
 use super::public_stash_retriever::PublicStashData;
-use thiserror::Error;
 use diesel::Queryable;
+use thiserror::Error;
 
 #[derive(Queryable, Debug)]
 pub struct LatestStashId {
     pub latest_stash_id: Option<String>,
+}
+
+impl Default for LatestStashId {
+    fn default() -> Self {
+        LatestStashId {
+            latest_stash_id: None,
+        }
+    }
 }
 
 #[derive(Error, Debug)]
@@ -17,6 +25,8 @@ pub enum RepositoryError {
     NotFound,
     #[error("t")]
     Ttt,
+    #[error("skipped item")]
+    Skipped,
 }
 
 pub trait ItemRepository {

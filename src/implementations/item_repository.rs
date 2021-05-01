@@ -5,8 +5,8 @@ use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use diesel::Queryable;
 use dotenv::dotenv;
-use log::{debug, info};
-use std::convert::From;
+use log::{debug, info, warn};
+use std::convert::TryFrom;
 use std::env;
 use thiserror::Error;
 use uuid::Uuid;
@@ -22,10 +22,16 @@ struct SplittedItem(
     // Option<Hybrid>,
 );
 
-impl From<Item> for SplittedItem {
-    fn from(item: Item) -> Self {
+impl TryFrom<Item> for SplittedItem {
+    type Error = RepositoryError;
+    fn try_from(item: Item) -> Result<Self, Self::Error> {
+        if item.id.is_none() {
+            return Err(RepositoryError::Skipped);
+        }
+
         let raw = NewItem {
             account_id: String::new(),
+            account_name: String::new(),
             stash_id: String::new(),
             verified: item.verified,
             w: item.w,
@@ -35,9 +41,7 @@ impl From<Item> for SplittedItem {
             stack_size: item.stack_size,
             max_stack_size: item.max_stack_size,
             league: item.league,
-            id: item
-                .id
-                .map_or(Uuid::new_v4().to_hyphenated().to_string(), |v| v),
+            id: item.id.unwrap(),
             elder: item.elder,
             shaper: item.shaper,
             abyss_jewel: item.abyss_jewel,
@@ -67,7 +71,7 @@ impl From<Item> for SplittedItem {
             socket: item.socket,
             colour: item.colour,
         };
-        SplittedItem(raw)
+        Ok(SplittedItem(raw))
     }
 }
 /*
@@ -219,6 +223,7 @@ pub struct NewItem {
     pub id: String,
     pub base_type: String,
     pub account_id: String,
+    pub account_name: String,
     pub stash_id: String,
     pub league: Option<String>,
     pub name: String,
@@ -263,6 +268,14 @@ struct NewLatestStash {
     id: String,
 }
 
+#[derive(Identifiable)]
+#[table_name = "items"]
+#[primary_key(account_id, stash_id)]
+struct RemoveItems<'a> {
+    account_id: &'a String,
+    stash_id: &'a String,
+}
+
 pub struct DieselItemRepository {
     conn: SqliteConnection,
 }
@@ -279,13 +292,10 @@ impl DieselItemRepository {
 impl ItemRepository for DieselItemRepository {
     fn get_stash_id(&self) -> Result<LatestStashId, RepositoryError> {
         let v = stash_dsl::latest_stash_id.load::<LatestStashId>(&self.conn)?;
-        if v.len() > 0 {
-            Ok(v.into_iter().nth(0).unwrap())
-        } else {
-            Ok(LatestStashId {
-                latest_stash_id: None,
-            })
-        }
+        Ok(v.into_iter()
+            .nth(0)
+            .or(Some(LatestStashId::default()))
+            .unwrap())
     }
 
     fn insert_raw_item(&self, public_data: PublicStashData) -> Result<(), RepositoryError> {
@@ -296,18 +306,33 @@ impl ItemRepository for DieselItemRepository {
                 .map(|v| {
                     v.items
                         .iter()
-                        .map(|i| {
-                            let mut item = SplittedItem::from(i.clone());
-                            item.0.account_id = v.account_name.as_ref().cloned().unwrap();
-                            item.0.stash_id = v.stash.as_ref().cloned().unwrap();
-                            item
+                        .map(|i| match SplittedItem::try_from(i.clone()) {
+                            Ok(mut item) => {
+                                item.0.account_id = v.id.clone();
+                                item.0.account_name = v.account_name.as_ref().cloned().unwrap();
+                                item.0.stash_id = v.stash.as_ref().cloned().unwrap();
+                                Some(item)
+                            }
+                            Err(_) => {
+                                warn!("skipping {:?} item because cant generate entity", i);
+                                None
+                            }
                         })
+                        .filter_map(|i| i)
                         .collect::<Vec<SplittedItem>>()
                 })
                 .flatten()
                 .collect();
 
+            // TODO: implement stash unlist
             let insert_items: Vec<&NewItem> = new_item_info.iter().map(|v| &v.0).collect();
+            let delete_items: Vec<RemoveItems> = new_item_info
+                .iter()
+                .map(|v| RemoveItems {
+                    account_id: &v.0.account_id,
+                    stash_id: &v.0.stash_id,
+                })
+                .collect();
 
             let latest_stash = NewLatestStash {
                 id: public_data.next_change_id,
@@ -323,6 +348,18 @@ impl ItemRepository for DieselItemRepository {
                 diesel::update(latest_stash_id::table)
                     .set(stash_dsl::id.eq(&latest_stash.id))
                     .execute(&self.conn)?;
+            }
+
+            // TODO: somehow use Identifiable or smth else to simplify delete query
+            for i in &delete_items {
+                diesel::delete(
+                    items_dsl::items.filter(
+                        items_dsl::account_id
+                            .eq(i.account_id)
+                            .and(items_dsl::stash_id.eq(i.stash_id)),
+                    ),
+                )
+                .execute(&self.conn)?;
             }
 
             diesel::insert_into(items::table)
@@ -341,7 +378,6 @@ mod test {
     use crate::ports::outbound::public_stash_retriever::{Item, PublicStashData};
     use crate::ports::outbound::repository::ItemRepository;
     use diesel::prelude::*;
-    // use diesel_migrations::embed_migrations;
     use std::env;
 
     const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
@@ -350,7 +386,6 @@ mod test {
 
     #[test]
     fn insert_item() -> Result<(), anyhow::Error> {
-        // std::fs::remove_file("test.db")?;
         let conn = SqliteConnection::establish(":memory:")?;
         embedded_migrations::run(&conn)?;
 
@@ -360,7 +395,10 @@ mod test {
         let _ = repo.insert_raw_item(stash)?;
 
         let latest_stash_id = repo.get_stash_id()?;
-        assert_eq!(latest_stash_id.latest_stash_id.unwrap(), "2949-5227-4536-5447-1849");
+        assert_eq!(
+            latest_stash_id.latest_stash_id.unwrap(),
+            "2949-5227-4536-5447-1849"
+        );
 
         Ok(())
     }

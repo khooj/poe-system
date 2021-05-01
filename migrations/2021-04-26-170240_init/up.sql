@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS items (
     -- extended object
     -- from parent json model
     account_id TEXT NOT NULL,
+    account_name TEXT NOT NULL,
     stash_id TEXT NOT NULL,
     league TEXT,
     -- end parent json model
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS items (
     socket INTEGER,
     colour TEXT
 );
+CREATE INDEX item_account_stash ON items(account_id, stash_id);
 -- utility, implicit, explicit, crafted, enchant, fractured, cosmetic, veiled,
 -- explicit_hybrid
 CREATE TABLE IF NOT EXISTS mods (

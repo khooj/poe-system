@@ -42,6 +42,7 @@ table! {
         id -> Text,
         base_type -> Text,
         account_id -> Text,
+        account_name -> Text,
         stash_id -> Text,
         league -> Nullable<Text>,
         name -> Text,
