@@ -75,15 +75,13 @@ impl TryFrom<Item> for SplittedItem {
         Ok(SplittedItem(raw))
     }
 }
-/*
+
 #[derive(Queryable)]
 pub struct RawItem {
     id: String,
     base_type: String,
-    category: Option<String>,
-    prefixes: Option<i32>,
-    suffixes: Option<i32>,
     account_id: String,
+    account_name: String,
     stash_id: String,
     league: Option<String>,
     name: String,
@@ -98,8 +96,8 @@ pub struct RawItem {
     frame_type: Option<i32>,
     h: i32,
     w: i32,
-    x: Option<i32>,
-    y: Option<i32>,
+    x_coordinate: Option<i32>,
+    y_coordinaate: Option<i32>,
     is_relic: Option<bool>,
     note: Option<String>,
     shaper: Option<bool>,
@@ -120,20 +118,9 @@ pub struct RawItem {
     replica: Option<bool>,
     socket: Option<i32>,
     colour: Option<String>,
-    crusader: Option<bool>,
-    hunter: Option<bool>,
-    warlord: Option<bool>,
-    redeemer: Option<bool>,
-    // mods: Vec<Mod>,
-    // subcategories: Vec<Subcategory>,
-    // properties: Vec<Property>,
-    // socketed_items: Vec<RawItem>,
-    // sockets: Vec<Socket>,
-    // ultimatum_mods: Vec<UltimatumMod>,
-    // incubated_items: Vec<IncubatedItem>,
-    // hybrids: Vec<Hybrid>,
 }
 
+/*
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -288,6 +275,20 @@ impl DieselItemRepository {
     pub fn new(connection: SqliteConnection) -> Result<DieselItemRepository, RepositoryError> {
         Ok(DieselItemRepository { conn: connection })
     }
+
+    fn get_items(
+        &self,
+        account_name: &str,
+        stash_id: &str,
+    ) -> Result<Vec<RawItem>, RepositoryError> {
+        Ok(items_dsl::items
+            .filter(
+                items_dsl::account_name
+                    .eq(account_name)
+                    .and(items_dsl::stash_id.eq(stash_id)),
+            )
+            .load::<RawItem>(&self.conn)?)
+    }
 }
 
 impl ItemRepository for DieselItemRepository {
@@ -300,7 +301,6 @@ impl ItemRepository for DieselItemRepository {
     }
 
     fn insert_raw_item(&self, public_data: PublicStashData) -> Result<(), RepositoryError> {
-        use itertools::Itertools;
         self.conn.transaction::<_, RepositoryError, _>(|| {
             let new_item_info: HashMap<String, Vec<SplittedItem>> = public_data
                 .stashes
@@ -407,7 +407,34 @@ mod test {
             latest_stash_id.latest_stash_id.unwrap(),
             "2949-5227-4536-5447-1849"
         );
+        Ok(())
+    }
 
+    #[test]
+    fn insert_remove_stash() -> Result<(), anyhow::Error> {
+        let conn = SqliteConnection::establish(":memory:")?;
+        embedded_migrations::run(&conn)?;
+
+        let mut repo = DieselItemRepository::new(conn)?;
+        let mut stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
+
+        let _ = repo.insert_raw_item(stash.clone())?;
+
+        stash.stashes = vec![stash
+            .stashes
+            .into_iter()
+            .filter(|v| v.account_name.is_some())
+            .nth(0)
+            .unwrap()];
+        stash.stashes.get_mut(0).unwrap().items.truncate(3);
+
+        let _ = repo.insert_raw_item(stash.clone())?;
+
+        let items = repo.get_items(
+            stash.stashes[0].account_name.as_ref().unwrap(),
+            stash.stashes[0].stash.as_ref().unwrap(),
+        )?;
+        assert_eq!(items.len(), 3);
         Ok(())
     }
 }

@@ -153,7 +153,7 @@ fn default_str() -> Option<String> {
     Some(String::new())
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PublicStashChange {
     pub id: String,
@@ -168,7 +168,7 @@ pub struct PublicStashChange {
     pub items: Vec<Item>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct PublicStashData {
     pub next_change_id: String,
     pub stashes: Vec<PublicStashChange>,
