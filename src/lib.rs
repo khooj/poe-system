@@ -6,7 +6,7 @@ extern crate diesel_migrations;
 
 mod domain;
 mod pob;
-mod actors;
+pub mod actors;
 pub mod ports;
 pub mod implementations;
 pub mod schema;

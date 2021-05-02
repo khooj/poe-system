@@ -3,44 +3,63 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    moz_overlay.url = "github:mozilla/nixpkgs-mozilla/master";
-    moz_overlay.flake = false;
     flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+    crate2nix = {
+      url = "github:kolloch/crate2nix";
+      flake = false;
+    };
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, moz_overlay, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs = { self, nixpkgs, rust-overlay, flake-utils, crate2nix, ... }:
+    let
+      myapp = "poe-system";
+      rust-version = "1.51.0";
+    in flake-utils.lib.eachDefaultSystem (system:
       let
-        mozilla_overlay = import moz_overlay;
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ mozilla_overlay ];
-        };
+        overlays = [
+          rust-overlay.overlay
+          (self: super: rec {
+            rustc = self.rust-bin.stable.${rust-version}.default.override {
+              extensions = [ "rust-src" "rustfmt-preview" ];
+            };
+            cargo = rustc;
+          })
+        ];
+        pkgs = import nixpkgs { inherit system overlays; };
+        crate2nix-pkgs = import crate2nix { inherit pkgs; };
         lib = pkgs.lib;
-        ruststable = pkgs.latest.rustChannels.stable.rust.override {
-          extensions =
-            [ "rust-src" "rls-preview" "rust-analysis" "rustfmt-preview" ];
-        };
-      in {
+        project = import ./Cargo.nix { inherit pkgs; };
+
+        buildInputs = with pkgs; [
+          sqlite
+          postgresql
+          mysql
+          openssl
+          pkg-config
+          nasm
+          cmake
+          zlib
+          gnumake
+          fswatch
+          python3
+          jq
+          crate2nix-pkgs
+        ];
+        nativeBuildInputs = with pkgs; [ rustc cargo pkgconfig nixpkgs-fmt ];
+
+      in rec {
+        packages.${myapp} = project.rootCrate.build;
+        defaultPackage = packages.${myapp};
         devShell = with pkgs;
           mkShell {
             name = "rust";
-            buildInputs = [
-              sqlite
-              postgresql
-              mysql
-              ruststable
-              openssl
-              pkg-config
-              nasm
-              rustup
-              cmake
-              zlib
-              gnumake
-              fswatch
-              python3
-              jq
-            ];
+            buildInputs = [ ] ++ buildInputs;
+            inherit nativeBuildInputs;
 
             shellHook = ''
               export PATH=$PATH:$HOME/.cargo/bin

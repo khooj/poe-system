@@ -24,6 +24,18 @@ pub struct StashReceiverActor {
     client: Arc<Mutex<Client>>,
 }
 
+impl StashReceiverActor {
+    pub fn new(
+        repo: Arc<Mutex<DieselItemRepository>>,
+        client: Arc<Mutex<Client>>,
+    ) -> StashReceiverActor {
+        StashReceiverActor {
+            repository: repo,
+            client,
+        }
+    }
+}
+
 impl Actor for StashReceiverActor {
     type Context = Context<Self>;
 }
