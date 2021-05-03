@@ -13,7 +13,9 @@ use std::sync::{
 };
 use std::{env, time::Duration};
 
-#[actix_rt::main]
+const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
+
+#[actix::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     dotenv().ok().expect("cant load dotenv");
@@ -30,8 +32,7 @@ async fn main() -> std::io::Result<()> {
 
     let repo = DieselItemRepository::new(db_connection).expect("cant create repo");
 
-    let user_agent = env::var("USER_AGENT").expect("cant get USER_AGENT");
-    let client = Client::new(user_agent);
+    let client = Client::new(USER_AGENT.to_owned());
 
     let actor = StashReceiverActor::new(Arc::new(Mutex::new(repo)), Arc::new(Mutex::new(client)));
 
@@ -42,7 +43,7 @@ async fn main() -> std::io::Result<()> {
             Err(e) => error!("cant send receive msg to actor: {}", e),
             Ok(_) => {}
         };
-        actix_rt::time::delay_for(Duration::from_secs(1)).await;
+        actix::clock::sleep(Duration::from_secs(1)).await;
     }
 
     System::current().stop();

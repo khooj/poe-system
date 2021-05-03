@@ -6,6 +6,7 @@ use crate::ports::outbound::{
     repository::{ItemRepository, RepositoryError},
 };
 use actix::prelude::*;
+use log::error;
 use std::sync::Arc;
 use std::sync::Mutex;
 use thiserror::Error;
@@ -17,6 +18,8 @@ pub enum ActorError {
     RepoError(#[from] RepositoryError),
     #[error("client error")]
     ClientError(#[from] Error),
+    #[error("skipping this iteration")]
+    Skip,
 }
 
 pub struct StashReceiverActor {
@@ -48,12 +51,14 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
     type Result = ();
 
     fn handle(&mut self, msg: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
-        let stash_id = self
-            .repository
-            .lock()
-            .unwrap()
-            .get_stash_id()
-            .expect("cant get stash id from repo");
+        let stash_id = match self.repository.lock().unwrap().get_stash_id() {
+            Ok(s) => s,
+            Err(e) => {
+                error!("cant get stash id: {}", e);
+                return ();
+            }
+        };
+
         ctx.notify(GetStashMsg(stash_id.latest_stash_id));
     }
 }
@@ -71,15 +76,20 @@ impl Handler<GetStashMsg> for StashReceiverActor {
         Box::pin(
             async move {
                 let id = msg.0;
-                cl.lock()
-                    .unwrap()
-                    .get_latest_stash(id.as_deref())
-                    .await
-                    .expect("cant get latest stash")
+                match cl.lock().unwrap().get_latest_stash(id.as_deref()).await {
+                    Err(e) => {
+                        error!("cant get latest stash: {}", e);
+                        return Err(ActorError::Skip);
+                    }
+                    Ok(k) => Ok(k),
+                }
             }
             .into_actor(self)
             .map(|res, _act, ctx| {
-                ctx.notify(ReceivedStash(res));
+                if res.is_err() {
+                    return;
+                }
+                ctx.notify(ReceivedStash(res.unwrap()));
             }),
         )
     }
@@ -94,11 +104,12 @@ impl Handler<ReceivedStash> for StashReceiverActor {
 
     fn handle(&mut self, msg: ReceivedStash, ctx: &mut Self::Context) -> Self::Result {
         println!("started 3");
-        self.repository
-            .lock()
-            .unwrap()
-            .insert_raw_item(msg.0)
-            .expect("cant insert raw items");
+        match self.repository.lock().unwrap().insert_raw_item(msg.0) {
+            Err(e) => {
+                error!("cant insert items: {}", e);
+            }
+            _ => {}
+        };
     }
 }
 
