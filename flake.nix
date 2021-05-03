@@ -55,6 +55,11 @@
       in rec {
         packages.${myapp} = project.rootCrate.build;
         defaultPackage = packages.${myapp};
+        overlay = final: prev: {
+          poe-system = packages.${myapp};
+        };
+        nixosModule = import ./module.nix;
+
         devShell = with pkgs;
           mkShell {
             name = "rust";
