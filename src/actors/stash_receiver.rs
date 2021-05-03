@@ -6,11 +6,10 @@ use crate::ports::outbound::{
     repository::{ItemRepository, RepositoryError},
 };
 use actix::prelude::*;
-use log::error;
-use std::sync::Arc;
-use std::sync::Mutex;
+use log::{error, info};
+use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use tokio::task;
+use tokio::sync::Mutex as AsyncMutex;
 
 #[derive(Error, Debug)]
 pub enum ActorError {
@@ -24,13 +23,13 @@ pub enum ActorError {
 
 pub struct StashReceiverActor {
     repository: Arc<Mutex<DieselItemRepository>>,
-    client: Arc<Mutex<Client>>,
+    client: Arc<AsyncMutex<Client>>,
 }
 
 impl StashReceiverActor {
     pub fn new(
         repo: Arc<Mutex<DieselItemRepository>>,
-        client: Arc<Mutex<Client>>,
+        client: Arc<AsyncMutex<Client>>,
     ) -> StashReceiverActor {
         StashReceiverActor {
             repository: repo,
@@ -51,6 +50,10 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
     type Result = ();
 
     fn handle(&mut self, msg: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
+        if self.client.try_lock().is_err() {
+            info!("locked, skipping iteration");
+            return;
+        }
         let stash_id = match self.repository.lock().unwrap().get_stash_id() {
             Ok(s) => s,
             Err(e) => {
@@ -71,12 +74,12 @@ impl Handler<GetStashMsg> for StashReceiverActor {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: GetStashMsg, ctx: &mut Self::Context) -> Self::Result {
-        println!("started 2");
         let cl = Arc::clone(&self.client);
         Box::pin(
             async move {
                 let id = msg.0;
-                match cl.lock().unwrap().get_latest_stash(id.as_deref()).await {
+                let mut lock = cl.lock().await;
+                match lock.get_latest_stash(id.as_deref()).await {
                     Err(e) => {
                         error!("cant get latest stash: {}", e);
                         return Err(ActorError::Skip);
@@ -103,12 +106,13 @@ impl Handler<ReceivedStash> for StashReceiverActor {
     type Result = ();
 
     fn handle(&mut self, msg: ReceivedStash, ctx: &mut Self::Context) -> Self::Result {
-        println!("started 3");
         match self.repository.lock().unwrap().insert_raw_item(msg.0) {
             Err(e) => {
                 error!("cant insert items: {}", e);
             }
-            _ => {}
+            _ => {
+                info!("successfully inserted");
+            }
         };
     }
 }
@@ -130,7 +134,7 @@ mod test {
         embedded_migrations::run(&conn)?;
 
         let repo = Arc::new(Mutex::new(DieselItemRepository::new(conn)?));
-        let client = Arc::new(Mutex::new(Client::new(
+        let client = Arc::new(AsyncMutex::new(Client::new(
             "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)".to_owned(),
         )));
         let actor = StashReceiverActor {

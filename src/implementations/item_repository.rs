@@ -7,6 +7,7 @@ use diesel::Queryable;
 use dotenv::dotenv;
 use itertools::Itertools;
 use log::{debug, info, warn};
+use std::convert::TryInto;
 use std::env;
 use std::{collections::HashMap, convert::TryFrom};
 use thiserror::Error;
@@ -14,13 +15,13 @@ use uuid::Uuid;
 
 struct SplittedItem(
     NewItem,
-    // Vec<Mod>,
-    // Vec<Subcategory>,
-    // Vec<Property>,
-    // Vec<Socket>,
-    // Vec<UltimatumMod>,
-    // Option<IncubatedItem>,
-    // Option<Hybrid>,
+    Option<Vec<NewMod>>,
+    Option<Vec<NewSubcategory>>,
+    Option<Vec<NewProperty>>,
+    Option<Vec<NewSocket>>,
+    Option<Vec<NewUltimatumMod>>,
+    Option<NewIncubatedItem>,
+    Option<NewHybrid>,
 );
 
 impl TryFrom<Item> for SplittedItem {
@@ -72,8 +73,121 @@ impl TryFrom<Item> for SplittedItem {
             socket: item.socket,
             colour: item.colour,
         };
-        Ok(SplittedItem(raw))
+
+        let mut mods: Option<Vec<NewMod>> = None;
+        mods = append_mod(
+            mods,
+            item.utility_mods,
+            item.id.unwrap().clone(),
+            ModType::Utility,
+        );
+        mods = append_mod(
+            mods,
+            item.implicit_mods,
+            item.id.unwrap().clone(),
+            ModType::Implicit,
+        );
+        mods = append_mod(
+            mods,
+            item.explicit_mods,
+            item.id.unwrap().clone(),
+            ModType::Explicit,
+        );
+        mods = append_mod(
+            mods,
+            item.crafted_mods,
+            item.id.unwrap().clone(),
+            ModType::Crafted,
+        );
+        mods = append_mod(
+            mods,
+            item.enchant_mods,
+            item.id.unwrap().clone(),
+            ModType::Enchant,
+        );
+        mods = append_mod(
+            mods,
+            item.fractured_mods,
+            item.id.unwrap().clone(),
+            ModType::Fractured,
+        );
+        mods = append_mod(
+            mods,
+            item.cosmetic_mods,
+            item.id.unwrap().clone(),
+            ModType::Cosmetic,
+        );
+        mods = append_mod(
+            mods,
+            item.veiled_mods,
+            item.id.unwrap().clone(),
+            ModType::Veiled,
+        );
+        Ok(SplittedItem(raw, mods))
     }
+}
+
+fn append_mod<T>(
+    mut vals: Option<Vec<NewMod>>,
+    mut to_insert: Option<Vec<String>>,
+    item_id: String,
+    type_: ModType,
+) -> Option<Vec<NewMod>> {
+    append_if_not_empty2(
+        vals,
+        to_insert
+            .map_or(vec![], |v| v)
+            .into_iter()
+            .map(|el| NewMod {
+                item_id: item_id.clone(),
+                type_: type_ as i32,
+                mod_: el,
+            })
+            .collect(),
+    )
+}
+
+fn append_if_not_empty2<T>(mut vals: Option<Vec<T>>, mut to_insert: Vec<T>) -> Option<Vec<T>> {
+    if to_insert.len() == 0 {
+        return vals;
+    }
+
+    if to_insert.len() > 0 && vals.is_none() {
+        vals = Some(vec![]);
+    }
+
+    vals.as_mut().unwrap().append(&mut to_insert);
+
+    vals
+}
+
+fn append_if_not_empty<T, K>(
+    mut vals: Option<Vec<T>>,
+    mut to_insert: Option<Vec<K>>,
+) -> Result<Option<Vec<T>>, RepositoryError>
+where
+    K: TryInto<T>,
+    RepositoryError: From<<K as TryInto<T>>::Error>,
+{
+    if to_insert.is_none() || to_insert.as_ref().unwrap().len() == 0 {
+        return Ok(vals);
+    }
+
+    let mut ins: Vec<T> = vec![];
+    if to_insert.is_some() {
+        for el in to_insert.unwrap() {
+            let el_ = el.try_into()?;
+            ins.push(el_);
+        }
+    }
+
+    if ins.len() > 0 && vals.is_none() {
+        vals = Some(vec![]);
+    }
+
+    vals.as_mut().unwrap().append(&mut ins);
+
+    Ok(vals)
 }
 
 #[derive(Queryable)]
@@ -120,7 +234,6 @@ pub struct RawItem {
     colour: Option<String>,
 }
 
-/*
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -132,6 +245,7 @@ pub enum ModType {
     Veiled = 7,
     ExplicitHybrid = 8,
 }
+/*
 
 pub struct Mod {
     item_id: String,
@@ -203,7 +317,10 @@ pub struct Hybrid {
 }
 */
 
-use crate::schema::{items, latest_stash_id};
+use crate::schema::{
+    extended, hybrids, incubated_item, influences, items, latest_stash_id, mods, properties,
+    socketed_items, sockets, subcategories, ultimatum_mods,
+};
 
 #[derive(Insertable, Debug)]
 #[table_name = "items"]
@@ -248,6 +365,97 @@ pub struct NewItem {
     pub replica: Option<bool>,
     pub socket: Option<i32>,
     pub colour: Option<String>,
+}
+
+#[derive(Insertable)]
+#[table_name = "mods"]
+struct NewMod {
+    item_id: String,
+    type_: i32,
+    mod_: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "subcategories"]
+struct NewSubcategory {
+    item_id: String,
+    subcategory: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "properties"]
+struct NewProperty {
+    item_id: String,
+    property_type: i32,
+    name: String,
+    value_type: i32,
+    value: i32,
+    type_: Option<i32>,
+    progress: Option<f32>,
+    suffix: Option<String>,
+}
+
+#[derive(Insertable)]
+#[table_name = "socketed_items"]
+struct NewSocketedItem {
+    item_id: String,
+    socketed_item_id: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "sockets"]
+struct NewSocket {
+    item_id: String,
+    s_group: i32,
+    attr: Option<String>,
+    s_colour: Option<String>,
+}
+
+#[derive(Insertable)]
+#[table_name = "ultimatum_mods"]
+struct NewUltimatumMod {
+    item_id: String,
+    type_: String,
+    tier: i32,
+}
+
+#[derive(Insertable)]
+#[table_name = "incubated_item"]
+struct NewIncubatedItem {
+    item_id: String,
+    name: String,
+    level: i32,
+    progress: i32,
+    total: i32,
+}
+
+#[derive(Insertable)]
+#[table_name = "hybrids"]
+struct NewHybrid {
+    id: Option<String>,
+    item_id: String,
+    is_vaal_gem: Option<bool>,
+    base_type_name: String,
+    sec_descr_text: Option<String>,
+}
+
+#[derive(Insertable)]
+#[table_name = "extended"]
+struct NewExtended {
+    item_id: String,
+    category: String,
+    prefixes: Option<i32>,
+    suffixes: Option<i32>,
+}
+
+#[derive(Insertable)]
+#[table_name = "influences"]
+struct NewInfluence {
+    item_id: String,
+    warlord: Option<bool>,
+    crusader: Option<bool>,
+    redeemer: Option<bool>,
+    hunter: Option<bool>,
 }
 
 #[derive(Insertable)]

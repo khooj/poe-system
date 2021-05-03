@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate diesel_migrations;
+
 use actix::prelude::*;
 use diesel::{Connection, SqliteConnection};
 use dotenv::dotenv;
@@ -12,8 +15,11 @@ use std::sync::{
     Arc, Mutex,
 };
 use std::{env, time::Duration};
+use tokio::sync::Mutex as AsyncMutex;
 
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
+
+embed_migrations!("migrations");
 
 #[actix::main]
 async fn main() -> std::io::Result<()> {
@@ -30,11 +36,16 @@ async fn main() -> std::io::Result<()> {
     let db_url = env::var("DATABASE_URL").expect("cant get DATABASE_URL");
     let db_connection = SqliteConnection::establish(&db_url).expect("cannot establish sqlite conn");
 
+    embedded_migrations::run(&db_connection).expect("cant run migration");
+
     let repo = DieselItemRepository::new(db_connection).expect("cant create repo");
 
     let client = Client::new(USER_AGENT.to_owned());
 
-    let actor = StashReceiverActor::new(Arc::new(Mutex::new(repo)), Arc::new(Mutex::new(client)));
+    let actor = StashReceiverActor::new(
+        Arc::new(Mutex::new(repo)),
+        Arc::new(AsyncMutex::new(client)),
+    );
 
     let actor = actor.start();
 
