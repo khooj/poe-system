@@ -89,7 +89,8 @@ table! {
 }
 
 table! {
-    mods (item_id, mod_) {
+    mods (id) {
+        id -> Nullable<Text>,
         item_id -> Text,
         #[sql_name = "type"]
         type_ -> Integer,
@@ -99,12 +100,13 @@ table! {
 }
 
 table! {
-    properties (item_id, name) {
+    properties (id) {
+        id -> Nullable<Text>,
         item_id -> Text,
         property_type -> Integer,
         name -> Text,
         value_type -> Integer,
-        value -> Integer,
+        value -> Text,
         #[sql_name = "type"]
         type_ -> Nullable<Integer>,
         progress -> Nullable<Float>,
@@ -120,7 +122,8 @@ table! {
 }
 
 table! {
-    sockets (item_id, s_group) {
+    sockets (id) {
+        id -> Nullable<Text>,
         item_id -> Text,
         s_group -> Integer,
         attr -> Nullable<Text>,
@@ -129,7 +132,8 @@ table! {
 }
 
 table! {
-    subcategories (item_id, subcategory) {
+    subcategories (id) {
+        id -> Nullable<Text>,
         item_id -> Text,
         subcategory -> Text,
     }

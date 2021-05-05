@@ -6,7 +6,7 @@ use thiserror::Error;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemSocket {
-    pub group: u32,
+    pub group: i32,
     pub attr: Option<String>,
     pub s_colour: Option<String>,
 }
@@ -15,11 +15,11 @@ pub struct ItemSocket {
 #[serde(rename_all = "camelCase")]
 pub struct ItemProperty {
     pub name: String,
-    pub values: Vec<Value>,
-    pub display_mode: u32,
+    pub values: Vec<Vec<Value>>,
+    pub display_mode: i32,
     pub progress: Option<f64>,
     #[serde(rename = "type")]
-    pub item_type: Option<u32>,
+    pub item_type: Option<i32>,
     pub suffix: Option<String>,
 }
 
@@ -39,16 +39,16 @@ pub struct Influences {
 pub struct UltimatumMod {
     #[serde(rename = "type")]
     pub mod_type: String,
-    pub tier: u32,
+    pub tier: i32,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct IncubatedItem {
     pub name: String,
-    pub level: u32,
-    pub progress: u32,
-    pub total: u32,
+    pub level: i32,
+    pub progress: i32,
+    pub total: i32,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -81,8 +81,8 @@ fn default_bool() -> Option<bool> {
 pub struct Extended {
     pub category: String,
     pub subcategories: Option<Vec<String>>,
-    pub prefixes: Option<u32>,
-    pub suffixes: Option<u32>,
+    pub prefixes: Option<i32>,
+    pub suffixes: Option<i32>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -157,7 +157,7 @@ fn default_str() -> Option<String> {
     Some(String::new())
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PublicStashChange {
     pub id: String,
@@ -172,7 +172,7 @@ pub struct PublicStashChange {
     pub items: Vec<Item>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct PublicStashData {
     pub next_change_id: String,
     pub stashes: Vec<PublicStashChange>,

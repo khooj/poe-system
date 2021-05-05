@@ -49,54 +49,54 @@ CREATE INDEX item_account_id ON items(account_id);
 -- utility, implicit, explicit, crafted, enchant, fractured, cosmetic, veiled,
 -- explicit_hybrid
 CREATE TABLE IF NOT EXISTS mods (
+    id TEXT PRIMARY KEY,
     item_id TEXT NOT NULL,
     type INTEGER NOT NULL,
     mod TEXT NOT NULL,
-    PRIMARY KEY(item_id, mod),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE INDEX mods_item_id ON mods(item_id);
 CREATE TABLE IF NOT EXISTS subcategories (
+    id TEXT PRIMARY KEY,
     item_id TEXT NOT NULL,
     subcategory TEXT NOT NULL,
-    PRIMARY KEY(item_id, subcategory),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 -- properties, requirements, additional_properties, next_level_requirements,
 -- notable_properties, hybrid
 CREATE TABLE IF NOT EXISTS properties (
+    id TEXT PRIMARY KEY,
     item_id TEXT NOT NULL,
     property_type INTEGER NOT NULL,
     name TEXT NOT NULL,
     value_type INTEGER NOT NULL,
-    value INTEGER NOT NULL,
+    value TEXT NOT NULL,
     type INTEGER,
     progress REAL,
     suffix TEXT,
-    PRIMARY KEY(item_id, name),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE INDEX properties_item_id ON properties(item_id);
 CREATE TABLE IF NOT EXISTS socketed_items (
     item_id TEXT NOT NULL,
     socketed_item_id TEXT NOT NULL,
     PRIMARY KEY(item_id, socketed_item_id),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS sockets (
+    id TEXT PRIMARY KEY,
     item_id TEXT NOT NULL,
     s_group INTEGER NOT NULL,
     attr TEXT,
     s_colour TEXT,
-    PRIMARY KEY(item_id, s_group),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS ultimatum_mods (
     item_id TEXT NOT NULL,
     type TEXT NOT NULL,
     tier INTEGER NOT NULL,
     PRIMARY KEY(item_id, type),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE INDEX ultimatum_mods_item_id ON ultimatum_mods(item_id);
 CREATE TABLE IF NOT EXISTS incubated_item (
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS incubated_item (
     progress INTEGER NOT NULL,
     total INTEGER NOT NULL,
     PRIMARY KEY(item_id, name),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS hybrids (
     id TEXT,
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS extended (
     category TEXT NOT NULL,
     prefixes INTEGER,
     suffixes INTEGER,
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS influences (
     item_id TEXT PRIMARY KEY,
@@ -130,5 +130,5 @@ CREATE TABLE IF NOT EXISTS influences (
     crusader BOOLEAN,
     redeemer BOOLEAN,
     hunter BOOLEAN,
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );

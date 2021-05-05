@@ -40,6 +40,14 @@ async fn main() -> std::io::Result<()> {
 
     let repo = DieselItemRepository::new(db_connection).expect("cant create repo");
 
+    let change_id = env::var("START_CHANGE_ID").unwrap_or("".to_owned());
+    if !change_id.is_empty() {
+        let stash = repo.get_stash_id().expect("cant get latest stash id");
+        if stash.latest_stash_id.is_none() {
+            repo.set_stash_id(&change_id).expect("cant set stash id");
+        }
+    }
+
     let client = Client::new(USER_AGENT.to_owned());
 
     let actor = StashReceiverActor::new(
