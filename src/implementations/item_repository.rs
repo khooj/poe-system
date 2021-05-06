@@ -1,29 +1,13 @@
-use crate::ports::outbound::public_stash_retriever::{
-    Extended, Item, ItemProperty, ItemSocket, PublicStashData,
-};
-use crate::ports::outbound::repository::{ItemRepository, LatestStashId, RepositoryError};
-use crate::{domain::item::Item as DomainItem, ports::outbound::repository};
-use diesel::{
-    backend::UsesAnsiSavepointSyntax,
-    connection::{AnsiTransactionManager, TransactionManager},
-    prelude::*,
-    sqlite::Sqlite,
-};
-use diesel::{
-    backend::{Backend, SupportsDefaultKeyword},
-    Queryable,
-};
-use diesel::{query_dsl::LoadQuery, sqlite::SqliteConnection};
-use dotenv::dotenv;
+use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty, PublicStashData};
+use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
+use diesel::Queryable;
 use itertools::Itertools;
-use log::{debug, info, warn};
+use log::warn;
 use serde_json::json;
 use std::convert::TryInto;
-use std::env;
-use std::ops::Deref;
-use std::str::FromStr;
 use std::{collections::HashMap, convert::TryFrom};
-use thiserror::Error;
 use uuid::Uuid;
 
 struct SplittedItem {
@@ -239,7 +223,7 @@ impl TryFrom<Item> for SplittedItem {
 }
 
 fn append_properties(
-    mut to_insert: Vec<(Option<Vec<ItemProperty>>, PropertyType)>,
+    to_insert: Vec<(Option<Vec<ItemProperty>>, PropertyType)>,
     item_id: &str,
 ) -> Option<Vec<NewProperty>> {
     let mut vals = None;
@@ -283,8 +267,8 @@ fn append_mods(
 }
 
 fn append_mod(
-    mut vals: Option<Vec<NewMod>>,
-    mut to_insert: Option<Vec<String>>,
+    vals: Option<Vec<NewMod>>,
+    to_insert: Option<Vec<String>>,
     item_id: &str,
     type_: ModType,
 ) -> Option<Vec<NewMod>> {
@@ -317,9 +301,9 @@ fn append_if_not_empty2<T>(mut vals: Option<Vec<T>>, mut to_insert: Vec<T>) -> O
     vals
 }
 
-fn append_if_not_empty<T, K>(
+fn _append_if_not_empty<T, K>(
     mut vals: Option<Vec<T>>,
-    mut to_insert: Option<Vec<K>>,
+    to_insert: Option<Vec<K>>,
 ) -> Result<Option<Vec<T>>, RepositoryError>
 where
     K: TryInto<T>,
@@ -346,6 +330,7 @@ where
     Ok(vals)
 }
 
+#[allow(dead_code)]
 #[derive(Queryable)]
 pub struct RawItem {
     id: String,
@@ -403,16 +388,16 @@ pub enum ModType {
     ExplicitHybrid = 8,
 }
 
-pub struct Mod {
-    item_id: String,
-    r#type: ModType,
-    r#mod: String,
-}
+// pub struct Mod {
+//     item_id: String,
+//     r#type: ModType,
+//     r#mod: String,
+// }
 
-pub struct Subcategory {
-    item_id: String,
-    subcategory: String,
-}
+// pub struct Subcategory {
+//     item_id: String,
+//     subcategory: String,
+// }
 
 #[derive(Clone, Copy)]
 pub enum PropertyType {
@@ -645,7 +630,7 @@ impl DieselItemRepository {
         Ok(DieselItemRepository { conn: connection })
     }
 
-    fn get_items(
+    fn get_raw_items(
         &self,
         account_name: &str,
         stash_id: &str,
@@ -671,9 +656,7 @@ impl DieselItemRepository {
         // workaround for upsert functionality for sqlite https://github.com/diesel-rs/diesel/issues/1854
         let vals = stash_dsl::latest_stash_id.load::<LatestStashId>(&self.conn)?;
         if vals.len() == 0 {
-            let latest_stash = NewLatestStash {
-                id: id.to_owned(),
-            };
+            let latest_stash = NewLatestStash { id: id.to_owned() };
             diesel::insert_into(latest_stash_id::table)
                 .values(&latest_stash)
                 .execute(&self.conn)?;
@@ -841,12 +824,8 @@ impl DieselItemRepository {
 #[cfg(test)]
 mod test {
     use super::DieselItemRepository;
-    use crate::ports::outbound::public_stash_retriever::{Item, PublicStashData};
-    use crate::ports::outbound::repository::ItemRepository;
+    use crate::ports::outbound::public_stash_retriever::PublicStashData;
     use diesel::prelude::*;
-    use diesel_logger::LoggingConnection;
-    use log::debug;
-    use std::env;
 
     const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
 
@@ -857,7 +836,7 @@ mod test {
         let conn = SqliteConnection::establish(":memory:")?;
         embedded_migrations::run(&conn)?;
 
-        let mut repo = DieselItemRepository::new(conn)?;
+        let repo = DieselItemRepository::new(conn)?;
         let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
         let _ = repo.insert_raw_item(stash)?;
@@ -875,7 +854,7 @@ mod test {
         let conn = SqliteConnection::establish(":memory:")?;
         embedded_migrations::run(&conn)?;
 
-        let mut repo = DieselItemRepository::new(conn)?;
+        let repo = DieselItemRepository::new(conn)?;
         let mut stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
         let _ = repo.insert_raw_item(stash.clone())?;
@@ -890,7 +869,7 @@ mod test {
 
         let _ = repo.insert_raw_item(stash.clone())?;
 
-        let items = repo.get_items(
+        let items = repo.get_raw_items(
             stash.stashes[0].account_name.as_ref().unwrap(),
             stash.stashes[0].stash.as_ref().unwrap(),
         )?;

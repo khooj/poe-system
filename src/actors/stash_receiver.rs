@@ -3,10 +3,9 @@ use crate::implementations::{
 };
 use crate::ports::outbound::{
     public_stash_retriever::{Error, PublicStashData, Retriever},
-    repository::{ItemRepository, RepositoryError},
+    repository::RepositoryError,
 };
 use actix::prelude::*;
-use diesel::SqliteConnection;
 use log::{error, info};
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
@@ -50,7 +49,7 @@ pub struct StartReceiveMsg;
 impl Handler<StartReceiveMsg> for StashReceiverActor {
     type Result = ();
 
-    fn handle(&mut self, msg: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
         if self.client.try_lock().is_err() {
             info!("locked, skipping iteration");
             return;
@@ -74,7 +73,7 @@ struct GetStashMsg(Option<String>);
 impl Handler<GetStashMsg> for StashReceiverActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, msg: GetStashMsg, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: GetStashMsg, _: &mut Self::Context) -> Self::Result {
         let cl = Arc::clone(&self.client);
         info!("latest stash id from repo: {:?}", msg.0);
         Box::pin(
@@ -107,7 +106,7 @@ struct ReceivedStash(PublicStashData);
 impl Handler<ReceivedStash> for StashReceiverActor {
     type Result = ();
 
-    fn handle(&mut self, msg: ReceivedStash, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ReceivedStash, _: &mut Self::Context) -> Self::Result {
         info!("received stash with next id: {}", msg.0.next_change_id);
         match self.repository.lock().unwrap().insert_raw_item(msg.0) {
             Err(e) => {

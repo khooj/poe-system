@@ -1,8 +1,7 @@
-use anyhow::anyhow;
-use std::convert::TryFrom;
+use std::default::Default;
 
 #[allow(unused)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Rarity {
     Normal,
     Magic,
@@ -10,8 +9,14 @@ pub enum Rarity {
     Unique,
 }
 
+impl Default for Rarity {
+    fn default() -> Self {
+        Rarity::Normal
+    }
+}
+
 #[allow(unused)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Category {
     Flasks,
     Jewellery,
@@ -23,8 +28,14 @@ pub enum Category {
     Other,
 }
 
+impl Default for Category {
+    fn default() -> Self {
+        Category::Flasks
+    }
+}
+
 #[allow(unused)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Class {
     LifeFlask,
     ManaFlask,
@@ -90,6 +101,12 @@ pub enum Class {
     Blueprint,
     Trinket,
     HeistTarget,
+}
+
+impl Default for Class {
+    fn default() -> Self {
+        Class::LifeFlask
+    }
 }
 
 #[allow(unused)]
@@ -255,27 +272,61 @@ enum BodyArmour {
     SacrificialGarb,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
+pub enum League {
+    Standard,
+    Hardcore,
+    TempStandard,
+    TempHardcore,
+}
+
+impl Default for League {
+    fn default() -> Self {
+        League::Standard
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum ItemLvl {
+    No,
+    Yes(i32),
+}
+
+impl Default for ItemLvl {
+    fn default() -> Self {
+        ItemLvl::No
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Influence {
+    Shaper,
+    Elder,
+    Warlord,
+    Hunter,
+    Redeemer,
+    Crusader,
+}
+
+#[derive(Clone, Debug, Default)]
 pub struct Item {
     pub id: String,
+    pub league: League,
+
+    pub item_lvl: ItemLvl,
+    pub identified: bool,
     pub rarity: Rarity,
     pub name: String,
     pub category: Category,
     pub class: Class,
     pub base_type: String,
-}
-
-impl Item {
-    pub fn empty() -> Item {
-        Item {
-            id: String::new(),
-            rarity: Rarity::Normal,
-            name: String::new(),
-            category: Category::Armor,
-            class: Class::AbyssJewel,
-            base_type: String::new(),
-        }
-    }
+    pub type_line: String,
+    pub corrupted: bool,
+    pub influences: Vec<Influence>,
+    pub fractured: bool,
+    pub synthesised: bool,
+    pub split: bool,
+    pub veiled: bool,
 }
 
 pub struct PoeItem(String);

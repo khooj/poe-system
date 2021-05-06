@@ -14,6 +14,7 @@ use std::{
 };
 use tokio::time::Instant as TokioInstant;
 
+
 #[derive(Debug)]
 struct Limits {
     hit_count: u32,
@@ -153,7 +154,6 @@ impl Retriever for Client {
 mod test {
     use super::*;
     use crate::ports::outbound::public_stash_retriever::Retriever;
-    use std::env::set_var;
 
     // #[tokio::test]
     async fn get_single() -> Result<(), anyhow::Error> {
