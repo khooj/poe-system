@@ -402,6 +402,19 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "std" ];
       };
+      "arrayvec" = rec {
+        crateName = "arrayvec";
+        version = "0.5.2";
+        edition = "2018";
+        sha256 = "12q6hn01x5435bprwlb7w9m7817dyfq55yrl4psygr78bp32zdi3";
+        authors = [
+          "bluss"
+        ];
+        features = {
+          "default" = [ "std" ];
+        };
+        resolvedDefaultFeatures = [ "array-sizes-33-128" ];
+      };
       "async-trait" = rec {
         crateName = "async-trait";
         version = "0.1.50";
@@ -517,6 +530,41 @@ rec {
         features = {
         };
         resolvedDefaultFeatures = [ "default" ];
+      };
+      "bitvec" = rec {
+        crateName = "bitvec";
+        version = "0.19.5";
+        edition = "2018";
+        sha256 = "08a3rfly22mky5y1881a4gr6wsapnqmcmc50vp4kh65fab9whhl9";
+        authors = [
+          "myrrlyn <self@myrrlyn.dev>"
+        ];
+        dependencies = [
+          {
+            name = "funty";
+            packageId = "funty";
+            usesDefaultFeatures = false;
+          }
+          {
+            name = "radium";
+            packageId = "radium";
+          }
+          {
+            name = "tap";
+            packageId = "tap";
+          }
+          {
+            name = "wyz";
+            packageId = "wyz";
+            usesDefaultFeatures = false;
+          }
+        ];
+        features = {
+          "alloc" = [ "wyz/alloc" ];
+          "default" = [ "atomic" "std" ];
+          "std" = [ "alloc" ];
+        };
+        resolvedDefaultFeatures = [ "alloc" "std" ];
       };
       "bumpalo" = rec {
         crateName = "bumpalo";
@@ -1204,6 +1252,18 @@ rec {
           "Raph Levien <raph@google.com>"
         ];
 
+      };
+      "funty" = rec {
+        crateName = "funty";
+        version = "1.1.0";
+        edition = "2018";
+        sha256 = "19wx3p3jmv863y0mjb56sr4qf1kvqhl3fsyslkd92zli0p8lrlzy";
+        authors = [
+          "myrrlyn <self@myrrlyn.dev>"
+        ];
+        features = {
+          "default" = [ "std" ];
+        };
       };
       "futures" = rec {
         crateName = "futures";
@@ -2208,6 +2268,50 @@ rec {
           "spin_no_std" = [ "spin" ];
         };
       };
+      "lexical-core" = rec {
+        crateName = "lexical-core";
+        version = "0.7.6";
+        edition = "2018";
+        sha256 = "1zjzab1fnaw4kj6ixyrskp4dyz761gdcab07m4bkvlk1l4mcc1v6";
+        authors = [
+          "Alex Huszagh <ahuszagh@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "arrayvec";
+            packageId = "arrayvec";
+            optional = true;
+            usesDefaultFeatures = false;
+            features = [ "array-sizes-33-128" ];
+          }
+          {
+            name = "bitflags";
+            packageId = "bitflags";
+          }
+          {
+            name = "cfg-if";
+            packageId = "cfg-if 1.0.0";
+          }
+          {
+            name = "ryu";
+            packageId = "ryu";
+            optional = true;
+          }
+          {
+            name = "static_assertions";
+            packageId = "static_assertions";
+            optional = true;
+          }
+        ];
+        features = {
+          "correct" = [ "arrayvec" "static_assertions" "table" ];
+          "default" = [ "correct" "ryu" "std" ];
+          "format" = [ "static_assertions" ];
+          "grisu3" = [ "dtoa" ];
+          "property_tests" = [ "quickcheck" "proptest" ];
+        };
+        resolvedDefaultFeatures = [ "arrayvec" "correct" "default" "ryu" "static_assertions" "std" "table" ];
+      };
       "libc" = rec {
         crateName = "libc";
         version = "0.2.93";
@@ -2677,6 +2781,53 @@ rec {
           "compat_sync" = [ "spin" ];
         };
         resolvedDefaultFeatures = [ "alloc" "compat_hash" "hashbrown" "std" ];
+      };
+      "nom" = rec {
+        crateName = "nom";
+        version = "6.1.2";
+        edition = "2018";
+        sha256 = "1qnmyd9y9ljy7hxch8sbayybd7sn18vvs95nlx2lggbijsckyhg7";
+        authors = [
+          "contact@geoffroycouprie.com"
+        ];
+        dependencies = [
+          {
+            name = "bitvec";
+            packageId = "bitvec";
+            optional = true;
+            usesDefaultFeatures = false;
+          }
+          {
+            name = "funty";
+            packageId = "funty";
+            optional = true;
+            usesDefaultFeatures = false;
+          }
+          {
+            name = "lexical-core";
+            packageId = "lexical-core";
+            optional = true;
+          }
+          {
+            name = "memchr";
+            packageId = "memchr";
+            usesDefaultFeatures = false;
+          }
+        ];
+        buildDependencies = [
+          {
+            name = "version_check";
+            packageId = "version_check";
+          }
+        ];
+        features = {
+          "alloc" = [ "bitvec/alloc" "funty" ];
+          "default" = [ "std" "bitvec" "lexical" ];
+          "lexical" = [ "lexical-core" ];
+          "regexp" = [ "regex" ];
+          "std" = [ "alloc" "bitvec/std" "memchr/use_std" ];
+        };
+        resolvedDefaultFeatures = [ "alloc" "bitvec" "default" "funty" "lexical" "lexical-core" "std" ];
       };
       "nonzero_ext" = rec {
         crateName = "nonzero_ext";
@@ -3257,6 +3408,10 @@ rec {
             packageId = "log";
           }
           {
+            name = "nom";
+            packageId = "nom";
+          }
+          {
             name = "num";
             packageId = "num";
           }
@@ -3422,6 +3577,17 @@ rec {
             name = "scheduled-thread-pool";
             packageId = "scheduled-thread-pool";
           }
+        ];
+
+      };
+      "radium" = rec {
+        crateName = "radium";
+        version = "0.5.3";
+        edition = "2018";
+        sha256 = "1f5vj5zy4kcsw8p87y976dm5pln6v6jfw5f0fkj7qbwfipbsj6wl";
+        authors = [
+          "Nika Layzell <nika@thelayzells.com>"
+          "myrrlyn <self@myrrlyn.dev>"
         ];
 
       };
@@ -4206,6 +4372,17 @@ rec {
         ];
 
       };
+      "static_assertions" = rec {
+        crateName = "static_assertions";
+        version = "1.1.0";
+        edition = "2015";
+        sha256 = "0gsl6xmw10gvn3zs1rv99laj5ig7ylffnh71f9l34js4nr4r7sx2";
+        authors = [
+          "Nikolai Vazquez"
+        ];
+        features = {
+        };
+      };
       "syn" = rec {
         crateName = "syn";
         version = "1.0.70";
@@ -4238,6 +4415,17 @@ rec {
           "test" = [ "syn-test-suite/all-features" ];
         };
         resolvedDefaultFeatures = [ "clone-impls" "default" "derive" "extra-traits" "fold" "full" "parsing" "printing" "proc-macro" "quote" "visit" "visit-mut" ];
+      };
+      "tap" = rec {
+        crateName = "tap";
+        version = "1.0.1";
+        edition = "2015";
+        sha256 = "0sc3gl4nldqpvyhqi3bbd0l9k7fngrcl4zs47n314nqqk4bpx4sm";
+        authors = [
+          "Elliott Linder <elliott.darfink@gmail.com>"
+          "myrrlyn <self@myrrlyn.dev>"
+        ];
+
       };
       "termcolor" = rec {
         crateName = "termcolor";
@@ -4899,6 +5087,16 @@ rec {
         sha256 = "0p9ypqvv55cq2rl0s7g5ca2bkvwn62cdrdb0hm8j0hd2crigznyb";
         authors = [
           "Jim McGrath <jimmc2@gmail.com>"
+        ];
+
+      };
+      "version_check" = rec {
+        crateName = "version_check";
+        version = "0.9.3";
+        edition = "2015";
+        sha256 = "1zmkcgj2m0pq0l4wnhrp1wl1lygf7x2h5p7pvjwc4719lnlxrv2z";
+        authors = [
+          "Sergio Benitez <sb@sergio.bz>"
         ];
 
       };
@@ -5732,6 +5930,20 @@ rec {
           }
         ];
 
+      };
+      "wyz" = rec {
+        crateName = "wyz";
+        version = "0.2.0";
+        edition = "2018";
+        sha256 = "05028bk49b2ix1lz22sj65fnlxr0f29j2klkaqjxp6az3c6hprl5";
+        authors = [
+          "myrrlyn <self@myrrlyn.dev>"
+        ];
+        features = {
+          "default" = [ "std" ];
+          "std" = [ "alloc" ];
+        };
+        resolvedDefaultFeatures = [ "alloc" ];
       };
       "xmlparser" = rec {
         crateName = "xmlparser";

@@ -15,9 +15,9 @@ impl Default for Rarity {
     }
 }
 
-#[allow(unused)]
+#[allow(unused, non_camel_case_types)]
 #[derive(Clone, Debug)]
-pub enum Category {
+pub enum __category_tmp {
     Flasks,
     Jewellery,
     OneHandedWeapon,
@@ -28,9 +28,18 @@ pub enum Category {
     Other,
 }
 
+#[allow(unused)]
+#[derive(Clone, Debug)]
+pub enum Category {
+    Accessories,
+    Armour,
+    Jewels,
+    Weapons,
+}
+
 impl Default for Category {
     fn default() -> Self {
-        Category::Flasks
+        Category::Accessories
     }
 }
 
@@ -308,6 +317,36 @@ pub enum Influence {
     Crusader,
 }
 
+#[derive(Clone, Debug)]
+pub enum Subcategory {
+    Smth(String),
+}
+
+impl Default for Subcategory {
+    fn default() -> Self {
+        Subcategory::Smth("".into())
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum ModType {
+    Utility = 0,
+    Implicit = 1,
+    Explicit = 2,
+    Crafted = 3,
+    Enchant = 4,
+    Fractured = 5,
+    Cosmetic = 6,
+    Veiled = 7,
+    ExplicitHybrid = 8,
+}
+
+#[derive(Clone, Debug)]
+pub struct Mod {
+    pub text: String,
+    pub type_: ModType,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Item {
     pub id: String,
@@ -318,18 +357,15 @@ pub struct Item {
     pub rarity: Rarity,
     pub name: String,
     pub category: Category,
-    pub class: Class,
+    pub subcategories: Vec<Subcategory>,
     pub base_type: String,
     pub type_line: String,
     pub corrupted: bool,
     pub influences: Vec<Influence>,
     pub fractured: bool,
     pub synthesised: bool,
-    pub split: bool,
-    pub veiled: bool,
+    pub mods: Vec<Mod>,
 }
-
-pub struct PoeItem(String);
 
 // Rarity: Unique
 // Bones of Ullr

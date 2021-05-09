@@ -204,6 +204,8 @@ impl TryFrom<Item> for SplittedItem {
                 hunter: el.hunter,
                 redeemer: el.redeemer,
                 warlord: el.warlord,
+                shaper: el.shaper,
+                elder: el.elder,
             })
         } else {
             None
@@ -606,6 +608,8 @@ struct NewInfluence {
     crusader: Option<bool>,
     redeemer: Option<bool>,
     hunter: Option<bool>,
+    shaper: Option<bool>,
+    elder: Option<bool>,
 }
 
 #[derive(Insertable)]
@@ -622,7 +626,7 @@ struct RemoveItems<'a> {
     stash_id: &'a String,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Associations, Debug, Default, Clone)]
 #[belongs_to(RawItem, foreign_key = "item_id")]
 #[table_name = "influences"]
 #[primary_key(item_id)]
@@ -632,9 +636,11 @@ struct Influence {
     crusader: Option<bool>,
     redeemer: Option<bool>,
     hunter: Option<bool>,
+    shaper: Option<bool>,
+    elder: Option<bool>,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Associations, Debug, Default, Clone)]
 #[belongs_to(RawItem, foreign_key = "item_id")]
 #[table_name = "extended"]
 #[primary_key(item_id)]
@@ -735,13 +741,152 @@ struct Mod {
 
 use std::convert::From;
 
-type DomainItemFrom = (RawItem, Vec<Influence>);
+type DomainItemFrom = (
+    RawItem,
+    Vec<Influence>,
+    Vec<Mod>,
+    Vec<Extended>,
+    Vec<Hybrid>,
+    Vec<IncubatedItem>,
+    Vec<UltimatumMod>,
+    Vec<Socket>,
+    Vec<SocketedItem>,
+    Vec<Property>,
+    Vec<Subcategory>,
+);
+
+use crate::domain::item as domain_item;
+
+impl Into<domain_item::League> for Option<String> {
+    fn into(self) -> domain_item::League {
+        use domain_item::League;
+        if let Some(l) = self {
+            match l.as_ref() {
+                "Standard" => League::Standard,
+                "Hardcore" => League::Hardcore,
+                "Ultimatum" => League::TempStandard,
+                "HC Ultimatum" => League::TempHardcore,
+                _ => League::Standard,
+            }
+        } else {
+            League::Standard
+        }
+    }
+}
+
+impl Into<domain_item::ItemLvl> for Option<i32> {
+    fn into(self) -> domain_item::ItemLvl {
+        if let Some(i) = self {
+            domain_item::ItemLvl::Yes(i)
+        } else {
+            domain_item::ItemLvl::No
+        }
+    }
+}
+
+impl Into<domain_item::Rarity> for Option<i32> {
+    fn into(self) -> domain_item::Rarity {
+        use domain_item::Rarity;
+        if let Some(i) = self {
+            match i {
+                0 => Rarity::Normal,
+                1 => Rarity::Magic,
+                2 => Rarity::Rare,
+                3 => Rarity::Unique,
+                _ => Rarity::Normal,
+            }
+        } else {
+            Rarity::Normal
+        }
+    }
+}
+
+impl Into<domain_item::Category> for String {
+    fn into(self) -> domain_item::Category {
+        use domain_item::Category;
+
+        match self.as_ref() {
+            "accessories" => Category::Accessories,
+            "armour" => Category::Armour,
+            "jewels" => Category::Jewels,
+            "weapons" => Category::Weapons,
+            _ => Category::Accessories,
+        }
+    }
+}
+
+impl Into<domain_item::Subcategory> for Subcategory {
+    fn into(self) -> domain_item::Subcategory {
+        domain_item::Subcategory::Smth(self.subcategory)
+    }
+}
+
+impl Into<Vec<domain_item::Influence>> for Influence {
+    fn into(self) -> Vec<domain_item::Influence> {
+        use domain_item::Influence as Inf;
+        let mut v = vec![];
+        let mapping = vec![
+            (Inf::Hunter, self.hunter),
+            (Inf::Shaper, self.shaper),
+            (Inf::Elder, self.elder),
+            (Inf::Warlord, self.warlord),
+            (Inf::Crusader, self.crusader),
+            (Inf::Redeemer, self.redeemer),
+        ];
+        for (type_, opt) in mapping {
+            if opt.is_some() {
+                v.push(type_);
+            }
+        }
+
+        v
+    }
+}
+
+impl Into<domain_item::Mod> for Mod {
+    fn into(self) -> domain_item::Mod {
+        use domain_item::ModType;
+
+        domain_item::Mod {
+            text: self.mod_,
+            type_: match self.type_ {
+                1 => ModType::Implicit,
+                2 => ModType::Explicit,
+                3 => ModType::Crafted,
+                4 => ModType::Enchant,
+                5 => ModType::Fractured,
+                6 => ModType::Cosmetic,
+                7 => ModType::Veiled,
+                8 => ModType::ExplicitHybrid,
+                _ => ModType::Utility,
+            },
+        }
+    }
+}
+
 impl From<DomainItemFrom> for DomainItem {
     fn from(val: DomainItemFrom) -> Self {
+        let extended = val.3.first().map_or(Extended::default(), |e| (*e).clone());
         DomainItem {
             id: val.0.id,
-            // league: val.0.league,
-            // item_lvl: val.0.item_lvl,
+            league: val.0.league.into(),
+            item_lvl: val.0.item_lvl.into(),
+            identified: val.0.identified,
+            rarity: val.0.frame_type.into(),
+            name: val.0.name,
+            category: extended.category.into(),
+            subcategories: val.10.into_iter().map(|e| e.into()).collect(),
+            base_type: val.0.base_type,
+            type_line: val.0.type_line,
+            corrupted: val.0.corrupted.unwrap_or(false),
+            influences: val
+                .1
+                .first()
+                .map_or(Influence::default(), |e| (*e).clone())
+                .into(),
+            fractured: val.0.fractured.unwrap_or(false),
+            synthesised: val.0.synthesised.unwrap_or(false),
+            mods: val.2.into_iter().map(|e| e.into()).collect(),
             ..Default::default()
         }
     }
@@ -751,9 +896,7 @@ pub struct DieselItemRepository {
     conn: SqliteConnection,
 }
 
-use crate::schema::{
-    influences::dsl as influence_dsl, items::dsl as items_dsl, latest_stash_id::dsl as stash_dsl,
-};
+use crate::schema::{items::dsl as items_dsl, latest_stash_id::dsl as stash_dsl};
 
 impl DieselItemRepository {
     pub fn new(connection: SqliteConnection) -> Result<DieselItemRepository, RepositoryError> {
@@ -764,7 +907,7 @@ impl DieselItemRepository {
         &self,
         base_type: &str,
     ) -> Result<Vec<DomainItem>, RepositoryError> {
-        use itertools::{izip, multizip};
+        use itertools::izip;
 
         let items = items_dsl::items
             .filter(items_dsl::base_type.eq(base_type))
@@ -801,9 +944,21 @@ impl DieselItemRepository {
             .load::<Subcategory>(&self.conn)?
             .grouped_by(&items);
 
-        let data = izip!(items, influences) //, mods, extended, hybrid, incubated, ultimatum))
-            .map(|v| DomainItem::from(v))
-            .collect::<Vec<_>>();
+        let data = izip!(
+            items,
+            influences,
+            mods,
+            extended,
+            hybrid,
+            incubated,
+            ultimatum,
+            socket,
+            socketed,
+            properties,
+            subcategories
+        )
+        .map(|v| DomainItem::from(v))
+        .collect::<Vec<_>>();
 
         Ok(data)
     }
@@ -1036,7 +1191,11 @@ mod test {
         let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
         let _ = repo.insert_raw_item(stash)?;
-        let _ = repo.get_items_by_basetype("Recurve Bow")?;
+        let items = repo.get_items_by_basetype("Recurve Bow")?;
+
+        for i in items {
+            println!("{:?}", i);
+        }
 
         Ok(())
     }

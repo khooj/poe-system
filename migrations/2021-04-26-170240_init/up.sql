@@ -130,5 +130,7 @@ CREATE TABLE IF NOT EXISTS influences (
     crusader BOOLEAN,
     redeemer BOOLEAN,
     hunter BOOLEAN,
+    shaper BOOLEAN,
+    elder BOOLEAN,
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );

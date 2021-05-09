@@ -34,6 +34,8 @@ table! {
         crusader -> Nullable<Bool>,
         redeemer -> Nullable<Bool>,
         hunter -> Nullable<Bool>,
+        shaper -> Nullable<Bool>,
+        elder -> Nullable<Bool>,
     }
 }
 

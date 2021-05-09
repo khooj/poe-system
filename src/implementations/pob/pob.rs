@@ -1,5 +1,4 @@
 use crate::domain::item::Item;
-use anyhow::anyhow;
 use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
 use roxmltree::{Document, Node};
@@ -50,7 +49,7 @@ impl ItemSet {
             let id = item.attribute("itemId").map_or("-1", |v| v);
             let id = i32::from_str(id)?;
             if id == -1 || id == 0 {
-                continue
+                continue;
             }
             items.push(items_map.get(&id).unwrap().clone());
         }
@@ -69,6 +68,12 @@ impl TryFrom<PobItem> for Item {
     type Error = anyhow::Error;
 
     fn try_from(value: PobItem) -> Result<Self, Self::Error> {
+        let strings = value.0.lines().collect::<Vec<_>>();
+        let rarity = strings[0];
+        let name = strings[1];
+        let base_type = strings[2];
+
+
         Ok(Item::default())
     }
 }
