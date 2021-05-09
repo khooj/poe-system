@@ -1,6 +1,6 @@
 table! {
     extended (item_id) {
-        item_id -> Nullable<Text>,
+        item_id -> Text,
         category -> Text,
         prefixes -> Nullable<Integer>,
         suffixes -> Nullable<Integer>,
@@ -9,7 +9,7 @@ table! {
 
 table! {
     hybrids (id, item_id) {
-        id -> Nullable<Text>,
+        id -> Text,
         item_id -> Text,
         is_vaal_gem -> Nullable<Bool>,
         base_type_name -> Text,
@@ -29,7 +29,7 @@ table! {
 
 table! {
     influences (item_id) {
-        item_id -> Nullable<Text>,
+        item_id -> Text,
         warlord -> Nullable<Bool>,
         crusader -> Nullable<Bool>,
         redeemer -> Nullable<Bool>,
@@ -90,7 +90,7 @@ table! {
 
 table! {
     mods (id) {
-        id -> Nullable<Text>,
+        id -> Text,
         item_id -> Text,
         #[sql_name = "type"]
         type_ -> Integer,
@@ -101,7 +101,7 @@ table! {
 
 table! {
     properties (id) {
-        id -> Nullable<Text>,
+        id -> Text,
         item_id -> Text,
         property_type -> Integer,
         name -> Text,
@@ -123,7 +123,7 @@ table! {
 
 table! {
     sockets (id) {
-        id -> Nullable<Text>,
+        id -> Text,
         item_id -> Text,
         s_group -> Integer,
         attr -> Nullable<Text>,
@@ -133,7 +133,7 @@ table! {
 
 table! {
     subcategories (id) {
-        id -> Nullable<Text>,
+        id -> Text,
         item_id -> Text,
         subcategory -> Text,
     }

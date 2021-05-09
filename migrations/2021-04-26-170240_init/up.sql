@@ -49,7 +49,7 @@ CREATE INDEX item_account_id ON items(account_id);
 -- utility, implicit, explicit, crafted, enchant, fractured, cosmetic, veiled,
 -- explicit_hybrid
 CREATE TABLE IF NOT EXISTS mods (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY NOT NULL,
     item_id TEXT NOT NULL,
     type INTEGER NOT NULL,
     mod TEXT NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS mods (
 );
 CREATE INDEX mods_item_id ON mods(item_id);
 CREATE TABLE IF NOT EXISTS subcategories (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY NOT NULL,
     item_id TEXT NOT NULL,
     subcategory TEXT NOT NULL,
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS subcategories (
 -- properties, requirements, additional_properties, next_level_requirements,
 -- notable_properties, hybrid
 CREATE TABLE IF NOT EXISTS properties (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY NOT NULL,
     item_id TEXT NOT NULL,
     property_type INTEGER NOT NULL,
     name TEXT NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS socketed_items (
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS sockets (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY NOT NULL,
     item_id TEXT NOT NULL,
     s_group INTEGER NOT NULL,
     attr TEXT,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS incubated_item (
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS hybrids (
-    id TEXT,
+    id TEXT NOT NULL,
     item_id TEXT NOT NULL,
     is_vaal_gem BOOLEAN,
     base_type_name TEXT NOT NULL,
@@ -118,14 +118,14 @@ CREATE TABLE IF NOT EXISTS hybrids (
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 CREATE TABLE IF NOT EXISTS extended (
-    item_id TEXT PRIMARY KEY,
+    item_id TEXT PRIMARY KEY NOT NULL,
     category TEXT NOT NULL,
     prefixes INTEGER,
     suffixes INTEGER,
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS influences (
-    item_id TEXT PRIMARY KEY,
+    item_id TEXT PRIMARY KEY NOT NULL,
     warlord BOOLEAN,
     crusader BOOLEAN,
     redeemer BOOLEAN,

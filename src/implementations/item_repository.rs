@@ -1,7 +1,9 @@
+use crate::domain::item::Item as DomainItem;
 use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty, PublicStashData};
 use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
+use diesel::BelongingToDsl;
 use diesel::Queryable;
 use itertools::Itertools;
 use log::warn;
@@ -331,7 +333,8 @@ where
 }
 
 #[allow(dead_code)]
-#[derive(Queryable)]
+#[derive(Queryable, Identifiable, Debug)]
+#[table_name = "items"]
 pub struct RawItem {
     id: String,
     base_type: String,
@@ -619,15 +622,190 @@ struct RemoveItems<'a> {
     stash_id: &'a String,
 }
 
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "influences"]
+#[primary_key(item_id)]
+struct Influence {
+    item_id: String,
+    warlord: Option<bool>,
+    crusader: Option<bool>,
+    redeemer: Option<bool>,
+    hunter: Option<bool>,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "extended"]
+#[primary_key(item_id)]
+struct Extended {
+    item_id: String,
+    category: String,
+    prefixes: Option<i32>,
+    suffixes: Option<i32>,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "hybrids"]
+#[primary_key(id, item_id)]
+struct Hybrid {
+    id: String,
+    item_id: String,
+    is_vaal_gem: Option<bool>,
+    base_type_name: String,
+    sec_descr_text: Option<String>,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "incubated_item"]
+#[primary_key(item_id, name)]
+struct IncubatedItem {
+    item_id: String,
+    name: String,
+    level: i32,
+    progress: i32,
+    total: i32,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "ultimatum_mods"]
+#[primary_key(item_id, type_)]
+struct UltimatumMod {
+    item_id: String,
+    type_: String,
+    tier: i32,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "sockets"]
+struct Socket {
+    id: String,
+    item_id: String,
+    s_group: i32,
+    attr: Option<String>,
+    s_colour: Option<String>,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "socketed_items"]
+#[primary_key(item_id, socketed_item_id)]
+struct SocketedItem {
+    item_id: String,
+    socketed_item_id: String,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "properties"]
+struct Property {
+    id: String,
+    item_id: String,
+    property_type: i32,
+    name: String,
+    value_type: i32,
+    value: String,
+    type_: Option<i32>,
+    progress: Option<f32>,
+    suffix: Option<String>,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "subcategories"]
+struct Subcategory {
+    id: String,
+    item_id: String,
+    subcategory: String,
+}
+
+#[derive(Identifiable, Queryable, Associations, Debug)]
+#[belongs_to(RawItem, foreign_key = "item_id")]
+#[table_name = "mods"]
+struct Mod {
+    id: String,
+    item_id: String,
+    type_: i32,
+    mod_: String,
+}
+
+use std::convert::From;
+
+type DomainItemFrom = (RawItem, Vec<Influence>);
+impl From<DomainItemFrom> for DomainItem {
+    fn from(val: DomainItemFrom) -> Self {
+        DomainItem {
+            id: val.0.id,
+            // league: val.0.league,
+            // item_lvl: val.0.item_lvl,
+            ..Default::default()
+        }
+    }
+}
+
 pub struct DieselItemRepository {
     conn: SqliteConnection,
 }
 
-use crate::schema::{items::dsl as items_dsl, latest_stash_id::dsl as stash_dsl};
+use crate::schema::{
+    influences::dsl as influence_dsl, items::dsl as items_dsl, latest_stash_id::dsl as stash_dsl,
+};
 
 impl DieselItemRepository {
     pub fn new(connection: SqliteConnection) -> Result<DieselItemRepository, RepositoryError> {
         Ok(DieselItemRepository { conn: connection })
+    }
+
+    pub fn get_items_by_basetype(
+        &self,
+        base_type: &str,
+    ) -> Result<Vec<DomainItem>, RepositoryError> {
+        use itertools::{izip, multizip};
+
+        let items = items_dsl::items
+            .filter(items_dsl::base_type.eq(base_type))
+            .load::<RawItem>(&self.conn)?;
+
+        let influences = Influence::belonging_to(&items)
+            .load::<Influence>(&self.conn)?
+            .grouped_by(&items);
+        let mods = Mod::belonging_to(&items)
+            .load::<Mod>(&self.conn)?
+            .grouped_by(&items);
+        let extended = Extended::belonging_to(&items)
+            .load::<Extended>(&self.conn)?
+            .grouped_by(&items);
+        let hybrid = Hybrid::belonging_to(&items)
+            .load::<Hybrid>(&self.conn)?
+            .grouped_by(&items);
+        let incubated = IncubatedItem::belonging_to(&items)
+            .load::<IncubatedItem>(&self.conn)?
+            .grouped_by(&items);
+        let ultimatum = UltimatumMod::belonging_to(&items)
+            .load::<UltimatumMod>(&self.conn)?
+            .grouped_by(&items);
+        let socket = Socket::belonging_to(&items)
+            .load::<Socket>(&self.conn)?
+            .grouped_by(&items);
+        let socketed = SocketedItem::belonging_to(&items)
+            .load::<SocketedItem>(&self.conn)?
+            .grouped_by(&items);
+        let properties = Property::belonging_to(&items)
+            .load::<Property>(&self.conn)?
+            .grouped_by(&items);
+        let subcategories = Subcategory::belonging_to(&items)
+            .load::<Subcategory>(&self.conn)?
+            .grouped_by(&items);
+
+        let data = izip!(items, influences) //, mods, extended, hybrid, incubated, ultimatum))
+            .map(|v| DomainItem::from(v))
+            .collect::<Vec<_>>();
+
+        Ok(data)
     }
 
     fn get_raw_items(
@@ -846,6 +1024,20 @@ mod test {
             latest_stash_id.latest_stash_id.unwrap(),
             "2949-5227-4536-5447-1849"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn get_items() -> Result<(), anyhow::Error> {
+        let conn = SqliteConnection::establish(":memory:")?;
+        embedded_migrations::run(&conn)?;
+
+        let repo = DieselItemRepository::new(conn)?;
+        let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
+
+        let _ = repo.insert_raw_item(stash)?;
+        let _ = repo.get_items_by_basetype("Recurve Bow")?;
+
         Ok(())
     }
 

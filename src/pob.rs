@@ -69,7 +69,7 @@ impl TryFrom<PobItem> for Item {
     type Error = anyhow::Error;
 
     fn try_from(value: PobItem) -> Result<Self, Self::Error> {
-        Ok(Item::empty())
+        Ok(Item::default())
     }
 }
 
