@@ -1,53 +1,64 @@
 use nom::{
-    branch::alt,
-    bytes::complete::{tag, take_until, take_while},
-    character::{
-        complete::{alpha1, alphanumeric1, digit1, multispace0, newline, not_line_ending},
-        is_alphabetic, is_newline,
-    },
-    combinator::{map_res, opt},
-    sequence::{delimited, preceded, terminated},
-    Finish, IResult,
+    bytes::complete::{tag, take_while},
+    character::complete::{alpha1, alphanumeric1, digit1, multispace0, newline, not_line_ending},
+    combinator::{map_res, opt, peek},
+    error::ParseError,
+    multi::{count, many0},
+    sequence::{delimited, pair, preceded, terminated},
+    AsChar, IResult, Parser,
 };
 use std::str::FromStr;
-use thiserror::Error;
+
+fn cut_tag<'a, E: ParseError<&'a str>, F>(
+    t: &'a str,
+    ps: F,
+) -> impl FnMut(&'a str) -> IResult<&'a str, &'a str, E>
+where
+    F: Parser<&'a str, &'a str, E>,
+{
+    preceded(pair(opt(multispace0), tag(t)), ps)
+}
 
 fn rarity(i: &str) -> IResult<&str, &str> {
-    preceded(tag("Rarity: "), alpha1)(i)
+    cut_tag("Rarity: ", alpha1)(i)
 }
 
 fn name(i: &str) -> IResult<&str, &str> {
-    not_line_ending(i)
+    preceded(opt(multispace0), not_line_ending)(i)
 }
 
 fn base_type(i: &str) -> IResult<&str, &str> {
-    not_line_ending(i)
+    preceded(opt(multispace0), not_line_ending)(i)
 }
 
 fn unique_id(i: &str) -> IResult<&str, &str> {
-    preceded(tag("Unique ID: "), alphanumeric1)(i)
+    cut_tag("Unique ID: ", alphanumeric1)(i)
 }
 
 fn item_lvl(i: &str) -> IResult<&str, i32> {
-    map_res(preceded(tag("Item Level: "), digit1), |out: &str| {
+    map_res(cut_tag("Item Level: ", digit1), |out: &str| {
         i32::from_str(out)
     })(i)
 }
 
 fn level_req(i: &str) -> IResult<&str, i32> {
-    map_res(preceded(tag("LevelReq: "), digit1), |out: &str| {
+    map_res(cut_tag("LevelReq: ", digit1), |out: &str| {
         i32::from_str(out)
     })(i)
 }
 
 fn implicits_count(i: &str) -> IResult<&str, i32> {
-    map_res(preceded(tag("Implicits: "), digit1), |out: &str| {
+    map_res(cut_tag("Implicits: ", digit1), |out: &str| {
         i32::from_str(out)
     })(i)
 }
 
 fn affix(i: &str) -> IResult<&str, &str> {
-    preceded(opt(tag("{crafted}")), not_line_ending)(i)
+    delimited(
+        pair(opt(multispace0), opt(tag("{crafted}"))),
+        take_while(|e: char| e.is_ascii() || e.is_whitespace()),
+        opt(newline),
+    )(i)
 }
 
 #[derive(Debug)]
@@ -58,6 +69,7 @@ pub struct PobItem<'a> {
     unique_id: &'a str,
     item_lvl: i32,
     lvl_req: i32,
+    implicits: Vec<&'a str>,
     affixes: Vec<&'a str>,
 }
 
@@ -68,12 +80,10 @@ fn parse_pob_item<'a>(input: &'a str) -> IResult<&'a str, PobItem<'a>> {
     let (input, unique_id) = unique_id(input)?;
     let (input, item_lvl) = item_lvl(input)?;
     let (input, lvl_req) = level_req(input)?;
-    let (mut input, impl_count) = implicits_count(input)?;
-    let mut implicits = vec![];
-    for i in 0..impl_count {
-        let (input, implicit) = affix(input)?;
-        implicits.push(implicit);
-    }
+    let (input, impl_count) = implicits_count(input)?;
+    let (input, implicits) = count(affix, impl_count as usize)(input)?;
+    let (input, affixes) = many0(affix)(input)?;
+
     Ok((
         input,
         PobItem {
@@ -83,7 +93,8 @@ fn parse_pob_item<'a>(input: &'a str) -> IResult<&'a str, PobItem<'a>> {
             unique_id,
             item_lvl,
             lvl_req,
-            affixes: implicits,
+            implicits,
+            affixes,
         },
     ))
 }
@@ -95,6 +106,7 @@ mod test {
     #[test]
     fn rarity_test() {
         assert_eq!(rarity(&"Rarity: RARE"), Ok((&""[..], &"RARE"[..])));
+        assert_eq!(rarity(&"\n\t\tRarity: RARE"), Ok((&""[..], &"RARE"[..])));
     }
 
     #[test]
@@ -124,6 +136,7 @@ mod test {
                 &"Added Small Passive Skills also grant: +3% to Chaos Resistance"[..]
             ))
         );
+        assert_ne!(affix(&""), Ok((&""[..], &""[..])));
     }
 
     #[test]
@@ -146,6 +159,8 @@ Added Small Passive Skills also grant: +5 to Strength
 
         let (_, item) = parse_pob_item(&item)?;
         println!("{:?}", item);
+        assert_eq!(item.implicits.len(), 2);
+        assert_eq!(item.affixes.len(), 4);
         Ok(())
     }
 }
