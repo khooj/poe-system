@@ -8,9 +8,9 @@
 
     nixpkgs.overlays = [
         (self: super: {
-
+            poe-system = (import ./default.nix).default;
         })
-    ]
+    ];
 
     services.poe-system = {
         enable = true;

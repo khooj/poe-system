@@ -29,10 +29,11 @@ in {
       requires = [ ];
       after = [ ];
       preStart = ''
-        d=$(dirname ${cfg.start_change_id})
+        d=$(dirname ${cfg.database_url})
         mkdir -p $d
       '';
       environment = {
+          RUST_LOG = "info";
           DATABASE_URL = cfg.database_url;
           START_CHANGE_ID = cfg.start_change_id;
       };
@@ -40,7 +41,7 @@ in {
         ExecStart = "${pkg}/bin/main";
         Restart = "on-failure";
         RestartSec = "10";
-        User = "poe-system";
+        User = "root";
       };
     };
 

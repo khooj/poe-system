@@ -3,7 +3,6 @@ extern crate diesel_migrations;
 
 use actix::prelude::*;
 use diesel::{Connection, SqliteConnection};
-use dotenv::dotenv;
 use env_logger;
 use log::error;
 use poe_system::actors::stash_receiver::{StartReceiveMsg, StashReceiverActor};
@@ -24,7 +23,6 @@ embed_migrations!("migrations");
 #[actix::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-    dotenv().ok().expect("cant load dotenv");
 
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
