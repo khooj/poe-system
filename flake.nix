@@ -49,6 +49,7 @@
           python3
           jq
           crate2nix-pkgs
+          nixos-shell
         ];
         nativeBuildInputs = with pkgs; [ rustc cargo pkgconfig nixpkgs-fmt ];
 
