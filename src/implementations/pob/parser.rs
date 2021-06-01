@@ -1,11 +1,11 @@
 use nom::{
     bytes::complete::{tag, take_while},
     character::complete::{alpha1, alphanumeric1, digit1, multispace0, newline, not_line_ending},
-    combinator::{map_res, opt, peek},
+    combinator::{map_res, opt},
     error::ParseError,
     multi::{count, many0},
-    sequence::{delimited, pair, preceded, terminated},
-    AsChar, IResult, Parser,
+    sequence::{delimited, pair, preceded},
+    IResult, Parser,
 };
 use std::str::FromStr;
 
@@ -16,7 +16,7 @@ fn cut_tag<'a, E: ParseError<&'a str>, F>(
 where
     F: Parser<&'a str, &'a str, E>,
 {
-    preceded(pair(opt(multispace0), tag(t)), ps)
+    delimited(pair(opt(multispace0), tag(t)), ps, opt(newline))
 }
 
 fn rarity(i: &str) -> IResult<&str, &str> {
@@ -56,24 +56,26 @@ fn implicits_count(i: &str) -> IResult<&str, i32> {
 fn affix(i: &str) -> IResult<&str, &str> {
     delimited(
         pair(opt(multispace0), opt(tag("{crafted}"))),
-        take_while(|e: char| e.is_ascii() || e.is_whitespace()),
+        take_while(|e: char| {
+            e.is_alphabetic() || e.is_numeric() || e.is_ascii_punctuation() || e != '\n'
+        }),
         opt(newline),
     )(i)
 }
 
 #[derive(Debug)]
 pub struct PobItem<'a> {
-    rarity: &'a str,
-    name: &'a str,
-    base_line: &'a str,
-    unique_id: &'a str,
-    item_lvl: i32,
-    lvl_req: i32,
-    implicits: Vec<&'a str>,
-    affixes: Vec<&'a str>,
+    pub rarity: &'a str,
+    pub name: &'a str,
+    pub base_line: &'a str,
+    pub unique_id: &'a str,
+    pub item_lvl: i32,
+    pub lvl_req: i32,
+    pub implicits: Vec<&'a str>,
+    pub affixes: Vec<&'a str>,
 }
 
-fn parse_pob_item<'a>(input: &'a str) -> IResult<&'a str, PobItem<'a>> {
+pub fn parse_pob_item<'a>(input: &'a str) -> IResult<&'a str, PobItem<'a>> {
     let (input, rarity) = rarity(input)?;
     let (input, name) = name(input)?;
     let (input, base_line) = base_type(input)?;
@@ -81,8 +83,19 @@ fn parse_pob_item<'a>(input: &'a str) -> IResult<&'a str, PobItem<'a>> {
     let (input, item_lvl) = item_lvl(input)?;
     let (input, lvl_req) = level_req(input)?;
     let (input, impl_count) = implicits_count(input)?;
-    let (input, implicits) = count(affix, impl_count as usize)(input)?;
-    let (input, affixes) = many0(affix)(input)?;
+    let (mut input, implicits) = count(affix, impl_count as usize)(input)?;
+    let mut affixes = vec![];
+    while let Ok((i, affix)) = affix(input) {
+        if !affix.is_empty() {
+            affixes.push(affix);
+        }
+
+        if i.trim().is_empty() {
+            break;
+        }
+
+        input = i;
+    }
 
     Ok((
         input,
@@ -104,9 +117,15 @@ mod test {
     use super::*;
 
     #[test]
+    fn whitespace_test() {
+        assert!('\n'.is_whitespace());
+    }
+
+    #[test]
     fn rarity_test() {
         assert_eq!(rarity(&"Rarity: RARE"), Ok((&""[..], &"RARE"[..])));
         assert_eq!(rarity(&"\n\t\tRarity: RARE"), Ok((&""[..], &"RARE"[..])));
+        assert_eq!(rarity(&"Rarity: RARE\n"), Ok((&""[..], &"RARE"[..])));
     }
 
     #[test]
@@ -130,13 +149,14 @@ mod test {
             Ok((&""[..], &"Adds 2 Passive Skills"[..]))
         );
         assert_eq!(
-            affix(&"Added Small Passive Skills also grant: +3% to Chaos Resistance"),
+            affix(&"Added Small Passive Skills also grant: +3% to Chaos Resistance\n"),
             Ok((
                 &""[..],
                 &"Added Small Passive Skills also grant: +3% to Chaos Resistance"[..]
             ))
         );
-        assert_ne!(affix(&""), Ok((&""[..], &""[..])));
+
+        assert_eq!(affix(&""), Ok((&""[..], &""[..])));
     }
 
     #[test]
@@ -159,6 +179,15 @@ Added Small Passive Skills also grant: +5 to Strength
 
         let (_, item) = parse_pob_item(&item)?;
         println!("{:?}", item);
+        assert_eq!(item.rarity, "RARE");
+        assert_eq!(item.name, "Loath Cut");
+        assert_eq!(item.base_line, "Small Cluster Jewel");
+        assert_eq!(
+            item.unique_id,
+            "c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb"
+        );
+        assert_eq!(item.item_lvl, 84);
+        assert_eq!(item.lvl_req, 54);
         assert_eq!(item.implicits.len(), 2);
         assert_eq!(item.affixes.len(), 4);
         Ok(())
