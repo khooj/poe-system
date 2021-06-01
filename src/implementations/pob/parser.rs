@@ -161,8 +161,7 @@ mod test {
 
     #[test]
     fn simple_pob_item() -> Result<(), anyhow::Error> {
-        let item = r#"
-			Rarity: RARE
+        let item = r#"Rarity: RARE
 Loath Cut
 Small Cluster Jewel
 Unique ID: c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb
@@ -174,8 +173,7 @@ Implicits: 2
 Added Small Passive Skills also grant: +3% to Chaos Resistance
 Added Small Passive Skills also grant: +5 to Maximum Energy Shield
 Added Small Passive Skills also grant: +5 to Strength
-1 Added Passive Skill is Elegant Form
-        "#;
+1 Added Passive Skill is Elegant Form"#;
 
         let (_, item) = parse_pob_item(&item)?;
         println!("{:?}", item);

@@ -3,7 +3,8 @@ use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
 use roxmltree::{Document, Node};
 use std::{collections::HashMap, io::Read};
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::{TryFrom, TryInto}, str::FromStr};
+use super::parser::{parse_pob_item, PobItem as ParsedItem};
 
 pub struct Pob {
     original: String,
@@ -62,19 +63,23 @@ impl ItemSet {
     }
 }
 
+impl<'a> TryInto<Item> for ParsedItem<'a> {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<Item, Self::Error> {
+    }
+}
+
 pub struct PobItem(String);
 
 impl TryFrom<PobItem> for Item {
     type Error = anyhow::Error;
 
     fn try_from(value: PobItem) -> Result<Self, Self::Error> {
-        let strings = value.0.lines().collect::<Vec<_>>();
-        let rarity = strings[0];
-        let name = strings[1];
-        let base_type = strings[2];
+        let s = value.0;
+        let (_, parsed_item) = parse_pob_item(&s)?;
 
-
-        Ok(Item::default())
+        parsed_item.try_into()
     }
 }
 
