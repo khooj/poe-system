@@ -1,4 +1,5 @@
-use std::default::Default;
+use anyhow::anyhow;
+use std::{convert::TryFrom, default::Default};
 
 #[allow(unused)]
 #[derive(Clone, Debug)]
@@ -12,6 +13,20 @@ pub enum Rarity {
 impl Default for Rarity {
     fn default() -> Self {
         Rarity::Normal
+    }
+}
+
+impl TryFrom<String> for Rarity {
+    type Error = anyhow::Error;
+
+    fn try_from(v: String) -> Result<Rarity, Self::Error> {
+        match v.to_lowercase().as_str() {
+            "magic" => Ok(Rarity::Normal),
+            "rare" => Ok(Rarity::Rare),
+            "unique" => Ok(Rarity::Unique),
+            "normal" => Ok(Rarity::Normal),
+            _ => Err(anyhow!("cant convert from {} to rarity enum", v)),
+        }
     }
 }
 
@@ -301,6 +316,12 @@ pub enum ItemLvl {
     Yes(i32),
 }
 
+impl From<i32> for ItemLvl {
+    fn from(value: i32) -> Self {
+        ItemLvl::Yes(value)
+    }
+}
+
 impl Default for ItemLvl {
     fn default() -> Self {
         ItemLvl::No
@@ -345,6 +366,15 @@ pub enum ModType {
 pub struct Mod {
     pub text: String,
     pub type_: ModType,
+}
+
+impl Mod {
+    pub fn from_str(value: &str, type_: ModType) -> Self {
+        Mod {
+            text: value.to_owned(),
+            type_,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]

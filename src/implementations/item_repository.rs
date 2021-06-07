@@ -8,8 +8,10 @@ use diesel::Queryable;
 use itertools::Itertools;
 use log::warn;
 use serde_json::json;
-use std::convert::TryInto;
-use std::{collections::HashMap, convert::TryFrom};
+use std::{
+    collections::HashMap,
+    convert::{From, TryFrom},
+};
 use uuid::Uuid;
 
 struct SplittedItem {
@@ -310,8 +312,8 @@ fn _append_if_not_empty<T, K>(
     to_insert: Option<Vec<K>>,
 ) -> Result<Option<Vec<T>>, RepositoryError>
 where
-    K: TryInto<T>,
-    RepositoryError: From<<K as TryInto<T>>::Error>,
+    K: std::convert::TryInto<T>,
+    RepositoryError: From<<K as std::convert::TryInto<T>>::Error>,
 {
     if to_insert.is_none() || to_insert.as_ref().unwrap().len() == 0 {
         return Ok(vals);
@@ -738,8 +740,6 @@ struct Mod {
     type_: i32,
     mod_: String,
 }
-
-use std::convert::From;
 
 type DomainItemFrom = (
     RawItem,

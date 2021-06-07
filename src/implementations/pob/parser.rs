@@ -63,20 +63,20 @@ fn affix(i: &str) -> IResult<&str, &str> {
     )(i)
 }
 
-#[derive(Debug)]
-pub struct PobItem<'a> {
-    pub rarity: &'a str,
-    pub name: &'a str,
-    pub base_line: &'a str,
-    pub unique_id: &'a str,
+#[derive(Debug, Clone)]
+pub struct PobItem {
+    pub rarity: String,
+    pub name: String,
+    pub base_line: String,
+    pub unique_id: String,
     pub item_lvl: i32,
     pub lvl_req: i32,
-    pub implicits: Vec<&'a str>,
-    pub affixes: Vec<&'a str>,
+    pub implicits: Vec<String>,
+    pub affixes: Vec<String>,
 }
 
-pub fn parse_pob_item<'a>(input: &'a str) -> IResult<&'a str, PobItem<'a>> {
-    let (input, rarity) = rarity(input)?;
+pub fn parse_pob_item(value: String) -> IResult<(), PobItem, ()> {
+    let (input, rarity) = rarity(value.as_str())?;
     let (input, name) = name(input)?;
     let (input, base_line) = base_type(input)?;
     let (input, unique_id) = unique_id(input)?;
@@ -98,16 +98,16 @@ pub fn parse_pob_item<'a>(input: &'a str) -> IResult<&'a str, PobItem<'a>> {
     }
 
     Ok((
-        input,
+        (),
         PobItem {
-            rarity,
-            name,
-            base_line,
-            unique_id,
+            rarity: rarity.to_owned(),
+            name: name.to_owned(),
+            base_line: base_line.to_owned(),
+            unique_id: unique_id.to_owned(),
             item_lvl,
             lvl_req,
-            implicits,
-            affixes,
+            implicits: implicits.into_iter().map(|e| e.to_owned()).collect(),
+            affixes: affixes.into_iter().map(|e| e.to_owned()).collect(),
         },
     ))
 }

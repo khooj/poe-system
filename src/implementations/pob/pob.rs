@@ -1,10 +1,13 @@
-use crate::domain::item::Item;
+use super::parser::{parse_pob_item, PobItem as ParsedItem};
+use crate::domain::item::{Category, Item, ItemLvl, League, Mod, ModType, Rarity};
 use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
 use roxmltree::{Document, Node};
 use std::{collections::HashMap, io::Read};
-use std::{convert::{TryFrom, TryInto}, str::FromStr};
-use super::parser::{parse_pob_item, PobItem as ParsedItem};
+use std::{
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
 
 pub struct Pob {
     original: String,
@@ -63,10 +66,30 @@ impl ItemSet {
     }
 }
 
-impl<'a> TryInto<Item> for ParsedItem<'a> {
+impl TryInto<Item> for ParsedItem {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<Item, Self::Error> {
+        let rarity: Rarity = self.rarity.try_into()?;
+        let item_lvl: ItemLvl = self.item_lvl.into();
+        let mut mods: Vec<Mod> = self
+            .implicits
+            .iter()
+            .map(|e| Mod::from_str(e, ModType::Implicit))
+            .collect();
+        mods.extend(
+            self.affixes
+                .iter()
+                .map(|e| Mod::from_str(e, ModType::Explicit)),
+        );
+        Ok(Item {
+            league: League::Standard,
+            item_lvl,
+            rarity,
+            name: self.name.to_owned(),
+            base_type: self.base_line.to_owned(),
+            ..Item::default()
+        })
     }
 }
 
@@ -76,10 +99,11 @@ impl TryFrom<PobItem> for Item {
     type Error = anyhow::Error;
 
     fn try_from(value: PobItem) -> Result<Self, Self::Error> {
-        let s = value.0;
-        let (_, parsed_item) = parse_pob_item(&s)?;
+        let parsed_item = parse_pob_item(&value.0)?;
 
-        parsed_item.try_into()
+        let item = parsed_item.try_into()?;
+
+        Ok(item)
     }
 }
 
