@@ -31,3 +31,4 @@ num = "0.4.0"
 itertools = "0.10.0"
 ctrlc = { version = "3.0", features = ["termination"] }
 nom = { version = "6.1.2", features = ["alloc"] }
+actix-web = "3"
