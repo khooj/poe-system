@@ -2,11 +2,12 @@ use nom::{
     bytes::complete::{tag, take_while},
     character::complete::{alpha1, alphanumeric1, digit1, multispace0, newline, not_line_ending},
     combinator::{map_res, opt},
-    error::ParseError,
+    error::{FromExternalError, ParseError},
     multi::{count, many0},
     sequence::{delimited, pair, preceded},
     IResult, Parser,
 };
+use std::num::ParseIntError;
 use std::str::FromStr;
 
 fn cut_tag<'a, E: ParseError<&'a str>, F>(
@@ -19,41 +20,49 @@ where
     delimited(pair(opt(multispace0), tag(t)), ps, opt(newline))
 }
 
-fn rarity(i: &str) -> IResult<&str, &str> {
+fn rarity<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     cut_tag("Rarity: ", alpha1)(i)
 }
 
-fn name(i: &str) -> IResult<&str, &str> {
+fn name<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     preceded(opt(multispace0), not_line_ending)(i)
 }
 
-fn base_type(i: &str) -> IResult<&str, &str> {
+fn base_type<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     preceded(opt(multispace0), not_line_ending)(i)
 }
 
-fn unique_id(i: &str) -> IResult<&str, &str> {
+fn unique_id<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     cut_tag("Unique ID: ", alphanumeric1)(i)
 }
 
-fn item_lvl(i: &str) -> IResult<&str, i32> {
+fn item_lvl<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+    i: &'a str,
+) -> IResult<&'a str, i32, E> {
     map_res(cut_tag("Item Level: ", digit1), |out: &str| {
         i32::from_str(out)
     })(i)
 }
 
-fn level_req(i: &str) -> IResult<&str, i32> {
+fn level_req<'a, E>(i: &'a str) -> IResult<&'a str, i32, E>
+where
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>,
+{
     map_res(cut_tag("LevelReq: ", digit1), |out: &str| {
         i32::from_str(out)
     })(i)
 }
 
-fn implicits_count(i: &str) -> IResult<&str, i32> {
+fn implicits_count<'a, E>(i: &'a str) -> IResult<&'a str, i32, E>
+where
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>,
+{
     map_res(cut_tag("Implicits: ", digit1), |out: &str| {
         i32::from_str(out)
     })(i)
 }
 
-fn affix(i: &str) -> IResult<&str, &str> {
+fn affix<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     delimited(
         pair(opt(multispace0), opt(tag("{crafted}"))),
         take_while(|e: char| {
@@ -75,8 +84,11 @@ pub struct PobItem {
     pub affixes: Vec<String>,
 }
 
-pub fn parse_pob_item(value: String) -> IResult<(), PobItem, ()> {
-    let (input, rarity) = rarity(value.as_str())?;
+pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, PobItem, E>
+where
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>,
+{
+    let (input, rarity) = rarity(i)?;
     let (input, name) = name(input)?;
     let (input, base_line) = base_type(input)?;
     let (input, unique_id) = unique_id(input)?;
@@ -85,7 +97,7 @@ pub fn parse_pob_item(value: String) -> IResult<(), PobItem, ()> {
     let (input, impl_count) = implicits_count(input)?;
     let (mut input, implicits) = count(affix, impl_count as usize)(input)?;
     let mut affixes = vec![];
-    while let Ok((i, affix)) = affix(input) {
+    while let Ok((i, affix)) = affix::<E>(input) {
         if !affix.is_empty() {
             affixes.push(affix);
         }
@@ -98,7 +110,7 @@ pub fn parse_pob_item(value: String) -> IResult<(), PobItem, ()> {
     }
 
     Ok((
-        (),
+        input,
         PobItem {
             rarity: rarity.to_owned(),
             name: name.to_owned(),
@@ -123,40 +135,48 @@ mod test {
 
     #[test]
     fn rarity_test() {
-        assert_eq!(rarity(&"Rarity: RARE"), Ok((&""[..], &"RARE"[..])));
-        assert_eq!(rarity(&"\n\t\tRarity: RARE"), Ok((&""[..], &"RARE"[..])));
-        assert_eq!(rarity(&"Rarity: RARE\n"), Ok((&""[..], &"RARE"[..])));
+        assert_eq!(rarity::<()>(&"Rarity: RARE"), Ok((&""[..], &"RARE"[..])));
+        assert_eq!(
+            rarity::<()>(&"\n\t\tRarity: RARE"),
+            Ok((&""[..], &"RARE"[..]))
+        );
+        assert_eq!(rarity::<()>(&"Rarity: RARE\n"), Ok((&""[..], &"RARE"[..])));
     }
 
     #[test]
     fn name_base_line_test() {
-        assert_eq!(name(&"Loath Cut"), Ok((&""[..], &"Loath Cut"[..])));
+        assert_eq!(name::<()>(&"Loath Cut"), Ok((&""[..], &"Loath Cut"[..])));
         assert_eq!(
-            base_type(&"Small Cluster Jewel"),
+            base_type::<()>(&"Small Cluster Jewel"),
             Ok((&""[..], &"Small Cluster Jewel"[..]))
         );
     }
 
     #[test]
     fn implicits_count_test() {
-        assert_eq!(implicits_count(&"Implicits: 2"), Ok((&""[..], 2)));
+        assert_eq!(implicits_count::<()>(&"Implicits: 2"), Ok((&""[..], 2)));
+    }
+
+    #[test]
+    fn implicits_count_error() {
+        assert_eq!(implicits_count::<()>(&"Implicits: no"), Err(nom::Err::Error(())));
     }
 
     #[test]
     fn affix_test() {
         assert_eq!(
-            affix(&"{crafted}Adds 2 Passive Skills"),
+            affix::<()>(&"{crafted}Adds 2 Passive Skills"),
             Ok((&""[..], &"Adds 2 Passive Skills"[..]))
         );
         assert_eq!(
-            affix(&"Added Small Passive Skills also grant: +3% to Chaos Resistance\n"),
+            affix::<()>(&"Added Small Passive Skills also grant: +3% to Chaos Resistance\n"),
             Ok((
                 &""[..],
                 &"Added Small Passive Skills also grant: +3% to Chaos Resistance"[..]
             ))
         );
 
-        assert_eq!(affix(&""), Ok((&""[..], &""[..])));
+        assert_eq!(affix::<()>(&""), Ok((&""[..], &""[..])));
     }
 
     #[test]
@@ -175,7 +195,7 @@ Added Small Passive Skills also grant: +5 to Maximum Energy Shield
 Added Small Passive Skills also grant: +5 to Strength
 1 Added Passive Skill is Elegant Form"#;
 
-        let (_, item) = parse_pob_item(&item)?;
+        let (_, item) = parse_pob_item::<()>(&item)?;
         println!("{:?}", item);
         assert_eq!(item.rarity, "RARE");
         assert_eq!(item.name, "Loath Cut");

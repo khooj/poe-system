@@ -99,9 +99,9 @@ impl TryFrom<PobItem> for Item {
     type Error = anyhow::Error;
 
     fn try_from(value: PobItem) -> Result<Self, Self::Error> {
-        let parsed_item = parse_pob_item(&value.0)?;
+        let parsed_item = parse_pob_item::<()>(&value.0)?;
 
-        let item = parsed_item.try_into()?;
+        let item = parsed_item.1.try_into()?;
 
         Ok(item)
     }
