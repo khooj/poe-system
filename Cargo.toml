@@ -32,3 +32,6 @@ itertools = "0.10.0"
 ctrlc = { version = "3.0", features = ["termination"] }
 nom = { version = "6.1.2", features = ["alloc"] }
 actix-web = "3"
+jsonrpc-v2 = { version = "0.10.1", features = ["actix-web-v3-integration"] }
+config = { version = "0.10.1", default-features = false, features = ["yaml"] }
+serde-aux = { version = "2.2.0" }

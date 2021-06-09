@@ -1615,6 +1615,42 @@ rec {
         };
         resolvedDefaultFeatures = [ "clock" "default" "libc" "oldtime" "std" "time" "winapi" ];
       };
+      "config" = rec {
+        crateName = "config";
+        version = "0.10.1";
+        edition = "2015";
+        sha256 = "1qrcp7nm24xzp418xnqf0i26qahw93w31nk5vs6m7ng18ghpdc0r";
+        authors = [
+          "Ryan Leckey <leckey.ryan@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "lazy_static";
+            packageId = "lazy_static";
+          }
+          {
+            name = "nom";
+            packageId = "nom 5.1.2";
+          }
+          {
+            name = "serde";
+            packageId = "serde";
+          }
+          {
+            name = "yaml-rust";
+            packageId = "yaml-rust";
+            optional = true;
+          }
+        ];
+        features = {
+          "default" = [ "toml" "json" "yaml" "hjson" "ini" ];
+          "hjson" = [ "serde-hjson" ];
+          "ini" = [ "rust-ini" ];
+          "json" = [ "serde_json" ];
+          "yaml" = [ "yaml-rust" ];
+        };
+        resolvedDefaultFeatures = [ "yaml" "yaml-rust" ];
+      };
       "const_fn" = rec {
         crateName = "const_fn";
         version = "0.4.8";
@@ -2185,6 +2221,44 @@ rec {
           "default" = [ "termcolor" "atty" "humantime" "regex" ];
         };
         resolvedDefaultFeatures = [ "atty" "default" "humantime" "regex" "termcolor" ];
+      };
+      "erased-serde" = rec {
+        crateName = "erased-serde";
+        version = "0.3.15";
+        edition = "2018";
+        sha256 = "1kgg0y06gkk8yw44vmack1dihkfzcwgh7ill93s97wwm49pnxcz5";
+        authors = [
+          "David Tolnay <dtolnay@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "serde";
+            packageId = "serde";
+            usesDefaultFeatures = false;
+          }
+        ];
+        features = {
+          "alloc" = [ "serde/alloc" ];
+          "default" = [ "std" ];
+          "std" = [ "serde/std" ];
+        };
+        resolvedDefaultFeatures = [ "default" "std" ];
+      };
+      "extensions" = rec {
+        crateName = "extensions";
+        version = "0.2.0";
+        edition = "2018";
+        sha256 = "1q722lvy1984fj48m4m48x93xb6wh4744vd60f2483865fyp13r5";
+        authors = [
+          "Jacob Brown <kardeiz@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "fxhash";
+            packageId = "fxhash";
+          }
+        ];
+
       };
       "flate2" = rec {
         crateName = "flate2";
@@ -3505,6 +3579,70 @@ rec {
         ];
 
       };
+      "jsonrpc-v2" = rec {
+        crateName = "jsonrpc-v2";
+        version = "0.10.1";
+        edition = "2018";
+        sha256 = "1djdcmkwws39dzfmds4ag429wk9y50c654agjxiy8fzqyjgk0nrs";
+        authors = [
+          "Jacob Brown <kardeiz@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "actix-service";
+            packageId = "actix-service";
+            rename = "actix-service-v1";
+            optional = true;
+          }
+          {
+            name = "actix-web";
+            packageId = "actix-web";
+            rename = "actix-web-v3";
+            optional = true;
+          }
+          {
+            name = "async-trait";
+            packageId = "async-trait";
+          }
+          {
+            name = "bytes";
+            packageId = "bytes 0.5.6";
+            rename = "bytes-v05";
+            optional = true;
+          }
+          {
+            name = "erased-serde";
+            packageId = "erased-serde";
+          }
+          {
+            name = "extensions";
+            packageId = "extensions";
+          }
+          {
+            name = "futures";
+            packageId = "futures";
+          }
+          {
+            name = "serde";
+            packageId = "serde";
+            features = [ "derive" ];
+          }
+          {
+            name = "serde_json";
+            packageId = "serde_json";
+            features = [ "raw_value" ];
+          }
+        ];
+        features = {
+          "actix-web-v1-integration" = [ "actix-web-v1" "actix-service-v04" "futures-v01" "bytes-v04" "futures/compat" ];
+          "actix-web-v2-integration" = [ "actix-web-v2" "actix-service-v1" "bytes-v05" ];
+          "actix-web-v3-integration" = [ "actix-web-v3" "actix-service-v1" "bytes-v05" ];
+          "default" = [ "actix-web-v3-integration" ];
+          "hyper-integration" = [ "hyper" "hyper/full" "tower-service" "bytes-v10" ];
+          "macros" = [ "jsonrpc-v2-macros" ];
+        };
+        resolvedDefaultFeatures = [ "actix-service-v1" "actix-web-v3" "actix-web-v3-integration" "bytes-v05" "default" ];
+      };
       "kernel32-sys" = rec {
         crateName = "kernel32-sys";
         version = "0.2.2";
@@ -4111,7 +4249,42 @@ rec {
         };
         resolvedDefaultFeatures = [ "alloc" "compat_hash" "hashbrown" "std" ];
       };
-      "nom" = rec {
+      "nom 5.1.2" = rec {
+        crateName = "nom";
+        version = "5.1.2";
+        edition = "2018";
+        sha256 = "1br74rwdp3c2ddga03bphnf355spn4mzwf1slg0a30zd4qnjdd7z";
+        authors = [
+          "contact@geoffroycouprie.com"
+        ];
+        dependencies = [
+          {
+            name = "lexical-core";
+            packageId = "lexical-core";
+            optional = true;
+          }
+          {
+            name = "memchr";
+            packageId = "memchr";
+            usesDefaultFeatures = false;
+          }
+        ];
+        buildDependencies = [
+          {
+            name = "version_check";
+            packageId = "version_check";
+          }
+        ];
+        features = {
+          "default" = [ "std" "lexical" ];
+          "lexical" = [ "lexical-core" ];
+          "regexp" = [ "regex" ];
+          "regexp_macros" = [ "regexp" "lazy_static" ];
+          "std" = [ "alloc" "memchr/use_std" ];
+        };
+        resolvedDefaultFeatures = [ "alloc" "default" "lexical" "lexical-core" "std" ];
+      };
+      "nom 6.1.2" = rec {
         crateName = "nom";
         version = "6.1.2";
         edition = "2018";
@@ -4756,6 +4929,12 @@ rec {
             packageId = "base64";
           }
           {
+            name = "config";
+            packageId = "config";
+            usesDefaultFeatures = false;
+            features = [ "yaml" ];
+          }
+          {
             name = "ctrlc";
             packageId = "ctrlc";
             features = [ "termination" ];
@@ -4790,12 +4969,17 @@ rec {
             packageId = "itertools";
           }
           {
+            name = "jsonrpc-v2";
+            packageId = "jsonrpc-v2";
+            features = [ "actix-web-v3-integration" ];
+          }
+          {
             name = "log";
             packageId = "log";
           }
           {
             name = "nom";
-            packageId = "nom";
+            packageId = "nom 6.1.2";
             features = [ "alloc" ];
           }
           {
@@ -4816,6 +5000,10 @@ rec {
             name = "serde";
             packageId = "serde";
             features = [ "derive" ];
+          }
+          {
+            name = "serde-aux";
+            packageId = "serde-aux";
           }
           {
             name = "serde_json";
@@ -5803,6 +5991,35 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "derive" "serde_derive" "std" ];
       };
+      "serde-aux" = rec {
+        crateName = "serde-aux";
+        version = "2.2.0";
+        edition = "2018";
+        sha256 = "007fr8f06iw5bj407pk8ca70n63ba128l2lpixgdzbpbys1qrsvp";
+        authors = [
+          "Victor Polevoy <maintainer@vpolevoy.com>"
+        ];
+        dependencies = [
+          {
+            name = "chrono";
+            packageId = "chrono";
+            optional = true;
+          }
+          {
+            name = "serde";
+            packageId = "serde";
+            features = [ "derive" ];
+          }
+          {
+            name = "serde_json";
+            packageId = "serde_json";
+          }
+        ];
+        features = {
+          "default" = [ "chrono" ];
+        };
+        resolvedDefaultFeatures = [ "chrono" "default" ];
+      };
       "serde_derive" = rec {
         crateName = "serde_derive";
         version = "1.0.125";
@@ -5862,7 +6079,7 @@ rec {
           "preserve_order" = [ "indexmap" ];
           "std" = [ "serde/std" ];
         };
-        resolvedDefaultFeatures = [ "default" "std" ];
+        resolvedDefaultFeatures = [ "default" "raw_value" "std" ];
       };
       "serde_urlencoded" = rec {
         crateName = "serde_urlencoded";
@@ -8265,6 +8482,22 @@ rec {
           "default" = [ "std" ];
         };
         resolvedDefaultFeatures = [ "default" "std" ];
+      };
+      "yaml-rust" = rec {
+        crateName = "yaml-rust";
+        version = "0.4.5";
+        edition = "2018";
+        sha256 = "118wbqrr4n6wgk5rjjnlrdlahawlxc1bdsx146mwk8f79in97han";
+        authors = [
+          "Yuheng Chen <yuhengchen@sensetime.com>"
+        ];
+        dependencies = [
+          {
+            name = "linked-hash-map";
+            packageId = "linked-hash-map";
+          }
+        ];
+
       };
     };
 

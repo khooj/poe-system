@@ -526,6 +526,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "config"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19b076e143e1d9538dde65da30f8481c2a6c44040edb8e02b9bf1351edb92ce3"
+dependencies = [
+ "lazy_static",
+ "nom 5.1.2",
+ "serde",
+ "yaml-rust",
+]
+
+[[package]]
 name = "const_fn"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -727,6 +739,24 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
+]
+
+[[package]]
+name = "erased-serde"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5b36e6f2295f393f44894c6031f67df4d185b984cd54d08f768ce678007efcd"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "extensions"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "258f70bd2b060d448403a66d420e81dcac3e5247a4928a887404a5e03715e2e0"
+dependencies = [
+ "fxhash",
 ]
 
 [[package]]
@@ -1189,6 +1219,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonrpc-v2"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a5b309ff4f83be463974f916218283e4d9e04798ae856dd6f6968ce67654db6"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "async-trait",
+ "bytes 0.5.6",
+ "erased-serde",
+ "extensions",
+ "futures",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "kernel32-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1421,6 +1468,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 dependencies = [
  "hashbrown 0.8.2",
+]
+
+[[package]]
+name = "nom"
+version = "5.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffb4262d26ed83a1c0a33a38fe2bb15797329c85770da05e6b828ddb782627af"
+dependencies = [
+ "lexical-core",
+ "memchr",
+ "version_check",
 ]
 
 [[package]]
@@ -1666,6 +1724,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "base64",
+ "config",
  "ctrlc",
  "diesel",
  "diesel_migrations",
@@ -1674,12 +1733,14 @@ dependencies = [
  "flate2",
  "governor",
  "itertools",
+ "jsonrpc-v2",
  "log",
- "nom",
+ "nom 6.1.2",
  "num",
  "reqwest",
  "roxmltree",
  "serde",
+ "serde-aux",
  "serde_json",
  "syn",
  "thiserror",
@@ -2008,6 +2069,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "558dc50e1a5a5fa7112ca2ce4effcb321b0300c0d4ccf0776a9f60cd89031171"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-aux"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77eb8c83f6ebaedf5e8f970a8a44506b180b8e6268de03885c8547031ccaee00"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2756,3 +2828,12 @@ name = "xmlparser"
 version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
+
+[[package]]
+name = "yaml-rust"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
+dependencies = [
+ "linked-hash-map",
+]

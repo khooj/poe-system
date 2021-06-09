@@ -9,3 +9,4 @@ pub mod actors;
 pub mod ports;
 pub mod implementations;
 pub mod schema;
+pub mod application;
