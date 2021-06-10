@@ -19,7 +19,7 @@ impl Actor for PublicStashTimer {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         ctx.run_interval(self.interval, move |act, _ctx| {
-            let _ = act.actor.send(StartReceiveMsg);
+            let _ = act.actor.do_send(StartReceiveMsg);
         });
     }
 }

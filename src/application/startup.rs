@@ -1,4 +1,4 @@
-use crate::application::configuration::Settings;
+use crate::{actors::stash_receiver::StartReceiveMsg, application::configuration::Settings};
 use crate::implementations::http_controller::{calculate_pob, get_build_price};
 use crate::{
     actors::stash_receiver::StashReceiverActor,
@@ -7,18 +7,21 @@ use crate::{
     implementations::public_stash_timer::PublicStashTimer,
 };
 
-use actix::Actor;
+use actix::prelude::*;
 use actix_web::{dev::Server, web, App, HttpServer};
 use diesel::{Connection, SqliteConnection};
 use jsonrpc_v2::Server as JsonrpcServer;
 use std::net::TcpListener;
+use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
+use std::{thread, thread::JoinHandle};
 use tokio::sync::Mutex as AsyncMutex;
 
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
 
 pub struct Application {
     server: Server,
+    handle: JoinHandle<Result<(), std::io::Error>>,
 }
 
 embed_migrations!("migrations");
@@ -27,7 +30,10 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         env_logger::init();
 
-        let addr = format!("{}:{}", "0.0.0.0", 3000);
+        let addr = format!(
+            "{}:{}",
+            configuration.application.host, configuration.application.port
+        );
         let listener = TcpListener::bind(&addr)?;
         let server = run(listener)?;
 
@@ -49,24 +55,39 @@ impl Application {
         let repo = Arc::new(Mutex::new(repo));
         let client = Arc::new(AsyncMutex::new(Client::new(USER_AGENT.to_owned())));
 
-        let actor = StashReceiverActor::new(repo.clone(), client.clone());
+        let (tx, rx) = channel::<Arc<actix::SystemRunner>>();
 
-        let actor = actor.start();
-        let timer = PublicStashTimer {
-            actor: actor.clone(),
-            interval: std::time::Duration::from_secs(
-                configuration.application.refresh_interval_secs,
-            ),
-            repo: repo.clone(),
-            client: client.clone(),
-        };
-        let _ = timer.start();
+        // идея для корректного отключения состоит в использовании арбитра (можно цепануть у системы)
+        // вероятно можно даже не создавать тред, но это не точно
+        let handle = thread::spawn(move || {
+            let system = System::new();
 
-        Ok(Self { server })
+            system.block_on(async {
+                let actor = StashReceiverActor::new(repo.clone(), client.clone());
+
+                let actor = actor.start();
+
+                let timer = PublicStashTimer {
+                    actor: actor.clone(),
+                    interval: std::time::Duration::from_secs(
+                        configuration.application.refresh_interval_secs,
+                    ),
+                    repo: repo.clone(),
+                    client: client.clone(),
+                };
+                let _ = timer.start();
+            });
+            system.run()
+        });
+
+        Ok(Self { server, handle })
     }
 
     pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
-        self.server.await
+        let result = self.server.await;
+        // TODO: somehow chain with result below
+        let result2 = self.handle.join();
+        result
     }
 }
 
