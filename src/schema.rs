@@ -1,4 +1,12 @@
 table! {
+    build_info (id) {
+        id -> Text,
+        pob_url -> Text,
+        itemset -> Text,
+    }
+}
+
+table! {
     extended (item_id) {
         item_id -> Text,
         category -> Text,
@@ -162,6 +170,7 @@ joinable!(subcategories -> items (item_id));
 joinable!(ultimatum_mods -> items (item_id));
 
 allow_tables_to_appear_in_same_query!(
+    build_info,
     extended,
     hybrids,
     incubated_item,
