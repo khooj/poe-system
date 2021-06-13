@@ -1,37 +1,5 @@
-[package]
-name = "poe-system"
-version = "0.1.0"
-authors = ["Igor Gilmutdinov <bladoff@gmail.com>"]
-edition = "2018"
-
-[dependencies]
-base64 = "0.13.0"
-anyhow = "1.0.40"
-flate2 = "1.0"
-roxmltree = "0.14"
-actix = { version = "0.11.0" }
-actix_derive = "0.6.0"
-actix-rt = "2.2"
-governor = "0.3.2"
-reqwest = { version = "0.11.2", default-features = false, features = ["json", "rustls-tls"] }
-tokio = { version = "1.4.0", features = ["full"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1" }
-thiserror = "1.0.24"
-#waiter_di = { version = "1.6.5", futures = ["async"] }
-async-trait = "0.1.50"
-log = "0.4"
-env_logger = "0.8.3"
-syn = { version = "1.0.48", features = ["full"]}
-dotenv = "0.15.0"
-diesel = { version = "1.4.4", features = ["sqlite", "64-column-tables", "extras"] }
-diesel_migrations = "1.4.0"
-uuid = { version = "0.8.2", features = ["v4"] }
-num = "0.4.0"
-itertools = "0.10.0"
-ctrlc = { version = "3.0", features = ["termination"] }
-nom = { version = "6.1.2", features = ["alloc"] }
-actix-web = "3"
-jsonrpc-v2 = { version = "0.10.1", features = ["actix-web-v3-integration"] }
-config = { version = "0.10.1", default-features = false, features = ["yaml"] }
-serde-aux = { version = "2.2.0" }
+[workspace]
+members = [
+	"server",
+	"dylint"
+]
