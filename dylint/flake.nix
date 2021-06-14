@@ -37,6 +37,7 @@
           cmake
           gnumake
           jq
+          sqlite
           crate2nix-pkgs
           nixos-shell
         ];
@@ -56,6 +57,7 @@
             inherit nativeBuildInputs;
 
             shellHook = ''
+              export RUSTUP_TOOLCHAIN="nightly"
               export PATH=$PATH:$HOME/.cargo/bin
             '';
           };
