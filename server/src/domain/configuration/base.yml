@@ -1,6 +1,0 @@
-database: "main.db"
-start_change_id: "1213165889-1218256303-1175652717-1316233223-1264663143"
-application:
-  port: 3000
-  host: 0.0.0.0
-  refresh_interval_secs: 5

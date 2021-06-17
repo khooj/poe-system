@@ -61,21 +61,6 @@ pub struct Hybrid {
     pub sec_descr_text: Option<String>,
 }
 
-fn default_subcategories() -> Option<Vec<String>> {
-    Some(vec![])
-}
-
-fn default_int<T>() -> Option<T>
-where
-    T: num::Integer + std::default::Default,
-{
-    Some(T::default())
-}
-
-fn default_bool() -> Option<bool> {
-    Some(false)
-}
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Extended {

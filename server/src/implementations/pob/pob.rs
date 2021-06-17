@@ -36,6 +36,7 @@ impl<'a> Pob {
     }
 }
 
+#[derive(Clone)]
 pub struct ItemSet {
     title: String,
     id: i32,

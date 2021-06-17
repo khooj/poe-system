@@ -1,4 +1,4 @@
-use crate::implementations::models::NewBuild;
+use crate::implementations::models::{NewBuild, PobBuild};
 use diesel::prelude::*;
 use thiserror::Error;
 use uuid::Uuid;
@@ -6,7 +6,9 @@ use uuid::Uuid;
 #[derive(Error, Debug)]
 pub enum BuildsRepositoryError {
     #[error("cant load from db")]
-    RepositoryError(#[from] diesel::result::Error),
+    Repository(#[from] diesel::result::Error),
+    #[error("empty response")]
+    Empty,
 }
 
 pub struct DieselBuildsRepository {
@@ -42,5 +44,28 @@ impl DieselBuildsRepository {
             .execute(&self.conn)?;
 
         Ok(new_build.id.to_owned())
+    }
+
+    pub fn get_build(&self, id_: &str) -> Result<PobBuild, BuildsRepositoryError> {
+        use crate::schema::build_info::dsl::*;
+
+        let builds = build_info
+            .filter(id.eq(id_))
+            .limit(1)
+            .load::<PobBuild>(&self.conn)?;
+
+        if builds.len() > 0 {
+            Ok(builds[0].clone())
+        } else {
+            Err(BuildsRepositoryError::Empty)
+        }
+    }
+
+    pub fn update_build(&self, build: &PobBuild) -> Result<(), BuildsRepositoryError> {
+        use crate::schema::build_info::dsl::*;
+
+        diesel::update(build_info).set(build).execute(&self.conn)?;
+
+        Ok(())
     }
 }
