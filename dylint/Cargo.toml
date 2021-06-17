@@ -16,3 +16,8 @@ if_chain = "1.0.1"
 
 [dev-dependencies]
 dylint_testing = "0.1.0"
+diesel = { version = "1.4.4", features = ["sqlite"] }
+
+[[example]]
+name = "diesel_lint"
+path = "ui/diesel_lint.rs"

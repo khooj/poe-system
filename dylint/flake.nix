@@ -34,6 +34,7 @@
 
         buildInputs = with pkgs; [
           pkg-config
+          openssl
           cmake
           gnumake
           jq
@@ -57,7 +58,7 @@
             inherit nativeBuildInputs;
 
             shellHook = ''
-              export RUSTUP_TOOLCHAIN="nightly"
+              export RUSTUP_TOOLCHAIN="nightly-2021-04-22"
               export PATH=$PATH:$HOME/.cargo/bin
             '';
           };
