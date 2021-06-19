@@ -4,3 +4,11 @@ CREATE TABLE IF NOT EXISTS build_info (
 	itemset TEXT NOT NULL
 );
 CREATE INDEX build_info_pob_itemset ON build_info(pob_url, itemset);
+CREATE TABLE IF NOT EXISTS builds_match (
+	id TEXT NOT NULL,
+	idx INTEGER NOT NULL,
+	score INTEGER NOT NULL,
+	item_id TEXT NOT NULL,
+	PRIMARY KEY(id, idx),
+	FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
+);

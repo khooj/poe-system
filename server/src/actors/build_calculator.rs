@@ -1,12 +1,24 @@
 use actix::prelude::*;
+use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use itertools::Itertools;
 use log::error;
 use std::sync::{Arc, Mutex};
+use std::{collections::HashMap, convert::TryInto};
+use uuid::Uuid;
 
-use crate::implementations::{builds_repository::DieselBuildsRepository, pob::pob::{ItemSet, Pob}};
+use crate::{
+    domain::item::Item,
+    implementations::{
+        builds_repository::DieselBuildsRepository,
+        item_repository::DieselItemRepository,
+        models::NewBuildMatch,
+        pob::pob::{ItemSet, Pob},
+    },
+};
 
 pub struct BuildCalculatorActor {
     repo: Arc<Mutex<DieselBuildsRepository>>,
+    item_repo: Arc<Mutex<DieselItemRepository>>,
 }
 
 impl Actor for BuildCalculatorActor {
@@ -54,7 +66,7 @@ struct CalculateBuild {
 impl Handler<CalculateBuild> for BuildCalculatorActor {
     type Result = Result<(), anyhow::Error>;
 
-    fn handle(&mut self, msg: CalculateBuild, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: CalculateBuild, _ctx: &mut Self::Context) -> Self::Result {
         let mut build = self.repo.lock().unwrap().get_build(&msg.id)?;
 
         let token = build.pob_url.split('/').collect::<Vec<_>>();
@@ -73,10 +85,13 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
         let pob_doc = pob.as_document()?;
         let itemsets = pob_doc.get_item_sets();
 
-        let mut itemset: ItemSet;
+        let itemset: ItemSet;
 
         if build.itemset.is_empty() {
-            itemset = match itemsets.first().ok_or(anyhow::anyhow!("empty itemset in build {}", build.id)) {
+            itemset = match itemsets
+                .first()
+                .ok_or(anyhow::anyhow!("empty itemset in build {}", build.id))
+            {
                 Ok(k) => k.clone(),
                 Err(e) => {
                     error!("{}", e);
@@ -85,9 +100,14 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
             };
             build.itemset = itemset.title().to_owned();
         } else {
-            itemset = match itemsets.into_iter()
-            .find(|e| e.title() == build.itemset)
-            .ok_or(anyhow::anyhow!("cant find itemset {} in build {}", build.itemset, build.id)) {
+            itemset = match itemsets
+                .into_iter()
+                .find(|e| e.title() == build.itemset)
+                .ok_or(anyhow::anyhow!(
+                    "cant find itemset {} in build {}",
+                    build.itemset,
+                    build.id
+                )) {
                 Ok(k) => k,
                 Err(e) => {
                     error!("{}", e);
@@ -96,6 +116,52 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
             };
         }
 
+        let items = itemset.items();
+        let matcher = SkimMatcherV2::default();
+        let mut item_match = HashMap::new();
+
+        for (idx, item) in items.iter().enumerate() {
+            let domain_item: Item = item.clone().try_into()?;
+
+            let db_items = self
+                .item_repo
+                .lock()
+                .unwrap()
+                .get_items_by_basetype(&domain_item.base_type)?;
+
+            for db_item in &db_items {
+                let mods_scores = domain_item
+                    .mods
+                    .iter()
+                    .cartesian_product(db_item.mods.iter())
+                    .group_by(|(el, _)| el.text.clone())
+                    .into_iter()
+                    .map(|(k, grp)| {
+                        (
+                            k,
+                            grp.map(|(o, d)| matcher.fuzzy_match(&d.text, &o.text).unwrap_or(0i64))
+                                .max()
+                                .unwrap_or(0i64),
+                        )
+                    })
+                    .collect::<HashMap<String, i64>>();
+
+                let e = item_match.entry(idx).or_insert((0i64, String::new()));
+                e.1 = db_item.id.clone();
+                e.0 = mods_scores.values().sum();
+            }
+        }
+
+        for (idx, (score, id)) in &item_match {
+            let mtch = NewBuildMatch {
+                id: Uuid::new_v4().to_hyphenated().to_string(),
+                idx: *idx as i32,
+                score: *score as i32,
+                item_id: &id,
+            };
+
+            self.repo.lock().unwrap().new_build_match(&mtch)?;
+        }
 
         Ok(())
     }

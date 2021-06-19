@@ -3,6 +3,8 @@ use diesel::prelude::*;
 use thiserror::Error;
 use uuid::Uuid;
 
+use super::models::NewBuildMatch;
+
 #[derive(Error, Debug)]
 pub enum BuildsRepositoryError {
     #[error("cant load from db")]
@@ -65,6 +67,16 @@ impl DieselBuildsRepository {
         use crate::schema::build_info::dsl::*;
 
         diesel::update(build_info).set(build).execute(&self.conn)?;
+
+        Ok(())
+    }
+
+    pub fn new_build_match(&self, mtch: &NewBuildMatch) -> Result<(), BuildsRepositoryError> {
+        use crate::schema::builds_match::dsl::*;
+
+        diesel::insert_into(builds_match)
+            .values(mtch)
+            .execute(&self.conn)?;
 
         Ok(())
     }
