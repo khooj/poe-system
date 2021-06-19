@@ -15,9 +15,7 @@ use crate::{
         pob::pob::{ItemSet, Pob},
     },
 };
-
 use anyhow::anyhow;
-use if_chain::if_chain;
 
 pub struct BuildCalculatorActor {
     pub repo: Arc<Mutex<DieselBuildsRepository>>,

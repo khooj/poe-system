@@ -18,9 +18,9 @@ pub struct PobBuild {
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "builds_match"]
-pub struct NewBuildMatch<'a> {
+pub struct NewBuildMatch {
     pub id: String,
     pub idx: i32,
     pub score: i32,
-    pub item_id: &'a str,
+    pub item_id: String,
 }
