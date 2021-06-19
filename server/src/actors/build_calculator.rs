@@ -16,6 +16,9 @@ use crate::{
     },
 };
 
+use if_chain::if_chain;
+use anyhow::anyhow;
+
 pub struct BuildCalculatorActor {
     pub repo: Arc<Mutex<DieselBuildsRepository>>,
     pub item_repo: Arc<Mutex<DieselItemRepository>>,
@@ -70,7 +73,7 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
         let mut build = self.repo.lock().unwrap().get_build(&msg.id)?;
 
         let token = build.pob_url.split('/').collect::<Vec<_>>();
-        let token = token.last().unwrap_or(&"");
+        let token = token.last().unwrap_or(&"").to_string();
 
         if token.is_empty() {
             let e = anyhow::anyhow!("wrong pastebin url");
@@ -78,8 +81,28 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
             return Err(e);
         }
 
-        let resp = reqwest::blocking::get(format!("https://pastebin.com/raw/{}", token))?;
-        let data = resp.text()?;
+        let data: String;
+        {
+            let handle = tokio::runtime::Handle::current();
+            handle.enter();
+            // deadlock
+            data = futures::executor::block_on(async {
+                let resp = reqwest::get(format!("https://pastebin.com/raw/{}", token)).await;
+                if_chain! {
+                    if let Ok(k) = resp;
+                    if let Ok(s) = k.text().await;
+                    then { s }
+                    else {
+                        "".to_owned()
+                    }
+                }
+            });
+        }
+
+        if data.is_empty() {
+            let e = anyhow!("cant request pastebin");
+            return Err(e);
+        }
 
         let pob = Pob::new(data);
         let pob_doc = pob.as_document()?;
