@@ -11,13 +11,13 @@ use crate::{
     implementations::{
         builds_repository::DieselBuildsRepository,
         item_repository::DieselItemRepository,
-        models::NewBuildMatch,
+        models::{NewBuildMatch, PobBuild},
         pob::pob::{ItemSet, Pob},
     },
 };
 
-use if_chain::if_chain;
 use anyhow::anyhow;
+use if_chain::if_chain;
 
 pub struct BuildCalculatorActor {
     pub repo: Arc<Mutex<DieselBuildsRepository>>,
@@ -46,7 +46,17 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
             .save_new_build(&msg.pob_url, msg.itemset.as_deref().unwrap_or(&""))
         {
             Ok(k) => {
-                ctx.notify(CalculateBuild { id: k.clone() });
+                let build = self.repo.lock().unwrap().get_build(&k)?;
+
+                let token = build.pob_url.split('/').collect::<Vec<_>>();
+                let token = token.last().unwrap_or(&"").to_string();
+
+                if token.is_empty() {
+                    let e = anyhow::anyhow!("wrong pastebin url");
+                    error!("{}", e);
+                    return Err(e);
+                }
+                ctx.notify(CalculateBuild { build, token });
                 Ok(k)
             }
             Err(e) => {
@@ -63,48 +73,62 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
 #[derive(Message)]
 #[rtype(result = "Result<(), anyhow::Error>")]
 struct CalculateBuild {
-    id: String,
+    build: PobBuild,
+    token: String,
 }
 
 impl Handler<CalculateBuild> for BuildCalculatorActor {
+    type Result = ResponseActFuture<Self, Result<(), anyhow::Error>>;
+
+    fn handle(&mut self, msg: CalculateBuild, ctx: &mut Self::Context) -> Self::Result {
+        Box::pin(
+            async move {
+                let resp = reqwest::get(format!("https://pastebin.com/raw/{}", msg.token)).await;
+                let k = match resp {
+                    Ok(k) => match k.text().await {
+                        Ok(s) => s,
+                        Err(e) => {
+                            let e = anyhow!("cant get pastebin: {}", e);
+                            error!("{}", e);
+                            return Err(e);
+                        }
+                    },
+                    Err(e) => {
+                        let e = anyhow!("cant get pastebin: {}", e);
+                        error!("{}", e);
+                        return Err(e);
+                    }
+                };
+                Ok((k, msg.build))
+            }
+            .into_actor(self)
+            .map(|result, act, ctx| {
+                if result.is_err() {
+                    let e = anyhow!("cant request pastebin");
+                    error!("{}", e);
+                    return Err(e);
+                }
+                let (pob_data, build) = result.unwrap();
+                ctx.notify(CalculateBuildAlgo { pob_data, build });
+                Ok(())
+            }),
+        )
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "Result<(), anyhow::Error>")]
+struct CalculateBuildAlgo {
+    build: PobBuild,
+    pob_data: String,
+}
+
+impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
     type Result = Result<(), anyhow::Error>;
 
-    fn handle(&mut self, msg: CalculateBuild, _ctx: &mut Self::Context) -> Self::Result {
-        let mut build = self.repo.lock().unwrap().get_build(&msg.id)?;
-
-        let token = build.pob_url.split('/').collect::<Vec<_>>();
-        let token = token.last().unwrap_or(&"").to_string();
-
-        if token.is_empty() {
-            let e = anyhow::anyhow!("wrong pastebin url");
-            error!("{}", e);
-            return Err(e);
-        }
-
-        let data: String;
-        {
-            let handle = tokio::runtime::Handle::current();
-            handle.enter();
-            // deadlock
-            data = futures::executor::block_on(async {
-                let resp = reqwest::get(format!("https://pastebin.com/raw/{}", token)).await;
-                if_chain! {
-                    if let Ok(k) = resp;
-                    if let Ok(s) = k.text().await;
-                    then { s }
-                    else {
-                        "".to_owned()
-                    }
-                }
-            });
-        }
-
-        if data.is_empty() {
-            let e = anyhow!("cant request pastebin");
-            return Err(e);
-        }
-
-        let pob = Pob::new(data);
+    fn handle(&mut self, msg: CalculateBuildAlgo, ctx: &mut Self::Context) -> Self::Result {
+        let mut build = msg.build;
+        let pob = Pob::new(msg.pob_data);
         let pob_doc = pob.as_document()?;
         let itemsets = pob_doc.get_item_sets();
 
