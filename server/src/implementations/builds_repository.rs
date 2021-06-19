@@ -14,7 +14,7 @@ pub enum BuildsRepositoryError {
 }
 
 pub struct DieselBuildsRepository {
-    conn: SqliteConnection,
+    pub conn: SqliteConnection,
 }
 
 impl DieselBuildsRepository {

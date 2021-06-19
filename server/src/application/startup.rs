@@ -1,5 +1,11 @@
-use crate::application::configuration::Settings;
-use crate::implementations::http_controller::{calculate_pob, get_build_price};
+use crate::implementations::{
+    builds_repository::DieselBuildsRepository,
+    http_controller::{calculate_pob, get_build_price},
+};
+use crate::{
+    actors::build_calculator::BuildCalculatorActor, application::configuration::Settings,
+    ports::outbound::repository,
+};
 use crate::{
     actors::stash_receiver::StashReceiverActor,
     implementations::item_repository::DieselItemRepository,
@@ -10,7 +16,7 @@ use crate::{
 use actix::prelude::*;
 use actix_web::{dev::Server, web, App, HttpServer};
 use diesel::{Connection, SqliteConnection};
-use jsonrpc_v2::Server as JsonrpcServer;
+use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use log::error;
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver};
@@ -32,13 +38,6 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         env_logger::init();
 
-        let addr = format!(
-            "{}:{}",
-            configuration.application.host, configuration.application.port
-        );
-        let listener = TcpListener::bind(&addr)?;
-        let server = run(listener)?;
-
         let db_conn = SqliteConnection::establish(&configuration.database)
             .expect("cannot establish sqlite conn");
 
@@ -54,10 +53,21 @@ impl Application {
             }
         }
 
+        let db_conn = SqliteConnection::establish(&configuration.database)
+            .expect("cannot establish second sqlite conn");
+
+        let build_repo = Arc::new(Mutex::new(DieselBuildsRepository { conn: db_conn }));
+
         let repo = Arc::new(Mutex::new(repo));
         let client = Arc::new(AsyncMutex::new(Client::new(USER_AGENT.to_owned())));
 
         let (tx, rx) = channel::<actix::System>();
+        let (tx2, rx2) = channel::<Addr<BuildCalculatorActor>>();
+
+        let addr = format!(
+            "{}:{}",
+            configuration.application.host, configuration.application.port
+        );
 
         let handle = thread::spawn(move || {
             let system_runner = System::new();
@@ -80,9 +90,22 @@ impl Application {
                     client: client.clone(),
                 };
                 let _ = timer.start();
+
+                let t = BuildCalculatorActor {
+                    item_repo: repo.clone(),
+                    repo: build_repo.clone(),
+                }
+                .start();
+
+                tx2.send(t.clone()).expect("cant send actor");
             });
             system_runner.run()
         });
+
+        let build_actor = rx2.recv().expect("cant get actor");
+
+        let listener = TcpListener::bind(&addr)?;
+        let server = run(listener, build_actor)?;
 
         Ok(Self { server, handle, rx })
     }
@@ -105,8 +128,9 @@ impl Application {
     }
 }
 
-fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
+fn run(listener: TcpListener, addr: Addr<BuildCalculatorActor>) -> Result<Server, std::io::Error> {
     let rpc = JsonrpcServer::new()
+        .with_data(Data::new(addr))
         .with_method("calculate_pob", calculate_pob)
         .finish();
 

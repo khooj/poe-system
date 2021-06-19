@@ -17,8 +17,8 @@ use crate::{
 };
 
 pub struct BuildCalculatorActor {
-    repo: Arc<Mutex<DieselBuildsRepository>>,
-    item_repo: Arc<Mutex<DieselItemRepository>>,
+    pub repo: Arc<Mutex<DieselBuildsRepository>>,
+    pub item_repo: Arc<Mutex<DieselItemRepository>>,
 }
 
 impl Actor for BuildCalculatorActor {
@@ -28,8 +28,8 @@ impl Actor for BuildCalculatorActor {
 #[derive(Message)]
 #[rtype(result = "Result<String, anyhow::Error>")]
 pub struct StartBuildCalculatingMsg {
-    pob_url: String,
-    itemset: Option<String>,
+    pub pob_url: String,
+    pub itemset: Option<String>,
 }
 
 impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
