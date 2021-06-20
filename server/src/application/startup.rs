@@ -15,7 +15,8 @@ use crate::{
 
 use actix::prelude::*;
 use actix_web::{dev::Server, web, App, HttpServer};
-use diesel::{Connection, SqliteConnection};
+use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::{Connection};
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use log::error;
 use std::net::TcpListener;
@@ -32,18 +33,14 @@ pub struct Application {
     rx: Receiver<System>,
 }
 
-embed_migrations!("migrations");
-
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         env_logger::init();
 
-        let db_conn = SqliteConnection::establish(&configuration.database)
-            .expect("cannot establish sqlite conn");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&configuration.database);
+        let pool = Pool::new(manager).expect("cant create diesel pool");
 
-        embedded_migrations::run(&db_conn).expect("cant run migration");
-
-        let repo = DieselItemRepository::new(db_conn).expect("cant create item repository");
+        let repo = DieselItemRepository::new(pool.clone()).expect("cant create item repository");
 
         if configuration.start_change_id.is_some() {
             let stash = repo.get_stash_id().expect("cant get latest stash id");
@@ -53,12 +50,7 @@ impl Application {
             }
         }
 
-        let db_conn = SqliteConnection::establish(&configuration.database)
-            .expect("cannot establish second sqlite conn");
-
-        let build_repo = Arc::new(Mutex::new(DieselBuildsRepository { conn: db_conn }));
-
-        let repo = Arc::new(Mutex::new(repo));
+        let build_repo = DieselBuildsRepository { conn: pool.clone() };
         let client = Arc::new(AsyncMutex::new(Client::new(USER_AGENT.to_owned())));
 
         let (tx, rx) = channel::<actix::System>();

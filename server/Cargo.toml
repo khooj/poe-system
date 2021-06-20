@@ -24,8 +24,7 @@ log = "0.4"
 env_logger = "0.8.3"
 syn = { version = "1.0.48", features = ["full"]}
 dotenv = "0.15.0"
-diesel = { version = "1.4.4", features = ["sqlite", "64-column-tables", "extras"] }
-diesel_migrations = "1.4.0"
+diesel = { version = "1.4", features = ["r2d2", "64-column-tables", "extras"] }
 uuid = { version = "0.8.2", features = ["v4"] }
 num = "0.4.0"
 itertools = "0.10.0"
@@ -41,3 +40,5 @@ futures = { version = "0.3.15" }
 if_chain = "1.0.1"
 tracing = { version = "0.1" }
 tracing-actix = { version = "0.3" }
+r2d2 = "0.8.9"
+r2d2_sqlite = "0.18"

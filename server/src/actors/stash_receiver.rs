@@ -70,7 +70,6 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
             .map(|res, _act, ctx| {
                 if_chain! {
                     if let Ok(stash_id) = res;
-                    // if let Ok(stash_id) = t;
                     then {
                         ctx.notify(GetStashMsg(stash_id.latest_stash_id));
                     }

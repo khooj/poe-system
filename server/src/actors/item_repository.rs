@@ -1,8 +1,11 @@
-use actix::prelude::*;
-use crate::{define_repo_method, implementations::item_repository::{DieselItemRepository, RawItem}};
-use crate::ports::outbound::repository::{RepositoryError, LatestStashId};
-use crate::ports::outbound::public_stash_retriever::PublicStashData;
 use crate::domain::item::Item;
+use crate::ports::outbound::public_stash_retriever::PublicStashData;
+use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
+use crate::{
+    define_repo_method,
+    implementations::item_repository::{DieselItemRepository, RawItem},
+};
+use actix::prelude::*;
 
 pub struct ItemsRepositoryActor {
     pub repo: DieselItemRepository,
@@ -27,8 +30,7 @@ define_repo_method! {
 
 #[derive(Message)]
 #[rtype(result = "Result<LatestStashId, RepositoryError>")]
-pub struct GetStashId {
-}
+pub struct GetStashId {}
 
 define_repo_method! {
     ItemsRepositoryActor,
@@ -39,7 +41,7 @@ define_repo_method! {
 
 #[derive(Message)]
 #[rtype(result = "Result<(), RepositoryError>")]
-pub struct SetStashId{
+pub struct SetStashId {
     pub id: String,
 }
 

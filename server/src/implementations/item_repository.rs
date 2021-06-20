@@ -2,11 +2,12 @@ use crate::domain::item::Item as DomainItem;
 use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty, PublicStashData};
 use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
 use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
+use diesel::r2d2::Pool;
 use diesel::BelongingToDsl;
 use diesel::Queryable;
 use itertools::Itertools;
 use log::warn;
+use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::json;
 use std::{
     collections::HashMap,
@@ -892,15 +893,18 @@ impl From<DomainItemFrom> for DomainItem {
     }
 }
 
+#[derive(Clone)]
 pub struct DieselItemRepository {
-    conn: SqliteConnection,
+    conn: Pool<SqliteConnectionManager>,
 }
 
 use crate::schema::{items::dsl as items_dsl, latest_stash_id::dsl as stash_dsl};
 
 impl DieselItemRepository {
-    pub fn new(connection: SqliteConnection) -> Result<DieselItemRepository, RepositoryError> {
-        Ok(DieselItemRepository { conn: connection })
+    pub fn new(
+        conn: Pool<SqliteConnectionManager>,
+    ) -> Result<DieselItemRepository, RepositoryError> {
+        Ok(DieselItemRepository { conn })
     }
 
     pub fn get_items_by_basetype(
@@ -1162,12 +1166,9 @@ mod test {
 
     const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
 
-    embed_migrations!("migrations");
-
     #[test]
     fn insert_item() -> Result<(), anyhow::Error> {
         let conn = SqliteConnection::establish(":memory:")?;
-        embedded_migrations::run(&conn)?;
 
         let repo = DieselItemRepository::new(conn)?;
         let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
@@ -1185,7 +1186,6 @@ mod test {
     #[test]
     fn get_items() -> Result<(), anyhow::Error> {
         let conn = SqliteConnection::establish(":memory:")?;
-        embedded_migrations::run(&conn)?;
 
         let repo = DieselItemRepository::new(conn)?;
         let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
@@ -1203,7 +1203,6 @@ mod test {
     #[test]
     fn insert_remove_stash() -> Result<(), anyhow::Error> {
         let conn = SqliteConnection::establish(":memory:")?;
-        embedded_migrations::run(&conn)?;
 
         let repo = DieselItemRepository::new(conn)?;
         let mut stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
