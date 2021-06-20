@@ -1001,7 +1001,7 @@ impl DieselItemRepository {
         Ok(())
     }
 
-    pub fn insert_raw_item(&self, public_data: PublicStashData) -> Result<(), RepositoryError> {
+    pub fn insert_raw_item(&self, public_data: &PublicStashData) -> Result<(), RepositoryError> {
         self.conn.transaction::<_, RepositoryError, _>(|| {
             let new_item_info: HashMap<String, Vec<SplittedItem>> = public_data
                 .stashes
@@ -1172,7 +1172,7 @@ mod test {
         let repo = DieselItemRepository::new(conn)?;
         let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
-        let _ = repo.insert_raw_item(stash)?;
+        let _ = repo.insert_raw_item(&stash)?;
 
         let latest_stash_id = repo.get_stash_id()?;
         assert_eq!(
@@ -1190,7 +1190,7 @@ mod test {
         let repo = DieselItemRepository::new(conn)?;
         let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
-        let _ = repo.insert_raw_item(stash)?;
+        let _ = repo.insert_raw_item(&stash)?;
         let items = repo.get_items_by_basetype("Recurve Bow")?;
 
         for i in items {
@@ -1208,7 +1208,7 @@ mod test {
         let repo = DieselItemRepository::new(conn)?;
         let mut stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
-        let _ = repo.insert_raw_item(stash.clone())?;
+        let _ = repo.insert_raw_item(&stash.clone())?;
 
         stash.stashes = vec![stash
             .stashes
@@ -1218,7 +1218,7 @@ mod test {
             .unwrap()];
         stash.stashes.get_mut(0).unwrap().items.truncate(3);
 
-        let _ = repo.insert_raw_item(stash.clone())?;
+        let _ = repo.insert_raw_item(&stash)?;
 
         let items = repo.get_raw_items(
             stash.stashes[0].account_name.as_ref().unwrap(),

@@ -6,10 +6,13 @@ use crate::ports::outbound::{
     repository::RepositoryError,
 };
 use actix::prelude::*;
+use if_chain::if_chain;
 use log::{error, info};
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use tokio::sync::Mutex as AsyncMutex;
+
+use super::item_repository::{GetStashId, InsertRawItem, ItemsRepositoryActor};
 
 #[derive(Error, Debug)]
 pub enum ActorError {
@@ -22,13 +25,13 @@ pub enum ActorError {
 }
 
 pub struct StashReceiverActor {
-    repository: Arc<Mutex<DieselItemRepository>>,
+    repository: Addr<ItemsRepositoryActor>,
     client: Arc<AsyncMutex<Client>>,
 }
 
 impl StashReceiverActor {
     pub fn new(
-        repo: Arc<Mutex<DieselItemRepository>>,
+        repo: Addr<ItemsRepositoryActor>,
         client: Arc<AsyncMutex<Client>>,
     ) -> StashReceiverActor {
         StashReceiverActor {
@@ -47,22 +50,33 @@ impl Actor for StashReceiverActor {
 pub struct StartReceiveMsg;
 
 impl Handler<StartReceiveMsg> for StashReceiverActor {
-    type Result = ();
+    type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, _: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
-        if self.client.try_lock().is_err() {
-            info!("locked, skipping iteration");
-            return;
-        }
-        let stash_id = match self.repository.lock().unwrap().get_stash_id() {
-            Ok(s) => s,
-            Err(e) => {
-                error!("cant get stash id: {}", e);
-                return ();
+        let r = self.repository.clone();
+        let c = Arc::clone(&self.client);
+        Box::pin(
+            async move {
+                if c.try_lock().is_err() {
+                    info!("locked, skipping iteration");
+                    return Err(RepositoryError::Skipped);
+                }
+                match r.send(GetStashId {}).await {
+                    Ok(k) => k,
+                    Err(e) => Err(RepositoryError::Skipped),
+                }
             }
-        };
-
-        ctx.notify(GetStashMsg(stash_id.latest_stash_id));
+            .into_actor(self)
+            .map(|res, _act, ctx| {
+                if_chain! {
+                    if let Ok(stash_id) = res;
+                    // if let Ok(stash_id) = t;
+                    then {
+                        ctx.notify(GetStashMsg(stash_id.latest_stash_id));
+                    }
+                };
+            }),
+        )
     }
 }
 
@@ -104,18 +118,27 @@ impl Handler<GetStashMsg> for StashReceiverActor {
 struct ReceivedStash(PublicStashData);
 
 impl Handler<ReceivedStash> for StashReceiverActor {
-    type Result = ();
+    type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: ReceivedStash, _: &mut Self::Context) -> Self::Result {
-        info!("received stash with next id: {}", msg.0.next_change_id);
-        match self.repository.lock().unwrap().insert_raw_item(msg.0) {
-            Err(e) => {
-                error!("cant insert items: {}", e);
+        let r = self.repository.clone();
+        Box::pin(
+            async move {
+                info!("received stash with next id: {}", msg.0.next_change_id);
+                r.send(InsertRawItem { data: msg.0 }).await
             }
-            _ => {
-                info!("successfully inserted");
-            }
-        };
+            .into_actor(self)
+            .map(|res, _act, ctx| {
+                match res {
+                    Err(e) => {
+                        error!("cant insert items: {}", e);
+                    }
+                    _ => {
+                        info!("successfully inserted");
+                    }
+                };
+            }),
+        )
     }
 }
 
@@ -136,13 +159,14 @@ mod test {
         let conn = diesel::SqliteConnection::establish(":memory:")?;
         embedded_migrations::run(&conn)?;
 
-        let repo = Arc::new(Mutex::new(DieselItemRepository::new(conn)?));
+        let repo = DieselItemRepository::new(conn)?;
         let client = Arc::new(AsyncMutex::new(Client::new(
             "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)".to_owned(),
         )));
+        let repo = ItemsRepositoryActor { repo }.start();
         let actor = StashReceiverActor {
             client: Arc::clone(&client),
-            repository: Arc::clone(&repo),
+            repository: repo.clone(),
         };
 
         let actor = actor.start();
@@ -150,7 +174,7 @@ mod test {
         actor.try_send(StartReceiveMsg)?;
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
-        let stash_id = repo.lock().unwrap().get_stash_id()?;
+        let stash_id = repo.send(GetStashId {}).await??;
         assert_ne!(stash_id.latest_stash_id, None);
         Ok(())
     }

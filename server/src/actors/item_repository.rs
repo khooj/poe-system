@@ -1,6 +1,7 @@
 use actix::prelude::*;
 use crate::{define_repo_method, implementations::item_repository::{DieselItemRepository, RawItem}};
 use crate::ports::outbound::repository::{RepositoryError, LatestStashId};
+use crate::ports::outbound::public_stash_retriever::PublicStashData;
 use crate::domain::item::Item;
 
 pub struct ItemsRepositoryActor {
@@ -34,4 +35,30 @@ define_repo_method! {
     GetStashId,
     Result<LatestStashId, RepositoryError>,
     get_stash_id,
+}
+
+#[derive(Message)]
+#[rtype(result = "Result<(), RepositoryError>")]
+pub struct SetStashId{
+    pub id: String,
+}
+
+define_repo_method! {
+    ItemsRepositoryActor,
+    SetStashId,
+    Result<(), RepositoryError>,
+    set_stash_id, id
+}
+
+#[derive(Message)]
+#[rtype(result = "Result<(), RepositoryError>")]
+pub struct InsertRawItem {
+    pub data: PublicStashData,
+}
+
+define_repo_method! {
+    ItemsRepositoryActor,
+    InsertRawItem,
+    Result<(), RepositoryError>,
+    insert_raw_item, data
 }

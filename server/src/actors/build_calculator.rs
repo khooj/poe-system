@@ -202,7 +202,7 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 idx: *idx as i32,
                 score: *score as i32,
-                item_id: &id,
+                item_id: id.clone(),
             };
 
             self.repo.lock().unwrap().new_build_match(&mtch)?;
