@@ -1059,9 +1059,11 @@ impl DieselItemRepository {
                         .execute(&self.conn)?;
                     }
 
-                    diesel::insert_into(items::table)
-                        .values(insert_items)
-                        .execute(&self.conn)?;
+                    for i in insert_items {
+                        diesel::insert_into(items::table)
+                            .values(i)
+                            .execute(&self.conn)?;
+                    }
 
                     // TODO: write func to insert these values?
                     let mods = v
@@ -1071,7 +1073,7 @@ impl DieselItemRepository {
                         .flatten()
                         .collect::<Vec<&NewMod>>();
                     diesel::insert_into(mods::table)
-                        .values(mods)
+                        .values(mods.as_slice())
                         .execute(&self.conn)?;
 
                     let subcategories = v
