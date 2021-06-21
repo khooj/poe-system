@@ -1,11 +1,10 @@
+use super::models::NewBuildMatch;
+use super::SqliteConnection;
+use crate::application::connection_pool::ConnectionPool;
 use crate::implementations::models::{NewBuild, PobBuild};
 use diesel::prelude::*;
-use diesel::r2d2::Pool;
-use r2d2_sqlite::SqliteConnectionManager;
 use thiserror::Error;
 use uuid::Uuid;
-
-use super::models::NewBuildMatch;
 
 #[derive(Error, Debug)]
 pub enum BuildsRepositoryError {
@@ -17,7 +16,7 @@ pub enum BuildsRepositoryError {
 
 #[derive(Clone)]
 pub struct DieselBuildsRepository {
-    pub conn: Pool<SqliteConnectionManager>,
+    pub conn: ConnectionPool<SqliteConnection>,
 }
 
 impl DieselBuildsRepository {

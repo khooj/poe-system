@@ -1,7 +1,3 @@
-use crate::implementations::{
-    builds_repository::DieselBuildsRepository,
-    http_controller::{calculate_pob, get_build_price},
-};
 use crate::{
     actors::build_calculator::BuildCalculatorActor, application::configuration::Settings,
     ports::outbound::repository,
@@ -12,11 +8,19 @@ use crate::{
     implementations::public_stash_retriever::Client,
     implementations::public_stash_timer::PublicStashTimer,
 };
+use crate::{
+    actors::{builds_repository::BuildsRepositoryActor, item_repository::ItemsRepositoryActor},
+    implementations::{
+        builds_repository::DieselBuildsRepository,
+        http_controller::{calculate_pob, get_build_price},
+    },
+};
 
+use super::connection_pool::ConnectionPool;
 use actix::prelude::*;
 use actix_web::{dev::Server, web, App, HttpServer};
 use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::{Connection};
+use diesel::Connection;
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use log::error;
 use std::net::TcpListener;
@@ -37,8 +41,11 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         env_logger::init();
 
-        let manager = r2d2_sqlite::SqliteConnectionManager::file(&configuration.database);
+        let manager = diesel::r2d2::ConnectionManager::<diesel::SqliteConnection>::new(
+            &configuration.database,
+        );
         let pool = Pool::new(manager).expect("cant create diesel pool");
+        let pool = ConnectionPool { pool };
 
         let repo = DieselItemRepository::new(pool.clone()).expect("cant create item repository");
 
@@ -69,6 +76,8 @@ impl Application {
             tx.send(system).expect("cant send running system");
 
             system_runner.block_on(async {
+                let repo = ItemsRepositoryActor { repo }.start();
+                let build_repo = BuildsRepositoryActor { repo: build_repo }.start();
                 let actor = StashReceiverActor::new(repo.clone(), client.clone());
 
                 let actor = actor.start();
@@ -78,8 +87,6 @@ impl Application {
                     interval: std::time::Duration::from_secs(
                         configuration.application.refresh_interval_secs,
                     ),
-                    repo: repo.clone(),
-                    client: client.clone(),
                 };
                 let _ = timer.start();
 

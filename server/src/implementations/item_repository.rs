@@ -1,13 +1,13 @@
+use super::SqliteConnection;
+use crate::application::connection_pool::ConnectionPool;
 use crate::domain::item::Item as DomainItem;
 use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty, PublicStashData};
 use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
 use diesel::prelude::*;
-use diesel::r2d2::Pool;
 use diesel::BelongingToDsl;
 use diesel::Queryable;
 use itertools::Itertools;
 use log::warn;
-use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::json;
 use std::{
     collections::HashMap,
@@ -895,14 +895,14 @@ impl From<DomainItemFrom> for DomainItem {
 
 #[derive(Clone)]
 pub struct DieselItemRepository {
-    conn: Pool<SqliteConnectionManager>,
+    conn: ConnectionPool<SqliteConnection>,
 }
 
 use crate::schema::{items::dsl as items_dsl, latest_stash_id::dsl as stash_dsl};
 
 impl DieselItemRepository {
     pub fn new(
-        conn: Pool<SqliteConnectionManager>,
+        conn: ConnectionPool<SqliteConnection>,
     ) -> Result<DieselItemRepository, RepositoryError> {
         Ok(DieselItemRepository { conn })
     }
