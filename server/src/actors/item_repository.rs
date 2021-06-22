@@ -1,14 +1,12 @@
+use crate::define_repo_method;
 use crate::domain::item::Item;
+use crate::implementations::ItemsRepository;
 use crate::ports::outbound::public_stash_retriever::PublicStashData;
 use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
-use crate::{
-    define_repo_method,
-    implementations::item_repository::{DieselItemRepository, RawItem},
-};
 use actix::prelude::*;
 
 pub struct ItemsRepositoryActor {
-    pub repo: DieselItemRepository,
+    pub repo: ItemsRepository,
 }
 
 impl Actor for ItemsRepositoryActor {

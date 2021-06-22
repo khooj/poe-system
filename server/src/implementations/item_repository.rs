@@ -1,11 +1,9 @@
-use super::SqliteConnection;
-use crate::application::connection_pool::ConnectionPool;
 use crate::domain::item::Item as DomainItem;
 use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty, PublicStashData};
 use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
-use diesel::prelude::*;
 use diesel::BelongingToDsl;
 use diesel::Queryable;
+use diesel::{backend::UsesAnsiSavepointSyntax, sqlite::Sqlite, connection::AnsiTransactionManager, prelude::*};
 use itertools::Itertools;
 use log::warn;
 use serde_json::json;
@@ -909,16 +907,22 @@ macro_rules! collect_val2 {
 }
 
 #[derive(Clone)]
-pub struct DieselItemRepository {
-    conn: ConnectionPool<SqliteConnection>,
+pub struct DieselItemRepository<T>
+where
+    T: Connection + Send + 'static,
+{
+    conn: T,
 }
 
 use crate::schema::{items::dsl as items_dsl, latest_stash_id::dsl as stash_dsl};
 
-impl DieselItemRepository {
-    pub fn new(
-        conn: ConnectionPool<SqliteConnection>,
-    ) -> Result<DieselItemRepository, RepositoryError> {
+impl<T> DieselItemRepository<T>
+where
+    // TODO: investigate why compiler complains about `Backend = Sqlite` requirement
+    T: Connection<TransactionManager = AnsiTransactionManager, Backend = Sqlite> + Send + 'static,
+    T::Backend: UsesAnsiSavepointSyntax,
+{
+    pub fn new(conn: T) -> Result<DieselItemRepository<T>, RepositoryError> {
         Ok(DieselItemRepository { conn })
     }
 

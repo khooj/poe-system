@@ -1,8 +1,9 @@
 use super::models::NewBuildMatch;
-use super::SqliteConnection;
-use crate::application::connection_pool::ConnectionPool;
 use crate::implementations::models::{NewBuild, PobBuild};
-use diesel::prelude::*;
+use diesel::{
+    backend::UsesAnsiSavepointSyntax, connection::AnsiTransactionManager, prelude::*,
+    sqlite::Sqlite,
+};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -15,11 +16,18 @@ pub enum BuildsRepositoryError {
 }
 
 #[derive(Clone)]
-pub struct DieselBuildsRepository {
-    pub conn: ConnectionPool<SqliteConnection>,
+pub struct DieselBuildsRepository<T>
+where
+    T: Connection + Send + 'static,
+{
+    pub conn: T,
 }
 
-impl DieselBuildsRepository {
+impl<T> DieselBuildsRepository<T>
+where
+    T: Connection<TransactionManager = AnsiTransactionManager, Backend = Sqlite> + Send + 'static,
+    T::Backend: UsesAnsiSavepointSyntax,
+{
     pub fn save_new_build(
         &self,
         pob: &str,

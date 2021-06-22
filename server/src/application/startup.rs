@@ -16,16 +16,15 @@ use crate::{
     },
 };
 
-use super::connection_pool::ConnectionPool;
+use crate::implementations::connection_pool::ConnectionPool;
 use actix::prelude::*;
 use actix_web::{dev::Server, web, App, HttpServer};
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::Connection;
+use diesel::r2d2::Pool;
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use log::error;
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::{thread, thread::JoinHandle};
 use tokio::sync::Mutex as AsyncMutex;
 

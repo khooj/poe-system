@@ -150,13 +150,12 @@ mod test {
         item_repository::DieselItemRepository, public_stash_retriever::Client,
     };
 
-    embed_migrations!("migrations");
 
     // TODO: mock db or client to remove ugly wait
     // #[actix::test]
     async fn run_actor() -> Result<(), anyhow::Error> {
         let conn = diesel::SqliteConnection::establish(":memory:")?;
-        embedded_migrations::run(&conn)?;
+        // embedded_migrations::run(&conn)?;
 
         let repo = DieselItemRepository::new(conn)?;
         let client = Arc::new(AsyncMutex::new(Client::new(

@@ -1,11 +1,12 @@
-use crate::implementations::{builds_repository::{BuildsRepositoryError, DieselBuildsRepository}, models::NewBuildMatch as NewBuildMatchRepo};
+use crate::implementations::{builds_repository::{BuildsRepositoryError}, models::NewBuildMatch as NewBuildMatchRepo};
+use crate::implementations::BuildsRepository;
 use crate::implementations::models::*;
 use actix::prelude::*;
 
 use crate::define_repo_method;
 
 pub struct BuildsRepositoryActor {
-    pub repo: DieselBuildsRepository,
+    pub repo: BuildsRepository,
 }
 
 impl Actor for BuildsRepositoryActor {
