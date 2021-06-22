@@ -37,7 +37,7 @@ pub struct StartBuildCalculatingMsg {
 impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
     type Result = ResponseActFuture<Self, Result<String, anyhow::Error>>;
 
-    fn handle(&mut self, msg: StartBuildCalculatingMsg, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: StartBuildCalculatingMsg, _ctx: &mut Self::Context) -> Self::Result {
         let repo = self.repo.clone();
         Box::pin(
             async move {
@@ -115,7 +115,7 @@ struct CalculateBuild {
 impl Handler<CalculateBuild> for BuildCalculatorActor {
     type Result = ResponseActFuture<Self, Result<(), anyhow::Error>>;
 
-    fn handle(&mut self, msg: CalculateBuild, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: CalculateBuild, _ctx: &mut Self::Context) -> Self::Result {
         Box::pin(
             async move {
                 let resp = reqwest::get(format!("https://pastebin.com/raw/{}", msg.token)).await;
@@ -137,7 +137,7 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
                 Ok((k, msg.build))
             }
             .into_actor(self)
-            .map(|result, act, ctx| {
+            .map(|result, _act, ctx| {
                 if result.is_err() {
                     let e = anyhow!("cant request pastebin");
                     error!("{}", e);
@@ -161,7 +161,7 @@ struct CalculateBuildAlgo {
 impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
     type Result = ResponseFuture<Result<(), anyhow::Error>>;
 
-    fn handle(&mut self, msg: CalculateBuildAlgo, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: CalculateBuildAlgo, _ctx: &mut Self::Context) -> Self::Result {
         let item_repo = self.item_repo.clone();
         let repo = self.repo.clone();
         Box::pin(async move {
@@ -247,6 +247,7 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
                     item_id: id.clone(),
                 };
 
+                // TODO: log error
                 repo.send(MsgNewBuildMatch { mtch }).await?;
             }
 

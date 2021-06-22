@@ -3,7 +3,7 @@ use nom::{
     character::complete::{alpha1, alphanumeric1, digit1, multispace0, newline, not_line_ending},
     combinator::{map_res, opt},
     error::{FromExternalError, ParseError},
-    multi::{count, many0},
+    multi::count,
     sequence::{delimited, pair, preceded},
     IResult, Parser,
 };
@@ -159,7 +159,10 @@ mod test {
 
     #[test]
     fn implicits_count_error() {
-        assert_eq!(implicits_count::<()>(&"Implicits: no"), Err(nom::Err::Error(())));
+        assert_eq!(
+            implicits_count::<()>(&"Implicits: no"),
+            Err(nom::Err::Error(()))
+        );
     }
 
     #[test]

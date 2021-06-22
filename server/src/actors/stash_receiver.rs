@@ -1,6 +1,4 @@
-use crate::implementations::{
-    item_repository::DieselItemRepository, public_stash_retriever::Client,
-};
+use crate::implementations::public_stash_retriever::Client;
 use crate::ports::outbound::{
     public_stash_retriever::{Error, PublicStashData, Retriever},
     repository::RepositoryError,
@@ -8,7 +6,7 @@ use crate::ports::outbound::{
 use actix::prelude::*;
 use if_chain::if_chain;
 use log::{error, info};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex as AsyncMutex;
 
@@ -52,7 +50,7 @@ pub struct StartReceiveMsg;
 impl Handler<StartReceiveMsg> for StashReceiverActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, _: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _: StartReceiveMsg, _ctx: &mut Self::Context) -> Self::Result {
         let r = self.repository.clone();
         let c = Arc::clone(&self.client);
         Box::pin(
@@ -63,7 +61,7 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
                 }
                 match r.send(GetStashId {}).await {
                     Ok(k) => k,
-                    Err(e) => Err(RepositoryError::Skipped),
+                    Err(_) => Err(RepositoryError::Skipped),
                 }
             }
             .into_actor(self)
@@ -127,7 +125,7 @@ impl Handler<ReceivedStash> for StashReceiverActor {
                 r.send(InsertRawItem { data: msg.0 }).await
             }
             .into_actor(self)
-            .map(|res, _act, ctx| {
+            .map(|res, _act, _ctx| {
                 match res {
                     Err(e) => {
                         error!("cant insert items: {}", e);
@@ -143,37 +141,36 @@ impl Handler<ReceivedStash> for StashReceiverActor {
 
 #[cfg(test)]
 mod test {
-    use diesel::Connection;
+    // use diesel::Connection;
 
-    use super::*;
-    use crate::implementations::{
-        item_repository::DieselItemRepository, public_stash_retriever::Client,
-    };
-
+    // use super::*;
+    // use crate::implementations::{
+    //     item_repository::DieselItemRepository, public_stash_retriever::Client,
+    // };
 
     // TODO: mock db or client to remove ugly wait
     // #[actix::test]
-    async fn run_actor() -> Result<(), anyhow::Error> {
-        let conn = diesel::SqliteConnection::establish(":memory:")?;
-        // embedded_migrations::run(&conn)?;
+    // async fn run_actor() -> Result<(), anyhow::Error> {
+    //     let conn = diesel::SqliteConnection::establish(":memory:")?;
+    //     // embedded_migrations::run(&conn)?;
 
-        let repo = DieselItemRepository::new(conn)?;
-        let client = Arc::new(AsyncMutex::new(Client::new(
-            "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)".to_owned(),
-        )));
-        let repo = ItemsRepositoryActor { repo }.start();
-        let actor = StashReceiverActor {
-            client: Arc::clone(&client),
-            repository: repo.clone(),
-        };
+    //     let repo = DieselItemRepository::new(conn)?;
+    //     let client = Arc::new(AsyncMutex::new(Client::new(
+    //         "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)".to_owned(),
+    //     )));
+    //     let repo = ItemsRepositoryActor { repo }.start();
+    //     let actor = StashReceiverActor {
+    //         client: Arc::clone(&client),
+    //         repository: repo.clone(),
+    //     };
 
-        let actor = actor.start();
+    //     let actor = actor.start();
 
-        actor.try_send(StartReceiveMsg)?;
-        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+    //     actor.try_send(StartReceiveMsg)?;
+    //     tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
-        let stash_id = repo.send(GetStashId {}).await??;
-        assert_ne!(stash_id.latest_stash_id, None);
-        Ok(())
-    }
+    //     let stash_id = repo.send(GetStashId {}).await??;
+    //     assert_ne!(stash_id.latest_stash_id, None);
+    //     Ok(())
+    // }
 }

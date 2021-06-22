@@ -156,7 +156,7 @@ mod test {
     use crate::ports::outbound::public_stash_retriever::Retriever;
 
     // #[tokio::test]
-    async fn get_single() -> Result<(), anyhow::Error> {
+    async fn _get_single() -> Result<(), anyhow::Error> {
         let mut ret = Client::new("OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)".to_owned());
         let result = ret.get_latest_stash(None).await?;
         assert_ne!(result.next_change_id, "");

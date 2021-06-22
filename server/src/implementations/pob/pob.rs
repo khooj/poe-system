@@ -1,5 +1,5 @@
 use super::parser::{parse_pob_item, PobItem as ParsedItem};
-use crate::domain::item::{Category, Item, ItemLvl, League, Mod, ModType, Rarity};
+use crate::domain::item::{Item, ItemLvl, League, Mod, ModType, Rarity};
 use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
 use roxmltree::{Document, Node};
@@ -155,13 +155,13 @@ impl<'a> PobDocument<'a> {
 mod tests {
     const TESTPOB: &'static str = include_str!("pob.txt");
 
-    use super::{Pob, PobDocument};
+    use super::Pob;
     use std::convert::TryFrom;
 
     #[test]
     fn parse_pob() -> Result<(), anyhow::Error> {
         let pob = Pob::try_from(TESTPOB)?;
-        let doc = pob.as_document()?;
+        let _ = pob.as_document()?;
         Ok(())
     }
 

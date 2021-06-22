@@ -986,7 +986,7 @@ where
         Ok(data)
     }
 
-    fn get_raw_items(
+    fn _get_raw_items(
         &self,
         account_name: &str,
         stash_id: &str,
@@ -1206,7 +1206,7 @@ mod test {
 
         let _ = repo.insert_raw_item(&stash)?;
 
-        let items = repo.get_raw_items(
+        let items = repo._get_raw_items(
             stash.stashes[0].account_name.as_ref().unwrap(),
             stash.stashes[0].stash.as_ref().unwrap(),
         )?;

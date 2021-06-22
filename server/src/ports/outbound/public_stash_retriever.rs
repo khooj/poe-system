@@ -134,10 +134,6 @@ pub struct Item {
     pub colour: Option<String>,
 }
 
-fn default_vec<T>() -> Option<Vec<T>> {
-    Some(vec![])
-}
-
 fn default_str() -> Option<String> {
     Some(String::new())
 }

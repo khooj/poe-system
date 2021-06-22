@@ -1,11 +1,9 @@
 use actix::prelude::*;
-use actix_web::{get, web, HttpResponse, Responder};
-use jsonrpc_v2::{Data, Error, Params, Server};
+use jsonrpc_v2::{Data, Error, Params};
 use serde::Deserialize;
 
 use crate::{
     actors::build_calculator::{BuildCalculatorActor, StartBuildCalculatingMsg},
-    application::poe_data,
 };
 
 #[derive(Deserialize)]
@@ -16,7 +14,7 @@ pub struct CalculatePob {
 
 #[derive(Deserialize)]
 pub struct BuildPrice {
-    build_id: String,
+    pub build_id: String,
 }
 
 pub async fn calculate_pob(
@@ -27,14 +25,14 @@ pub async fn calculate_pob(
         itemset: params.itemset,
         pob_url: params.pob_url,
     }) {
-        Ok(k) => Ok("".into()),
-        Err(e) => Err(Error::Provided {
+        Ok(_) => Ok("".into()),
+        Err(_) => Err(Error::Provided {
             code: 1,
             message: "cant start actor: {}",
         }),
     }
 }
 
-pub async fn get_build_price(Params(params): Params<BuildPrice>) -> Result<String, Error> {
+pub async fn get_build_price(Params(_): Params<BuildPrice>) -> Result<String, Error> {
     Ok("".into())
 }

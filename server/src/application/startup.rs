@@ -1,7 +1,4 @@
-use crate::{
-    actors::build_calculator::BuildCalculatorActor, application::configuration::Settings,
-    ports::outbound::repository,
-};
+use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
 use crate::{
     actors::stash_receiver::StashReceiverActor,
     implementations::item_repository::DieselItemRepository,
@@ -77,9 +74,7 @@ impl Application {
             system_runner.block_on(async {
                 let repo = ItemsRepositoryActor { repo }.start();
                 let build_repo = BuildsRepositoryActor { repo: build_repo }.start();
-                let actor = StashReceiverActor::new(repo.clone(), client.clone());
-
-                let actor = actor.start();
+                let actor = StashReceiverActor::new(repo.clone(), client.clone()).start();
 
                 let timer = PublicStashTimer {
                     actor: actor.clone(),

@@ -32,7 +32,7 @@ where
     fn get_conn(&self) -> Result<PooledConnection<T>, Error> {
         match self.pool.get() {
             Ok(k) => Ok(k),
-            Err(e) => Err(Error::RollbackTransaction),
+            Err(_) => Err(Error::RollbackTransaction),
         }
     }
 }
@@ -56,9 +56,11 @@ where
     <C::Connection as Connection>::Backend: UsesAnsiSavepointSyntax,
 {
     type Backend = <C::Connection as Connection>::Backend;
+    // TODO: implement type with Drop trait to correctly use pooled connection and 
+    // transaction manager in self.transaction_manager()?
     type TransactionManager = <C::Connection as Connection>::TransactionManager;
 
-    fn establish(database_url: &str) -> ConnectionResult<Self> {
+    fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(
             "Cannot directly establish a pooled connection",
         )))
@@ -98,8 +100,12 @@ where
     }
 
     fn transaction_manager(&self) -> &Self::TransactionManager {
-        self.transaction_manager()
-
-        // conn.transaction_manager()
+        unimplemented!();
+        // match self.get_conn() {
+        //     Ok(k) => k.
+        //     Err(e) => {
+        //         panic!("cant get connection for transaction manager: {}", e)
+        //     }
+        // }
     }
 }
