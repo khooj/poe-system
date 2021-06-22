@@ -893,6 +893,21 @@ impl From<DomainItemFrom> for DomainItem {
     }
 }
 
+macro_rules! collect_val {
+    ($v:expr, $field:tt) => {
+        $v.iter()
+            .map(|el| &el.$field)
+            .filter_map(|el| el.as_ref())
+            .flatten()
+    };
+}
+
+macro_rules! collect_val2 {
+    ($v:expr, $field:tt) => {
+        $v.iter().map(|el| &el.$field).filter_map(|el| el.as_ref())
+    };
+}
+
 #[derive(Clone)]
 pub struct DieselItemRepository {
     conn: ConnectionPool<SqliteConnection>,
@@ -1006,6 +1021,8 @@ impl DieselItemRepository {
     }
 
     pub fn insert_raw_item(&self, public_data: &PublicStashData) -> Result<(), RepositoryError> {
+        use itertools::izip;
+
         self.conn.transaction::<_, RepositoryError, _>(|| {
             let new_item_info: HashMap<String, Vec<SplittedItem>> = public_data
                 .stashes
@@ -1065,92 +1082,56 @@ impl DieselItemRepository {
                             .execute(&self.conn)?;
                     }
 
-                    // TODO: write func to insert these values?
-                    let mods = v
-                        .iter()
-                        .map(|el| &el.mods)
-                        .filter_map(|el| el.as_ref())
-                        .flatten()
-                        .collect::<Vec<&NewMod>>();
-                    diesel::insert_into(mods::table)
-                        .values(mods.as_slice())
-                        .execute(&self.conn)?;
+                    for mods in izip!(
+                        collect_val!(v, mods),
+                        collect_val!(v, subcategories),
+                        collect_val!(v, props),
+                        collect_val!(v, sockets),
+                        collect_val!(v, ultimatum),
+                    ) {
+                        diesel::insert_into(mods::table)
+                            .values(mods.0)
+                            .execute(&self.conn)?;
 
-                    let subcategories = v
-                        .iter()
-                        .map(|el| &el.subcategories)
-                        .filter_map(|el| el.as_deref())
-                        .flatten()
-                        .collect::<Vec<&NewSubcategory>>();
-                    diesel::insert_into(subcategories::table)
-                        .values(subcategories)
-                        .execute(&self.conn)?;
+                        diesel::insert_into(subcategories::table)
+                            .values(mods.1)
+                            .execute(&self.conn)?;
 
-                    let props = v
-                        .iter()
-                        .map(|el| &el.props)
-                        .filter_map(|el| el.as_deref())
-                        .flatten()
-                        .collect::<Vec<&NewProperty>>();
-                    diesel::insert_into(properties::table)
-                        .values(props)
-                        .execute(&self.conn)?;
+                        diesel::insert_into(properties::table)
+                            .values(mods.2)
+                            .execute(&self.conn)?;
 
-                    let sockets = v
-                        .iter()
-                        .map(|el| &el.sockets)
-                        .filter_map(|el| el.as_deref())
-                        .flatten()
-                        .collect::<Vec<&NewSocket>>();
-                    diesel::insert_into(sockets::table)
-                        .values(sockets)
-                        .execute(&self.conn)?;
+                        diesel::insert_into(sockets::table)
+                            .values(mods.3)
+                            .execute(&self.conn)?;
 
-                    let ultimatum = v
-                        .iter()
-                        .map(|el| &el.ultimatum)
-                        .filter_map(|el| el.as_deref())
-                        .flatten()
-                        .collect::<Vec<&NewUltimatumMod>>();
-                    diesel::insert_into(ultimatum_mods::table)
-                        .values(ultimatum)
-                        .execute(&self.conn)?;
+                        diesel::insert_into(ultimatum_mods::table)
+                            .values(mods.4)
+                            .execute(&self.conn)?;
+                    }
 
-                    let incubated = v
-                        .iter()
-                        .map(|el| &el.incubated)
-                        .filter_map(|el| el.as_ref())
-                        .collect::<Vec<&NewIncubatedItem>>();
-                    diesel::insert_into(incubated_item::table)
-                        .values(incubated)
-                        .execute(&self.conn)?;
+                    for mods in izip!(
+                        collect_val2!(v, incubated),
+                        collect_val2!(v, hybrid),
+                        collect_val2!(v, extended),
+                        collect_val2!(v, influence),
+                    ) {
+                        diesel::insert_into(incubated_item::table)
+                            .values(mods.0)
+                            .execute(&self.conn)?;
 
-                    let hybrid = v
-                        .iter()
-                        .map(|el| &el.hybrid)
-                        .filter_map(|el| el.as_ref())
-                        .collect::<Vec<&NewHybrid>>();
-                    diesel::insert_into(hybrids::table)
-                        .values(hybrid)
-                        .execute(&self.conn)?;
+                        diesel::insert_into(hybrids::table)
+                            .values(mods.1)
+                            .execute(&self.conn)?;
 
-                    let extended = v
-                        .iter()
-                        .map(|el| &el.extended)
-                        .filter_map(|el| el.as_ref())
-                        .collect::<Vec<&NewExtended>>();
-                    diesel::insert_into(extended::table)
-                        .values(extended)
-                        .execute(&self.conn)?;
+                        diesel::insert_into(extended::table)
+                            .values(mods.2)
+                            .execute(&self.conn)?;
 
-                    let influences = v
-                        .iter()
-                        .map(|el| &el.influence)
-                        .filter_map(|el| el.as_ref())
-                        .collect::<Vec<&NewInfluence>>();
-                    diesel::insert_into(influences::table)
-                        .values(influences)
-                        .execute(&self.conn)?;
+                        diesel::insert_into(influences::table)
+                            .values(mods.3)
+                            .execute(&self.conn)?;
+                    }
                 }
             }
 

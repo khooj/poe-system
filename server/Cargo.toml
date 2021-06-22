@@ -24,7 +24,7 @@ log = "0.4"
 env_logger = "0.8.3"
 syn = { version = "1.0.48", features = ["full"]}
 dotenv = "0.15.0"
-diesel = { version = "1.4", features = ["r2d2", "sqlite", "64-column-tables", "extras"] }
+diesel = { version = "1.4.7", features = ["r2d2", "sqlite", "64-column-tables", "extras"] }
 uuid = { version = "0.8.2", features = ["v4"] }
 num = "0.4.0"
 itertools = "0.10.0"
