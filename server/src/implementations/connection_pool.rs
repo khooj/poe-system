@@ -1,4 +1,4 @@
-use diesel::connection::AnsiTransactionManager;
+use diesel::connection::{AnsiTransactionManager, TransactionManager};
 use diesel::deserialize::QueryableByName;
 use diesel::prelude::*;
 use diesel::query_builder::{AsQuery, QueryFragment, QueryId};
@@ -52,7 +52,10 @@ where
 impl<C> Connection for ConnectionPool<C>
 where
     C: ManageConnection,
-    C::Connection: Connection<TransactionManager = AnsiTransactionManager> + Send + 'static,
+    // C::Connection: Connection<TransactionManager = AnsiTransactionManager> + Send + 'static,
+    C::Connection: Connection + Send + 'static,
+    // <<C::Connection as Connection>::TransactionManager as TransactionManager>::Backend: UsesAnsiSavepointSyntax,
+    <C::Connection as Connection>::TransactionManager: TransactionManager<C::Connection>,
     <C::Connection as Connection>::Backend: UsesAnsiSavepointSyntax,
 {
     type Backend = <C::Connection as Connection>::Backend;
@@ -109,3 +112,5 @@ where
         // }
     }
 }
+
+pub struct BorrowedAnsiTransactionManager{}

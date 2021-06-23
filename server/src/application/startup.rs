@@ -13,10 +13,10 @@ use crate::{
     },
 };
 
-use crate::implementations::connection_pool::ConnectionPool;
 use actix::prelude::*;
 use actix_web::{dev::Server, web, App, HttpServer};
 use diesel::r2d2::Pool;
+use diesel_migrations::embed_migrations;
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use log::error;
 use std::net::TcpListener;
@@ -26,6 +26,8 @@ use std::{thread, thread::JoinHandle};
 use tokio::sync::Mutex as AsyncMutex;
 
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
+
+embed_migrations!("migrations");
 
 pub struct Application {
     server: Server,
@@ -41,7 +43,11 @@ impl Application {
             &configuration.database,
         );
         let pool = Pool::new(manager).expect("cant create diesel pool");
-        let pool = ConnectionPool { pool };
+
+        {
+            let conn = pool.get().expect("cant get conn from pool");
+            embedded_migrations::run(&conn).expect("cant migrate");
+        }
 
         let repo = DieselItemRepository::new(pool.clone()).expect("cant create item repository");
 

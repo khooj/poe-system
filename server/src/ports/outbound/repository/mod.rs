@@ -21,6 +21,8 @@ pub enum RepositoryError {
     OrmError(#[from] diesel::result::ConnectionError),
     #[error("query error")]
     QueryError(#[from] diesel::result::Error),
+    #[error("pool error")]
+    PoolError(#[from] r2d2::Error),
     #[error("not found")]
     NotFound,
     #[error("t")]
