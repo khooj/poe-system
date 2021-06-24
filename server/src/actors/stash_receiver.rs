@@ -5,7 +5,7 @@ use crate::ports::outbound::{
 };
 use actix::prelude::*;
 use if_chain::if_chain;
-use log::{error, info};
+use tracing::{error, info};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex as AsyncMutex;

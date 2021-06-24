@@ -38,6 +38,7 @@ pub struct Application {
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         env_logger::init();
+        Application::setup_tracing();
 
         let manager = diesel::r2d2::ConnectionManager::<diesel::SqliteConnection>::new(
             &configuration.database,
@@ -124,6 +125,22 @@ impl Application {
             }
         };
         result.and(result2)
+    }
+
+    fn setup_tracing() {
+        use tracing_subscriber::{fmt, prelude::*, registry::Registry, EnvFilter};
+
+        let fmt_subscriber = fmt::layer();
+
+        let env_subscriber = EnvFilter::try_from_default_env()
+            .or_else(|_| EnvFilter::try_new("info"))
+            .unwrap();
+
+        let collector = Registry::default()
+            .with(fmt_subscriber)
+            .with(env_subscriber);
+
+        tracing::subscriber::set_global_default(collector).expect("could not set global default");
     }
 }
 

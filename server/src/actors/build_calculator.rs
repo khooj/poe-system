@@ -1,7 +1,6 @@
 use actix::prelude::*;
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use itertools::Itertools;
-use log::error;
 use std::{collections::HashMap, convert::TryInto};
 use uuid::Uuid;
 
@@ -14,6 +13,8 @@ use crate::{
     },
 };
 use anyhow::anyhow;
+use tracing::{event, span, Instrument, Level, error};
+use tracing_actix::ActorInstrument;
 
 use super::builds_repository::{GetBuild, NewBuildMatch as MsgNewBuildMatch, SaveNewBuild};
 use super::item_repository::GetItemsByBasetype;
@@ -39,6 +40,10 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
 
     fn handle(&mut self, msg: StartBuildCalculatingMsg, _ctx: &mut Self::Context) -> Self::Result {
         let repo = self.repo.clone();
+        let span = span!(
+            Level::INFO,
+            "BuildCalculatorActor(StartBuildCalculatingMsg)"
+        );
         Box::pin(
             async move {
                 match repo
@@ -55,13 +60,13 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
                                     Ok(s) => s,
                                     Err(e) => {
                                         let e = anyhow::anyhow!("actor err: {}", e);
-                                        error!("{}", e);
+                                        event!(Level::ERROR, "{}", e);
                                         return Err(e);
                                     }
                                 },
                                 Err(e) => {
                                     let e = anyhow::anyhow!("err repo: {}", e);
-                                    error!("{}", e);
+                                    event!(Level::ERROR, "{}", e);
                                     return Err(e);
                                 }
                             };
@@ -71,13 +76,13 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
 
                             if token.is_empty() {
                                 let e = anyhow::anyhow!("wrong pastebin url");
-                                error!("{}", e);
+                                event!(Level::ERROR, "{}", e);
                                 return Err(e);
                             }
                             Ok((CalculateBuild { build, token }, k))
                         }
                         Err(e) => {
-                            error!("cant save new build for calculating: {}", e);
+                            event!(Level::ERROR, "cant save new build for calculating: {}", e);
                             Err(anyhow::anyhow!(
                                 "cant save new build for calculating: {}",
                                 e
@@ -85,7 +90,7 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
                         }
                     },
                     Err(e) => {
-                        error!("cant save new build for calculating: {}", e);
+                        event!(Level::ERROR, "cant save new build for calculating: {}", e);
                         Err(anyhow::anyhow!(
                             "cant save new build for calculating: {}",
                             e
@@ -93,6 +98,7 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
                     }
                 }
             }
+            .instrument(span)
             .into_actor(self)
             .map(|res, _, ctx| match res {
                 Ok(k) => {
@@ -116,6 +122,7 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
     type Result = ResponseActFuture<Self, Result<(), anyhow::Error>>;
 
     fn handle(&mut self, msg: CalculateBuild, _ctx: &mut Self::Context) -> Self::Result {
+        let span = span!(Level::INFO, "BuildCalculatorActor(CalculateBuild)");
         Box::pin(
             async move {
                 let resp = reqwest::get(format!("https://pastebin.com/raw/{}", msg.token)).await;
@@ -124,18 +131,19 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
                         Ok(s) => s,
                         Err(e) => {
                             let e = anyhow!("cant get pastebin: {}", e);
-                            error!("{}", e);
+                            event!(Level::ERROR, "{}", e);
                             return Err(e);
                         }
                     },
                     Err(e) => {
                         let e = anyhow!("cant get pastebin: {}", e);
-                        error!("{}", e);
+                        event!(Level::ERROR, "{}", e);
                         return Err(e);
                     }
                 };
                 Ok((k, msg.build))
             }
+            .instrument(span)
             .into_actor(self)
             .map(|result, _act, ctx| {
                 if result.is_err() {
@@ -164,94 +172,98 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
     fn handle(&mut self, msg: CalculateBuildAlgo, _ctx: &mut Self::Context) -> Self::Result {
         let item_repo = self.item_repo.clone();
         let repo = self.repo.clone();
-        Box::pin(async move {
-            let mut build = msg.build;
-            let pob = Pob::new(msg.pob_data);
-            let pob_doc = pob.as_document()?;
-            let itemsets = pob_doc.get_item_sets();
+        let span = span!(Level::INFO, "BuildCalculatorActor(CalculateBuildAlgo)");
+        Box::pin(
+            async move {
+                let mut build = msg.build;
+                let pob = Pob::new(msg.pob_data);
+                let pob_doc = pob.as_document()?;
+                let itemsets = pob_doc.get_item_sets();
 
-            let itemset: ItemSet;
+                let itemset: ItemSet;
 
-            if build.itemset.is_empty() {
-                itemset = match itemsets
-                    .first()
-                    .ok_or(anyhow::anyhow!("empty itemset in build {}", build.id))
-                {
-                    Ok(k) => k.clone(),
-                    Err(e) => {
-                        error!("{}", e);
-                        return Err(e);
-                    }
-                };
-                build.itemset = itemset.title().to_owned();
-            } else {
-                itemset = match itemsets
-                    .into_iter()
-                    .find(|e| e.title() == build.itemset)
-                    .ok_or(anyhow::anyhow!(
-                        "cant find itemset {} in build {}",
-                        build.itemset,
-                        build.id
-                    )) {
-                    Ok(k) => k,
-                    Err(e) => {
-                        error!("{}", e);
-                        return Err(e);
-                    }
-                };
-            }
-
-            let items = itemset.items();
-            let matcher = SkimMatcherV2::default();
-            let mut item_match = HashMap::new();
-
-            for (idx, item) in items.iter().enumerate() {
-                let domain_item: Item = item.clone().try_into()?;
-
-                let db_items = item_repo
-                    .send(GetItemsByBasetype {
-                        base_type: domain_item.base_type.clone(),
-                    })
-                    .await??;
-
-                for db_item in &db_items {
-                    let mods_scores = domain_item
-                        .mods
-                        .iter()
-                        .cartesian_product(db_item.mods.iter())
-                        .group_by(|(el, _)| el.text.clone())
+                if build.itemset.is_empty() {
+                    itemset = match itemsets
+                        .first()
+                        .ok_or(anyhow::anyhow!("empty itemset in build {}", build.id))
+                    {
+                        Ok(k) => k.clone(),
+                        Err(e) => {
+                            error!("{}", e);
+                            return Err(e);
+                        }
+                    };
+                    build.itemset = itemset.title().to_owned();
+                } else {
+                    itemset = match itemsets
                         .into_iter()
-                        .map(|(k, grp)| {
-                            (
-                                k,
-                                grp.map(|(o, d)| {
-                                    matcher.fuzzy_match(&d.text, &o.text).unwrap_or(0i64)
-                                })
-                                .max()
-                                .unwrap_or(0i64),
-                            )
-                        })
-                        .collect::<HashMap<String, i64>>();
-
-                    let e = item_match.entry(idx).or_insert((0i64, String::new()));
-                    e.1 = db_item.id.clone();
-                    e.0 = mods_scores.values().sum();
+                        .find(|e| e.title() == build.itemset)
+                        .ok_or(anyhow::anyhow!(
+                            "cant find itemset {} in build {}",
+                            build.itemset,
+                            build.id
+                        )) {
+                        Ok(k) => k,
+                        Err(e) => {
+                            error!("{}", e);
+                            return Err(e);
+                        }
+                    };
                 }
+
+                let items = itemset.items();
+                let matcher = SkimMatcherV2::default();
+                let mut item_match = HashMap::new();
+
+                for (idx, item) in items.iter().enumerate() {
+                    let domain_item: Item = item.clone().try_into()?;
+
+                    let db_items = item_repo
+                        .send(GetItemsByBasetype {
+                            base_type: domain_item.base_type.clone(),
+                        })
+                        .await??;
+
+                    for db_item in &db_items {
+                        let mods_scores = domain_item
+                            .mods
+                            .iter()
+                            .cartesian_product(db_item.mods.iter())
+                            .group_by(|(el, _)| el.text.clone())
+                            .into_iter()
+                            .map(|(k, grp)| {
+                                (
+                                    k,
+                                    grp.map(|(o, d)| {
+                                        matcher.fuzzy_match(&d.text, &o.text).unwrap_or(0i64)
+                                    })
+                                    .max()
+                                    .unwrap_or(0i64),
+                                )
+                            })
+                            .collect::<HashMap<String, i64>>();
+
+                        let e = item_match.entry(idx).or_insert((0i64, String::new()));
+                        e.1 = db_item.id.clone();
+                        e.0 = mods_scores.values().sum();
+                    }
+                }
+
+                for (idx, (score, id)) in &item_match {
+                    let mtch = NewBuildMatch {
+                        id: Uuid::new_v4().to_hyphenated().to_string(),
+                        idx: *idx as i32,
+                        score: *score as i32,
+                        item_id: id.clone(),
+                    };
+
+                    // TODO: log error
+                    repo.send(MsgNewBuildMatch { mtch }).await?;
+                }
+
+                Ok(())
             }
-
-            for (idx, (score, id)) in &item_match {
-                let mtch = NewBuildMatch {
-                    id: Uuid::new_v4().to_hyphenated().to_string(),
-                    idx: *idx as i32,
-                    score: *score as i32,
-                    item_id: id.clone(),
-                };
-
-                // TODO: log error
-                repo.send(MsgNewBuildMatch { mtch }).await?;
-            }
-
-            Ok(())
-        })
+            .instrument(span),
+        )
     }
 }
