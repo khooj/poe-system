@@ -1,11 +1,14 @@
-use log::info;
+use tracing::info;
 use poe_system::implementations::public_stash_retriever::Client;
 use poe_system::ports::outbound::public_stash_retriever::{Error, Retriever};
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
+use tracing_subscriber::fmt;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
+    fmt::init();
+
     let args: Vec<String> = args().collect();
     if args.len() < 2 {
         return Err(std::io::Error::new(

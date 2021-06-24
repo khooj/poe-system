@@ -18,7 +18,7 @@ use actix_web::{dev::Server, web, App, HttpServer};
 use diesel::r2d2::Pool;
 use diesel_migrations::embed_migrations;
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
-use log::error;
+use tracing::error;
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
@@ -37,7 +37,6 @@ pub struct Application {
 
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
-        env_logger::init();
         Application::setup_tracing();
 
         let manager = diesel::r2d2::ConnectionManager::<diesel::SqliteConnection>::new(

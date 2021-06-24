@@ -14,7 +14,6 @@ use crate::{
 };
 use anyhow::anyhow;
 use tracing::{event, span, Instrument, Level, error};
-use tracing_actix::ActorInstrument;
 
 use super::builds_repository::{GetBuild, NewBuildMatch as MsgNewBuildMatch, SaveNewBuild};
 use super::item_repository::GetItemsByBasetype;

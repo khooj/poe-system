@@ -5,7 +5,7 @@ use governor::{
     state::{direct::NotKeyed, InMemoryState},
     Quota, RateLimiter,
 };
-use log::info;
+use tracing::info;
 use std::num::NonZeroU32;
 use std::str::FromStr;
 use std::{

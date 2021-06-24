@@ -5,10 +5,10 @@ use crate::ports::outbound::{
 };
 use actix::prelude::*;
 use if_chain::if_chain;
-use tracing::{error, info};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex as AsyncMutex;
+use tracing::{error, event, info, span, Instrument, Level};
 
 use super::item_repository::{GetStashId, InsertRawItem, ItemsRepositoryActor};
 
@@ -53,6 +53,7 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
     fn handle(&mut self, _: StartReceiveMsg, _ctx: &mut Self::Context) -> Self::Result {
         let r = self.repository.clone();
         let c = Arc::clone(&self.client);
+        let span = span!(Level::INFO, "StashReceiverActor(StartReceiveMsg)");
         Box::pin(
             async move {
                 if c.try_lock().is_err() {
@@ -64,6 +65,7 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
                     Err(_) => Err(RepositoryError::Skipped),
                 }
             }
+            .instrument(span)
             .into_actor(self)
             .map(|res, _act, ctx| {
                 if_chain! {
@@ -86,9 +88,10 @@ impl Handler<GetStashMsg> for StashReceiverActor {
 
     fn handle(&mut self, msg: GetStashMsg, _: &mut Self::Context) -> Self::Result {
         let cl = Arc::clone(&self.client);
-        info!("latest stash id from repo: {:?}", msg.0);
+        let span = span!(Level::INFO, "StashReceiverActor(GetStashMsg)");
         Box::pin(
             async move {
+                info!("latest stash id from repo: {:?}", msg.0);
                 let id = msg.0;
                 let mut lock = cl.lock().await;
                 match lock.get_latest_stash(id.as_deref()).await {
@@ -99,6 +102,7 @@ impl Handler<GetStashMsg> for StashReceiverActor {
                     Ok(k) => Ok(k),
                 }
             }
+            .instrument(span)
             .into_actor(self)
             .map(|res, _act, ctx| {
                 if res.is_err() {
@@ -119,11 +123,13 @@ impl Handler<ReceivedStash> for StashReceiverActor {
 
     fn handle(&mut self, msg: ReceivedStash, _: &mut Self::Context) -> Self::Result {
         let r = self.repository.clone();
+        let span = span!(Level::INFO, "StashReceiverActor(ReceivedStash)");
         Box::pin(
             async move {
                 info!("received stash with next id: {}", msg.0.next_change_id);
                 r.send(InsertRawItem { data: msg.0 }).await
             }
+            .instrument(span)
             .into_actor(self)
             .map(|res, _act, _ctx| {
                 match res {
@@ -131,7 +137,7 @@ impl Handler<ReceivedStash> for StashReceiverActor {
                         error!("cant insert items: {}", e);
                     }
                     _ => {
-                        info!("successfully inserted");
+                        event!(Level::INFO, "successfully inserted");
                     }
                 };
             }),

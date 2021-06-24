@@ -25,30 +25,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3720d0064a0ce5c0de7bd93bdb0a6caebab2a9b5668746145d7b3b0c5da02914"
-dependencies = [
- "actix-rt 2.2.0",
- "actix_derive",
- "bitflags",
- "bytes 1.0.1",
- "crossbeam-channel",
- "futures-core",
- "futures-sink",
- "futures-task",
- "futures-util",
- "log",
- "once_cell",
- "parking_lot",
- "pin-project-lite 0.2.6",
- "smallvec",
- "tokio 1.4.0",
- "tokio-util 0.6.5",
-]
-
-[[package]]
 name = "actix-codec"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -392,17 +368,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "atty"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
-dependencies = [
- "hermit-abi",
- "libc",
- "winapi 0.3.9",
 ]
 
 [[package]]
@@ -773,19 +738,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "env_logger"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17392a012ea30ef05a610aa97dfb49496e71c9f676b27879922ea5bdf60d9d3f"
-dependencies = [
- "atty",
- "humantime",
- "log",
- "regex",
- "termcolor",
-]
-
-[[package]]
 name = "erased-serde"
 version = "0.3.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1137,12 +1089,6 @@ name = "httpdate"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "494b4d60369511e7dea41cf646832512a94e542f68bb9c49e54518e0f468eb47"
-
-[[package]]
-name = "humantime"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hyper"
@@ -1787,7 +1733,7 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 name = "poe-system"
 version = "0.1.0"
 dependencies = [
- "actix 0.11.1",
+ "actix",
  "actix-rt 2.2.0",
  "actix-web",
  "actix_derive",
@@ -1799,7 +1745,6 @@ dependencies = [
  "diesel",
  "diesel_migrations",
  "dotenv",
- "env_logger",
  "flate2",
  "futures",
  "fuzzy-matcher",
@@ -1808,7 +1753,6 @@ dependencies = [
  "itertools",
  "jsonrpc-v2",
  "lazy_static",
- "log",
  "nom 6.1.2",
  "num",
  "r2d2",
@@ -1821,7 +1765,6 @@ dependencies = [
  "thiserror",
  "tokio 1.4.0",
  "tracing",
- "tracing-actix",
  "tracing-subscriber",
  "uuid 0.8.2",
 ]
@@ -2361,15 +2304,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
-name = "termcolor"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dfed899f0eb03f32ee8c6a0aabdb8a7949659e3466561fc0adf54e26d88c5f4"
-dependencies = [
- "winapi-util",
-]
-
-[[package]]
 name = "thiserror"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2577,18 +2511,6 @@ dependencies = [
  "pin-project-lite 0.2.6",
  "tracing-attributes",
  "tracing-core",
-]
-
-[[package]]
-name = "tracing-actix"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a5321c876b5a40dd7e9d8b91b72ea20a48169883dc02def4257e6d43a710c8a"
-dependencies = [
- "actix 0.12.0",
- "futures",
- "pin-project-lite 0.2.6",
- "tracing",
 ]
 
 [[package]]
@@ -2945,15 +2867,6 @@ name = "winapi-i686-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
-
-[[package]]
-name = "winapi-util"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70ec6ce85bb158151cae5e5c87f95a8e97d2c0c4b001223f33a334e3ce5de178"
-dependencies = [
- "winapi 0.3.9",
-]
 
 [[package]]
 name = "winapi-x86_64-pc-windows-gnu"

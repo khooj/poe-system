@@ -9,7 +9,7 @@ use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
 use itertools::Itertools;
-use log::warn;
+use tracing::warn;
 use std::{
     collections::HashMap,
     convert::{From, TryFrom},

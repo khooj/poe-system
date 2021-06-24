@@ -19,8 +19,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 thiserror = "1.0.24"
 async-trait = "0.1.50"
-log = "0.4"
-env_logger = "0.8.3"
 syn = { version = "1.0.48", features = ["full"]}
 dotenv = "0.15.0"
 diesel = { version = "1.4.7", features = ["r2d2", "sqlite", "64-column-tables", "extras"] }
@@ -39,6 +37,5 @@ fuzzy-matcher = "0.3.7"
 futures = { version = "0.3.15" }
 if_chain = "1.0.1"
 tracing = { version = "0.1" }
-tracing-actix = { version = "0.3" }
 tracing-subscriber = { version = "0.2" }
 r2d2 = "0.8.9"
