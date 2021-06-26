@@ -13,7 +13,7 @@ use crate::{
     },
 };
 use anyhow::anyhow;
-use tracing::{event, span, Instrument, Level, error};
+use tracing::{error, event, span, Instrument, Level};
 
 use super::builds_repository::{GetBuild, NewBuildMatch as MsgNewBuildMatch, SaveNewBuild};
 use super::item_repository::GetItemsByBasetype;
@@ -256,8 +256,12 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
                         item_id: id.clone(),
                     };
 
-                    // TODO: log error
-                    repo.send(MsgNewBuildMatch { mtch }).await?;
+                    match repo.send(MsgNewBuildMatch { mtch }).await? {
+                        Err(e) => {
+                            event!(Level::ERROR, "error while inserting new build match: {}", e);
+                        }
+                        _ => {}
+                    }
                 }
 
                 Ok(())

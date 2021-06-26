@@ -4,9 +4,9 @@ macro_rules! define_repo_method {
         impl Handler<$msg_t> for $actor {
             type Result = $res;
 
-            fn handle(&mut self, msg: $msg_t, _: &mut Self::Context) -> Self::Result {
+            fn handle(&mut self, _msg: $msg_t, _: &mut Self::Context) -> Self::Result {
                 self.repo.$call(
-                    $( &msg.$args, )*
+                    $( &_msg.$args, )*
                 )
             }
         }

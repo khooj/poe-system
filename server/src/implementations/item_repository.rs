@@ -283,7 +283,7 @@ mod test {
     // use crate::ports::outbound::public_stash_retriever::PublicStashData;
     // use diesel::prelude::*;
 
-    const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
+    // const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
 
     // #[test]
     // fn insert_item() -> Result<(), anyhow::Error> {
