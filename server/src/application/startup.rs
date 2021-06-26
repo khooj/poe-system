@@ -24,6 +24,7 @@ use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::{thread, thread::JoinHandle};
 use tokio::sync::Mutex as AsyncMutex;
+use tracing_actix_web::TracingLogger;
 
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
 
@@ -167,6 +168,7 @@ fn run(listener: TcpListener, addr: Addr<BuildCalculatorActor>) -> Result<Server
                     .guard(actix_web::guard::Get())
                     .finish(rpc_get.into_web_service()),
             )
+            .wrap(TracingLogger)
     })
     .listen(listener)?
     .run();
