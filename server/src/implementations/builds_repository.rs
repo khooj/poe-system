@@ -70,6 +70,14 @@ impl DieselBuildsRepository {
         }
     }
 
+    pub fn get_build_by_url(&self, url: &str) -> Result<Vec<PobBuild>, BuildsRepositoryError> {
+        use crate::schema::build_info::dsl::*;
+
+        let conn = self.conn.get()?;
+
+        Ok(build_info.filter(pob_url.eq(url)).load::<PobBuild>(&conn)?)
+    }
+
     pub fn update_build(&self, build: &PobBuild) -> Result<(), BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
 

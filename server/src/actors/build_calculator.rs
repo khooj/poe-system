@@ -15,7 +15,7 @@ use crate::{
 use anyhow::anyhow;
 use tracing::{error, event, span, Instrument, Level};
 
-use super::builds_repository::{GetBuild, NewBuildMatch as MsgNewBuildMatch, SaveNewBuild};
+use super::builds_repository::{GetBuild, GetBuildByUrl, NewBuildMatch as MsgNewBuildMatch, SaveNewBuild};
 use super::item_repository::GetItemsByBasetype;
 
 pub struct BuildCalculatorActor {
@@ -45,8 +45,14 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
         );
         Box::pin(
             async move {
-                match repo
-                    .send(SaveNewBuild {
+                let builds = match repo.send(GetBuildByUrl{ url: msg.pob_url.clone() }).await {
+                    Ok(k) => k,
+                    Err(e) => {
+                        event!(Level::INFO, "build not found, creating new {}", url=msg.pob_url);
+                        vec![]
+                    }
+                };
+                match repo.send(SaveNewBuild {
                         pob: msg.pob_url,
                         itemset: msg.itemset.unwrap_or(String::new()),
                     })
@@ -72,6 +78,7 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
 
                             let token = build.pob_url.split('/').collect::<Vec<_>>();
                             let token = token.last().unwrap_or(&"").to_string();
+                            event!(Level::INFO, "token extracted from {} for {}: {}", build.pob_url, k, token);
 
                             if token.is_empty() {
                                 let e = anyhow::anyhow!("wrong pastebin url");
@@ -89,9 +96,9 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
                         }
                     },
                     Err(e) => {
-                        event!(Level::ERROR, "cant save new build for calculating: {}", e);
+                        event!(Level::ERROR, "cant send msg for repo: {}", e);
                         Err(anyhow::anyhow!(
-                            "cant save new build for calculating: {}",
+                            "cant send msg for repo: {}",
                             e
                         ))
                     }
@@ -151,6 +158,7 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
                     return Err(e);
                 }
                 let (pob_data, build) = result.unwrap();
+                event!(Level::INFO, "successfully got build data for build {}", build.id);
                 ctx.notify(CalculateBuildAlgo { pob_data, build });
                 Ok(())
             }),

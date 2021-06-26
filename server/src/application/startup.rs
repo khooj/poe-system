@@ -18,12 +18,12 @@ use actix_web::{dev::Server, web, App, HttpServer};
 use diesel::r2d2::Pool;
 use diesel_migrations::embed_migrations;
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
-use tracing::error;
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::{thread, thread::JoinHandle};
 use tokio::sync::Mutex as AsyncMutex;
+use tracing::error;
 use tracing_actix_web::TracingLogger;
 
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
@@ -79,8 +79,11 @@ impl Application {
             tx.send(system).expect("cant send running system");
 
             system_runner.block_on(async {
-                let repo = ItemsRepositoryActor { repo }.start();
-                let build_repo = BuildsRepositoryActor { repo: build_repo }.start();
+                let repo =
+                    SyncArbiter::start(1, move || ItemsRepositoryActor { repo: repo.clone() });
+                let build_repo = SyncArbiter::start(1, move || BuildsRepositoryActor {
+                    repo: build_repo.clone(),
+                });
                 let actor = StashReceiverActor::new(repo.clone(), client.clone()).start();
 
                 let timer = PublicStashTimer {
@@ -140,6 +143,7 @@ impl Application {
             .with(fmt_subscriber)
             .with(env_subscriber);
 
+        tracing_log::LogTracer::init().expect("cant set log tracer");
         tracing::subscriber::set_global_default(collector).expect("could not set global default");
     }
 }
@@ -148,25 +152,16 @@ fn run(listener: TcpListener, addr: Addr<BuildCalculatorActor>) -> Result<Server
     let rpc = JsonrpcServer::new()
         .with_data(Data::new(addr))
         .with_method("calculate_pob", calculate_pob)
-        .finish();
-
-    let rpc_get = JsonrpcServer::new()
         .with_method("get_build_price", get_build_price)
         .finish();
 
     let server = HttpServer::new(move || {
         let rpc = rpc.clone();
-        let rpc_get = rpc_get.clone();
         App::new()
             .service(
                 web::service("/api")
                     .guard(actix_web::guard::Post())
                     .finish(rpc.into_web_service()),
-            )
-            .service(
-                web::service("/read")
-                    .guard(actix_web::guard::Get())
-                    .finish(rpc_get.into_web_service()),
             )
             .wrap(TracingLogger)
     })

@@ -10,7 +10,7 @@ pub struct BuildsRepositoryActor {
 }
 
 impl Actor for BuildsRepositoryActor {
-    type Context = Context<Self>;
+    type Context = SyncContext<Self>;
 }
 
 #[derive(Message)]
@@ -38,6 +38,19 @@ define_repo_method! {
     GetBuild,
     Result<PobBuild, BuildsRepositoryError>,
     get_build, id
+}
+
+#[derive(Message)]
+#[rtype(result = "Result<Vec<PobBuild>, BuildsRepositoryError>")]
+pub struct GetBuildByUrl {
+    pub url: String,
+}
+
+define_repo_method! {
+    BuildsRepositoryActor,
+    GetBuildByUrl,
+    Result<Vec<PobBuild>, BuildsRepositoryError>,
+    get_build_by_url, url
 }
 
 #[derive(Message)]

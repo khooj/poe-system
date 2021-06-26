@@ -57,7 +57,7 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
         Box::pin(
             async move {
                 if c.try_lock().is_err() {
-                    info!("locked, skipping iteration");
+                    event!(Level::INFO, "locked, skipping iteration");
                     return Err(RepositoryError::Skipped);
                 }
                 match r.send(GetStashId {}).await {

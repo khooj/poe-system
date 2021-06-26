@@ -10,7 +10,7 @@ pub struct ItemsRepositoryActor {
 }
 
 impl Actor for ItemsRepositoryActor {
-    type Context = Context<Self>;
+    type Context = SyncContext<Self>;
 }
 
 #[derive(Message)]
