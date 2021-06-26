@@ -25,14 +25,16 @@
           rust-overlay.overlay
           (self: super: rec {
             rustc = self.rust-bin.stable.${rust-version}.default.override {
-              extensions = [ "rust-src" "rustfmt-preview" "llvm-tools-preview" ];
+              extensions =
+                [ "rust-src" "rustfmt-preview" "llvm-tools-preview" ];
             };
             cargo = rustc;
           })
           (self: super: rec {
-            rustc-nightly = self.rust-bin.nightly."2021-04-22".default.override {
-              extensions = [ "rustc-dev" "llvm-tools-preview" ];
-            };
+            rustc-nightly =
+              self.rust-bin.nightly."2021-04-22".default.override {
+                extensions = [ "rustc-dev" "llvm-tools-preview" ];
+              };
           })
         ];
         pkgs = import nixpkgs { inherit system overlays; };
@@ -41,6 +43,7 @@
         project = import ./Cargo.nix { inherit pkgs; };
 
         buildInputs = with pkgs; [
+          sccache
           sqlite
           postgresql
           mysql
@@ -61,9 +64,7 @@
       in rec {
         packages.${myapp} = project.rootCrate.build;
         defaultPackage = packages.${myapp};
-        overlay = final: prev: {
-          poe-system = packages.${myapp};
-        };
+        overlay = final: prev: { poe-system = packages.${myapp}; };
         nixosModule = import ./module.nix;
 
         devShell = with pkgs;
@@ -73,6 +74,7 @@
             inherit nativeBuildInputs;
 
             shellHook = ''
+              export RUSTC_WRAPPER="${pkgs.sccache}/bin/sccache"
               export PATH=$PATH:$HOME/.cargo/bin
             '';
           };
