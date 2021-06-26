@@ -1766,6 +1766,7 @@ dependencies = [
  "tokio 1.4.0",
  "tracing",
  "tracing-actix-web",
+ "tracing-log",
  "tracing-subscriber",
  "uuid 0.8.2",
 ]

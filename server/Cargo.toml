@@ -39,4 +39,5 @@ if_chain = "1.0.1"
 tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.2" }
 tracing-actix-web = { version = "0.2" }
+tracing-log = "0.1"
 r2d2 = "0.8.9"
