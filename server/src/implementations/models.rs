@@ -14,7 +14,7 @@ pub struct NewBuild<'a> {
     pub itemset: &'a str,
 }
 
-#[derive(Queryable, Identifiable, AsChangeset, Clone)]
+#[derive(Queryable, Identifiable, AsChangeset, Clone, Debug)]
 #[table_name = "build_info"]
 pub struct PobBuild {
     pub id: String,

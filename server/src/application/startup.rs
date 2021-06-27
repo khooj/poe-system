@@ -72,6 +72,7 @@ impl Application {
         );
 
         let handle = thread::spawn(move || {
+            let repo = repo.clone();
             let system_runner = System::new();
 
             let system = System::try_current().expect("cant get thread system");
@@ -79,12 +80,18 @@ impl Application {
             tx.send(system).expect("cant send running system");
 
             system_runner.block_on(async {
-                let repo =
-                    SyncArbiter::start(1, move || ItemsRepositoryActor { repo: repo.clone() });
-                let build_repo = SyncArbiter::start(1, move || BuildsRepositoryActor {
+                let t = BuildCalculatorActor {
+                    item_repo: repo.clone(),
                     repo: build_repo.clone(),
-                });
-                let actor = StashReceiverActor::new(repo.clone(), client.clone()).start();
+                }
+                .start();
+
+                tx2.send(t.clone()).expect("cant send actor");
+
+                let repo_actor =
+                    SyncArbiter::start(1, move || ItemsRepositoryActor { repo: repo.clone() });
+
+                let actor = StashReceiverActor::new(repo_actor.clone(), client.clone()).start();
 
                 let timer = PublicStashTimer {
                     actor: actor.clone(),
@@ -94,13 +101,6 @@ impl Application {
                 };
                 let _ = timer.start();
 
-                let t = BuildCalculatorActor {
-                    item_repo: repo.clone(),
-                    repo: build_repo.clone(),
-                }
-                .start();
-
-                tx2.send(t.clone()).expect("cant send actor");
             });
             system_runner.run()
         });

@@ -13,21 +13,17 @@ pub struct Pob {
     original: String,
 }
 
-impl TryFrom<&str> for Pob {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let tmp = decode_config(value, URL_SAFE)?;
-        let mut decoder = ZlibDecoder::new(&tmp[..]);
-        let mut s = String::new();
-        decoder.read_to_string(&mut s)?;
-        Ok(Pob::new(s))
-    }
-}
-
 impl<'a> Pob {
     pub fn new(data: String) -> Pob {
         Pob { original: data }
+    }
+
+    pub fn from_pastebin_data(data: String) -> Result<Pob, anyhow::Error> {
+        let tmp = decode_config(data, URL_SAFE)?;
+        let mut decoder = ZlibDecoder::new(&tmp[..]);
+        let mut s = String::new();
+        decoder.read_to_string(&mut s)?;
+        Ok(Pob { original: s })
     }
 
     pub fn as_document(&'a self) -> Result<PobDocument<'a>, anyhow::Error> {
@@ -156,18 +152,17 @@ mod tests {
     const TESTPOB: &'static str = include_str!("pob.txt");
 
     use super::Pob;
-    use std::convert::TryFrom;
 
     #[test]
     fn parse_pob() -> Result<(), anyhow::Error> {
-        let pob = Pob::try_from(TESTPOB)?;
+        let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
         let _ = pob.as_document()?;
         Ok(())
     }
 
     #[test]
     fn check_itemsets() -> Result<(), anyhow::Error> {
-        let pob = Pob::try_from(TESTPOB)?;
+        let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
         let doc = pob.as_document()?;
         let itemsets = doc.get_item_sets();
         assert_eq!(itemsets.len(), 3);
