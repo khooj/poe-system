@@ -8,6 +8,7 @@ use std::{
     convert::{TryFrom, TryInto},
     str::FromStr,
 };
+use tracing::{event, Level};
 
 pub struct Pob {
     original: String,
@@ -41,7 +42,9 @@ pub struct ItemSet {
 
 impl ItemSet {
     fn try_from(node: &Node, items_map: &HashMap<i32, Item>) -> Result<ItemSet, anyhow::Error> {
-        let id = node.attribute("id").unwrap();
+        let id = node
+            .attribute("id")
+            .ok_or(anyhow::anyhow!("cant get itemset id"))?;
         let id = i32::from_str(id)?;
         let title = node.attribute("title").map_or("default", |v| v);
         let mut items = vec![];
@@ -52,7 +55,7 @@ impl ItemSet {
             if id == -1 || id == 0 {
                 continue;
             }
-            items.push(items_map.get(&id).unwrap().clone());
+            items.push(items_map.get(&id).unwrap_or(&Item::default()).clone());
         }
 
         Ok(ItemSet {
@@ -126,16 +129,29 @@ impl<'a> PobDocument<'a> {
         let mut itemsets = vec![];
         let mut items: HashMap<i32, Item> = HashMap::new();
         let mut nodes = self.doc.descendants();
-        let items_node = nodes.find(|&x| x.tag_name().name() == "Items").unwrap();
+        let items_node = match nodes.find(|&x| x.tag_name().name() == "Items") {
+            Some(k) => k,
+            None => {
+                event!(Level::INFO, "pob does not have any items");
+                return vec![];
+            }
+        };
 
         for item in items_node.descendants() {
             if item.tag_name().name() == "Item" {
                 let id = item.attribute("id").unwrap();
                 let id = i32::from_str(id).unwrap();
-                let item_parsed = Item::try_from(PobItem(item.text().unwrap().to_owned())).unwrap();
+                let item_parsed = match Item::try_from(PobItem(item.text().unwrap().to_owned())) {
+                    Ok(k) => k,
+                    Err(e) => {
+                        event!(Level::ERROR, "cant convert into domain item: {} with err: {}", item.text().unwrap(), e);
+                        continue
+                    }
+                };
                 items.insert(id, item_parsed);
             }
         }
+
         for set in items_node.descendants() {
             if set.tag_name().name() == "ItemSet" {
                 if let Ok(s) = ItemSet::try_from(&set, &items) {
@@ -143,6 +159,7 @@ impl<'a> PobDocument<'a> {
                 }
             }
         }
+
         itemsets
     }
 }

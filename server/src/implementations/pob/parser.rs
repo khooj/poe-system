@@ -1,14 +1,35 @@
 use nom::{
+    branch::alt,
     bytes::complete::{tag, take_while},
     character::complete::{alpha1, alphanumeric1, digit1, multispace0, newline, not_line_ending},
-    combinator::{map_res, opt},
-    error::{FromExternalError, ParseError},
-    multi::count,
+    combinator::{map, map_res, opt},
+    error::{ContextError, FromExternalError, ParseError},
+    multi::{count, many0},
     sequence::{delimited, pair, preceded},
     IResult, Parser,
 };
 use std::num::ParseIntError;
 use std::str::FromStr;
+
+#[derive(Debug, PartialEq)]
+enum ItemValue {
+    Rarity(String),
+    Name(String),
+    BaseType(String),
+    ItemLevel(i32),
+    LevelReq(i32),
+    ImplicitsCount(i32),
+    UniqueId(String),
+    Affix(String),
+}
+
+fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+    let chars = " \t\r\n";
+
+    // nom combinators like `take_while` return a function. That function is the
+    // parser,to which we can pass the input
+    take_while(move |c| chars.contains(c))(i)
+}
 
 fn cut_tag<'a, E: ParseError<&'a str>, F>(
     t: &'a str,
@@ -64,12 +85,34 @@ where
 
 fn affix<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     delimited(
-        pair(opt(multispace0), opt(tag("{crafted}"))),
+        alt((sp, tag("{crafted}"))),
         take_while(|e: char| {
             e.is_alphabetic() || e.is_numeric() || e.is_ascii_punctuation() || e != '\n'
         }),
         opt(newline),
     )(i)
+}
+
+fn item_value<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+    i: &'a str,
+) -> IResult<&'a str, ItemValue, E> {
+    preceded(
+        sp,
+        alt((
+            map(rarity, |s| ItemValue::Rarity(String::from(s))),
+            map(name, |s| ItemValue::Name(String::from(s))),
+            map(base_type, |s| ItemValue::BaseType(String::from(s))),
+            map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
+            map(item_lvl, ItemValue::ItemLevel),
+            map(level_req, ItemValue::LevelReq),
+            map(implicits_count, ItemValue::ImplicitsCount),
+            // map(affix, |s| ItemValue::Affix(String::from(s))),
+        )),
+    )(i)
+}
+
+fn root<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(i: &'a str) -> IResult<&'a str, Vec<ItemValue>, E> {
+    many0(item_value)(i)
 }
 
 #[derive(Debug, Clone)]
@@ -88,6 +131,11 @@ pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, PobItem, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>,
 {
+    let (_, items) = root(i)?;
+
+    println!("{:?}", items);
+
+    // TODO: rewrite parsing because mods order not fixed
     let (input, rarity) = rarity(i)?;
     let (input, name) = name(input)?;
     let (input, base_line) = base_type(input)?;
@@ -211,6 +259,26 @@ Added Small Passive Skills also grant: +5 to Strength
         assert_eq!(item.lvl_req, 54);
         assert_eq!(item.implicits.len(), 2);
         assert_eq!(item.affixes.len(), 4);
+        Ok(())
+    }
+
+    #[test]
+    fn pob_item1() -> Result<(), anyhow::Error> {
+        use nom::error::VerboseError;
+
+        let item = r#"
+        			Rarity: MAGIC
+Surgeon's Granite Flask of Warding
+Unique ID: f8294e01590b2cbed5bc1fd2de3989ce956e029b838b3334875fc13abea89a18
+Item Level: 44
+Quality: 0
+LevelReq: 27
+Implicits: 0
+20% chance to gain a Flask Charge when you deal a Critical Strike
+Immune to Curses during Flask effect
+Removes Curses on use"#;
+
+        let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
         Ok(())
     }
 }
