@@ -1,12 +1,12 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
-    character::complete::{alpha1, alphanumeric1, digit1, multispace0, newline, not_line_ending},
-    combinator::{map, map_res, opt},
-    error::{ContextError, FromExternalError, ParseError},
-    multi::{count, many0},
-    sequence::{delimited, pair, preceded},
-    IResult, Parser,
+    character::complete::{alpha1, alphanumeric1, digit1, line_ending, not_line_ending},
+    combinator::{cut, map, map_res, opt},
+    error::{context, ContextError, FromExternalError, ParseError},
+    multi::{many0, many_m_n},
+    sequence::{preceded, terminated},
+    IResult,
 };
 use std::num::ParseIntError;
 use std::str::FromStr;
@@ -14,108 +14,182 @@ use std::str::FromStr;
 #[derive(Debug, PartialEq)]
 enum ItemValue {
     Rarity(String),
-    Name(String),
-    BaseType(String),
+    Name(String, Option<String>),
     ItemLevel(i32),
     LevelReq(i32),
     ImplicitsCount(i32),
     UniqueId(String),
     Affix(String),
+    Quality(i32),
+    Sockets(String),
 }
 
+static EMPTY_BASETYPES: &[&str] = &["Flask"];
+
 fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    let chars = " \t\r\n";
+    let chars = " \t\r\n ";
 
     // nom combinators like `take_while` return a function. That function is the
     // parser,to which we can pass the input
     take_while(move |c| chars.contains(c))(i)
 }
 
-fn cut_tag<'a, E: ParseError<&'a str>, F>(
-    t: &'a str,
-    ps: F,
-) -> impl FnMut(&'a str) -> IResult<&'a str, &'a str, E>
-where
-    F: Parser<&'a str, &'a str, E>,
-{
-    delimited(pair(opt(multispace0), tag(t)), ps, opt(newline))
+fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    context("rarity", preceded(tag("Rarity: "), cut(alpha1)))(i)
 }
 
-fn rarity<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    cut_tag("Rarity: ", alpha1)(i)
+fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, (&'a str, Option<&'a str>), E> {
+    let (i, name) = context("name", cut(not_line_ending))(i)?;
+
+    if !EMPTY_BASETYPES.iter().any(|el| name.contains(el)) {
+        let (i, basetype) = base_type(i)?;
+        return Ok((i, (name, Some(basetype))));
+    }
+
+    Ok((i, (name, None)))
 }
 
-fn name<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    preceded(opt(multispace0), not_line_ending)(i)
+fn base_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    context("base_type", preceded(sp, cut(not_line_ending)))(i)
 }
 
-fn base_type<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    preceded(opt(multispace0), not_line_ending)(i)
+fn unique_id<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    context(
+        "unique_id",
+        preceded(tag("Unique ID: "), cut(alphanumeric1)),
+    )(i)
 }
 
-fn unique_id<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    cut_tag("Unique ID: ", alphanumeric1)(i)
+fn sockets<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    context("sockets", preceded(tag("Sockets: "), cut(not_line_ending)))(i)
 }
 
-fn item_lvl<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+fn quality<
+    'a,
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+>(
     i: &'a str,
 ) -> IResult<&'a str, i32, E> {
-    map_res(cut_tag("Item Level: ", digit1), |out: &str| {
-        i32::from_str(out)
-    })(i)
+    context(
+        "quality",
+        map_res(preceded(tag("Quality: "), cut(digit1)), |out: &str| {
+            i32::from_str(out)
+        }),
+    )(i)
+}
+
+fn item_lvl<
+    'a,
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+>(
+    i: &'a str,
+) -> IResult<&'a str, i32, E> {
+    context(
+        "item_lvl",
+        map_res(preceded(tag("Item Level: "), cut(digit1)), |out: &str| {
+            i32::from_str(out)
+        }),
+    )(i)
 }
 
 fn level_req<'a, E>(i: &'a str) -> IResult<&'a str, i32, E>
 where
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
-    map_res(cut_tag("LevelReq: ", digit1), |out: &str| {
-        i32::from_str(out)
-    })(i)
+    context(
+        "level_req",
+        map_res(preceded(tag("LevelReq: "), cut(digit1)), |out: &str| {
+            i32::from_str(out)
+        }),
+    )(i)
 }
 
 fn implicits_count<'a, E>(i: &'a str) -> IResult<&'a str, i32, E>
 where
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
-    map_res(cut_tag("Implicits: ", digit1), |out: &str| {
-        i32::from_str(out)
-    })(i)
-}
-
-fn affix<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    delimited(
-        alt((sp, tag("{crafted}"))),
-        take_while(|e: char| {
-            e.is_alphabetic() || e.is_numeric() || e.is_ascii_punctuation() || e != '\n'
+    context(
+        "implicits_count",
+        map_res(preceded(tag("Implicits: "), cut(digit1)), |out: &str| {
+            i32::from_str(out)
         }),
-        opt(newline),
     )(i)
 }
 
-fn item_value<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    context(
+        "affix",
+        preceded(opt(tag("{crafted}")), cut(not_line_ending)),
+    )(i)
+}
+
+fn item_value_header<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, ItemValue, E> {
-    preceded(
-        sp,
-        alt((
-            map(rarity, |s| ItemValue::Rarity(String::from(s))),
-            map(name, |s| ItemValue::Name(String::from(s))),
-            map(base_type, |s| ItemValue::BaseType(String::from(s))),
-            map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
-            map(item_lvl, ItemValue::ItemLevel),
-            map(level_req, ItemValue::LevelReq),
-            map(implicits_count, ItemValue::ImplicitsCount),
-            // map(affix, |s| ItemValue::Affix(String::from(s))),
-        )),
+    context(
+        "item_value_header",
+        preceded(
+            sp,
+            alt((
+                map(rarity, |s| ItemValue::Rarity(String::from(s))),
+                map(name, |(n, b)| {
+                    ItemValue::Name(String::from(n), b.map(String::from))
+                }),
+            )),
+        ),
     )(i)
 }
 
-fn root<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(i: &'a str) -> IResult<&'a str, Vec<ItemValue>, E> {
-    many0(item_value)(i)
+fn item_value<
+    'a,
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+>(
+    i: &'a str,
+) -> IResult<&'a str, ItemValue, E> {
+    context(
+        "item_value",
+        preceded(
+            sp,
+            alt((
+                map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
+                map(item_lvl, ItemValue::ItemLevel),
+                map(level_req, ItemValue::LevelReq),
+                map(implicits_count, ItemValue::ImplicitsCount),
+                map(quality, ItemValue::Quality),
+                map(sockets, |s| ItemValue::Sockets(String::from(s))),
+                map(affix, |s| ItemValue::Affix(String::from(s))),
+            )),
+        ),
+    )(i)
 }
 
-#[derive(Debug, Clone)]
+fn root<
+    'a,
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+>(
+    i: &'a str,
+) -> IResult<&'a str, Vec<ItemValue>, E> {
+    let (i, mut header_vals) = many_m_n(2, 2, terminated(item_value_header, line_ending))(i)?;
+    let (i, mut vals) = many0(terminated(item_value, line_ending))(i)?;
+    let (i, end_val) = item_value(i)?;
+    header_vals.append(&mut vals);
+    header_vals.push(end_val);
+    Ok((i, header_vals))
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct PobItem {
     pub rarity: String,
     pub name: String,
@@ -123,53 +197,34 @@ pub struct PobItem {
     pub unique_id: String,
     pub item_lvl: i32,
     pub lvl_req: i32,
+    pub sockets: String,
+    pub quality: i32,
     pub implicits: Vec<String>,
     pub affixes: Vec<String>,
 }
 
 pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, PobItem, E>
 where
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
-    let (_, items) = root(i)?;
+    let (i, items) = root(i)?;
+    let mut item = PobItem::default();
 
-    println!("{:?}", items);
-
-    // TODO: rewrite parsing because mods order not fixed
-    let (input, rarity) = rarity(i)?;
-    let (input, name) = name(input)?;
-    let (input, base_line) = base_type(input)?;
-    let (input, unique_id) = unique_id(input)?;
-    let (input, item_lvl) = item_lvl(input)?;
-    let (input, lvl_req) = level_req(input)?;
-    let (input, impl_count) = implicits_count(input)?;
-    let (mut input, implicits) = count(affix, impl_count as usize)(input)?;
-    let mut affixes = vec![];
-    while let Ok((i, affix)) = affix::<E>(input) {
-        if !affix.is_empty() {
-            affixes.push(affix);
-        }
-
-        if i.trim().is_empty() {
-            break;
-        }
-
-        input = i;
+    for val in items {
+        match val {
+            ItemValue::Rarity(r) => item.rarity = r,
+            ItemValue::Name(name, Some(base)) => {
+                item.name = name;
+                item.base_line = base;
+            }
+            ItemValue::Name(name, None) => item.name = name,
+            ItemValue::UniqueId(id) => item.unique_id = id,
+            ItemValue::ItemLevel(il) => item.item_lvl = il,
+            _ => {}
+        };
     }
 
-    Ok((
-        input,
-        PobItem {
-            rarity: rarity.to_owned(),
-            name: name.to_owned(),
-            base_line: base_line.to_owned(),
-            unique_id: unique_id.to_owned(),
-            item_lvl,
-            lvl_req,
-            implicits: implicits.into_iter().map(|e| e.to_owned()).collect(),
-            affixes: affixes.into_iter().map(|e| e.to_owned()).collect(),
-        },
-    ))
+    Ok((i, item))
 }
 
 #[cfg(test)]
@@ -232,7 +287,8 @@ mod test {
 
     #[test]
     fn simple_pob_item() -> Result<(), anyhow::Error> {
-        let item = r#"Rarity: RARE
+        let item = r#"
+            Rarity: RARE
 Loath Cut
 Small Cluster Jewel
 Unique ID: c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb
@@ -268,15 +324,14 @@ Added Small Passive Skills also grant: +5 to Strength
 
         let item = r#"
         			Rarity: MAGIC
-Surgeon's Granite Flask of Warding
-Unique ID: f8294e01590b2cbed5bc1fd2de3989ce956e029b838b3334875fc13abea89a18
-Item Level: 44
+Experimenter's Silver Flask of Adrenaline
+Unique ID: c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4
+Item Level: 53
 Quality: 0
-LevelReq: 27
+LevelReq: 22
 Implicits: 0
-20% chance to gain a Flask Charge when you deal a Critical Strike
-Immune to Curses during Flask effect
-Removes Curses on use"#;
+21% increased Movement Speed during Flask effect
+38% increased Duration"#;
 
         let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
         Ok(())
