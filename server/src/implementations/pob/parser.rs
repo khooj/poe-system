@@ -17,7 +17,7 @@ enum ItemValue {
     Name(String, Option<String>),
     ItemLevel(i32),
     LevelReq(i32),
-    ImplicitsCount(i32),
+    Implicits(Vec<String>),
     UniqueId(String),
     Affix(String),
     Quality(i32),
@@ -114,15 +114,24 @@ where
     )(i)
 }
 
-fn implicits_count<'a, E>(i: &'a str) -> IResult<&'a str, i32, E>
+fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<&'a str>, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
-    context(
+    let (i, implicits_count) = context(
         "implicits_count",
         map_res(preceded(tag("Implicits: "), cut(digit1)), |out: &str| {
             i32::from_str(out)
         }),
+    )(i)?;
+
+    context(
+        "implicits",
+        many_m_n(
+            implicits_count as usize,
+            implicits_count as usize,
+            preceded(sp, affix),
+        ),
     )(i)
 }
 
@@ -166,7 +175,9 @@ fn item_value<
                 map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
                 map(item_lvl, ItemValue::ItemLevel),
                 map(level_req, ItemValue::LevelReq),
-                map(implicits_count, ItemValue::ImplicitsCount),
+                map(implicits, |vals| {
+                    ItemValue::Implicits(vals.into_iter().map(String::from).collect())
+                }),
                 map(quality, ItemValue::Quality),
                 map(sockets, |s| ItemValue::Sockets(String::from(s))),
                 map(affix, |s| ItemValue::Affix(String::from(s))),
@@ -220,7 +231,11 @@ where
             ItemValue::Name(name, None) => item.name = name,
             ItemValue::UniqueId(id) => item.unique_id = id,
             ItemValue::ItemLevel(il) => item.item_lvl = il,
-            _ => {}
+            ItemValue::LevelReq(lr) => item.lvl_req = lr,
+            ItemValue::Sockets(s) => item.sockets = s,
+            ItemValue::Quality(q) => item.quality = q,
+            ItemValue::Implicits(implicits) => item.implicits = implicits,
+            ItemValue::Affix(affix) => item.affixes.push(affix),
         };
     }
 
@@ -238,51 +253,50 @@ mod test {
 
     #[test]
     fn rarity_test() {
-        assert_eq!(rarity::<()>(&"Rarity: RARE"), Ok((&""[..], &"RARE"[..])));
-        assert_eq!(
-            rarity::<()>(&"\n\t\tRarity: RARE"),
-            Ok((&""[..], &"RARE"[..]))
-        );
-        assert_eq!(rarity::<()>(&"Rarity: RARE\n"), Ok((&""[..], &"RARE"[..])));
+        assert_eq!(rarity::<()>("Rarity: RARE"), Ok(("", "RARE")));
+        assert_eq!(rarity::<()>("Rarity: RARE\n"), Ok(("\n", "RARE")));
     }
 
     #[test]
     fn name_base_line_test() {
-        assert_eq!(name::<()>(&"Loath Cut"), Ok((&""[..], &"Loath Cut"[..])));
         assert_eq!(
-            base_type::<()>(&"Small Cluster Jewel"),
-            Ok((&""[..], &"Small Cluster Jewel"[..]))
+            name::<()>("Loath Cut\nSmall Jewel"),
+            Ok(("", ("Loath Cut", Some("Small Jewel"))))
+        );
+        assert_eq!(
+            name::<()>("Mega Flask\nSome affix"),
+            Ok(("\nSome affix", ("Mega Flask", None)))
         );
     }
 
     #[test]
     fn implicits_count_test() {
-        assert_eq!(implicits_count::<()>(&"Implicits: 2"), Ok((&""[..], 2)));
-    }
-
-    #[test]
-    fn implicits_count_error() {
+        assert_eq!(implicits::<()>("Implicits: 0"), Ok(("", vec![])));
         assert_eq!(
-            implicits_count::<()>(&"Implicits: no"),
-            Err(nom::Err::Error(()))
+            implicits::<()>("Implicits: 2\nAffix1\nAffix2"),
+            Ok(("", vec!["Affix1", "Affix2"]))
+        );
+        assert_eq!(
+            implicits::<()>(&"Implicits: no"),
+            Err(nom::Err::Failure(()))
         );
     }
 
     #[test]
     fn affix_test() {
         assert_eq!(
-            affix::<()>(&"{crafted}Adds 2 Passive Skills"),
-            Ok((&""[..], &"Adds 2 Passive Skills"[..]))
+            affix::<()>("{crafted}Adds 2 Passive Skills"),
+            Ok(("", "Adds 2 Passive Skills"))
         );
         assert_eq!(
-            affix::<()>(&"Added Small Passive Skills also grant: +3% to Chaos Resistance\n"),
+            affix::<()>("Added Small Passive Skills also grant: +3% to Chaos Resistance\n"),
             Ok((
-                &""[..],
-                &"Added Small Passive Skills also grant: +3% to Chaos Resistance"[..]
+                "\n",
+                "Added Small Passive Skills also grant: +3% to Chaos Resistance"
             ))
         );
 
-        assert_eq!(affix::<()>(&""), Ok((&""[..], &""[..])));
+        assert_eq!(affix::<()>(""), Ok(("", "")));
     }
 
     #[test]
@@ -303,7 +317,6 @@ Added Small Passive Skills also grant: +5 to Strength
 1 Added Passive Skill is Elegant Form"#;
 
         let (_, item) = parse_pob_item::<()>(&item)?;
-        println!("{:?}", item);
         assert_eq!(item.rarity, "RARE");
         assert_eq!(item.name, "Loath Cut");
         assert_eq!(item.base_line, "Small Cluster Jewel");
@@ -313,7 +326,13 @@ Added Small Passive Skills also grant: +5 to Strength
         );
         assert_eq!(item.item_lvl, 84);
         assert_eq!(item.lvl_req, 54);
-        assert_eq!(item.implicits.len(), 2);
+        assert_eq!(
+            item.implicits,
+            vec![
+                "Adds 2 Passive Skills",
+                "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits"
+            ]
+        );
         assert_eq!(item.affixes.len(), 4);
         Ok(())
     }
@@ -333,7 +352,7 @@ Implicits: 0
 21% increased Movement Speed during Flask effect
 38% increased Duration"#;
 
-        let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
+        let (_, _) = parse_pob_item::<VerboseError<&str>>(&item)?;
         Ok(())
     }
 }
