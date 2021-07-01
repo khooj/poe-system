@@ -15,6 +15,7 @@ pub struct ApplicationSettings {
     pub host: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub refresh_interval_secs: u64,
+    pub enable_items_refresh: bool,
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {

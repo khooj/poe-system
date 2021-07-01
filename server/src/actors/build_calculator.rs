@@ -115,7 +115,7 @@ struct CalculateBuildAlgo {
 impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
     type Result = Result<(), anyhow::Error>;
 
-    #[instrument(err, skip(self, _ctx))]
+    #[instrument(err, skip(self, _ctx, msg), fields(build = ?msg.build))]
     fn handle(&mut self, msg: CalculateBuildAlgo, _ctx: &mut Self::Context) -> Self::Result {
         // TODO: need to fix unwrap()s
 
@@ -191,6 +191,8 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
 
             self.repo.new_build_match(&mtch)?;
         }
+
+        event!(Level::INFO, "build {} done", build.id);
 
         Ok(())
     }

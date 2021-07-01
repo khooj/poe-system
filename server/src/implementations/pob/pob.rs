@@ -144,8 +144,13 @@ impl<'a> PobDocument<'a> {
                 let item_parsed = match Item::try_from(PobItem(item.text().unwrap().to_owned())) {
                     Ok(k) => k,
                     Err(e) => {
-                        event!(Level::ERROR, "cant convert into domain item: {} with err: {}", item.text().unwrap(), e);
-                        continue
+                        event!(
+                            Level::ERROR,
+                            "cant convert into domain item: {} with err: {}",
+                            item.text().unwrap(),
+                            e
+                        );
+                        continue;
                     }
                 };
                 items.insert(id, item_parsed);

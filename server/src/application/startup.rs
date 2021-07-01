@@ -99,8 +99,10 @@ impl Application {
                         configuration.application.refresh_interval_secs,
                     ),
                 };
-                let _ = timer.start();
 
+                if configuration.application.enable_items_refresh {
+                    let _ = timer.start();
+                }
             });
             system_runner.run()
         });
