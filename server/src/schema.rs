@@ -1,21 +1,4 @@
 table! {
-    build_info (id) {
-        id -> Text,
-        pob_url -> Text,
-        itemset -> Text,
-    }
-}
-
-table! {
-    builds_match (id, idx) {
-        id -> Text,
-        idx -> Integer,
-        score -> Integer,
-        item_id -> Text,
-    }
-}
-
-table! {
     extended (item_id) {
         item_id -> Text,
         category -> Text,
@@ -25,10 +8,16 @@ table! {
 }
 
 table! {
-    hybrids (id, item_id) {
-        id -> Text,
+    hybrid_items (hybrid_id, item_id) {
+        hybrid_id -> Text,
         item_id -> Text,
-        is_vaal_gem -> Nullable<Bool>,
+    }
+}
+
+table! {
+    hybrid_mods (id) {
+        id -> Text,
+        is_vaal_gem -> Bool,
         base_type_name -> Text,
         sec_descr_text -> Nullable<Text>,
     }
@@ -167,9 +156,8 @@ table! {
     }
 }
 
-joinable!(builds_match -> items (item_id));
 joinable!(extended -> items (item_id));
-joinable!(hybrids -> items (item_id));
+joinable!(hybrid_items -> items (item_id));
 joinable!(incubated_item -> items (item_id));
 joinable!(influences -> items (item_id));
 joinable!(mods -> items (item_id));
@@ -180,10 +168,9 @@ joinable!(subcategories -> items (item_id));
 joinable!(ultimatum_mods -> items (item_id));
 
 allow_tables_to_appear_in_same_query!(
-    build_info,
-    builds_match,
     extended,
-    hybrids,
+    hybrid_items,
+    hybrid_mods,
     incubated_item,
     influences,
     items,

@@ -485,8 +485,8 @@ pub struct Hybrid {
 */
 
 use crate::schema::{
-    extended, hybrids, incubated_item, influences, items, latest_stash_id, mods, properties,
-    socketed_items, sockets, subcategories, ultimatum_mods,
+    extended, hybrid_items, hybrid_mods, incubated_item, influences, items, latest_stash_id, mods,
+    properties, socketed_items, sockets, subcategories, ultimatum_mods,
 };
 
 #[derive(Insertable, Debug)]
@@ -601,13 +601,19 @@ pub struct NewIncubatedItem {
 }
 
 #[derive(Insertable)]
-#[table_name = "hybrids"]
-pub struct NewHybrid {
-    pub id: Option<String>,
-    pub item_id: String,
-    pub is_vaal_gem: Option<bool>,
+#[table_name = "hybrid_mods"]
+pub struct NewHybridMod {
+    pub id: String,
+    pub is_vaal_gem: bool,
     pub base_type_name: String,
     pub sec_descr_text: Option<String>,
+}
+
+#[derive(Insertable)]
+#[table_name = "hybrid_items"]
+pub struct NewHybridItem {
+    pub hybrid_id: String,
+    pub item_id: String,
 }
 
 #[derive(Insertable)]
@@ -672,12 +678,19 @@ pub struct Extended {
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
 #[belongs_to(RawItem, foreign_key = "item_id")]
-#[table_name = "hybrids"]
-#[primary_key(id, item_id)]
-pub struct Hybrid {
-    pub id: String,
+#[belongs_to(HybridMod, foreign_key = "hybrid_id")]
+#[table_name = "hybrid_items"]
+#[primary_key(hybrid_id, item_id)]
+pub struct HybridItem {
+    pub hybrid_id: String,
     pub item_id: String,
-    pub is_vaal_gem: Option<bool>,
+}
+
+#[derive(Identifiable, Queryable, Debug)]
+#[table_name = "hybrid_mods"]
+pub struct HybridMod {
+    pub id: String,
+    pub is_vaal_gem: bool,
     pub base_type_name: String,
     pub sec_descr_text: Option<String>,
 }
@@ -763,13 +776,14 @@ type DomainItemFrom = (
     Vec<Influence>,
     Vec<Mod>,
     Vec<Extended>,
-    Vec<Hybrid>,
+    Vec<HybridItem>,
     Vec<IncubatedItem>,
     Vec<UltimatumMod>,
     Vec<Socket>,
     Vec<SocketedItem>,
     Vec<Property>,
     Vec<Subcategory>,
+    Vec<HybridMod>,
 );
 
 use crate::domain::item as domain_item;
