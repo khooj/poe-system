@@ -1,5 +1,4 @@
 use actix::prelude::*;
-use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use itertools::Itertools;
 use std::{collections::HashMap, convert::TryInto};
 use uuid::Uuid;
@@ -12,6 +11,7 @@ use crate::{
         BuildsRepository, ItemsRepository,
     },
 };
+use strsim::levenshtein;
 use tracing::{event, instrument, span, Instrument, Level};
 
 pub struct BuildCalculatorActor {
@@ -148,7 +148,6 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
         event!(Level::INFO, "ready to calculate items");
 
         let items = itemset.items();
-        let matcher = SkimMatcherV2::default();
         let mut item_match = HashMap::new();
 
         for (idx, item) in items.iter().enumerate() {
@@ -168,8 +167,8 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
                     .map(|(k, grp)| {
                         (
                             k,
-                            grp.map(|(o, d)| matcher.fuzzy_match(&d.text, &o.text).unwrap_or(0i64))
-                                .max()
+                            grp.map(|(o, d)| levenshtein(&d.text, &o.text) as i64)
+                                .min()
                                 .unwrap_or(0i64),
                         )
                     })
