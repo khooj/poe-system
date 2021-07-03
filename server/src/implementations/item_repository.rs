@@ -1,6 +1,7 @@
 use super::models::{
-    Extended, Hybrid, IncubatedItem, Influence, Mod, NewItem, NewLatestStash, Property, RawItem,
-    RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
+    Extended, Hybrid, IncubatedItem, Influence, Mod, NewHybrid, NewHybridMod, NewItem,
+    NewLatestStash, Property, RawItem, RemoveItems, Socket, SocketedItem, SplittedItem,
+    Subcategory, UltimatumMod,
 };
 use super::TypedConnectionPool;
 use crate::domain::item::Item as DomainItem;
@@ -9,11 +10,12 @@ use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
 use itertools::Itertools;
-use tracing::warn;
 use std::{
     collections::HashMap,
     convert::{From, TryFrom},
 };
+use tracing::warn;
+use uuid::Uuid;
 
 macro_rules! collect_val {
     ($v:expr, $field:tt) => {
@@ -149,6 +151,43 @@ impl DieselItemRepository {
         Ok(())
     }
 
+    fn get_id_for_hybrid_mod(
+        &self,
+        is_vaal: bool,
+        base_type: &str,
+        desc: Option<&str>,
+    ) -> Result<String, RepositoryError> {
+        use crate::schema::hybrid_mods::dsl::*;
+
+        let conn = self.conn.get()?;
+
+        Ok(hybrid_mods
+            .filter(
+                is_vaal_gem
+                    .eq(is_vaal)
+                    .and(base_type_name.eq(base_type).and(sec_descr_text.eq(desc))),
+            )
+            .select(id)
+            .first::<String>(&conn)?)
+    }
+
+    fn save_new_hybrid_mod(&self, mod_: &NewHybridMod) -> Result<String, RepositoryError> {
+        use crate::schema::hybrid_mods::dsl::*;
+
+        let conn = self.conn.get()?;
+
+        diesel::insert_into(hybrid_mods)
+            .values(mod_)
+            .execute(&conn)?;
+
+        // TODO: conn reusage?
+        Ok(self.get_id_for_hybrid_mod(
+            mod_.is_vaal_gem,
+            &mod_.base_type_name,
+            mod_.sec_descr_text.as_deref(),
+        )?)
+    }
+
     pub fn insert_raw_item(&self, public_data: &PublicStashData) -> Result<(), RepositoryError> {
         use crate::schema::items::dsl::*;
         use crate::schema::{
@@ -184,11 +223,12 @@ impl DieselItemRepository {
                             }
                         })
                         .filter_map(|i| i)
-                        .collect::<Vec<SplittedItem>>()
+                        .collect::<Vec<_>>()
                 })
                 .flatten()
                 .into_group_map_by(|el| el.item.account_id.clone());
 
+            // TODO: check if works in given transaction
             self.set_stash_id(&public_data.next_change_id)?;
 
             for (k, v) in &new_item_info {
@@ -256,8 +296,25 @@ impl DieselItemRepository {
                             .values(mods.0)
                             .execute(&conn)?;
 
+                        let id_mod = match self.get_id_for_hybrid_mod(
+                            mods.1.is_vaal_gem,
+                            &mods.1.base_type_name,
+                            mods.1.sec_descr_text.as_deref(),
+                        ) {
+                            Ok(id_) => id_,
+                            Err(_) => self.save_new_hybrid_mod(&NewHybridMod {
+                                id: Uuid::new_v4().to_hyphenated().to_string(),
+                                is_vaal_gem: mods.1.is_vaal_gem,
+                                base_type_name: mods.1.base_type_name.clone(),
+                                sec_descr_text: mods.1.sec_descr_text.clone(),
+                            })?,
+                        };
+
                         diesel::insert_into(hybrids_table)
-                            .values(mods.1)
+                            .values(&NewHybrid {
+                                hybrid_id: id_mod.clone(),
+                                item_id: mods.1.item_id.clone(),
+                            })
                             .execute(&conn)?;
 
                         diesel::insert_into(extended_table)
@@ -279,70 +336,89 @@ impl DieselItemRepository {
 
 #[cfg(test)]
 mod test {
-    // use super::DieselItemRepository;
-    // use crate::ports::outbound::public_stash_retriever::PublicStashData;
-    // use diesel::prelude::*;
+    use super::DieselItemRepository;
+    use crate::ports::outbound::public_stash_retriever::PublicStashData;
+    use diesel::prelude::*;
+    use diesel::r2d2::{ConnectionManager, Pool};
+    use diesel::sqlite::SqliteConnection;
+    use std::{fs::remove_file, path::PathBuf};
+    use temp_file::{TempFile, empty};
 
-    // const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
+    const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
 
-    // #[test]
-    // fn insert_item() -> Result<(), anyhow::Error> {
-    //     let conn = SqliteConnection::establish(":memory:")?;
+    embed_migrations!("migrations");
 
-    //     let repo = DieselItemRepository::new(conn)?;
-    //     let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
+    fn prepare_db() -> Result<(Pool<ConnectionManager<SqliteConnection>>, TempFile), anyhow::Error> {
+        let f = empty();
 
-    //     let _ = repo.insert_raw_item(&stash)?;
+        let pool = Pool::new(ConnectionManager::new(f.path().to_str().unwrap()))?;
 
-    //     let latest_stash_id = repo.get_stash_id()?;
-    //     assert_eq!(
-    //         latest_stash_id.latest_stash_id.unwrap(),
-    //         "2949-5227-4536-5447-1849"
-    //     );
-    //     Ok(())
-    // }
+        {
+            let conn = pool.get()?;
+            embedded_migrations::run(&conn)?;
+        }
 
-    // #[test]
-    // fn get_items() -> Result<(), anyhow::Error> {
-    //     let conn = SqliteConnection::establish(":memory:")?;
+        Ok((pool, f))
+    }
 
-    //     let repo = DieselItemRepository::new(conn)?;
-    //     let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
+    #[test]
+    fn insert_item() -> Result<(), anyhow::Error> {
+        let (pool, _guard) = prepare_db()?;
 
-    //     let _ = repo.insert_raw_item(&stash)?;
-    //     let items = repo.get_items_by_basetype("Recurve Bow")?;
+        let repo = DieselItemRepository::new(pool)?;
+        let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
-    //     for i in items {
-    //         println!("{:?}", i);
-    //     }
+        let _ = repo.insert_raw_item(&stash)?;
 
-    //     Ok(())
-    // }
+        let latest_stash_id = repo.get_stash_id()?;
+        assert_eq!(
+            latest_stash_id.latest_stash_id.unwrap(),
+            "2949-5227-4536-5447-1849"
+        );
+        Ok(())
+    }
 
-    // #[test]
-    // fn insert_remove_stash() -> Result<(), anyhow::Error> {
-    //     let conn = SqliteConnection::establish(":memory:")?;
+    #[test]
+    fn get_items() -> Result<(), anyhow::Error> {
+        let (pool, _guard) = prepare_db()?;
 
-    //     let repo = DieselItemRepository::new(conn)?;
-    //     let mut stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
+        let repo = DieselItemRepository::new(pool)?;
+        let stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
 
-    //     let _ = repo.insert_raw_item(&stash.clone())?;
+        let _ = repo.insert_raw_item(&stash)?;
+        let items = repo.get_items_by_basetype("Recurve Bow")?;
 
-    //     stash.stashes = vec![stash
-    //         .stashes
-    //         .into_iter()
-    //         .filter(|v| v.account_name.is_some())
-    //         .nth(0)
-    //         .unwrap()];
-    //     stash.stashes.get_mut(0).unwrap().items.truncate(3);
+        for i in items {
+            println!("{:?}", i);
+        }
 
-    //     let _ = repo.insert_raw_item(&stash)?;
+        Ok(())
+    }
 
-    //     let items = repo._get_raw_items(
-    //         stash.stashes[0].account_name.as_ref().unwrap(),
-    //         stash.stashes[0].stash.as_ref().unwrap(),
-    //     )?;
-    //     assert_eq!(items.len(), 3);
-    //     Ok(())
-    // }
+    #[test]
+    fn insert_remove_stash() -> Result<(), anyhow::Error> {
+        let (pool, _guard) = prepare_db()?;
+
+        let repo = DieselItemRepository::new(pool)?;
+        let mut stash: PublicStashData = serde_json::from_str(&PUBLIC_STASH_DATA)?;
+
+        let _ = repo.insert_raw_item(&stash.clone())?;
+
+        stash.stashes = vec![stash
+            .stashes
+            .into_iter()
+            .filter(|v| v.account_name.is_some())
+            .nth(0)
+            .unwrap()];
+        stash.stashes.get_mut(0).unwrap().items.truncate(3);
+
+        let _ = repo.insert_raw_item(&stash)?;
+
+        let items = repo._get_raw_items(
+            stash.stashes[0].account_name.as_ref().unwrap(),
+            stash.stashes[0].stash.as_ref().unwrap(),
+        )?;
+        assert_eq!(items.len(), 3);
+        Ok(())
+    }
 }

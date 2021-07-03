@@ -108,13 +108,17 @@ CREATE TABLE IF NOT EXISTS incubated_item (
     PRIMARY KEY(item_id, name),
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS hybrids (
-    id TEXT NOT NULL,
-    item_id TEXT NOT NULL,
-    is_vaal_gem BOOLEAN,
+CREATE TABLE IF NOT EXISTS hybrid_mods (
+    id TEXT NOT NULL PRIMARY KEY,
+    is_vaal_gem BOOLEAN NOT NULL,
     base_type_name TEXT NOT NULL,
-    sec_descr_text TEXT,
-    PRIMARY KEY(id, item_id),
+    sec_descr_text TEXT
+);
+CREATE TABLE IF NOT EXISTS hybrids (
+    hybrid_id TEXT NOT NULL,
+    item_id TEXT NOT NULL,
+    PRIMARY KEY(hybrid_id, item_id),
+    FOREIGN KEY(hybrid_id) REFERENCES hybrid_mods(id),
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
 CREATE TABLE IF NOT EXISTS extended (

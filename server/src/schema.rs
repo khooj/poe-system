@@ -25,12 +25,18 @@ table! {
 }
 
 table! {
-    hybrids (id, item_id) {
+    hybrid_mods (id) {
         id -> Text,
-        item_id -> Text,
-        is_vaal_gem -> Nullable<Bool>,
+        is_vaal_gem -> Bool,
         base_type_name -> Text,
         sec_descr_text -> Nullable<Text>,
+    }
+}
+
+table! {
+    hybrids (hybrid_id, item_id) {
+        hybrid_id -> Text,
+        item_id -> Text,
     }
 }
 
@@ -169,6 +175,7 @@ table! {
 
 joinable!(builds_match -> items (item_id));
 joinable!(extended -> items (item_id));
+joinable!(hybrids -> hybrid_mods (hybrid_id));
 joinable!(hybrids -> items (item_id));
 joinable!(incubated_item -> items (item_id));
 joinable!(influences -> items (item_id));
@@ -183,6 +190,7 @@ allow_tables_to_appear_in_same_query!(
     build_info,
     builds_match,
     extended,
+    hybrid_mods,
     hybrids,
     incubated_item,
     influences,

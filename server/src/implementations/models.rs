@@ -39,7 +39,7 @@ pub struct SplittedItem {
     pub sockets: Option<Vec<NewSocket>>,
     pub ultimatum: Option<Vec<NewUltimatumMod>>,
     pub incubated: Option<NewIncubatedItem>,
-    pub hybrid: Option<NewHybrid>,
+    pub hybrid: Option<HybridMod>,
     pub extended: Option<NewExtended>,
     pub influence: Option<NewInfluence>,
 }
@@ -194,11 +194,10 @@ impl TryFrom<Item> for SplittedItem {
         };
 
         let hybrid = if let Some(el) = item.hybrid {
-            Some(NewHybrid {
-                id: Some(Uuid::new_v4().to_hyphenated().to_string()),
+            Some(HybridMod {
                 item_id: item.id.as_ref().unwrap().clone(),
                 base_type_name: el.base_type_name,
-                is_vaal_gem: el.is_vaal_gem,
+                is_vaal_gem: el.is_vaal_gem.unwrap_or(false),
                 sec_descr_text: el.sec_descr_text,
             })
         } else {
@@ -324,36 +323,6 @@ fn append_if_not_empty2<T>(mut vals: Option<Vec<T>>, mut to_insert: Vec<T>) -> O
     vals
 }
 
-fn _append_if_not_empty<T, K>(
-    mut vals: Option<Vec<T>>,
-    to_insert: Option<Vec<K>>,
-) -> Result<Option<Vec<T>>, RepositoryError>
-where
-    K: std::convert::TryInto<T>,
-    RepositoryError: From<<K as std::convert::TryInto<T>>::Error>,
-{
-    if to_insert.is_none() || to_insert.as_ref().unwrap().len() == 0 {
-        return Ok(vals);
-    }
-
-    let mut ins: Vec<T> = vec![];
-    if to_insert.is_some() {
-        for el in to_insert.unwrap() {
-            let el_ = el.try_into()?;
-            ins.push(el_);
-        }
-    }
-
-    if ins.len() > 0 && vals.is_none() {
-        vals = Some(vec![]);
-    }
-
-    vals.as_mut().unwrap().append(&mut ins);
-
-    Ok(vals)
-}
-
-#[allow(dead_code)]
 #[derive(Queryable, Identifiable, Debug)]
 #[table_name = "items"]
 pub struct RawItem {
@@ -412,17 +381,6 @@ pub enum ModType {
     ExplicitHybrid = 8,
 }
 
-// pub struct Mod {
-//     item_id: String,
-//     r#type: ModType,
-//     r#mod: String,
-// }
-
-// pub struct Subcategory {
-//     item_id: String,
-//     subcategory: String,
-// }
-
 #[derive(Clone, Copy)]
 pub enum PropertyType {
     Properties = 0,
@@ -441,52 +399,10 @@ pub enum ValueType {
     Lightning = 6,
     Chaos = 7,
 }
-/*
-
-pub struct Property {
-    item_id: String,
-    property_type: PropertyType,
-    name: String,
-    value_type: ValueType,
-    value: i32,
-    r#type: Option<i32>,
-    progress: Option<f64>,
-    suffix: Option<String>,
-}
-
-pub struct Socket {
-    item_id: String,
-    s_group: i32,
-    attr: Option<String>,
-    s_colour: Option<String>,
-}
-
-pub struct UltimatumMod {
-    item_id: String,
-    r#type: String,
-    tier: i32,
-}
-
-pub struct IncubatedItem {
-    item_id: String,
-    name: String,
-    level: i32,
-    progress: i32,
-    total: i32,
-}
-
-pub struct Hybrid {
-    id: Option<String>,
-    item_id: String,
-    is_vaal_gem: Option<bool>,
-    base_type_name: String,
-    sec_descr_text: Option<String>,
-}
-*/
 
 use crate::schema::{
-    extended, hybrids, incubated_item, influences, items, latest_stash_id, mods, properties,
-    socketed_items, sockets, subcategories, ultimatum_mods,
+    extended, hybrid_mods, hybrids, incubated_item, influences, items, latest_stash_id, mods,
+    properties, socketed_items, sockets, subcategories, ultimatum_mods,
 };
 
 #[derive(Insertable, Debug)]
@@ -600,12 +516,25 @@ pub struct NewIncubatedItem {
     pub total: i32,
 }
 
+pub struct HybridMod {
+    pub item_id: String,
+    pub is_vaal_gem: bool,
+    pub base_type_name: String,
+    pub sec_descr_text: Option<String>,
+}
+
 #[derive(Insertable)]
 #[table_name = "hybrids"]
 pub struct NewHybrid {
-    pub id: Option<String>,
+    pub hybrid_id: String,
     pub item_id: String,
-    pub is_vaal_gem: Option<bool>,
+}
+
+#[derive(Insertable, Identifiable)]
+#[table_name = "hybrid_mods"]
+pub struct NewHybridMod {
+    pub id: String,
+    pub is_vaal_gem: bool,
     pub base_type_name: String,
     pub sec_descr_text: Option<String>,
 }
@@ -672,12 +601,19 @@ pub struct Extended {
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
 #[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(HybridModDb, foreign_key = "hybrid_id")]
 #[table_name = "hybrids"]
-#[primary_key(id, item_id)]
+#[primary_key(hybrid_id, item_id)]
 pub struct Hybrid {
-    pub id: String,
+    pub hybrid_id: String,
     pub item_id: String,
-    pub is_vaal_gem: Option<bool>,
+}
+
+#[derive(Identifiable, Queryable, Debug)]
+#[table_name = "hybrid_mods"]
+pub struct HybridModDb {
+    pub id: String,
+    pub is_vaal_gem: bool,
     pub base_type_name: String,
     pub sec_descr_text: Option<String>,
 }
