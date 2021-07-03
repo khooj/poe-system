@@ -1,5 +1,5 @@
 use super::models::{
-    Extended, Hybrid, IncubatedItem, Influence, Mod, NewHybrid, NewHybridMod, NewItem,
+    Extended, Hybrid, HybridModDb, IncubatedItem, Influence, Mod, NewHybrid, NewHybridMod, NewItem,
     NewLatestStash, Property, RawItem, RemoveItems, Socket, SocketedItem, SplittedItem,
     Subcategory, UltimatumMod,
 };
@@ -46,6 +46,7 @@ impl DieselItemRepository {
         &self,
         base_type_: &str,
     ) -> Result<Vec<DomainItem>, RepositoryError> {
+        use crate::schema::hybrid_mods::dsl as hybrid_mods_dsl;
         use crate::schema::items::dsl::{base_type, items as items_table};
         use itertools::izip;
 
@@ -64,9 +65,27 @@ impl DieselItemRepository {
         let extended = Extended::belonging_to(&items)
             .load::<Extended>(&conn)?
             .grouped_by(&items);
-        let hybrid = Hybrid::belonging_to(&items)
-            .load::<Hybrid>(&conn)?
-            .grouped_by(&items);
+
+        let hybrid = Hybrid::belonging_to(&items).load::<Hybrid>(&conn)?;
+        let hybrid_mods = hybrid_mods_dsl::hybrid_mods
+            .filter(hybrid_mods_dsl::id.eq_any(hybrid.iter().map(|e| &e.hybrid_id)))
+            .load::<HybridModDb>(&conn)?;
+
+        let hybrid_mods = hybrid_mods
+            .into_iter()
+            .map(|el| (el.id.clone(), el))
+            .collect::<HashMap<String, HybridModDb>>();
+
+        let hybrid = hybrid.grouped_by(&items);
+        let hybrid = hybrid
+            .into_iter()
+            .map(|el| {
+                el.into_iter()
+                    .map(|inner_el| hybrid_mods.get(&inner_el.hybrid_id).cloned().unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<Vec<_>>>();
+
         let incubated = IncubatedItem::belonging_to(&items)
             .load::<IncubatedItem>(&conn)?
             .grouped_by(&items);
@@ -338,17 +357,16 @@ impl DieselItemRepository {
 mod test {
     use super::DieselItemRepository;
     use crate::ports::outbound::public_stash_retriever::PublicStashData;
-    use diesel::prelude::*;
     use diesel::r2d2::{ConnectionManager, Pool};
     use diesel::sqlite::SqliteConnection;
-    use std::{fs::remove_file, path::PathBuf};
-    use temp_file::{TempFile, empty};
+    use temp_file::{empty, TempFile};
 
     const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
 
     embed_migrations!("migrations");
 
-    fn prepare_db() -> Result<(Pool<ConnectionManager<SqliteConnection>>, TempFile), anyhow::Error> {
+    fn prepare_db() -> Result<(Pool<ConnectionManager<SqliteConnection>>, TempFile), anyhow::Error>
+    {
         let f = empty();
 
         let pool = Pool::new(ConnectionManager::new(f.path().to_str().unwrap()))?;

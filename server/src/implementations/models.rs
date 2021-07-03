@@ -601,7 +601,6 @@ pub struct Extended {
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
 #[belongs_to(RawItem, foreign_key = "item_id")]
-#[belongs_to(HybridModDb, foreign_key = "hybrid_id")]
 #[table_name = "hybrids"]
 #[primary_key(hybrid_id, item_id)]
 pub struct Hybrid {
@@ -609,7 +608,7 @@ pub struct Hybrid {
     pub item_id: String,
 }
 
-#[derive(Identifiable, Queryable, Debug)]
+#[derive(Identifiable, Queryable, Debug, Clone)]
 #[table_name = "hybrid_mods"]
 pub struct HybridModDb {
     pub id: String,
@@ -699,7 +698,7 @@ type DomainItemFrom = (
     Vec<Influence>,
     Vec<Mod>,
     Vec<Extended>,
-    Vec<Hybrid>,
+    Vec<HybridModDb>,
     Vec<IncubatedItem>,
     Vec<UltimatumMod>,
     Vec<Socket>,
@@ -817,9 +816,21 @@ impl Into<domain_item::Mod> for Mod {
     }
 }
 
+impl Into<domain_item::Mod> for HybridModDb {
+    fn into(self) -> domain_item::Mod {
+        domain_item::Mod {
+            text: self.sec_descr_text.unwrap_or(String::new()),
+            type_: domain_item::ModType::ExplicitHybrid,
+        }
+    }
+}
+
 impl From<DomainItemFrom> for DomainItem {
     fn from(val: DomainItemFrom) -> Self {
         let extended = val.3.first().map_or(Extended::default(), |e| (*e).clone());
+        let hybrids = val.4.into_iter().map(|e| e.into());
+        let mods: Vec<domain_item::Mod> = val.2.into_iter().map(|e| e.into()).chain(hybrids).collect();
+
         DomainItem {
             id: val.0.id,
             league: val.0.league.into(),
@@ -839,7 +850,7 @@ impl From<DomainItemFrom> for DomainItem {
                 .into(),
             fractured: val.0.fractured.unwrap_or(false),
             synthesised: val.0.synthesised.unwrap_or(false),
-            mods: val.2.into_iter().map(|e| e.into()).collect(),
+            mods,
             ..Default::default()
         }
     }
