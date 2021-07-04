@@ -29,6 +29,8 @@ pub enum RepositoryError {
     Ttt,
     #[error("skipped item")]
     Skipped,
+    #[error("database error")]
+    Db,
 }
 
 pub trait ItemRepository {

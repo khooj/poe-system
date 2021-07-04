@@ -5,6 +5,7 @@ use crate::schema::{build_info, builds_match};
 use serde_json::json;
 use std::convert::{From, TryFrom};
 use uuid::Uuid;
+use tracing::{event, Level};
 
 #[derive(Insertable)]
 #[table_name = "build_info"]
@@ -194,6 +195,7 @@ impl TryFrom<Item> for SplittedItem {
         };
 
         let hybrid = if let Some(mut el) = item.hybrid {
+            event!(Level::DEBUG, "hybrid: {:?}", el);
             let mut hybrid_mods = append_mods(
                 vec![(el.explicit_mods.take(), ModType::ExplicitHybrid)],
                 item.id.as_deref().unwrap(),
@@ -544,6 +546,7 @@ pub struct NewIncubatedItem {
     pub total: i32,
 }
 
+#[derive(Debug)]
 pub struct HybridMod {
     pub item_id: String,
     pub is_vaal_gem: bool,

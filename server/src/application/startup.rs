@@ -1,6 +1,5 @@
 use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
 use crate::{
-    actors::item_repository::ItemsRepositoryActor,
     implementations::{
         builds_repository::DieselBuildsRepository,
         http_controller::{calculate_pob, get_build_price},
@@ -88,10 +87,7 @@ impl Application {
 
                 tx2.send(t.clone()).expect("cant send actor");
 
-                let repo_actor =
-                    SyncArbiter::start(1, move || ItemsRepositoryActor { repo: repo.clone() });
-
-                let actor = StashReceiverActor::new(repo_actor.clone(), client.clone()).start();
+                let actor = StashReceiverActor::new(repo.clone(), client.clone()).start();
 
                 let timer = PublicStashTimer {
                     actor: actor.clone(),

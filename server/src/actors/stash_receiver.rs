@@ -1,16 +1,13 @@
-use crate::implementations::public_stash_retriever::Client;
+use crate::implementations::{public_stash_retriever::Client, ItemsRepository};
 use crate::ports::outbound::{
     public_stash_retriever::{Error, PublicStashData, Retriever},
     repository::RepositoryError,
 };
 use actix::prelude::*;
-use if_chain::if_chain;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::Mutex as AsyncMutex;
-use tracing::{error, event, info, span, Instrument, Level};
-
-use super::item_repository::{GetStashId, InsertRawItem, ItemsRepositoryActor};
+use tracing::{error, event, info, instrument, span, Instrument, Level};
 
 #[derive(Error, Debug)]
 pub enum ActorError {
@@ -25,19 +22,13 @@ pub enum ActorError {
 // TODO: should work on different thread
 // but cant do it now because of async client
 pub struct StashReceiverActor {
-    repository: Addr<ItemsRepositoryActor>,
+    repository: ItemsRepository,
     client: Arc<AsyncMutex<Client>>,
 }
 
 impl StashReceiverActor {
-    pub fn new(
-        repo: Addr<ItemsRepositoryActor>,
-        client: Arc<AsyncMutex<Client>>,
-    ) -> StashReceiverActor {
-        StashReceiverActor {
-            repository: repo,
-            client,
-        }
+    pub fn new(repository: ItemsRepository, client: Arc<AsyncMutex<Client>>) -> StashReceiverActor {
+        StashReceiverActor { repository, client }
     }
 }
 
@@ -46,38 +37,21 @@ impl Actor for StashReceiverActor {
 }
 
 #[derive(Message)]
-#[rtype(result = "()")]
+#[rtype(result = "Result<(), anyhow::Error>")]
 pub struct StartReceiveMsg;
 
 impl Handler<StartReceiveMsg> for StashReceiverActor {
-    type Result = ResponseActFuture<Self, ()>;
+    type Result = Result<(), anyhow::Error>;
 
-    fn handle(&mut self, _: StartReceiveMsg, _ctx: &mut Self::Context) -> Self::Result {
-        let r = self.repository.clone();
-        let c = Arc::clone(&self.client);
-        let span = span!(Level::INFO, "StashReceiverActor(StartReceiveMsg)");
-        Box::pin(
-            async move {
-                if c.try_lock().is_err() {
-                    event!(Level::INFO, "locked, skipping iteration");
-                    return Err(RepositoryError::Skipped);
-                }
-                match r.send(GetStashId {}).await {
-                    Ok(k) => k,
-                    Err(_) => Err(RepositoryError::Skipped),
-                }
-            }
-            .instrument(span)
-            .into_actor(self)
-            .map(|res, _act, ctx| {
-                if_chain! {
-                    if let Ok(stash_id) = res;
-                    then {
-                        ctx.notify(GetStashMsg(stash_id.latest_stash_id));
-                    }
-                };
-            }),
-        )
+    #[instrument(err, skip(self, ctx))]
+    fn handle(&mut self, _: StartReceiveMsg, ctx: &mut Self::Context) -> Self::Result {
+        if self.client.try_lock().is_err() {
+            event!(Level::INFO, "locked, skipping iteration");
+            return Ok(());
+        }
+        let res = self.repository.get_stash_id()?;
+        ctx.notify(GetStashMsg(res.latest_stash_id));
+        Ok(())
     }
 }
 
@@ -117,33 +91,18 @@ impl Handler<GetStashMsg> for StashReceiverActor {
 }
 
 #[derive(Message)]
-#[rtype(result = "()")]
+#[rtype(result = "Result<(), anyhow::Error>")]
 struct ReceivedStash(PublicStashData);
 
 impl Handler<ReceivedStash> for StashReceiverActor {
-    type Result = ResponseActFuture<Self, ()>;
+    type Result = Result<(), anyhow::Error>;
 
+    #[instrument(err, skip(self, msg))]
     fn handle(&mut self, msg: ReceivedStash, _: &mut Self::Context) -> Self::Result {
-        let r = self.repository.clone();
-        let span = span!(Level::INFO, "StashReceiverActor(ReceivedStash)");
-        Box::pin(
-            async move {
-                info!("received stash with next id: {}", msg.0.next_change_id);
-                r.send(InsertRawItem { data: msg.0 }).await
-            }
-            .instrument(span)
-            .into_actor(self)
-            .map(|res, _act, _ctx| {
-                match res {
-                    Err(e) => {
-                        error!("cant insert items: {}", e);
-                    }
-                    _ => {
-                        event!(Level::INFO, "successfully inserted");
-                    }
-                };
-            }),
-        )
+        info!("received stash with next id: {}", msg.0.next_change_id);
+        self.repository.insert_raw_item(&msg.0)?;
+        event!(Level::INFO, "successfully inserted");
+        Ok(())
     }
 }
 

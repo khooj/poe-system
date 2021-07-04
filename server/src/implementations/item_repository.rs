@@ -8,13 +8,14 @@ use crate::domain::item::Item as DomainItem;
 use crate::ports::outbound::public_stash_retriever::PublicStashData;
 use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
 use diesel::prelude::*;
+use diesel::result::Error as DieselError;
 use diesel::BelongingToDsl;
 use itertools::Itertools;
 use std::{
     collections::HashMap,
     convert::{From, TryFrom},
 };
-use tracing::warn;
+use tracing::{event, Level};
 use uuid::Uuid;
 
 macro_rules! collect_val {
@@ -26,9 +27,25 @@ macro_rules! collect_val {
     };
 }
 
+macro_rules! insert_val {
+    ($v:expr, $field:tt, $table:tt, $conn:expr) => {
+        for mod_ in collect_val!($v, $field) {
+            diesel::insert_into($table).values(mod_).execute(&$conn)?;
+        }
+    };
+}
+
 macro_rules! collect_val2 {
     ($v:expr, $field:tt) => {
         $v.iter().map(|el| &el.$field).filter_map(|el| el.as_ref())
+    };
+}
+
+macro_rules! insert_val2 {
+    ($v:expr, $field:tt, $table:tt, $conn:expr) => {
+        for mod_ in collect_val2!($v, $field) {
+            diesel::insert_into($table).values(mod_).execute(&$conn)?;
+        }
     };
 }
 
@@ -178,32 +195,70 @@ impl DieselItemRepository {
 
         let conn = self.conn.get()?;
 
-        match diesel::insert_into(hybrid_mods)
-            .values(&mod_)
-            .execute(&conn)
+        let id_ = match hybrid_mods
+            .filter(
+                is_vaal_gem
+                    .eq(&mod_.is_vaal_gem)
+                    .and(base_type_name.eq(&mod_.base_type_name)),
+            )
+            .select(id)
+            .get_results::<String>(&conn)
         {
-            Ok(_) => Ok(mod_.id),
-            Err(_) => {
-                let q = hybrid_mods
-                    .filter(
-                        is_vaal_gem
-                            .eq(&mod_.is_vaal_gem)
-                            .and(base_type_name.eq(&mod_.base_type_name)),
-                    )
-                    .select(id);
-
-                // TODO: use tracing for proper debugging
-                // use diesel::sqlite::Sqlite;
-                // println!("{}", debug_query::<Sqlite, _>(&q));
-                Ok(q.first::<String>(&conn)?)
+            Err(e) => match e {
+                _ => {
+                    event!(Level::ERROR, "cant find hybrid: {:?}", e);
+                    return Err(RepositoryError::Db);
+                }
+            },
+            Ok(k) => {
+                if k.len() == 0 {
+                    diesel::insert_into(hybrid_mods)
+                        .values(&mod_)
+                        .execute(&conn)?;
+                    mod_.id
+                } else {
+                    k.first().cloned().unwrap()
+                }
             }
-        }
+        };
+
+        Ok(id_)
+
+        // match diesel::insert_into(hybrid_mods)
+        //     .values(&mod_)
+        //     .execute(&conn)
+        // {
+        //     Ok(_) => Ok(mod_.id),
+        //     Err(e) => {
+        //         match e {
+        //             DieselError::DatabaseError(kind, err) => {
+        //                 event!(Level::ERROR, "{:?}: {:?}", kind, err);
+        //                 return Err(RepositoryError::Db);
+        //             }
+        //             _ => {}
+        //         };
+        //         let q = hybrid_mods
+        //             .filter(
+        //                 is_vaal_gem
+        //                     .eq(&mod_.is_vaal_gem)
+        //                     .and(base_type_name.eq(&mod_.base_type_name)),
+        //             )
+        //             .select(id);
+
+        //         println!("{:?}", hybrid_mods.get_results::<HybridModDb>(&conn)?);
+        //         // TODO: use tracing for proper debugging
+        //         use diesel::{debug_query, sqlite::Sqlite};
+        //         println!("{}", debug_query::<Sqlite, _>(&q));
+        //         Ok(q.first::<String>(&conn)?)
+        //     }
+        // }
     }
 
     pub fn insert_raw_item(&self, public_data: &PublicStashData) -> Result<(), RepositoryError> {
         use crate::schema::items::dsl::*;
         use crate::schema::{
-            extended::dsl::extended as extended_table, hybrids::dsl::hybrids as hybrids_table,
+            extended::dsl::extended as extended_table, hybrid_mods::dsl as hybrid_mods_dsl,
+            hybrids::dsl::hybrids as hybrids_table,
             incubated_item::dsl::incubated_item as incubated_item_table,
             influences::dsl::influences as influences_table, mods::dsl::mods as mods_table,
             properties::dsl::properties as properties_table,
@@ -211,7 +266,6 @@ impl DieselItemRepository {
             subcategories::dsl::subcategories as subcategories_table,
             ultimatum_mods::dsl::ultimatum_mods as ultimatum_mods_table,
         };
-        use itertools::izip;
 
         let conn = self.conn.get()?;
 
@@ -230,7 +284,11 @@ impl DieselItemRepository {
                                 Some(item)
                             }
                             Err(_) => {
-                                warn!("skipping {:?} item because cant generate entity", i);
+                                event!(
+                                    Level::WARN,
+                                    "skipping {:?} item because cant generate entity",
+                                    i
+                                );
                                 None
                             }
                         })
@@ -246,90 +304,94 @@ impl DieselItemRepository {
             for (k, v) in &new_item_info {
                 if v.len() == 0 {
                     diesel::delete(items.filter(account_id.eq(&k))).execute(&conn)?;
-                } else {
-                    let insert_items: Vec<&NewItem> = v.iter().map(|v| &v.item).collect();
-                    let delete_items: Vec<RemoveItems> = v
-                        .iter()
-                        .map(|v| RemoveItems {
-                            account_name: &v.item.account_name,
-                            stash_id: &v.item.stash_id,
-                        })
-                        .collect();
+                    continue;
+                }
+                let insert_items: Vec<&NewItem> = v.iter().map(|v| &v.item).collect();
+                let delete_items: Vec<RemoveItems> = v
+                    .iter()
+                    .map(|v| RemoveItems {
+                        account_name: &v.item.account_name,
+                        stash_id: &v.item.stash_id,
+                    })
+                    .collect();
 
-                    // TODO: somehow use Identifiable or smth else to simplify delete query
-                    for i in &delete_items {
-                        diesel::delete(
-                            items.filter(
-                                account_name.eq(i.account_name).and(stash_id.eq(i.stash_id)),
-                            ),
+                // TODO: somehow use Identifiable or smth else to simplify delete query
+                for i in &delete_items {
+                    diesel::delete(
+                        items.filter(account_name.eq(i.account_name).and(stash_id.eq(i.stash_id))),
+                    )
+                    .execute(&conn)?;
+                }
+
+                event!(Level::DEBUG, "inserting items");
+                for i in insert_items {
+                    diesel::insert_into(items).values(i).execute(&conn)?;
+                }
+
+                event!(
+                    Level::DEBUG,
+                    "inserting mods, subcats, props, sockets, ultimatums"
+                );
+
+                insert_val!(v, mods, mods_table, conn);
+                insert_val!(v, subcategories, subcategories_table, conn);
+                insert_val!(v, props, properties_table, conn);
+                insert_val!(v, sockets, sockets_table, conn);
+                insert_val!(v, ultimatum, ultimatum_mods_table, conn);
+
+                event!(
+                    Level::DEBUG,
+                    "inserting incubated, hybrid, extended, influences"
+                );
+
+                insert_val2!(v, incubated, incubated_item_table, conn);
+                insert_val2!(v, extended, extended_table, conn);
+                insert_val2!(v, influence, influences_table, conn);
+                for mods in collect_val2!(v, hybrid) {
+                    let new_mod = NewHybridMod {
+                        id: Uuid::new_v4().to_hyphenated().to_string(),
+                        is_vaal_gem: mods.is_vaal_gem,
+                        base_type_name: mods.base_type_name.clone(),
+                        sec_descr_text: mods.sec_descr_text.clone(),
+                    };
+
+                    let id_mod = match hybrid_mods_dsl::hybrid_mods
+                        .filter(
+                            hybrid_mods_dsl::is_vaal_gem
+                                .eq(&new_mod.is_vaal_gem)
+                                .and(hybrid_mods_dsl::base_type_name.eq(&new_mod.base_type_name)),
                         )
+                        .select(hybrid_mods_dsl::id)
+                        .first::<String>(&conn)
+                    {
+                        Err(e) => match e {
+                            DieselError::NotFound => {
+                                diesel::insert_into(hybrid_mods_dsl::hybrid_mods)
+                                    .values(&new_mod)
+                                    .execute(&conn)?;
+                                new_mod.id
+                            }
+                            _ => {
+                                event!(Level::ERROR, "cant find hybrid: {:?}", e);
+                                return Err(RepositoryError::Db);
+                            }
+                        },
+                        Ok(k) => k,
+                    };
+
+                    event!(
+                        Level::DEBUG,
+                        "generated hybrid id {} for {:?}",
+                        id_mod,
+                        mods
+                    );
+
+                    diesel::insert_into(hybrids_table)
+                        .values(&NewHybrid {
+                            hybrid_id: id_mod.clone(),
+                            item_id: mods.item_id.clone(),
+                        })
                         .execute(&conn)?;
-                    }
-
-                    for i in insert_items {
-                        diesel::insert_into(items).values(i).execute(&conn)?;
-                    }
-
-                    for mods in izip!(
-                        collect_val!(v, mods),
-                        collect_val!(v, subcategories),
-                        collect_val!(v, props),
-                        collect_val!(v, sockets),
-                        collect_val!(v, ultimatum),
-                    ) {
-                        diesel::insert_into(mods_table)
-                            .values(mods.0)
-                            .execute(&conn)?;
-
-                        diesel::insert_into(subcategories_table)
-                            .values(mods.1)
-                            .execute(&conn)?;
-
-                        diesel::insert_into(properties_table)
-                            .values(mods.2)
-                            .execute(&conn)?;
-
-                        diesel::insert_into(sockets_table)
-                            .values(mods.3)
-                            .execute(&conn)?;
-
-                        diesel::insert_into(ultimatum_mods_table)
-                            .values(mods.4)
-                            .execute(&conn)?;
-                    }
-
-                    for mods in izip!(
-                        collect_val2!(v, incubated),
-                        collect_val2!(v, hybrid),
-                        collect_val2!(v, extended),
-                        collect_val2!(v, influence),
-                    ) {
-                        diesel::insert_into(incubated_item_table)
-                            .values(mods.0)
-                            .execute(&conn)?;
-
-                        let id_mod = self.save_new_hybrid_mod(NewHybridMod {
-                            id: Uuid::new_v4().to_hyphenated().to_string(),
-                            is_vaal_gem: mods.1.is_vaal_gem,
-                            base_type_name: mods.1.base_type_name.clone(),
-                            sec_descr_text: mods.1.sec_descr_text.clone(),
-                        })?;
-
-                        diesel::insert_into(hybrids_table)
-                            .values(&NewHybrid {
-                                hybrid_id: id_mod.clone(),
-                                item_id: mods.1.item_id.clone(),
-                            })
-                            .execute(&conn)?;
-
-                        diesel::insert_into(extended_table)
-                            .values(mods.2)
-                            .execute(&conn)?;
-
-                        diesel::insert_into(influences_table)
-                            .values(mods.3)
-                            .execute(&conn)?;
-                    }
                 }
             }
 
@@ -350,6 +412,7 @@ mod test {
     use diesel::sqlite::SqliteConnection;
     use std::path::PathBuf;
     use temp_file::{empty, TempFile};
+    use tracing_subscriber;
     use uuid::Uuid;
 
     const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
@@ -358,6 +421,7 @@ mod test {
 
     fn prepare_db() -> Result<(Pool<ConnectionManager<SqliteConnection>>, TempFile), anyhow::Error>
     {
+        // tracing_subscriber::fmt::init();
         let f = empty();
 
         let pool = Pool::new(ConnectionManager::new(f.path().to_str().unwrap()))?;
