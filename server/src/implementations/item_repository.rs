@@ -15,7 +15,7 @@ use std::{
     collections::HashMap,
     convert::{From, TryFrom},
 };
-use tracing::{event, Level};
+use tracing::{event, instrument, Level};
 use uuid::Uuid;
 
 macro_rules! collect_val {
@@ -30,7 +30,8 @@ macro_rules! collect_val {
 macro_rules! insert_val {
     ($v:expr, $field:tt, $table:tt, $conn:expr) => {
         for mod_ in collect_val!($v, $field) {
-            diesel::insert_into($table).values(mod_).execute(&$conn)?;
+            // TODO: check why sometimes we trying to insert already presented values
+            diesel::replace_into($table).values(mod_).execute(&$conn)?;
         }
     };
 }
@@ -44,7 +45,8 @@ macro_rules! collect_val2 {
 macro_rules! insert_val2 {
     ($v:expr, $field:tt, $table:tt, $conn:expr) => {
         for mod_ in collect_val2!($v, $field) {
-            diesel::insert_into($table).values(mod_).execute(&$conn)?;
+            // TODO: check why sometimes we trying to insert already presented values
+            diesel::replace_into($table).values(mod_).execute(&$conn)?;
         }
     };
 }
@@ -59,6 +61,7 @@ impl DieselItemRepository {
         Ok(DieselItemRepository { conn })
     }
 
+    #[instrument(err, skip(self))]
     pub fn get_items_by_basetype(
         &self,
         base_type_: &str,
@@ -157,6 +160,7 @@ impl DieselItemRepository {
             .load::<RawItem>(&conn)?)
     }
 
+    #[instrument(err, skip(self))]
     pub fn get_stash_id(&self) -> Result<LatestStashId, RepositoryError> {
         use crate::schema::latest_stash_id::dsl::*;
 
@@ -169,91 +173,20 @@ impl DieselItemRepository {
             .unwrap())
     }
 
+    #[instrument(err, skip(self))]
     pub fn set_stash_id(&self, id_: &str) -> Result<(), RepositoryError> {
         use crate::schema::latest_stash_id::dsl::*;
 
         let conn = self.conn.get()?;
 
-        // workaround for upsert functionality for sqlite https://github.com/diesel-rs/diesel/issues/1854
-        // TODO: use replace_into instead
-        let vals = latest_stash_id.load::<LatestStashId>(&conn)?;
-        if vals.len() == 0 {
-            let latest_stash = NewLatestStash { id: id_.to_owned() };
-            diesel::insert_into(latest_stash_id)
-                .values(&latest_stash)
-                .execute(&conn)?;
-        } else {
-            diesel::update(latest_stash_id)
-                .set(id.eq(id_))
-                .execute(&conn)?;
-        }
+        let latest_stash = NewLatestStash { id: id_.to_owned() };
+        diesel::replace_into(latest_stash_id)
+            .values(&latest_stash)
+            .execute(&conn)?;
         Ok(())
     }
 
-    fn save_new_hybrid_mod(&self, mod_: NewHybridMod) -> Result<String, RepositoryError> {
-        use crate::schema::hybrid_mods::dsl::*;
-
-        let conn = self.conn.get()?;
-
-        let id_ = match hybrid_mods
-            .filter(
-                is_vaal_gem
-                    .eq(&mod_.is_vaal_gem)
-                    .and(base_type_name.eq(&mod_.base_type_name)),
-            )
-            .select(id)
-            .get_results::<String>(&conn)
-        {
-            Err(e) => match e {
-                _ => {
-                    event!(Level::ERROR, "cant find hybrid: {:?}", e);
-                    return Err(RepositoryError::Db);
-                }
-            },
-            Ok(k) => {
-                if k.len() == 0 {
-                    diesel::insert_into(hybrid_mods)
-                        .values(&mod_)
-                        .execute(&conn)?;
-                    mod_.id
-                } else {
-                    k.first().cloned().unwrap()
-                }
-            }
-        };
-
-        Ok(id_)
-
-        // match diesel::insert_into(hybrid_mods)
-        //     .values(&mod_)
-        //     .execute(&conn)
-        // {
-        //     Ok(_) => Ok(mod_.id),
-        //     Err(e) => {
-        //         match e {
-        //             DieselError::DatabaseError(kind, err) => {
-        //                 event!(Level::ERROR, "{:?}: {:?}", kind, err);
-        //                 return Err(RepositoryError::Db);
-        //             }
-        //             _ => {}
-        //         };
-        //         let q = hybrid_mods
-        //             .filter(
-        //                 is_vaal_gem
-        //                     .eq(&mod_.is_vaal_gem)
-        //                     .and(base_type_name.eq(&mod_.base_type_name)),
-        //             )
-        //             .select(id);
-
-        //         println!("{:?}", hybrid_mods.get_results::<HybridModDb>(&conn)?);
-        //         // TODO: use tracing for proper debugging
-        //         use diesel::{debug_query, sqlite::Sqlite};
-        //         println!("{}", debug_query::<Sqlite, _>(&q));
-        //         Ok(q.first::<String>(&conn)?)
-        //     }
-        // }
-    }
-
+    #[instrument(err, skip(self, public_data))]
     pub fn insert_raw_item(&self, public_data: &PublicStashData) -> Result<(), RepositoryError> {
         use crate::schema::items::dsl::*;
         use crate::schema::{
@@ -298,7 +231,6 @@ impl DieselItemRepository {
                 .flatten()
                 .into_group_map_by(|el| el.item.account_id.clone());
 
-            // TODO: check if works in given transaction
             self.set_stash_id(&public_data.next_change_id)?;
 
             for (k, v) in &new_item_info {
@@ -386,7 +318,7 @@ impl DieselItemRepository {
                         mods
                     );
 
-                    diesel::insert_into(hybrids_table)
+                    diesel::replace_into(hybrids_table)
                         .values(&NewHybrid {
                             hybrid_id: id_mod.clone(),
                             item_id: mods.item_id.clone(),
@@ -404,23 +336,18 @@ impl DieselItemRepository {
 #[cfg(test)]
 mod test {
     use super::DieselItemRepository;
-    use crate::{
-        implementations::models::NewHybridMod,
-        ports::outbound::public_stash_retriever::PublicStashData,
-    };
+    use super::TypedConnectionPool;
+    use crate::ports::outbound::public_stash_retriever::PublicStashData;
     use diesel::r2d2::{ConnectionManager, Pool};
-    use diesel::sqlite::SqliteConnection;
     use std::path::PathBuf;
     use temp_file::{empty, TempFile};
     use tracing_subscriber;
-    use uuid::Uuid;
 
     const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
 
     embed_migrations!("migrations");
 
-    fn prepare_db() -> Result<(Pool<ConnectionManager<SqliteConnection>>, TempFile), anyhow::Error>
-    {
+    fn prepare_db() -> Result<(TypedConnectionPool, TempFile), anyhow::Error> {
         // tracing_subscriber::fmt::init();
         let f = empty();
 
@@ -476,40 +403,14 @@ mod test {
     }
 
     #[test]
-    fn save_hybrid() -> Result<(), anyhow::Error> {
+    fn set_latest_stash_id() -> Result<(), anyhow::Error> {
         let (pool, _guard) = prepare_db()?;
-
         let repo = DieselItemRepository::new(pool)?;
 
-        let id_1 = repo.save_new_hybrid_mod(NewHybridMod {
-            id: Uuid::new_v4().to_hyphenated().to_string(),
-            is_vaal_gem: true,
-            base_type_name: "Haste".to_owned(),
-            sec_descr_text: Some("test".to_owned()),
-        })?;
-        let id_2 = repo.save_new_hybrid_mod(NewHybridMod {
-            id: Uuid::new_v4().to_hyphenated().to_string(),
-            is_vaal_gem: true,
-            base_type_name: "Haste".to_owned(),
-            sec_descr_text: Some("test".to_owned()),
-        })?;
+        repo.set_stash_id("asd-dsa")?;
+        let stash = repo.get_stash_id()?;
 
-        assert_eq!(id_1, id_2);
-
-        let id1 = repo.save_new_hybrid_mod(NewHybridMod {
-            id: Uuid::new_v4().to_hyphenated().to_string(),
-            is_vaal_gem: true,
-            base_type_name: "Haste".to_owned(),
-            sec_descr_text: None,
-        })?;
-        let id2 = repo.save_new_hybrid_mod(NewHybridMod {
-            id: Uuid::new_v4().to_hyphenated().to_string(),
-            is_vaal_gem: true,
-            base_type_name: "Haste".to_owned(),
-            sec_descr_text: None,
-        })?;
-
-        assert_eq!(id1, id2);
+        assert_eq!(stash.latest_stash_id, Some("asd-dsa".to_owned()));
 
         Ok(())
     }

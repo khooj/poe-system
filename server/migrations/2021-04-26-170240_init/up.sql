@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS hybrids (
     item_id TEXT NOT NULL,
     PRIMARY KEY(hybrid_id, item_id),
     FOREIGN KEY(hybrid_id) REFERENCES hybrid_mods(id),
-    FOREIGN KEY(item_id) REFERENCES items(id)
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS extended (
     item_id TEXT PRIMARY KEY NOT NULL,
@@ -131,11 +131,11 @@ CREATE TABLE IF NOT EXISTS extended (
 );
 CREATE TABLE IF NOT EXISTS influences (
     item_id TEXT PRIMARY KEY NOT NULL,
-    warlord BOOLEAN,
-    crusader BOOLEAN,
-    redeemer BOOLEAN,
-    hunter BOOLEAN,
-    shaper BOOLEAN,
-    elder BOOLEAN,
+    warlord BOOLEAN NOT NULL,
+    crusader BOOLEAN NOT NULL,
+    redeemer BOOLEAN NOT NULL,
+    hunter BOOLEAN NOT NULL,
+    shaper BOOLEAN NOT NULL,
+    elder BOOLEAN NOT NULL,
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );

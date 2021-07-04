@@ -53,12 +53,12 @@ table! {
 table! {
     influences (item_id) {
         item_id -> Text,
-        warlord -> Nullable<Bool>,
-        crusader -> Nullable<Bool>,
-        redeemer -> Nullable<Bool>,
-        hunter -> Nullable<Bool>,
-        shaper -> Nullable<Bool>,
-        elder -> Nullable<Bool>,
+        warlord -> Bool,
+        crusader -> Bool,
+        redeemer -> Bool,
+        hunter -> Bool,
+        shaper -> Bool,
+        elder -> Bool,
     }
 }
 

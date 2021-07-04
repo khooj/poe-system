@@ -4,8 +4,8 @@ use crate::ports::outbound::repository::RepositoryError;
 use crate::schema::{build_info, builds_match};
 use serde_json::json;
 use std::convert::{From, TryFrom};
-use uuid::Uuid;
 use tracing::{event, Level};
+use uuid::Uuid;
 
 #[derive(Insertable)]
 #[table_name = "build_info"]
@@ -248,12 +248,12 @@ impl TryFrom<Item> for SplittedItem {
         let influence = if let Some(el) = item.influences {
             Some(NewInfluence {
                 item_id: item.id.as_ref().unwrap().clone(),
-                crusader: el.crusader,
-                hunter: el.hunter,
-                redeemer: el.redeemer,
-                warlord: el.warlord,
-                shaper: el.shaper,
-                elder: el.elder,
+                crusader: el.crusader.unwrap_or(false),
+                hunter: el.hunter.unwrap_or(false),
+                redeemer: el.redeemer.unwrap_or(false),
+                warlord: el.warlord.unwrap_or(false),
+                shaper: el.shaper.unwrap_or(false),
+                elder: el.elder.unwrap_or(false),
             })
         } else {
             None
@@ -583,12 +583,12 @@ pub struct NewExtended {
 #[table_name = "influences"]
 pub struct NewInfluence {
     pub item_id: String,
-    pub warlord: Option<bool>,
-    pub crusader: Option<bool>,
-    pub redeemer: Option<bool>,
-    pub hunter: Option<bool>,
-    pub shaper: Option<bool>,
-    pub elder: Option<bool>,
+    pub warlord: bool,
+    pub crusader: bool,
+    pub redeemer: bool,
+    pub hunter: bool,
+    pub shaper: bool,
+    pub elder: bool,
 }
 
 #[derive(Insertable)]
@@ -611,12 +611,12 @@ pub struct RemoveItems<'a> {
 #[primary_key(item_id)]
 pub struct Influence {
     pub item_id: String,
-    pub warlord: Option<bool>,
-    pub crusader: Option<bool>,
-    pub redeemer: Option<bool>,
-    pub hunter: Option<bool>,
-    pub shaper: Option<bool>,
-    pub elder: Option<bool>,
+    pub warlord: bool,
+    pub crusader: bool,
+    pub redeemer: bool,
+    pub hunter: bool,
+    pub shaper: bool,
+    pub elder: bool,
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug, Default, Clone)]
@@ -817,7 +817,7 @@ impl Into<Vec<domain_item::Influence>> for Influence {
             (Inf::Redeemer, self.redeemer),
         ];
         for (type_, opt) in mapping {
-            if opt.is_some() {
+            if opt {
                 v.push(type_);
             }
         }

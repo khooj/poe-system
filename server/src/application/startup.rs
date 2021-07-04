@@ -1,10 +1,8 @@
-use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
-use crate::{
-    implementations::{
-        builds_repository::DieselBuildsRepository,
-        http_controller::{calculate_pob, get_build_price},
-    },
+use crate::implementations::{
+    builds_repository::DieselBuildsRepository,
+    http_controller::{calculate_pob, get_build_price},
 };
+use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
 use crate::{
     actors::stash_receiver::StashReceiverActor,
     implementations::item_repository::DieselItemRepository,
@@ -39,9 +37,7 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         Application::setup_tracing();
 
-        let manager = diesel::r2d2::ConnectionManager::<diesel::SqliteConnection>::new(
-            &configuration.database,
-        );
+        let manager = diesel::r2d2::ConnectionManager::new(&configuration.database);
         let pool = Pool::new(manager).expect("cant create diesel pool");
 
         {
