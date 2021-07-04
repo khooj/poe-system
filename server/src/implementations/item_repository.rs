@@ -1,7 +1,7 @@
 use super::models::{
-    Extended, Hybrid, HybridModDb, IncubatedItem, Influence, Mod, NewHybrid, NewHybridMod, NewItem,
-    NewLatestStash, Property, RawItem, RemoveItems, Socket, SocketedItem, SplittedItem,
-    Subcategory, UltimatumMod,
+    Extended, Hybrid, HybridModDb, IncubatedItem, Influence, ItemProperty, Mod, NewHybrid,
+    NewHybridMod, NewItem, NewLatestStash, NewProperty, NewPropertyType, Property, PropertyTypeDb,
+    RawItem, RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
 };
 use super::TypedConnectionPool;
 use crate::domain::item::Item as DomainItem;
@@ -68,6 +68,7 @@ impl DieselItemRepository {
     ) -> Result<Vec<DomainItem>, RepositoryError> {
         use crate::schema::hybrid_mods::dsl as hybrid_mods_dsl;
         use crate::schema::items::dsl::{base_type, items as items_table};
+        use crate::schema::property_types::dsl as property_types_dsl;
         use itertools::izip;
 
         let conn = self.conn.get()?;
@@ -120,9 +121,27 @@ impl DieselItemRepository {
         let socketed = SocketedItem::belonging_to(&items)
             .load::<SocketedItem>(&conn)?
             .grouped_by(&items);
-        let properties = Property::belonging_to(&items)
-            .load::<Property>(&conn)?
-            .grouped_by(&items);
+
+        let properties = ItemProperty::belonging_to(&items).load::<ItemProperty>(&conn)?;
+        let property_types = property_types_dsl::property_types
+            .filter(property_types_dsl::id.eq_any(properties.iter().map(|e| &e.property_id)))
+            .load::<PropertyTypeDb>(&conn)?;
+
+        let property_types = property_types
+            .into_iter()
+            .map(|el| (el.id.clone(), el))
+            .collect::<HashMap<String, PropertyTypeDb>>();
+
+        let properties = properties.grouped_by(&items);
+        let properties = properties
+            .into_iter()
+            .map(|el| {
+                el.into_iter()
+                    .map(|inner_el| property_types.get(&inner_el.property_id).cloned().unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<Vec<_>>>();
+
         let subcategories = Subcategory::belonging_to(&items)
             .load::<Subcategory>(&conn)?
             .grouped_by(&items);
@@ -195,7 +214,7 @@ impl DieselItemRepository {
             incubated_item::dsl::incubated_item as incubated_item_table,
             influences::dsl::influences as influences_table, mods::dsl::mods as mods_table,
             properties::dsl::properties as properties_table,
-            sockets::dsl::sockets as sockets_table,
+            property_types::dsl as property_types_dsl, sockets::dsl::sockets as sockets_table,
             subcategories::dsl::subcategories as subcategories_table,
             ultimatum_mods::dsl::ultimatum_mods as ultimatum_mods_table,
         };
@@ -267,7 +286,6 @@ impl DieselItemRepository {
 
                 insert_val!(v, mods, mods_table, conn);
                 insert_val!(v, subcategories, subcategories_table, conn);
-                insert_val!(v, props, properties_table, conn);
                 insert_val!(v, sockets, sockets_table, conn);
                 insert_val!(v, ultimatum, ultimatum_mods_table, conn);
 
@@ -279,6 +297,52 @@ impl DieselItemRepository {
                 insert_val2!(v, incubated, incubated_item_table, conn);
                 insert_val2!(v, extended, extended_table, conn);
                 insert_val2!(v, influence, influences_table, conn);
+                for mods in collect_val2!(v, props) {
+                    for mod_ in mods {
+                        let new_prop = NewPropertyType {
+                            id: Uuid::new_v4().to_hyphenated().to_string(),
+                            name: mod_.name.clone(),
+                            property_type: mod_.property_type,
+                        };
+
+                        let id_mod = match property_types_dsl::property_types
+                            .filter(
+                                property_types_dsl::property_type
+                                    .eq(mod_.property_type)
+                                    .and(property_types_dsl::name.eq(&mod_.name)),
+                            )
+                            .select(property_types_dsl::id)
+                            .first::<String>(&conn)
+                        {
+                            Err(e) => match e {
+                                DieselError::NotFound => {
+                                    diesel::insert_into(property_types_dsl::property_types)
+                                        .values(&new_prop)
+                                        .execute(&conn)?;
+                                    new_prop.id
+                                }
+                                _ => {
+                                    event!(Level::ERROR, "cant find prop: {:?}", e);
+                                    return Err(RepositoryError::Db);
+                                }
+                            },
+                            Ok(k) => k,
+                        };
+
+                        diesel::replace_into(properties_table)
+                            .values(&NewProperty {
+                                item_id: mod_.item_id.clone(),
+                                property_id: id_mod,
+                                progress: mod_.progress,
+                                suffix: mod_.suffix.clone(),
+                                type_: mod_.type_,
+                                value: mod_.value.clone(),
+                                value_type: mod_.value_type,
+                            })
+                            .execute(&conn)?;
+                    }
+                }
+
                 for mods in collect_val2!(v, hybrid) {
                     let new_mod = NewHybridMod {
                         id: Uuid::new_v4().to_hyphenated().to_string(),

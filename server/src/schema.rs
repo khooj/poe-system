@@ -125,17 +125,23 @@ table! {
 }
 
 table! {
-    properties (id) {
-        id -> Text,
+    properties (property_id, item_id) {
+        property_id -> Text,
         item_id -> Text,
-        property_type -> Integer,
-        name -> Text,
         value_type -> Integer,
         value -> Text,
         #[sql_name = "type"]
         type_ -> Nullable<Integer>,
         progress -> Nullable<Float>,
         suffix -> Nullable<Text>,
+    }
+}
+
+table! {
+    property_types (id) {
+        id -> Text,
+        property_type -> Integer,
+        name -> Text,
     }
 }
 
@@ -198,6 +204,7 @@ allow_tables_to_appear_in_same_query!(
     latest_stash_id,
     mods,
     properties,
+    property_types,
     socketed_items,
     sockets,
     subcategories,

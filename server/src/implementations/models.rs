@@ -1,5 +1,5 @@
 use crate::domain::item::Item as DomainItem;
-use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty};
+use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty as ItemPropertyJson};
 use crate::ports::outbound::repository::RepositoryError;
 use crate::schema::{build_info, builds_match};
 use serde_json::json;
@@ -36,7 +36,7 @@ pub struct SplittedItem {
     pub item: NewItem,
     pub mods: Option<Vec<NewMod>>,
     pub subcategories: Option<Vec<NewSubcategory>>,
-    pub props: Option<Vec<NewProperty>>,
+    pub props: Option<Vec<Property>>,
     pub sockets: Option<Vec<NewSocket>>,
     pub ultimatum: Option<Vec<NewUltimatumMod>>,
     pub incubated: Option<NewIncubatedItem>,
@@ -275,9 +275,9 @@ impl TryFrom<Item> for SplittedItem {
 }
 
 fn append_properties(
-    to_insert: Vec<(Option<Vec<ItemProperty>>, PropertyType)>,
+    to_insert: Vec<(Option<Vec<ItemPropertyJson>>, PropertyType)>,
     item_id: &str,
-) -> Option<Vec<NewProperty>> {
+) -> Option<Vec<Property>> {
     let mut vals = None;
     for (ins, t) in to_insert {
         // debug!("prop: {:?}", ins);
@@ -285,8 +285,7 @@ fn append_properties(
             vals,
             ins.map_or(vec![], |v| v)
                 .into_iter()
-                .map(|el| NewProperty {
-                    id: Uuid::new_v4().to_hyphenated().to_string(),
+                .map(|el| Property {
                     item_id: String::from(item_id),
                     name: el.name,
                     progress: el.progress.map_or(None, |v| Some(v as f32)),
@@ -432,7 +431,7 @@ pub enum ValueType {
 
 use crate::schema::{
     extended, hybrid_mods, hybrids, incubated_item, influences, items, latest_stash_id, mods,
-    properties, socketed_items, sockets, subcategories, ultimatum_mods,
+    properties, property_types, socketed_items, sockets, subcategories, ultimatum_mods,
 };
 
 #[derive(Insertable, Debug)]
@@ -497,13 +496,31 @@ pub struct NewSubcategory {
     pub subcategory: String,
 }
 
-#[derive(Insertable)]
-#[table_name = "properties"]
-pub struct NewProperty {
-    pub id: String,
+#[derive(Clone, Debug)]
+pub struct Property {
     pub item_id: String,
     pub property_type: i32,
     pub name: String,
+    pub value_type: i32,
+    pub value: String,
+    pub type_: Option<i32>,
+    pub progress: Option<f32>,
+    pub suffix: Option<String>,
+}
+
+#[derive(Insertable)]
+#[table_name = "property_types"]
+pub struct NewPropertyType {
+    pub id: String,
+    pub property_type: i32,
+    pub name: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "properties"]
+pub struct NewProperty {
+    pub property_id: String,
+    pub item_id: String,
     pub value_type: i32,
     pub value: String,
     pub type_: Option<i32>,
@@ -692,17 +709,25 @@ pub struct SocketedItem {
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
 #[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(PropertyTypeDb, foreign_key = "property_id")]
 #[table_name = "properties"]
-pub struct Property {
-    pub id: String,
+#[primary_key(property_id, item_id)]
+pub struct ItemProperty {
+    pub property_id: String,
     pub item_id: String,
-    pub property_type: i32,
-    pub name: String,
     pub value_type: i32,
     pub value: String,
     pub type_: Option<i32>,
     pub progress: Option<f32>,
     pub suffix: Option<String>,
+}
+
+#[derive(Identifiable, Queryable, Debug, Clone)]
+#[table_name = "property_types"]
+pub struct PropertyTypeDb {
+    pub id: String,
+    pub property_type: i32,
+    pub name: String,
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
@@ -734,7 +759,7 @@ type DomainItemFrom = (
     Vec<UltimatumMod>,
     Vec<Socket>,
     Vec<SocketedItem>,
-    Vec<Property>,
+    Vec<PropertyTypeDb>,
     Vec<Subcategory>,
 );
 

@@ -9,6 +9,7 @@ DROP TABLE sockets;
 DROP TABLE socketed_items;
 DROP INDEX properties_item_id;
 DROP TABLE properties;
+DROP TABLE property_type;
 DROP TABLE subcategories;
 DROP INDEX mods_item_id;
 DROP TABLE mods;

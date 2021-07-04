@@ -64,16 +64,22 @@ CREATE TABLE IF NOT EXISTS subcategories (
 );
 -- properties, requirements, additional_properties, next_level_requirements,
 -- notable_properties, hybrid
-CREATE TABLE IF NOT EXISTS properties (
+CREATE TABLE IF NOT EXISTS property_types (
     id TEXT PRIMARY KEY NOT NULL,
-    item_id TEXT NOT NULL,
     property_type INTEGER NOT NULL,
     name TEXT NOT NULL,
+    UNIQUE(property_type, name)
+);
+CREATE TABLE IF NOT EXISTS properties (
+    property_id TEXT NOT NULL,
+    item_id TEXT NOT NULL,
     value_type INTEGER NOT NULL,
     value TEXT NOT NULL,
     type INTEGER,
     progress REAL,
     suffix TEXT,
+    PRIMARY KEY(property_id, item_id),
+    FOREIGN KEY(property_id) REFERENCES property_type(id),
     FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 CREATE INDEX properties_item_id ON properties(item_id);
