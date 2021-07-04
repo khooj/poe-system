@@ -377,6 +377,23 @@ impl Mod {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Hybrid {
+    pub is_vaal_gem: bool,
+    pub base_type_name: String,
+    pub sec_descr_text: Option<String>,
+}
+
+impl Default for Hybrid {
+    fn default() -> Self {
+        Hybrid {
+            is_vaal_gem: false,
+            base_type_name: String::new(),
+            sec_descr_text: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Item {
     pub id: String,
@@ -395,6 +412,7 @@ pub struct Item {
     pub fractured: bool,
     pub synthesised: bool,
     pub mods: Vec<Mod>,
+    pub hybrid: Hybrid,
 }
 
 // Rarity: Unique

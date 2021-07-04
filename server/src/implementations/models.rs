@@ -94,7 +94,7 @@ impl TryFrom<Item> for SplittedItem {
             colour: item.colour.take(),
         };
 
-        let mods = append_mods(
+        let mut mods = append_mods(
             vec![
                 (item.utility_mods.take(), ModType::Utility),
                 (item.implicit_mods.take(), ModType::Implicit),
@@ -125,7 +125,7 @@ impl TryFrom<Item> for SplittedItem {
             None
         };
 
-        let props = append_properties(
+        let mut props = append_properties(
             vec![
                 (item.properties.take(), PropertyType::Properties),
                 (
@@ -193,7 +193,31 @@ impl TryFrom<Item> for SplittedItem {
             None
         };
 
-        let hybrid = if let Some(el) = item.hybrid {
+        let hybrid = if let Some(mut el) = item.hybrid {
+            let mut hybrid_mods = append_mods(
+                vec![(el.explicit_mods.take(), ModType::ExplicitHybrid)],
+                item.id.as_deref().unwrap(),
+            );
+            if mods.is_none() {
+                mods = hybrid_mods;
+            } else {
+                mods.as_mut().unwrap().append(hybrid_mods.as_mut().unwrap());
+            }
+
+            let mut hybrid_props = append_properties(
+                vec![(el.properties.take(), PropertyType::Hybrid)],
+                item.id.as_deref().unwrap(),
+            );
+
+            if props.is_none() {
+                props = hybrid_props;
+            } else {
+                props
+                    .as_mut()
+                    .unwrap()
+                    .append(hybrid_props.as_mut().unwrap());
+            }
+
             Some(HybridMod {
                 item_id: item.id.as_ref().unwrap().clone(),
                 base_type_name: el.base_type_name,
@@ -530,7 +554,7 @@ pub struct NewHybrid {
     pub item_id: String,
 }
 
-#[derive(Insertable, Identifiable)]
+#[derive(Insertable)]
 #[table_name = "hybrid_mods"]
 pub struct NewHybridMod {
     pub id: String,
@@ -698,7 +722,7 @@ type DomainItemFrom = (
     Vec<Influence>,
     Vec<Mod>,
     Vec<Extended>,
-    Vec<HybridModDb>,
+    Option<HybridModDb>,
     Vec<IncubatedItem>,
     Vec<UltimatumMod>,
     Vec<Socket>,
@@ -816,11 +840,12 @@ impl Into<domain_item::Mod> for Mod {
     }
 }
 
-impl Into<domain_item::Mod> for HybridModDb {
-    fn into(self) -> domain_item::Mod {
-        domain_item::Mod {
-            text: self.sec_descr_text.unwrap_or(String::new()),
-            type_: domain_item::ModType::ExplicitHybrid,
+impl Into<domain_item::Hybrid> for HybridModDb {
+    fn into(self) -> domain_item::Hybrid {
+        domain_item::Hybrid {
+            is_vaal_gem: self.is_vaal_gem,
+            base_type_name: self.base_type_name,
+            sec_descr_text: self.sec_descr_text,
         }
     }
 }
@@ -828,8 +853,7 @@ impl Into<domain_item::Mod> for HybridModDb {
 impl From<DomainItemFrom> for DomainItem {
     fn from(val: DomainItemFrom) -> Self {
         let extended = val.3.first().map_or(Extended::default(), |e| (*e).clone());
-        let hybrids = val.4.into_iter().map(|e| e.into());
-        let mods: Vec<domain_item::Mod> = val.2.into_iter().map(|e| e.into()).chain(hybrids).collect();
+        let mods: Vec<domain_item::Mod> = val.2.into_iter().map(|e| e.into()).collect();
 
         DomainItem {
             id: val.0.id,
@@ -851,6 +875,11 @@ impl From<DomainItemFrom> for DomainItem {
             fractured: val.0.fractured.unwrap_or(false),
             synthesised: val.0.synthesised.unwrap_or(false),
             mods,
+            hybrid: if let Some(k) = val.4 {
+                k.into()
+            } else {
+                domain_item::Hybrid::default()
+            },
             ..Default::default()
         }
     }

@@ -112,7 +112,8 @@ CREATE TABLE IF NOT EXISTS hybrid_mods (
     id TEXT NOT NULL PRIMARY KEY,
     is_vaal_gem BOOLEAN NOT NULL,
     base_type_name TEXT NOT NULL,
-    sec_descr_text TEXT
+    sec_descr_text TEXT,
+    UNIQUE(is_vaal_gem, base_type_name)
 );
 CREATE TABLE IF NOT EXISTS hybrids (
     hybrid_id TEXT NOT NULL,
