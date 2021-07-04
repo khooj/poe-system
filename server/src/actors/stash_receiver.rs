@@ -22,6 +22,8 @@ pub enum ActorError {
     Skip,
 }
 
+// TODO: should work on different thread
+// but cant do it now because of async client
 pub struct StashReceiverActor {
     repository: Addr<ItemsRepositoryActor>,
     client: Arc<AsyncMutex<Client>>,

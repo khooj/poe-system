@@ -201,7 +201,9 @@ impl TryFrom<Item> for SplittedItem {
             if mods.is_none() {
                 mods = hybrid_mods;
             } else {
-                mods.as_mut().unwrap().append(hybrid_mods.as_mut().unwrap());
+                if hybrid_mods.is_some() {
+                    mods.as_mut().unwrap().append(hybrid_mods.as_mut().unwrap());
+                }
             }
 
             let mut hybrid_props = append_properties(
@@ -212,10 +214,12 @@ impl TryFrom<Item> for SplittedItem {
             if props.is_none() {
                 props = hybrid_props;
             } else {
-                props
-                    .as_mut()
-                    .unwrap()
-                    .append(hybrid_props.as_mut().unwrap());
+                if hybrid_props.is_some() {
+                    props
+                        .as_mut()
+                        .unwrap()
+                        .append(hybrid_props.as_mut().unwrap());
+                }
             }
 
             Some(HybridMod {
