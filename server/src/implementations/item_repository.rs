@@ -185,11 +185,8 @@ impl DieselItemRepository {
 
         let conn = self.conn.get()?;
 
-        let v = latest_stash_id.load::<LatestStashId>(&conn)?;
-        Ok(v.into_iter()
-            .nth(0)
-            .or(Some(LatestStashId::default()))
-            .unwrap())
+        let v = latest_stash_id.first::<LatestStashId>(&conn)?;
+        Ok(v)
     }
 
     #[instrument(err, skip(self))]
@@ -199,9 +196,26 @@ impl DieselItemRepository {
         let conn = self.conn.get()?;
 
         let latest_stash = NewLatestStash { id: id_.to_owned() };
-        diesel::replace_into(latest_stash_id)
-            .values(&latest_stash)
-            .execute(&conn)?;
+
+        match latest_stash_id.first::<LatestStashId>(&conn) {
+            Err(e) => match e {
+                DieselError::NotFound => {
+                    diesel::insert_into(latest_stash_id)
+                        .values(&latest_stash)
+                        .execute(&conn)?;
+                }
+                _ => {
+                    event!(Level::ERROR, "{}", e);
+                    return Err(RepositoryError::Db);
+                }
+            },
+            Ok(_) => {
+                diesel::update(latest_stash_id)
+                    .set(id.eq(id_))
+                    .execute(&conn)?;
+            }
+        };
+
         Ok(())
     }
 
@@ -471,6 +485,7 @@ mod test {
         let (pool, _guard) = prepare_db()?;
         let repo = DieselItemRepository::new(pool)?;
 
+        repo.set_stash_id("dsa")?;
         repo.set_stash_id("asd-dsa")?;
         let stash = repo.get_stash_id()?;
 
