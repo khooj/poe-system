@@ -162,9 +162,13 @@ pub struct PublicStashData {
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("client error {0}")]
-    ClientError(#[from] reqwest::Error),
+    ClientError(#[from] ureq::Error),
+    #[error("io error {0}")]
+    IoError(#[from] std::io::Error),
     #[error("next cycle")]
     NextCycle,
+    #[error("status code")]
+    StatusCode(u16),
 }
 
 #[async_trait]

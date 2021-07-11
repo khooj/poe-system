@@ -17,9 +17,7 @@ use diesel_migrations::embed_migrations;
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver};
-use std::sync::Arc;
 use std::{thread, thread::JoinHandle};
-use tokio::sync::Mutex as AsyncMutex;
 use tracing::error;
 use tracing_actix_web::TracingLogger;
 
@@ -48,15 +46,13 @@ impl Application {
         let repo = DieselItemRepository::new(pool.clone()).expect("cant create item repository");
 
         if configuration.start_change_id.is_some() {
-            let stash = repo.get_stash_id().expect("cant get latest stash id");
-            if stash.latest_stash_id.is_none() {
+            if let Err(_) = repo.get_stash_id() {
                 repo.set_stash_id(configuration.start_change_id.as_ref().unwrap())
                     .expect("cant set stash id");
             }
         }
 
         let build_repo = DieselBuildsRepository { conn: pool.clone() };
-        let client = Arc::new(AsyncMutex::new(Client::new(USER_AGENT.to_owned())));
 
         let (tx, rx) = channel::<actix::System>();
         let (tx2, rx2) = channel::<Addr<BuildCalculatorActor>>();
@@ -74,7 +70,7 @@ impl Application {
 
             tx.send(system).expect("cant send running system");
 
-            system_runner.block_on(async {
+            system_runner.block_on(async move {
                 let t = BuildCalculatorActor {
                     item_repo: repo.clone(),
                     repo: build_repo.clone(),
@@ -83,7 +79,12 @@ impl Application {
 
                 tx2.send(t.clone()).expect("cant send actor");
 
-                let actor = StashReceiverActor::new(repo.clone(), client.clone()).start();
+                let actor = SyncArbiter::start(1, move || {
+                    StashReceiverActor::new(
+                        repo.clone(),
+                        Client::new(USER_AGENT.to_owned().clone()),
+                    )
+                });
 
                 let timer = PublicStashTimer {
                     actor: actor.clone(),

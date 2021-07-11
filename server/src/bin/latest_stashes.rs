@@ -1,12 +1,11 @@
-use tracing::info;
 use poe_system::implementations::public_stash_retriever::Client;
-use poe_system::ports::outbound::public_stash_retriever::{Error, Retriever};
+use poe_system::ports::outbound::public_stash_retriever::Error;
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
+use tracing::info;
 use tracing_subscriber::fmt;
 
-#[tokio::main]
-async fn main() -> Result<(), std::io::Error> {
+fn main() -> Result<(), std::io::Error> {
     fmt::init();
 
     let args: Vec<String> = args().collect();
@@ -18,9 +17,7 @@ async fn main() -> Result<(), std::io::Error> {
     }
 
     let mut stashes_info = Vec::with_capacity(110_000);
-    let mut client: Box<dyn Retriever> = Box::new(Client::new(
-        "OAuth latest-stashes/0.1.0 (contact: bladoff@gmail.com)".into(),
-    ));
+    let mut client = Client::new("OAuth latest-stashes/0.1.0 (contact: bladoff@gmail.com)".into());
     let mut id: Option<String> = None;
     let f = OpenOptions::new()
         .write(true)
@@ -30,7 +27,7 @@ async fn main() -> Result<(), std::io::Error> {
     let mut buf = BufWriter::new(f);
 
     loop {
-        let mut resp = match client.get_latest_stash(id.as_deref()).await {
+        let mut resp = match client.get_latest_stash(id.as_deref()) {
             Ok(r) => r,
             Err(e) => match e {
                 Error::NextCycle => continue,
