@@ -49,8 +49,8 @@ pub struct SplittedItem<'a> {
     pub item: NewItem<'a>,
     pub mods: Option<Vec<NewMod>>,
     pub subcategories: Option<Vec<NewSubcategory>>,
-    pub props: Option<Vec<Property>>,
-    pub sockets: Option<Vec<NewSocket>>,
+    pub props: Option<Vec<Property<'a>>>,
+    pub sockets: Option<Vec<NewSocket<'a>>>,
     pub ultimatum: Option<Vec<NewUltimatumMod>>,
     pub incubated: Option<NewIncubatedItem>,
     pub hybrid: Option<HybridMod>,
@@ -288,10 +288,10 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
     }
 }
 
-fn append_properties(
-    to_insert: Vec<(Option<Vec<ItemPropertyJson>>, PropertyType)>,
+fn append_properties<'a>(
+    to_insert: Vec<(Option<Vec<ItemPropertyJson<'a>>>, PropertyType)>,
     item_id: &str,
-) -> Option<Vec<Property>> {
+) -> Option<Vec<Property<'a>>> {
     let mut vals = None;
     for (ins, t) in to_insert {
         // debug!("prop: {:?}", ins);
@@ -511,35 +511,35 @@ pub struct NewSubcategory {
 }
 
 #[derive(Clone, Debug)]
-pub struct Property {
+pub struct Property<'a> {
     pub item_id: String,
     pub property_type: i32,
-    pub name: String,
+    pub name: &'a str,
     pub value_type: i32,
     pub value: String,
     pub type_: Option<i32>,
     pub progress: Option<f32>,
-    pub suffix: Option<String>,
+    pub suffix: Option<&'a str>,
 }
 
 #[derive(Insertable)]
 #[table_name = "property_types"]
-pub struct NewPropertyType {
+pub struct NewPropertyType<'a> {
     pub id: String,
     pub property_type: i32,
-    pub name: String,
+    pub name: &'a str,
 }
 
 #[derive(Insertable)]
 #[table_name = "properties"]
-pub struct NewProperty {
+pub struct NewProperty<'a> {
     pub property_id: String,
     pub item_id: String,
     pub value_type: i32,
     pub value: String,
     pub type_: Option<i32>,
     pub progress: Option<f32>,
-    pub suffix: Option<String>,
+    pub suffix: Option<&'a str>,
 }
 
 #[derive(Insertable)]
@@ -551,12 +551,12 @@ pub struct NewSocketedItem {
 
 #[derive(Insertable)]
 #[table_name = "sockets"]
-pub struct NewSocket {
+pub struct NewSocket<'a> {
     pub id: String,
     pub item_id: String,
     pub s_group: i32,
-    pub attr: Option<String>,
-    pub s_colour: Option<String>,
+    pub attr: Option<&'a str>,
+    pub s_colour: Option<&'a str>,
 }
 
 #[derive(Insertable)]

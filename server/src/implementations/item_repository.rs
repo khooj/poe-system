@@ -338,7 +338,7 @@ impl DieselItemRepository {
                     for mod_ in mods {
                         let new_prop = NewPropertyType {
                             id: Uuid::new_v4().to_hyphenated().to_string(),
-                            name: mod_.name.clone(),
+                            name: mod_.name,
                             property_type: mod_.property_type,
                         };
 
@@ -371,7 +371,7 @@ impl DieselItemRepository {
                                 item_id: mod_.item_id.clone(),
                                 property_id: id_mod,
                                 progress: mod_.progress,
-                                suffix: mod_.suffix.clone(),
+                                suffix: mod_.suffix,
                                 type_: mod_.type_,
                                 value: mod_.value.clone(),
                                 value_type: mod_.value_type,

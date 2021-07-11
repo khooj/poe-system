@@ -4,22 +4,22 @@ use thiserror::Error;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ItemSocket {
+pub struct ItemSocket<'a> {
     pub group: i32,
-    pub attr: Option<String>,
-    pub s_colour: Option<String>,
+    pub attr: Option<&'a str>,
+    pub s_colour: Option<&'a str>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ItemProperty {
-    pub name: String,
+pub struct ItemProperty<'a> {
+    pub name: &'a str,
     pub values: Vec<Vec<Value>>,
     pub display_mode: i32,
     pub progress: Option<f64>,
     #[serde(rename = "type")]
     pub item_type: Option<i32>,
-    pub suffix: Option<String>,
+    pub suffix: Option<&'a str>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -52,10 +52,11 @@ pub struct IncubatedItem {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Hybrid {
+pub struct Hybrid<'a> {
     pub is_vaal_gem: Option<bool>,
     pub base_type_name: String,
-    pub properties: Option<Vec<ItemProperty>>,
+    #[serde(borrow)]
+    pub properties: Option<Vec<ItemProperty<'a>>>,
     pub explicit_mods: Option<Vec<String>>,
     pub sec_descr_text: Option<String>,
 }
@@ -88,7 +89,7 @@ pub struct Item<'a> {
     pub delve: Option<bool>,
     pub fractured: Option<bool>,
     pub synthesised: Option<bool>,
-    pub sockets: Option<Vec<ItemSocket>>,
+    pub sockets: Option<Vec<ItemSocket<'a>>>,
     pub socketed_items: Option<Vec<Item<'a>>>,
     pub name: String,
     pub type_line: String,
@@ -101,11 +102,11 @@ pub struct Item<'a> {
     pub duplicated: Option<bool>,
     pub split: Option<bool>,
     pub corrupted: Option<bool>,
-    pub properties: Option<Vec<ItemProperty>>,
-    pub notable_properties: Option<Vec<ItemProperty>>,
-    pub requirements: Option<Vec<ItemProperty>>,
-    pub additional_properties: Option<Vec<ItemProperty>>,
-    pub next_item_requirements: Option<Vec<ItemProperty>>,
+    pub properties: Option<Vec<ItemProperty<'a>>>,
+    pub notable_properties: Option<Vec<ItemProperty<'a>>>,
+    pub requirements: Option<Vec<ItemProperty<'a>>>,
+    pub additional_properties: Option<Vec<ItemProperty<'a>>>,
+    pub next_item_requirements: Option<Vec<ItemProperty<'a>>>,
     pub talisman_tier: Option<i32>,
     pub sec_descr_text: Option<String>,
     pub utility_mods: Option<Vec<String>>,
@@ -124,7 +125,7 @@ pub struct Item<'a> {
     pub replica: Option<bool>,
     pub incubated_item: Option<IncubatedItem>,
     pub frame_type: Option<i32>,
-    pub hybrid: Option<Hybrid>,
+    pub hybrid: Option<Hybrid<'a>>,
     pub extended: Option<Extended>,
     pub x: Option<i32>,
     pub y: Option<i32>,
