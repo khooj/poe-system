@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use std::ops::Deref;
 use std::{convert::TryFrom, default::Default};
 
 #[allow(unused)]
@@ -413,6 +414,71 @@ pub struct Item {
     pub synthesised: bool,
     pub mods: Vec<Mod>,
     pub hybrid: Hybrid,
+}
+
+pub struct SimilarityScore(i64);
+
+impl Deref for SimilarityScore {
+    type Target = i64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Item {
+    pub fn calculate_similarity_score(&self, item: &Item) -> SimilarityScore {
+        use itertools::Itertools;
+        use std::collections::HashMap;
+        use strsim::levenshtein;
+
+        let mods_scores = self
+            .mods
+            .iter()
+            .cartesian_product(item.mods.iter())
+            .group_by(|(el, _)| el.text.clone())
+            .into_iter()
+            .map(|(k, grp)| {
+                (
+                    k,
+                    grp.map(|(o, d)| levenshtein(&d.text, &o.text) as i64)
+                        .min()
+                        .unwrap_or(0i64),
+                )
+            })
+            .collect::<HashMap<String, i64>>();
+
+        let score = mods_scores.values().sum();
+
+        SimilarityScore(score)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn check_similarity() -> anyhow::Result<()> {
+        let item1 = Item {
+            mods: vec![
+                Mod {
+                    text: "51% increased Energy Shield".to_owned(),
+                    type_: ModType::Explicit,
+                },
+                Mod {
+                    text: "+20 to maximum Life".to_owned(),
+                    type_: ModType::Explicit,
+                },
+            ],
+            ..Item::default()
+        };
+
+        let score = item1.calculate_similarity_score(&item1);
+        assert_eq!(*score, 0);
+
+        Ok(())
+    }
 }
 
 // Rarity: Unique

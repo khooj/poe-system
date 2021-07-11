@@ -1,12 +1,11 @@
 use diesel::backend::Backend;
-use diesel::connection::{AnsiTransactionManager, TransactionManager};
+use diesel::connection::AnsiTransactionManager;
+use diesel::debug_query;
 use diesel::deserialize::QueryableByName;
 use diesel::prelude::*;
 use diesel::query_builder::{AsQuery, QueryFragment, QueryId};
-use diesel::r2d2::{ManageConnection, Pool, PooledConnection};
 use diesel::sql_types::HasSqlType;
 use diesel::{backend::UsesAnsiSavepointSyntax, connection::SimpleConnection};
-use diesel::{debug_query, result::Error};
 use std::default::Default;
 use std::ops::Deref;
 use tracing::{event, Level};

@@ -7,12 +7,12 @@ use crate::{
     domain::item::Item,
     implementations::{
         models::{NewBuildMatch, PobBuild},
-        pob::pob::{ItemSet, Pob},
+        pob::pob::Pob,
         BuildsRepository, ItemsRepository,
     },
 };
 use strsim::levenshtein;
-use tracing::{event, instrument, span, Instrument, Level};
+use tracing::{event, instrument, Level};
 
 pub struct BuildCalculatorActor {
     pub repo: BuildsRepository,
@@ -38,16 +38,15 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
         // TODO: transactional work
         let repo = self.repo.clone();
         let mut builds = self.repo.get_build_by_url(&msg.pob_url)?;
-        let id: String;
-
-        if builds.len() == 0 {
+        let id = if builds.len() == 0 {
             // TODO: ignoring itemset for now
-            id = repo.save_new_build(&msg.pob_url, &msg.itemset.unwrap_or(String::new()))?;
+            let id = repo.save_new_build(&msg.pob_url, &msg.itemset.unwrap_or(String::new()))?;
             let build = repo.get_build(&id)?;
             builds.push(build);
+            id
         } else {
-            id = builds[0].id.clone();
-        }
+            builds[0].id.clone()
+        };
 
         for build in builds {
             let token = build.pob_url.split('/').collect::<Vec<_>>();
@@ -65,43 +64,10 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
                 continue;
             }
 
-            ctx.notify(CalculateBuild { build, token });
+            ctx.notify(CalculateBuildAlgo { build, token });
         }
 
         Ok(id)
-    }
-}
-
-#[derive(Message)]
-#[rtype(result = "()")]
-struct CalculateBuild {
-    build: PobBuild,
-    token: String,
-}
-
-impl Handler<CalculateBuild> for BuildCalculatorActor {
-    type Result = ResponseActFuture<Self, ()>;
-
-    fn handle(&mut self, msg: CalculateBuild, _ctx: &mut Self::Context) -> Self::Result {
-        let span = span!(Level::INFO, "BuildCalculatorActor(CalculateBuild)");
-        let token = msg.token.clone();
-        Box::pin(
-            async move {
-                match reqwest::get(format!("https://pastebin.com/raw/{}", token)).await {
-                    Ok(k) => k.text().await,
-                    Err(e) => Err(e),
-                }
-            }
-            .instrument(span)
-            .into_actor(self)
-            .map(|res, _act, ctx| match res {
-                Ok(k) => ctx.notify(CalculateBuildAlgo {
-                    build: msg.build,
-                    pob_data: k,
-                }),
-                Err(e) => event!(Level::ERROR, "{}", e),
-            }),
-        )
     }
 }
 
@@ -109,7 +75,7 @@ impl Handler<CalculateBuild> for BuildCalculatorActor {
 #[rtype(result = "Result<(), anyhow::Error>")]
 struct CalculateBuildAlgo {
     build: PobBuild,
-    pob_data: String,
+    token: String,
 }
 
 impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
@@ -119,31 +85,34 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
     fn handle(&mut self, msg: CalculateBuildAlgo, _ctx: &mut Self::Context) -> Self::Result {
         // TODO: need to fix unwrap()s
 
+        let pob_build = ureq::get(&format!("https://pastebin.com/raw/{}", msg.token))
+            .call()?
+            .into_string()?;
+
         let mut build = msg.build;
-        let pob = Pob::from_pastebin_data(msg.pob_data)?;
+        let pob = Pob::from_pastebin_data(pob_build)?;
         let pob_doc = pob.as_document()?;
         let itemsets = pob_doc.get_item_sets();
 
         event!(Level::INFO, "got itemsets for build {}", build.id);
 
-        let itemset: ItemSet;
-
-        if build.itemset.is_empty() {
-            itemset = itemsets
+        let itemset = if build.itemset.is_empty() {
+            let itemset = itemsets
                 .first()
                 .ok_or(anyhow::anyhow!("empty itemset in build {}", build.id))?
                 .clone();
             build.itemset = itemset.title().to_owned();
+            itemset
         } else {
-            itemset = itemsets
+            itemsets
                 .into_iter()
                 .find(|e| e.title() == build.itemset)
                 .ok_or(anyhow::anyhow!(
                     "cant find itemset {} in build {}",
                     build.itemset,
                     build.id
-                ))?;
-        }
+                ))?
+        };
 
         event!(Level::INFO, "ready to calculate items");
 
@@ -158,25 +127,11 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
                 .get_items_by_basetype(&domain_item.base_type)?;
 
             for db_item in &db_items {
-                let mods_scores = domain_item
-                    .mods
-                    .iter()
-                    .cartesian_product(db_item.mods.iter())
-                    .group_by(|(el, _)| el.text.clone())
-                    .into_iter()
-                    .map(|(k, grp)| {
-                        (
-                            k,
-                            grp.map(|(o, d)| levenshtein(&d.text, &o.text) as i64)
-                                .min()
-                                .unwrap_or(0i64),
-                        )
-                    })
-                    .collect::<HashMap<String, i64>>();
+                let mods_score = domain_item.calculate_similarity_score(&db_item);
 
                 let e = item_match.entry(idx).or_insert((0i64, String::new()));
                 e.1 = db_item.id.clone();
-                e.0 = mods_scores.values().sum();
+                e.0 = *mods_score;
             }
         }
 

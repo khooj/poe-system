@@ -1,7 +1,7 @@
 use super::models::{
     Extended, Hybrid, HybridModDb, IncubatedItem, Influence, ItemProperty, Mod, NewHybrid,
-    NewHybridMod, NewItem, NewLatestStash, NewProperty, NewPropertyType, Property, PropertyTypeDb,
-    RawItem, RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
+    NewHybridMod, NewItem, NewLatestStash, NewProperty, NewPropertyType, PropertyTypeDb, RawItem,
+    RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
 };
 use super::TypedConnectionPool;
 use crate::domain::item::Item as DomainItem;
@@ -421,12 +421,19 @@ mod test {
     use temp_file::{empty, TempFile};
     use tracing_subscriber;
 
+    lazy_static::lazy_static! {
+        static ref TRACING_EXEC: i32 = {
+            tracing_subscriber::fmt::init();
+            1
+        };
+    }
+
     const PUBLIC_STASH_DATA: &str = include_str!("public-stash-tabs.json");
 
     embed_migrations!("migrations");
 
     fn prepare_db() -> Result<(TypedConnectionPool, TempFile), anyhow::Error> {
-        // tracing_subscriber::fmt::init();
+        let _ = TRACING_EXEC;
         let f = empty();
 
         let pool = Pool::new(ConnectionManager::new(f.path().to_str().unwrap()))?;
@@ -440,8 +447,6 @@ mod test {
     }
 
     fn _copy_file(tmp: &TempFile, dst: PathBuf) -> Result<(), anyhow::Error> {
-        // let src = File::open(tmp.path())?;
-        // let dst = OpenOptions::new().create(true).open(&dst)?;
         std::fs::copy(tmp.path(), &dst)?;
         Ok(())
     }
