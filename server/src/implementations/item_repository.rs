@@ -188,7 +188,6 @@ impl DieselItemRepository {
         let v = latest_stash_id.first::<LatestStashId>(&conn)?;
         Ok(v)
     }
-
     #[instrument(err, skip(self))]
     pub fn set_stash_id(&self, id_: &str) -> Result<(), RepositoryError> {
         use crate::schema::latest_stash_id::dsl::*;
@@ -233,38 +232,62 @@ impl DieselItemRepository {
             ultimatum_mods::dsl::ultimatum_mods as ultimatum_mods_table,
         };
 
+        let new_item_info: HashMap<String, Vec<SplittedItem>> = public_data
+            .stashes
+            .iter()
+            .map(|v| {
+                v.items
+                    .iter()
+                    .map(|i| match SplittedItem::try_from(i.clone()) {
+                        Ok(mut item) => {
+                            item.item.account_id = v.id.clone();
+                            item.item.account_name = v.account_name.as_ref().cloned().unwrap();
+                            item.item.stash_id = v.stash.as_ref().cloned().unwrap();
+                            Some(item)
+                        }
+                        Err(_) => {
+                            event!(
+                                Level::WARN,
+                                "skipping {:?} item because cant generate entity",
+                                i
+                            );
+                            None
+                        }
+                    })
+                    .filter_map(|i| i)
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .into_group_map_by(|el| el.item.account_id.clone());
+
         let conn = self.conn.get()?;
-
         conn.transaction::<_, RepositoryError, _>(|| {
-            let new_item_info: HashMap<String, Vec<SplittedItem>> = public_data
-                .stashes
-                .iter()
-                .map(|v| {
-                    v.items
-                        .iter()
-                        .map(|i| match SplittedItem::try_from(i.clone()) {
-                            Ok(mut item) => {
-                                item.item.account_id = v.id.clone();
-                                item.item.account_name = v.account_name.as_ref().cloned().unwrap();
-                                item.item.stash_id = v.stash.as_ref().cloned().unwrap();
-                                Some(item)
-                            }
-                            Err(_) => {
-                                event!(
-                                    Level::WARN,
-                                    "skipping {:?} item because cant generate entity",
-                                    i
-                                );
-                                None
-                            }
-                        })
-                        .filter_map(|i| i)
-                        .collect::<Vec<_>>()
-                })
-                .flatten()
-                .into_group_map_by(|el| el.item.account_id.clone());
+            // TODO: need somehow run set_stash_id method in this transaction
+            let latest_stash = NewLatestStash {
+                id: public_data.next_change_id.clone(),
+            };
 
-            self.set_stash_id(&public_data.next_change_id)?;
+            {
+                use crate::schema::latest_stash_id::dsl::*;
+                match latest_stash_id.first::<LatestStashId>(&conn) {
+                    Err(e) => match e {
+                        DieselError::NotFound => {
+                            diesel::insert_into(latest_stash_id)
+                                .values(&latest_stash)
+                                .execute(&conn)?;
+                        }
+                        _ => {
+                            event!(Level::ERROR, "{}", e);
+                            return Err(RepositoryError::Db);
+                        }
+                    },
+                    Ok(_) => {
+                        diesel::update(latest_stash_id)
+                            .set(id.eq(&latest_stash.id))
+                            .execute(&conn)?;
+                    }
+                };
+            }
 
             for (k, v) in &new_item_info {
                 if v.len() == 0 {

@@ -160,6 +160,7 @@ fn run(listener: TcpListener, addr: Addr<BuildCalculatorActor>) -> Result<Server
             )
             .wrap(TracingLogger)
     })
+    .workers(4)
     .listen(listener)?
     .run();
 

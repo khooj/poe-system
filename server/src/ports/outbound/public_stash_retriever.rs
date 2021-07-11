@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
@@ -169,11 +168,6 @@ pub enum Error {
     NextCycle,
     #[error("status code")]
     StatusCode(u16),
-}
-
-#[async_trait]
-pub trait Retriever {
-    async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error>;
 }
 
 #[cfg(test)]
