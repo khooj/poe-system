@@ -1,5 +1,6 @@
 use super::models::NewBuildMatch;
 use super::TypedConnectionPool;
+use crate::domain::PastebinBuild;
 use crate::implementations::models::{NewBuild, PobBuild};
 use diesel::prelude::*;
 use thiserror::Error;
@@ -23,7 +24,7 @@ pub struct DieselBuildsRepository {
 impl DieselBuildsRepository {
     pub fn save_new_build(
         &self,
-        pob: &str,
+        pob: &PastebinBuild,
         item_set: &str,
     ) -> Result<String, BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
@@ -32,7 +33,7 @@ impl DieselBuildsRepository {
 
         let builds = build_info
             .select(id)
-            .filter(pob_url.eq(pob).and(itemset.eq(item_set)))
+            .filter(pob_url.eq(pob.as_ref()).and(itemset.eq(item_set)))
             .load::<String>(&conn)?;
 
         if builds.len() > 0 {
@@ -70,12 +71,17 @@ impl DieselBuildsRepository {
         }
     }
 
-    pub fn get_build_by_url(&self, url: &str) -> Result<Vec<PobBuild>, BuildsRepositoryError> {
+    pub fn get_build_by_url(
+        &self,
+        url: &PastebinBuild,
+    ) -> Result<Vec<PobBuild>, BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
 
         let conn = self.conn.get()?;
 
-        Ok(build_info.filter(pob_url.eq(url)).load::<PobBuild>(&conn)?)
+        Ok(build_info
+            .filter(pob_url.eq(url.as_ref()))
+            .load::<PobBuild>(&conn)?)
     }
 
     pub fn update_build(&self, build: &PobBuild) -> Result<(), BuildsRepositoryError> {
@@ -83,7 +89,12 @@ impl DieselBuildsRepository {
 
         let conn = self.conn.get()?;
 
-        diesel::update(build_info).set(build).execute(&conn)?;
+        diesel::update(build)
+            .set((
+                pob_url.eq(build.pob_url.as_ref()),
+                itemset.eq(&build.itemset),
+            ))
+            .execute(&conn)?;
 
         Ok(())
     }

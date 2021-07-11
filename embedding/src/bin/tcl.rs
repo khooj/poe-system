@@ -1,4 +1,4 @@
-use molt::{molt_ok, types::*, Interp};
+use molt::Interp;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut tcl = Interp::new();

@@ -459,7 +459,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn check_similarity() -> anyhow::Result<()> {
+    fn check_self_similarity() -> anyhow::Result<()> {
         let item1 = Item {
             mods: vec![
                 Mod {
@@ -476,6 +476,78 @@ mod test {
 
         let score = item1.calculate_similarity_score(&item1);
         assert_eq!(*score, 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn check_similarity_int_range() -> anyhow::Result<()> {
+        let item1 = Item {
+            mods: vec![
+                Mod {
+                    text: "51% increased Energy Shield".to_owned(),
+                    type_: ModType::Explicit,
+                },
+                Mod {
+                    text: "+20 to maximum Life".to_owned(),
+                    type_: ModType::Explicit,
+                },
+            ],
+            ..Item::default()
+        };
+
+        let item2 = Item {
+            mods: vec![
+                Mod {
+                    text: "33% increased Energy Shield".to_owned(),
+                    type_: ModType::Explicit,
+                },
+                Mod {
+                    text: "+1 to maximum Life".to_owned(),
+                    type_: ModType::Explicit,
+                },
+            ],
+            ..Item::default()
+        };
+
+        let score = item1.calculate_similarity_score(&item2);
+        assert_eq!(*score, 4);
+
+        Ok(())
+    }
+
+    #[test]
+    fn check_similarity_mods() -> anyhow::Result<()> {
+        let item1 = Item {
+            mods: vec![
+                Mod {
+                    text: "51% increased Energy Shield".to_owned(),
+                    type_: ModType::Explicit,
+                },
+                Mod {
+                    text: "+20 to maximum Life".to_owned(),
+                    type_: ModType::Explicit,
+                },
+            ],
+            ..Item::default()
+        };
+
+        let item2 = Item {
+            mods: vec![
+                Mod {
+                    text: "+1 to Level of all Raise Zombie Gems".to_owned(),
+                    type_: ModType::Explicit,
+                },
+                Mod {
+                    text: "+1 to Level of all Raise Spectre Gems".to_owned(),
+                    type_: ModType::Explicit,
+                },
+            ],
+            ..Item::default()
+        };
+
+        let score = item1.calculate_similarity_score(&item2);
+        assert_eq!(*score, 58);
 
         Ok(())
     }

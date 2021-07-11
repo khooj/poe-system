@@ -1,17 +1,15 @@
 use actix::prelude::*;
-use itertools::Itertools;
 use std::{collections::HashMap, convert::TryInto};
 use uuid::Uuid;
 
 use crate::{
-    domain::item::Item,
+    domain::{item::Item, PastebinBuild},
     implementations::{
         models::{NewBuildMatch, PobBuild},
         pob::pob::Pob,
         BuildsRepository, ItemsRepository,
     },
 };
-use strsim::levenshtein;
 use tracing::{event, instrument, Level};
 
 pub struct BuildCalculatorActor {
@@ -36,12 +34,14 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
     #[instrument(err, skip(self, ctx))]
     fn handle(&mut self, msg: StartBuildCalculatingMsg, ctx: &mut Self::Context) -> Self::Result {
         // TODO: transactional work
-        let repo = self.repo.clone();
-        let mut builds = self.repo.get_build_by_url(&msg.pob_url)?;
+        let pastebin = PastebinBuild::new(&msg.pob_url)?;
+        let mut builds = self.repo.get_build_by_url(&pastebin)?;
         let id = if builds.len() == 0 {
             // TODO: ignoring itemset for now
-            let id = repo.save_new_build(&msg.pob_url, &msg.itemset.unwrap_or(String::new()))?;
-            let build = repo.get_build(&id)?;
+            let id = self
+                .repo
+                .save_new_build(&pastebin, &msg.itemset.unwrap_or(String::new()))?;
+            let build = self.repo.get_build(&id)?;
             builds.push(build);
             id
         } else {
@@ -49,22 +49,7 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
         };
 
         for build in builds {
-            let token = build.pob_url.split('/').collect::<Vec<_>>();
-            let token = token.last().unwrap_or(&"").to_string();
-            event!(
-                Level::INFO,
-                "token extracted {} for {}: {}",
-                build.pob_url,
-                build.id,
-                token
-            );
-
-            if token.is_empty() {
-                event!(Level::ERROR, "wrong pastebin url {}", build.pob_url);
-                continue;
-            }
-
-            ctx.notify(CalculateBuildAlgo { build, token });
+            ctx.notify(CalculateBuildAlgo { build });
         }
 
         Ok(id)
@@ -75,7 +60,6 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
 #[rtype(result = "Result<(), anyhow::Error>")]
 struct CalculateBuildAlgo {
     build: PobBuild,
-    token: String,
 }
 
 impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
@@ -85,7 +69,7 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
     fn handle(&mut self, msg: CalculateBuildAlgo, _ctx: &mut Self::Context) -> Self::Result {
         // TODO: need to fix unwrap()s
 
-        let pob_build = ureq::get(&format!("https://pastebin.com/raw/{}", msg.token))
+        let pob_build = ureq::get(&msg.build.pob_url.pastebin_raw_url())
             .call()?
             .into_string()?;
 

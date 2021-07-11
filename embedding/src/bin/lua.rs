@@ -1,4 +1,3 @@
-use anyhow::Error;
 use rlua::{Function, Lua, Result as LuaResult};
 use std::io::BufReader;
 use std::path::PathBuf;

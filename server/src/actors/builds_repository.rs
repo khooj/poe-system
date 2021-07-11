@@ -1,6 +1,9 @@
-use crate::implementations::{builds_repository::{BuildsRepositoryError}, models::NewBuildMatch as NewBuildMatchRepo};
-use crate::implementations::BuildsRepository;
+use crate::domain::PastebinBuild;
 use crate::implementations::models::*;
+use crate::implementations::BuildsRepository;
+use crate::implementations::{
+    builds_repository::BuildsRepositoryError, models::NewBuildMatch as NewBuildMatchRepo,
+};
 use actix::prelude::*;
 
 use crate::define_repo_method;
@@ -16,7 +19,7 @@ impl Actor for BuildsRepositoryActor {
 #[derive(Message)]
 #[rtype(result = "Result<String, BuildsRepositoryError>")]
 pub struct SaveNewBuild {
-    pub pob: String,
+    pub pob: PastebinBuild,
     pub itemset: String,
 }
 
@@ -43,7 +46,7 @@ define_repo_method! {
 #[derive(Message)]
 #[rtype(result = "Result<Vec<PobBuild>, BuildsRepositoryError>")]
 pub struct GetBuildByUrl {
-    pub url: String,
+    pub url: PastebinBuild,
 }
 
 define_repo_method! {

@@ -1,9 +1,10 @@
-use crate::domain::item::Item as DomainItem;
+use crate::domain::{item::Item as DomainItem, PastebinBuild, PastebinToken};
 use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty as ItemPropertyJson};
 use crate::ports::outbound::repository::RepositoryError;
 use crate::schema::{build_info, builds_match};
+use diesel::{backend::Backend, deserialize::Queryable};
 use serde_json::json;
-use std::convert::{From, TryFrom};
+use std::convert::{From, Into, TryFrom};
 use tracing::{event, Level};
 use uuid::Uuid;
 
@@ -15,12 +16,24 @@ pub struct NewBuild<'a> {
     pub itemset: &'a str,
 }
 
-#[derive(Queryable, Identifiable, AsChangeset, Clone, Debug)]
+#[derive(Queryable, Identifiable, Clone, Debug)]
 #[table_name = "build_info"]
 pub struct PobBuild {
     pub id: String,
-    pub pob_url: String,
+    pub pob_url: PastebinBuild,
     pub itemset: String,
+}
+
+impl<DB, ST> Queryable<ST, DB> for PastebinBuild
+where
+    DB: Backend,
+    String: Queryable<ST, DB>,
+{
+    type Row = <String as Queryable<ST, DB>>::Row;
+
+    fn build(row: Self::Row) -> Self {
+        PastebinBuild::from_token(PastebinToken::new(String::build(row)))
+    }
 }
 
 #[derive(Insertable, AsChangeset)]

@@ -1,1 +1,53 @@
 pub mod item;
+
+use anyhow::Result;
+use std::convert::AsRef;
+use std::ops::Deref;
+
+#[derive(Debug)]
+pub struct PastebinToken(String);
+
+impl PastebinToken {
+    pub fn new(s: String) -> Self {
+        PastebinToken(s)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PastebinBuild(String);
+
+impl PastebinBuild {
+    pub fn new(url: &str) -> Result<Self> {
+        let token = url.split('/').collect::<Vec<_>>();
+        let token = token
+            .last()
+            .ok_or(anyhow::anyhow!("wrong pastebin url: {}", url))?;
+
+        Ok(Self(token.to_string()))
+    }
+
+    pub fn from_token(token: PastebinToken) -> Self {
+        Self(token.0)
+    }
+
+    pub fn pastebin_raw_url(&self) -> String {
+        format!("https://pastebin.com/raw/{}", &self.0)
+    }
+}
+
+impl AsRef<str> for PastebinBuild {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Deref for PastebinBuild {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[cfg(test)]
+mod test {}
