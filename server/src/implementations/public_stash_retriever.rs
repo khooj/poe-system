@@ -1,4 +1,4 @@
-use crate::ports::outbound::public_stash_retriever::{Error, PublicStashData};
+use crate::ports::outbound::public_stash_retriever::Error;
 use governor::{
     clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},
@@ -78,7 +78,7 @@ impl Client {
         self.latest_limiter = Some(limiting.to_owned());
     }
 
-    pub fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error> {
+    pub fn get_latest_stash(&mut self, id: Option<&str>) -> Result<String, Error> {
         while let Some(rl) = &self.limiter {
             let result = rl.check();
 
@@ -128,8 +128,6 @@ impl Client {
             300..=u16::MAX => return Err(Error::StatusCode(st)),
         };
 
-        let body = resp.into_json::<PublicStashData>()?;
-
-        Ok(body)
+        Ok(resp.into_string()?)
     }
 }

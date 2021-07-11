@@ -1,5 +1,8 @@
-use crate::implementations::{public_stash_retriever::Client, ItemsRepository};
 use crate::ports::outbound::{public_stash_retriever::Error, repository::RepositoryError};
+use crate::{
+    implementations::{public_stash_retriever::Client, ItemsRepository},
+    ports::outbound::public_stash_retriever::PublicStashData,
+};
 use actix::prelude::*;
 use thiserror::Error;
 use tracing::{error, event, info, instrument, Level};
@@ -43,8 +46,9 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
         let k = self
             .client
             .get_latest_stash(res.latest_stash_id.as_deref())?;
-        info!("received stash with next id: {}", k.next_change_id);
-        self.repository.insert_raw_item(&k)?;
+        let stash = serde_json::from_str::<PublicStashData>(&k)?;
+        info!("received stash with next id: {}", stash.next_change_id);
+        self.repository.insert_raw_item(&stash)?;
         event!(Level::INFO, "successfully inserted");
         Ok(())
     }

@@ -45,8 +45,8 @@ pub struct NewBuildMatch {
     pub item_id: String,
 }
 
-pub struct SplittedItem {
-    pub item: NewItem,
+pub struct SplittedItem<'a> {
+    pub item: NewItem<'a>,
     pub mods: Option<Vec<NewMod>>,
     pub subcategories: Option<Vec<NewSubcategory>>,
     pub props: Option<Vec<Property>>,
@@ -58,9 +58,10 @@ pub struct SplittedItem {
     pub influence: Option<NewInfluence>,
 }
 
-impl TryFrom<Item> for SplittedItem {
+impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
     type Error = RepositoryError;
-    fn try_from(mut item: Item) -> Result<Self, Self::Error> {
+
+    fn try_from(mut item: Item<'a>) -> Result<Self, Self::Error> {
         if item.id.is_none() {
             return Err(RepositoryError::Skipped);
         }
@@ -76,8 +77,8 @@ impl TryFrom<Item> for SplittedItem {
             support: item.support,
             stack_size: item.stack_size,
             max_stack_size: item.max_stack_size,
-            league: item.league.clone(),
-            id: item.id.as_ref().unwrap().clone(),
+            league: item.league,
+            id: item.id.unwrap(),
             elder: item.elder,
             shaper: item.shaper,
             abyss_jewel: item.abyss_jewel,
@@ -129,7 +130,7 @@ impl TryFrom<Item> for SplittedItem {
             .into_iter()
             .map(|el| NewSubcategory {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
-                item_id: item.id.as_ref().unwrap().clone(),
+                item_id: item.id.unwrap().to_owned(),
                 subcategory: el,
             })
             .collect();
@@ -166,7 +167,7 @@ impl TryFrom<Item> for SplittedItem {
             .into_iter()
             .map(|el| NewSocket {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
-                item_id: item.id.as_ref().unwrap().clone(),
+                item_id: item.id.unwrap().to_owned(),
                 attr: el.attr,
                 s_colour: el.s_colour,
                 s_group: el.group,
@@ -184,7 +185,7 @@ impl TryFrom<Item> for SplittedItem {
             .map_or(vec![], |v| v)
             .into_iter()
             .map(|el| NewUltimatumMod {
-                item_id: item.id.as_ref().unwrap().clone(),
+                item_id: item.id.unwrap().to_owned(),
                 tier: el.tier,
                 type_: el.mod_type,
             })
@@ -197,7 +198,7 @@ impl TryFrom<Item> for SplittedItem {
 
         let incubated = if let Some(el) = item.incubated_item {
             Some(NewIncubatedItem {
-                item_id: item.id.as_ref().unwrap().clone(),
+                item_id: item.id.unwrap().to_owned(),
                 level: el.level,
                 name: el.name,
                 progress: el.progress,
@@ -238,7 +239,7 @@ impl TryFrom<Item> for SplittedItem {
             }
 
             Some(HybridMod {
-                item_id: item.id.as_ref().unwrap().clone(),
+                item_id: item.id.unwrap().to_owned(),
                 base_type_name: el.base_type_name,
                 is_vaal_gem: el.is_vaal_gem.unwrap_or(false),
                 sec_descr_text: el.sec_descr_text,
@@ -249,7 +250,7 @@ impl TryFrom<Item> for SplittedItem {
 
         let extended = if let Some(el) = item.extended {
             Some(NewExtended {
-                item_id: item.id.as_ref().unwrap().clone(),
+                item_id: item.id.unwrap().to_owned(),
                 category: el.category,
                 prefixes: el.prefixes,
                 suffixes: el.suffixes,
@@ -260,7 +261,7 @@ impl TryFrom<Item> for SplittedItem {
 
         let influence = if let Some(el) = item.influences {
             Some(NewInfluence {
-                item_id: item.id.as_ref().unwrap().clone(),
+                item_id: item.id.unwrap().to_owned(),
                 crusader: el.crusader.unwrap_or(false),
                 hunter: el.hunter.unwrap_or(false),
                 redeemer: el.redeemer.unwrap_or(false),
@@ -319,7 +320,7 @@ fn append_properties(
     vals
 }
 
-fn append_mods(
+fn append_mods<'a>(
     to_insert: Vec<(Option<Vec<String>>, ModType)>,
     item_id: &str,
 ) -> Option<Vec<NewMod>> {
@@ -330,7 +331,7 @@ fn append_mods(
     vals
 }
 
-fn append_mod(
+fn append_mod<'a>(
     vals: Option<Vec<NewMod>>,
     to_insert: Option<Vec<String>>,
     item_id: &str,
@@ -449,17 +450,17 @@ use crate::schema::{
 
 #[derive(Insertable, Debug)]
 #[table_name = "items"]
-pub struct NewItem {
-    pub id: String,
+pub struct NewItem<'a> {
+    pub id: &'a str,
     pub base_type: String,
     pub account_id: String,
     pub account_name: String,
     pub stash_id: String,
-    pub league: Option<String>,
+    pub league: Option<&'a str>,
     pub name: String,
     pub item_lvl: Option<i32>,
     pub identified: bool,
-    pub inventory_id: Option<String>,
+    pub inventory_id: Option<&'a str>,
     pub type_line: String,
     pub abyss_jewel: Option<bool>,
     pub corrupted: Option<bool>,
@@ -486,10 +487,10 @@ pub struct NewItem {
     pub sec_descr_text: Option<String>,
     pub veiled: Option<bool>,
     pub descr_text: Option<String>,
-    pub prophecy_text: Option<String>,
+    pub prophecy_text: Option<&'a str>,
     pub replica: Option<bool>,
     pub socket: Option<i32>,
-    pub colour: Option<String>,
+    pub colour: Option<&'a str>,
 }
 
 #[derive(Insertable)]

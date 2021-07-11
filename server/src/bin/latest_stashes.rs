@@ -1,5 +1,8 @@
-use poe_system::implementations::public_stash_retriever::Client;
 use poe_system::ports::outbound::public_stash_retriever::Error;
+use poe_system::{
+    implementations::public_stash_retriever::Client,
+    ports::outbound::public_stash_retriever::PublicStashData,
+};
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
 use tracing::info;
@@ -16,7 +19,6 @@ fn main() -> Result<(), std::io::Error> {
         ));
     }
 
-    let mut stashes_info = Vec::with_capacity(110_000);
     let mut client = Client::new("OAuth latest-stashes/0.1.0 (contact: bladoff@gmail.com)".into());
     let mut id: Option<String> = None;
     let f = OpenOptions::new()
@@ -27,7 +29,7 @@ fn main() -> Result<(), std::io::Error> {
     let mut buf = BufWriter::new(f);
 
     loop {
-        let mut resp = match client.get_latest_stash(id.as_deref()) {
+        let resp = match client.get_latest_stash(id.as_deref()) {
             Ok(r) => r,
             Err(e) => match e {
                 Error::NextCycle => continue,
@@ -35,24 +37,18 @@ fn main() -> Result<(), std::io::Error> {
             },
         };
 
-        info!("next stash id: {}", resp.next_change_id);
+        let resp2 = serde_json::from_str::<PublicStashData>(&resp)?;
 
-        if resp.stashes.len() == 0 {
+        info!("next stash id: {}", resp2.next_change_id);
+
+        if resp2.stashes.len() == 0 {
             break;
         }
 
-        stashes_info.append(&mut resp.stashes);
-        id = Some(resp.next_change_id);
-        info!("now stashes info len: {}", stashes_info.len());
+        id = Some(resp2.next_change_id);
 
-        if stashes_info.len() >= 100_000 {
-            info!("writing {} entries", stashes_info.len());
-            serde_json::to_writer(&mut buf, &stashes_info)?;
-            stashes_info.clear();
-        }
+        info!("writing {} entries", resp2.stashes.len());
+        serde_json::to_writer(&mut buf, &resp2.stashes)?;
     }
-
-    info!("flushing");
-    serde_json::to_writer(&mut buf, &stashes_info)?;
     buf.flush()
 }

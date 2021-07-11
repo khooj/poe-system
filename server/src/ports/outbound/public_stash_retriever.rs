@@ -71,7 +71,7 @@ pub struct Extended {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Item {
+pub struct Item<'a> {
     pub verified: bool,
     pub w: i32,
     pub h: i32,
@@ -79,8 +79,8 @@ pub struct Item {
     pub support: Option<bool>,
     pub stack_size: Option<i32>,
     pub max_stack_size: Option<i32>,
-    pub league: Option<String>,
-    pub id: Option<String>,
+    pub league: Option<&'a str>,
+    pub id: Option<&'a str>,
     pub influences: Option<Influences>,
     pub elder: Option<bool>,
     pub shaper: Option<bool>,
@@ -89,7 +89,7 @@ pub struct Item {
     pub fractured: Option<bool>,
     pub synthesised: Option<bool>,
     pub sockets: Option<Vec<ItemSocket>>,
-    pub socketed_items: Option<Vec<Item>>,
+    pub socketed_items: Option<Vec<Item<'a>>>,
     pub name: String,
     pub type_line: String,
     pub base_type: String,
@@ -119,7 +119,7 @@ pub struct Item {
     pub veiled_mods: Option<Vec<String>>,
     pub veiled: Option<bool>,
     pub descr_text: Option<String>,
-    pub prophecy_text: Option<String>,
+    pub prophecy_text: Option<&'a str>,
     pub is_relic: Option<bool>,
     pub replica: Option<bool>,
     pub incubated_item: Option<IncubatedItem>,
@@ -128,9 +128,9 @@ pub struct Item {
     pub extended: Option<Extended>,
     pub x: Option<i32>,
     pub y: Option<i32>,
-    pub inventory_id: Option<String>,
+    pub inventory_id: Option<&'a str>,
     pub socket: Option<i32>,
-    pub colour: Option<String>,
+    pub colour: Option<&'a str>,
 }
 
 fn default_str() -> Option<String> {
@@ -139,7 +139,7 @@ fn default_str() -> Option<String> {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct PublicStashChange {
+pub struct PublicStashChange<'a> {
     pub id: String,
     pub public: bool,
     #[serde(default = "default_str")]
@@ -149,13 +149,15 @@ pub struct PublicStashChange {
     pub stash: Option<String>,
     pub stash_type: String,
     pub league: Option<String>,
-    pub items: Vec<Item>,
+    #[serde(borrow)]
+    pub items: Vec<Item<'a>>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct PublicStashData {
+pub struct PublicStashData<'a> {
     pub next_change_id: String,
-    pub stashes: Vec<PublicStashChange>,
+    #[serde(borrow)]
+    pub stashes: Vec<PublicStashChange<'a>>,
 }
 
 #[derive(Debug, Error)]

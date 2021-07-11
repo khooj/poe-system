@@ -1,7 +1,6 @@
 use crate::define_repo_method;
 use crate::domain::item::Item;
 use crate::implementations::ItemsRepository;
-use crate::ports::outbound::public_stash_retriever::PublicStashData;
 use crate::ports::outbound::repository::{LatestStashId, RepositoryError};
 use actix::prelude::*;
 
@@ -48,17 +47,4 @@ define_repo_method! {
     SetStashId,
     Result<(), RepositoryError>,
     set_stash_id, id
-}
-
-#[derive(Message)]
-#[rtype(result = "Result<(), RepositoryError>")]
-pub struct InsertRawItem {
-    pub data: PublicStashData,
-}
-
-define_repo_method! {
-    ItemsRepositoryActor,
-    InsertRawItem,
-    Result<(), RepositoryError>,
-    insert_raw_item, data
 }
