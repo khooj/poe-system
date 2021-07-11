@@ -294,8 +294,8 @@ impl DieselItemRepository {
                     diesel::delete(items.filter(account_id.eq(&k))).execute(&conn)?;
                     continue;
                 }
-                let insert_items: Vec<&NewItem> = v.iter().map(|v| &v.item).collect();
-                let delete_items: Vec<RemoveItems> = v
+                let insert_items: Vec<_> = v.iter().map(|v| &v.item).collect();
+                let delete_items: Vec<_> = v
                     .iter()
                     .map(|v| RemoveItems {
                         account_name: &v.item.account_name,
