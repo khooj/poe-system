@@ -1,25 +1,30 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::borrow::Cow;
 use thiserror::Error;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemSocket<'a> {
     pub group: i32,
-    pub attr: Option<&'a str>,
-    pub s_colour: Option<&'a str>,
+    #[serde(borrow)]
+    pub attr: Option<Cow<'a, str>>,
+    #[serde(borrow)]
+    pub s_colour: Option<Cow<'a, str>>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemProperty<'a> {
-    pub name: &'a str,
+    #[serde(borrow)]
+    pub name: Cow<'a, str>,
     pub values: Vec<Vec<Value>>,
     pub display_mode: i32,
     pub progress: Option<f64>,
     #[serde(rename = "type")]
     pub item_type: Option<i32>,
-    pub suffix: Option<&'a str>,
+    #[serde(borrow)]
+    pub suffix: Option<Cow<'a, str>>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -35,16 +40,17 @@ pub struct Influences {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct UltimatumMod {
-    #[serde(rename = "type")]
-    pub mod_type: String,
+pub struct UltimatumMod<'a> {
+    #[serde(borrow, rename = "type")]
+    pub mod_type: Cow<'a, str>,
     pub tier: i32,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct IncubatedItem {
-    pub name: String,
+pub struct IncubatedItem<'a> {
+    #[serde(borrow)]
+    pub name: Cow<'a, str>,
     pub level: i32,
     pub progress: i32,
     pub total: i32,
@@ -54,18 +60,23 @@ pub struct IncubatedItem {
 #[serde(rename_all = "camelCase")]
 pub struct Hybrid<'a> {
     pub is_vaal_gem: Option<bool>,
-    pub base_type_name: String,
+    #[serde(borrow)]
+    pub base_type_name: Cow<'a, str>,
     #[serde(borrow)]
     pub properties: Option<Vec<ItemProperty<'a>>>,
-    pub explicit_mods: Option<Vec<String>>,
-    pub sec_descr_text: Option<String>,
+    #[serde(borrow)]
+    pub explicit_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub sec_descr_text: Option<Cow<'a, str>>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Extended {
-    pub category: String,
-    pub subcategories: Option<Vec<String>>,
+pub struct Extended<'a> {
+    #[serde(borrow)]
+    pub category: Cow<'a, str>,
+    #[serde(borrow)]
+    pub subcategories: Option<Vec<Cow<'a, str>>>,
     pub prefixes: Option<i32>,
     pub suffixes: Option<i32>,
 }
@@ -109,24 +120,35 @@ pub struct Item<'a> {
     pub next_item_requirements: Option<Vec<ItemProperty<'a>>>,
     pub talisman_tier: Option<i32>,
     pub sec_descr_text: Option<String>,
-    pub utility_mods: Option<Vec<String>>,
-    pub implicit_mods: Option<Vec<String>>,
-    pub ultimatum_mods: Option<Vec<UltimatumMod>>,
-    pub explicit_mods: Option<Vec<String>>,
-    pub crafted_mods: Option<Vec<String>>,
-    pub enchant_mods: Option<Vec<String>>,
-    pub fractured_mods: Option<Vec<String>>,
-    pub cosmetic_mods: Option<Vec<String>>,
-    pub veiled_mods: Option<Vec<String>>,
+    #[serde(borrow)]
+    pub utility_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub implicit_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub ultimatum_mods: Option<Vec<UltimatumMod<'a>>>,
+    #[serde(borrow)]
+    pub explicit_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub crafted_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub enchant_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub fractured_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub cosmetic_mods: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow)]
+    pub veiled_mods: Option<Vec<Cow<'a, str>>>,
     pub veiled: Option<bool>,
     pub descr_text: Option<String>,
     pub prophecy_text: Option<&'a str>,
     pub is_relic: Option<bool>,
     pub replica: Option<bool>,
-    pub incubated_item: Option<IncubatedItem>,
+    #[serde(borrow)]
+    pub incubated_item: Option<IncubatedItem<'a>>,
     pub frame_type: Option<i32>,
     pub hybrid: Option<Hybrid<'a>>,
-    pub extended: Option<Extended>,
+    #[serde(borrow)]
+    pub extended: Option<Extended<'a>>,
     pub x: Option<i32>,
     pub y: Option<i32>,
     pub inventory_id: Option<&'a str>,
@@ -141,22 +163,23 @@ fn default_str() -> Option<String> {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PublicStashChange<'a> {
-    pub id: String,
+    pub id: &'a str,
     pub public: bool,
     #[serde(default = "default_str")]
     pub account_name: Option<String>,
-    pub last_character_name: Option<String>,
+    #[serde(borrow)]
+    pub last_character_name: Option<Cow<'a, str>>,
     #[serde(default = "default_str")]
     pub stash: Option<String>,
-    pub stash_type: String,
-    pub league: Option<String>,
+    pub stash_type: &'a str,
+    pub league: Option<&'a str>,
     #[serde(borrow)]
     pub items: Vec<Item<'a>>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct PublicStashData<'a> {
-    pub next_change_id: String,
+    pub next_change_id: &'a str,
     #[serde(borrow)]
     pub stashes: Vec<PublicStashChange<'a>>,
 }

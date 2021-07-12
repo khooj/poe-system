@@ -4,6 +4,7 @@ use crate::ports::outbound::repository::RepositoryError;
 use crate::schema::{build_info, builds_match};
 use diesel::{backend::Backend, deserialize::Queryable};
 use serde_json::json;
+use std::borrow::Cow;
 use std::convert::{From, Into, TryFrom};
 use tracing::{event, Level};
 use uuid::Uuid;
@@ -47,15 +48,32 @@ pub struct NewBuildMatch {
 
 pub struct SplittedItem<'a> {
     pub item: NewItem<'a>,
-    pub mods: Option<Vec<NewMod>>,
-    pub subcategories: Option<Vec<NewSubcategory>>,
+    pub mods: Option<Vec<NewMod<'a>>>,
+    pub subcategories: Option<Vec<NewSubcategory<'a>>>,
     pub props: Option<Vec<Property<'a>>>,
     pub sockets: Option<Vec<NewSocket<'a>>>,
-    pub ultimatum: Option<Vec<NewUltimatumMod>>,
-    pub incubated: Option<NewIncubatedItem>,
-    pub hybrid: Option<HybridMod>,
-    pub extended: Option<NewExtended>,
+    pub ultimatum: Option<Vec<NewUltimatumMod<'a>>>,
+    pub incubated: Option<NewIncubatedItem<'a>>,
+    pub hybrid: Option<HybridMod<'a>>,
+    pub extended: Option<NewExtended<'a>>,
     pub influence: Option<NewInfluence>,
+}
+
+fn get_s<'a>(i: &'a Cow<'a, str>) -> &'a str {
+    match i {
+        Cow::Borrowed(s) => s,
+        Cow::Owned(s) => s,
+    }
+}
+
+fn get_s_o<'a>(i: &'a Option<Cow<'a, str>>) -> Option<&'a str> {
+    match i {
+        Some(o) => Some(match o {
+            Cow::Borrowed(s) => s,
+            Cow::Owned(s) => s,
+        }),
+        None => None,
+    }
 }
 
 impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
@@ -131,7 +149,7 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             .map(|el| NewSubcategory {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: item.id.unwrap().to_owned(),
-                subcategory: el,
+                subcategory: get_s(&el),
             })
             .collect();
         let subcategories = if subcategories.len() > 0 {
@@ -168,8 +186,8 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             .map(|el| NewSocket {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: item.id.unwrap().to_owned(),
-                attr: el.attr,
-                s_colour: el.s_colour,
+                attr: get_s_o(&el.attr),
+                s_colour: get_s_o(&el.s_colour),
                 s_group: el.group,
             })
             .collect();
@@ -187,7 +205,7 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             .map(|el| NewUltimatumMod {
                 item_id: item.id.unwrap().to_owned(),
                 tier: el.tier,
-                type_: el.mod_type,
+                type_: get_s(&el.mod_type),
             })
             .collect();
         let ultimatum = if ultimatum.len() > 0 {
@@ -200,7 +218,7 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             Some(NewIncubatedItem {
                 item_id: item.id.unwrap().to_owned(),
                 level: el.level,
-                name: el.name,
+                name: get_s(&el.name),
                 progress: el.progress,
                 total: el.total,
             })
@@ -240,9 +258,9 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
 
             Some(HybridMod {
                 item_id: item.id.unwrap().to_owned(),
-                base_type_name: el.base_type_name,
+                base_type_name: get_s(&el.base_type_name),
                 is_vaal_gem: el.is_vaal_gem.unwrap_or(false),
-                sec_descr_text: el.sec_descr_text,
+                sec_descr_text: get_s_o(&el.sec_descr_text),
             })
         } else {
             None
@@ -251,7 +269,7 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
         let extended = if let Some(el) = item.extended {
             Some(NewExtended {
                 item_id: item.id.unwrap().to_owned(),
-                category: el.category,
+                category: get_s(&el.category),
                 prefixes: el.prefixes,
                 suffixes: el.suffixes,
             })
@@ -301,10 +319,10 @@ fn append_properties<'a>(
                 .into_iter()
                 .map(|el| Property {
                     item_id: String::from(item_id),
-                    name: el.name,
+                    name: get_s(&el.name),
                     progress: el.progress.map_or(None, |v| Some(v as f32)),
                     property_type: t as i32,
-                    suffix: el.suffix,
+                    suffix: get_s_o(&el.suffix),
                     type_: el.item_type,
                     value: el.values.get(0).map_or(&vec![json!("")], |el| el)[0]
                         .as_str()
@@ -321,9 +339,9 @@ fn append_properties<'a>(
 }
 
 fn append_mods<'a>(
-    to_insert: Vec<(Option<Vec<String>>, ModType)>,
+    to_insert: Vec<(Option<Vec<Cow<'a, str>>>, ModType)>,
     item_id: &str,
-) -> Option<Vec<NewMod>> {
+) -> Option<Vec<NewMod<'a>>> {
     let mut vals = None;
     for (ins, t) in to_insert {
         vals = append_mod(vals, ins, item_id, t);
@@ -332,11 +350,11 @@ fn append_mods<'a>(
 }
 
 fn append_mod<'a>(
-    vals: Option<Vec<NewMod>>,
-    to_insert: Option<Vec<String>>,
+    vals: Option<Vec<NewMod<'a>>>,
+    to_insert: Option<Vec<Cow<'a, str>>>,
     item_id: &str,
     type_: ModType,
-) -> Option<Vec<NewMod>> {
+) -> Option<Vec<NewMod<'a>>> {
     append_if_not_empty2(
         vals,
         to_insert
@@ -346,7 +364,7 @@ fn append_mod<'a>(
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: String::from(item_id),
                 type_: type_ as i32,
-                mod_: el,
+                mod_: get_s(&el),
             })
             .collect(),
     )
@@ -495,19 +513,19 @@ pub struct NewItem<'a> {
 
 #[derive(Insertable)]
 #[table_name = "mods"]
-pub struct NewMod {
+pub struct NewMod<'a> {
     pub id: String,
     pub item_id: String,
     pub type_: i32,
-    pub mod_: String,
+    pub mod_: &'a str,
 }
 
 #[derive(Insertable)]
 #[table_name = "subcategories"]
-pub struct NewSubcategory {
+pub struct NewSubcategory<'a> {
     pub id: String,
     pub item_id: String,
-    pub subcategory: String,
+    pub subcategory: &'a str,
 }
 
 #[derive(Clone, Debug)]
@@ -561,28 +579,28 @@ pub struct NewSocket<'a> {
 
 #[derive(Insertable)]
 #[table_name = "ultimatum_mods"]
-pub struct NewUltimatumMod {
+pub struct NewUltimatumMod<'a> {
     pub item_id: String,
-    pub type_: String,
+    pub type_: &'a str,
     pub tier: i32,
 }
 
 #[derive(Insertable)]
 #[table_name = "incubated_item"]
-pub struct NewIncubatedItem {
+pub struct NewIncubatedItem<'a> {
     pub item_id: String,
-    pub name: String,
+    pub name: &'a str,
     pub level: i32,
     pub progress: i32,
     pub total: i32,
 }
 
 #[derive(Debug)]
-pub struct HybridMod {
+pub struct HybridMod<'a> {
     pub item_id: String,
     pub is_vaal_gem: bool,
-    pub base_type_name: String,
-    pub sec_descr_text: Option<String>,
+    pub base_type_name: &'a str,
+    pub sec_descr_text: Option<&'a str>,
 }
 
 #[derive(Insertable)]
@@ -603,9 +621,9 @@ pub struct NewHybridMod {
 
 #[derive(Insertable)]
 #[table_name = "extended"]
-pub struct NewExtended {
+pub struct NewExtended<'a> {
     pub item_id: String,
-    pub category: String,
+    pub category: &'a str,
     pub prefixes: Option<i32>,
     pub suffixes: Option<i32>,
 }

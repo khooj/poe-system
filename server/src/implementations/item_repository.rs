@@ -240,7 +240,7 @@ impl DieselItemRepository {
                     .iter()
                     .map(|i| match SplittedItem::try_from(i.clone()) {
                         Ok(mut item) => {
-                            item.item.account_id = v.id.clone();
+                            item.item.account_id = v.id.to_owned();
                             item.item.account_name = v.account_name.as_ref().cloned().unwrap();
                             item.item.stash_id = v.stash.as_ref().cloned().unwrap();
                             Some(item)
@@ -264,7 +264,7 @@ impl DieselItemRepository {
         conn.transaction::<_, RepositoryError, _>(|| {
             // TODO: need somehow run set_stash_id method in this transaction
             let latest_stash = NewLatestStash {
-                id: public_data.next_change_id.clone(),
+                id: public_data.next_change_id.to_owned(),
             };
 
             {
@@ -384,8 +384,8 @@ impl DieselItemRepository {
                     let new_mod = NewHybridMod {
                         id: Uuid::new_v4().to_hyphenated().to_string(),
                         is_vaal_gem: mods.is_vaal_gem,
-                        base_type_name: mods.base_type_name.clone(),
-                        sec_descr_text: mods.sec_descr_text.clone(),
+                        base_type_name: mods.base_type_name.to_owned(),
+                        sec_descr_text: mods.sec_descr_text.map(|e| e.to_owned()),
                     };
 
                     let id_mod = match hybrid_mods_dsl::hybrid_mods
