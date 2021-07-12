@@ -62,7 +62,7 @@ pub struct SplittedItem<'a> {
 fn get_s<'a>(i: &'a Cow<'a, str>) -> &'a str {
     match i {
         Cow::Borrowed(s) => s,
-        Cow::Owned(s) => s,
+        Cow::Owned(s) => s.as_ref(),
     }
 }
 
