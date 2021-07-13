@@ -1,6 +1,6 @@
 use super::models::{
     Extended, Hybrid, HybridModDb, IncubatedItem, Influence, ItemProperty, Mod, NewHybrid,
-    NewHybridMod, NewItem, NewLatestStash, NewProperty, NewPropertyType, PropertyTypeDb, RawItem,
+    NewHybridMod, NewLatestStash, NewProperty, NewPropertyType, PropertyTypeDb, RawItem,
     RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
 };
 use super::TypedConnectionPool;

@@ -16,6 +16,7 @@ pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub refresh_interval_secs: u64,
     pub enable_items_refresh: bool,
+    pub only_leagues: Vec<String>,
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {

@@ -17,11 +17,20 @@ pub enum ActorError {
 pub struct StashReceiverActor {
     repository: ItemsRepository,
     client: Client,
+    only_leagues: Vec<String>,
 }
 
 impl StashReceiverActor {
-    pub fn new(repository: ItemsRepository, client: Client) -> StashReceiverActor {
-        StashReceiverActor { repository, client }
+    pub fn new(
+        repository: ItemsRepository,
+        client: Client,
+        only_leagues: Vec<String>,
+    ) -> StashReceiverActor {
+        StashReceiverActor {
+            repository,
+            client,
+            only_leagues,
+        }
     }
 }
 
@@ -40,10 +49,19 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
     fn handle(&mut self, _: StartReceiveMsg, _: &mut Self::Context) -> Self::Result {
         let res = self.repository.get_stash_id()?;
         info!("latest stash id from repo: {:?}", res.latest_stash_id);
-        let k = self
+        let mut k = self
             .client
             .get_latest_stash(res.latest_stash_id.as_deref())?;
         info!("received stash with next id: {}", k.next_change_id);
+        k.stashes = k
+            .stashes
+            .into_iter()
+            .filter(|el| {
+                self.only_leagues
+                    .iter()
+                    .any(|l| l == el.league.as_ref().unwrap_or(&String::new()))
+            })
+            .collect();
         self.repository.insert_raw_item(&k)?;
         event!(Level::INFO, "successfully inserted");
         Ok(())

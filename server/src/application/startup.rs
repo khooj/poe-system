@@ -62,6 +62,9 @@ impl Application {
             configuration.application.host, configuration.application.port
         );
 
+        let enable_items_refresh = configuration.application.enable_items_refresh;
+        let refresh_interval_secs = configuration.application.refresh_interval_secs;
+
         let handle = thread::spawn(move || {
             let repo = repo.clone();
             let system_runner = System::new();
@@ -83,17 +86,16 @@ impl Application {
                     StashReceiverActor::new(
                         repo.clone(),
                         Client::new(USER_AGENT.to_owned().clone()),
+                        configuration.application.only_leagues.clone(),
                     )
                 });
 
                 let timer = PublicStashTimer {
                     actor: actor.clone(),
-                    interval: std::time::Duration::from_secs(
-                        configuration.application.refresh_interval_secs,
-                    ),
+                    interval: std::time::Duration::from_secs(refresh_interval_secs),
                 };
 
-                if configuration.application.enable_items_refresh {
+                if enable_items_refresh {
                     let _ = timer.start();
                 }
             });
