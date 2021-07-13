@@ -62,7 +62,7 @@ pub struct SplittedItem<'a> {
 fn get_s<'a>(i: &'a Cow<'a, str>) -> &'a str {
     match i {
         Cow::Borrowed(s) => s,
-        Cow::Owned(s) => s.as_ref(),
+        Cow::Owned(s) => s,
     }
 }
 
@@ -127,25 +127,35 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             colour: item.colour.take(),
         };
 
+        fn conv<'a, T>(input: &'a Option<Vec<T>>) -> Option<Vec<&'a T>> {
+            input
+                .as_ref()
+                .map_or(None, |v| Some(v.iter().map(|l| l).collect()))
+        }
+
         let mut mods = append_mods(
             vec![
-                (item.utility_mods.take(), ModType::Utility),
-                (item.implicit_mods.take(), ModType::Implicit),
-                (item.explicit_mods.take(), ModType::Explicit),
-                (item.crafted_mods.take(), ModType::Crafted),
-                (item.enchant_mods.take(), ModType::Enchant),
-                (item.fractured_mods.take(), ModType::Fractured),
-                (item.cosmetic_mods.take(), ModType::Cosmetic),
-                (item.veiled_mods.take(), ModType::Veiled),
+                (conv(&item.utility_mods), ModType::Utility),
+                (conv(&item.implicit_mods), ModType::Implicit),
+                (conv(&item.explicit_mods), ModType::Explicit),
+                (conv(&item.crafted_mods), ModType::Crafted),
+                (conv(&item.enchant_mods), ModType::Enchant),
+                (conv(&item.fractured_mods), ModType::Fractured),
+                (conv(&item.cosmetic_mods), ModType::Cosmetic),
+                (conv(&item.veiled_mods), ModType::Veiled),
             ],
             item.id.as_deref().unwrap(),
         );
         let subcategories: Vec<NewSubcategory> = item
             .extended
-            .take()
-            .and_then(|el| el.subcategories)
+            .as_ref()
+            .and_then(|el| {
+                el.subcategories
+                    .as_ref()
+                    .map(|e| e.iter().map(|l| l).collect::<Vec<_>>())
+            })
             .map_or(vec![], |v| v)
-            .into_iter()
+            .iter()
             .map(|el| NewSubcategory {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: item.id.unwrap().to_owned(),
@@ -160,18 +170,18 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
 
         let mut props = append_properties(
             vec![
-                (item.properties.take(), PropertyType::Properties),
+                (conv(&item.properties), PropertyType::Properties),
                 (
-                    item.notable_properties.take(),
+                    conv(&item.notable_properties),
                     PropertyType::NotableProperties,
                 ),
-                (item.requirements.take(), PropertyType::Requirements),
+                (conv(&item.requirements), PropertyType::Requirements),
                 (
-                    item.additional_properties.take(),
+                    conv(&item.additional_properties),
                     PropertyType::AdditionalProperties,
                 ),
                 (
-                    item.next_item_requirements.take(),
+                    conv(&item.next_item_requirements),
                     PropertyType::NextLevelRequirements,
                 ),
             ],
@@ -180,9 +190,9 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
 
         let sockets: Vec<NewSocket> = item
             .sockets
-            .take()
-            .map_or(vec![], |v| v)
-            .into_iter()
+            .as_ref()
+            .map_or(vec![], |el| el.iter().map(|l| l).collect::<Vec<_>>())
+            .iter()
             .map(|el| NewSocket {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: item.id.unwrap().to_owned(),
@@ -199,9 +209,9 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
 
         let ultimatum: Vec<NewUltimatumMod> = item
             .ultimatum_mods
-            .take()
-            .map_or(vec![], |v| v)
-            .into_iter()
+            .as_ref()
+            .map_or(vec![], |v| v.iter().map(|l| l).collect::<Vec<_>>())
+            .iter()
             .map(|el| NewUltimatumMod {
                 item_id: item.id.unwrap().to_owned(),
                 tier: el.tier,
@@ -214,7 +224,7 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             None
         };
 
-        let incubated = if let Some(el) = item.incubated_item {
+        let incubated = if let Some(el) = &item.incubated_item {
             Some(NewIncubatedItem {
                 item_id: item.id.unwrap().to_owned(),
                 level: el.level,
@@ -226,10 +236,10 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             None
         };
 
-        let hybrid = if let Some(mut el) = item.hybrid {
+        let hybrid = if let Some(el) = &item.hybrid {
             event!(Level::DEBUG, "hybrid: {:?}", el);
             let mut hybrid_mods = append_mods(
-                vec![(el.explicit_mods.take(), ModType::ExplicitHybrid)],
+                vec![(conv(&el.explicit_mods), ModType::ExplicitHybrid)],
                 item.id.as_deref().unwrap(),
             );
             if mods.is_none() {
@@ -241,7 +251,12 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             }
 
             let mut hybrid_props = append_properties(
-                vec![(el.properties.take(), PropertyType::Hybrid)],
+                vec![(
+                    el.properties
+                        .as_ref()
+                        .map_or(None, |v| Some(v.iter().map(|l| l).collect::<Vec<_>>())),
+                    PropertyType::Hybrid,
+                )],
                 item.id.as_deref().unwrap(),
             );
 
@@ -259,14 +274,14 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
             Some(HybridMod {
                 item_id: item.id.unwrap().to_owned(),
                 base_type_name: get_s(&el.base_type_name),
-                is_vaal_gem: el.is_vaal_gem.unwrap_or(false),
+                is_vaal_gem: el.is_vaal_gem.clone().unwrap_or(false),
                 sec_descr_text: get_s_o(&el.sec_descr_text),
             })
         } else {
             None
         };
 
-        let extended = if let Some(el) = item.extended {
+        let extended = if let Some(el) = item.extended.as_ref() {
             Some(NewExtended {
                 item_id: item.id.unwrap().to_owned(),
                 category: get_s(&el.category),
@@ -307,12 +322,11 @@ impl<'a> TryFrom<Item<'a>> for SplittedItem<'a> {
 }
 
 fn append_properties<'a>(
-    to_insert: Vec<(Option<Vec<ItemPropertyJson<'a>>>, PropertyType)>,
+    to_insert: Vec<(Option<Vec<&'a ItemPropertyJson<'a>>>, PropertyType)>,
     item_id: &str,
 ) -> Option<Vec<Property<'a>>> {
     let mut vals = None;
     for (ins, t) in to_insert {
-        // debug!("prop: {:?}", ins);
         vals = append_if_not_empty2(
             vals,
             ins.map_or(vec![], |v| v)
@@ -339,7 +353,7 @@ fn append_properties<'a>(
 }
 
 fn append_mods<'a>(
-    to_insert: Vec<(Option<Vec<Cow<'a, str>>>, ModType)>,
+    to_insert: Vec<(Option<Vec<&'a Cow<'a, str>>>, ModType)>,
     item_id: &str,
 ) -> Option<Vec<NewMod<'a>>> {
     let mut vals = None;
@@ -351,7 +365,7 @@ fn append_mods<'a>(
 
 fn append_mod<'a>(
     vals: Option<Vec<NewMod<'a>>>,
-    to_insert: Option<Vec<Cow<'a, str>>>,
+    to_insert: Option<Vec<&'a Cow<'a, str>>>,
     item_id: &str,
     type_: ModType,
 ) -> Option<Vec<NewMod<'a>>> {
