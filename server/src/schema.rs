@@ -1,21 +1,4 @@
 table! {
-    build_info (id) {
-        id -> Text,
-        pob_url -> Text,
-        itemset -> Text,
-    }
-}
-
-table! {
-    builds_match (id, idx) {
-        id -> Text,
-        idx -> Integer,
-        score -> Integer,
-        item_id -> Text,
-    }
-}
-
-table! {
     extended (item_id) {
         item_id -> Text,
         category -> Text,
@@ -179,7 +162,6 @@ table! {
     }
 }
 
-joinable!(builds_match -> items (item_id));
 joinable!(extended -> items (item_id));
 joinable!(hybrids -> hybrid_mods (hybrid_id));
 joinable!(hybrids -> items (item_id));
@@ -193,8 +175,6 @@ joinable!(subcategories -> items (item_id));
 joinable!(ultimatum_mods -> items (item_id));
 
 allow_tables_to_appear_in_same_query!(
-    build_info,
-    builds_match,
     extended,
     hybrid_mods,
     hybrids,

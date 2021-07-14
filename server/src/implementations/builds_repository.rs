@@ -1,7 +1,7 @@
 use super::models::NewBuildMatch;
 use super::TypedConnectionPool;
 use crate::domain::PastebinBuild;
-use crate::implementations::models::{NewBuild, PobBuild};
+use crate::implementations::models::{NewBuild, NewPobFile, PobBuild, PobFile};
 use diesel::prelude::*;
 use thiserror::Error;
 use uuid::Uuid;
@@ -120,5 +120,20 @@ impl DieselBuildsRepository {
             .filter(id.eq(id_))
             .select(item_id)
             .get_results::<String>(&conn)?)
+    }
+
+    pub fn save_pob_file(&self, pob: NewPobFile) -> Result<(), BuildsRepositoryError> {
+        use crate::schema::pob_file::dsl::*;
+
+        let conn = self.conn.get()?;
+        diesel::insert_into(pob_file).values(&pob).execute(&conn)?;
+        Ok(())
+    }
+
+    pub fn get_pob_file(&self, id_: &str) -> Result<PobFile, BuildsRepositoryError> {
+        use crate::schema::pob_file::dsl::*;
+
+        let conn = self.conn.get()?;
+        Ok(pob_file.filter(id.eq(id_)).first::<PobFile>(&conn)?)
     }
 }

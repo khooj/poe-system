@@ -1,7 +1,7 @@
 use crate::domain::{item::Item as DomainItem, PastebinBuild, PastebinToken};
 use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty as ItemPropertyJson};
 use crate::ports::outbound::repository::RepositoryError;
-use crate::schema::{build_info, builds_match};
+use crate::schema::{build_info, builds_match, pob_file};
 use diesel::{backend::Backend, deserialize::Queryable};
 use serde_json::json;
 use std::convert::{From, Into, TryFrom};
@@ -928,4 +928,19 @@ impl From<DomainItemFrom> for DomainItem {
             ..Default::default()
         }
     }
+}
+
+#[derive(Queryable, Debug, Clone)]
+pub struct PobFile {
+    pub id: String,
+    pub url_token: String,
+    pub encoded_pob: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "pob_file"]
+pub struct NewPobFile<'a> {
+    pub id: String,
+    pub url_token: &'a str,
+    pub encoded_pob: &'a str,
 }
