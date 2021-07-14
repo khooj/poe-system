@@ -56,26 +56,34 @@ pub struct DieselItemRepository {
     conn: TypedConnectionPool,
 }
 
+use diesel::expression::{AppearsOnTable, Expression, NonAggregate};
+use diesel::query_builder::{QueryFragment, QueryId};
+use diesel::query_dsl::RunQueryDsl;
+use diesel::sql_types::Bool;
+use diesel::sqlite::Sqlite;
+
 impl DieselItemRepository {
     pub fn new(conn: TypedConnectionPool) -> Result<DieselItemRepository, RepositoryError> {
         Ok(DieselItemRepository { conn })
     }
 
-    #[instrument(err, skip(self))]
-    pub fn get_items_by_basetype(
-        &self,
-        base_type_: &str,
-    ) -> Result<Vec<DomainItem>, RepositoryError> {
+    #[instrument(err, skip(self, query))]
+    fn get_items_by_query<'a, U>(&self, query: U) -> Result<Vec<DomainItem>, RepositoryError>
+    where
+        U: Expression<SqlType = Bool>
+            + NonAggregate
+            + AppearsOnTable<crate::schema::items::table>
+            + QueryFragment<Sqlite>
+            + QueryId,
+    {
         use crate::schema::hybrid_mods::dsl as hybrid_mods_dsl;
-        use crate::schema::items::dsl::{base_type, items as items_table};
+        use crate::schema::items::dsl::items as items_table;
         use crate::schema::property_types::dsl as property_types_dsl;
         use itertools::izip;
 
         let conn = self.conn.get()?;
 
-        let items = items_table
-            .filter(base_type.eq(base_type_))
-            .load::<RawItem>(&conn)?;
+        let items = items_table.filter(query).load::<RawItem>(&conn)?;
 
         let influences = Influence::belonging_to(&items)
             .load::<Influence>(&conn)?
@@ -163,6 +171,23 @@ impl DieselItemRepository {
         .collect::<Vec<_>>();
 
         Ok(data)
+    }
+
+    #[instrument(err, skip(self))]
+    pub fn get_items_by_basetype(
+        &self,
+        base_type_: &str,
+    ) -> Result<Vec<DomainItem>, RepositoryError> {
+        use crate::schema::items::dsl::*;
+
+        self.get_items_by_query(base_type.eq(base_type_))
+    }
+
+    #[instrument(err, skip(self))]
+    pub fn get_items_by_ids(&self, ids: Vec<String>) -> Result<Vec<DomainItem>, RepositoryError> {
+        use crate::schema::items::dsl::*;
+
+        self.get_items_by_query(id.eq_any(&ids))
     }
 
     fn _get_raw_items(

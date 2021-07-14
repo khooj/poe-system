@@ -1,6 +1,7 @@
 use crate::implementations::{
     builds_repository::DieselBuildsRepository,
-    http_controller::{calculate_pob, get_build_price},
+    http_controller::{calculate_pob, get_build_matched_items, get_build_price},
+    http_service_layer::HttpServiceLayer,
 };
 use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
 use crate::{
@@ -54,6 +55,11 @@ impl Application {
 
         let build_repo = DieselBuildsRepository { conn: pool.clone() };
 
+        let svc = HttpServiceLayer {
+            item_repo: repo.clone(),
+            build_repo: build_repo.clone(),
+        };
+
         let (tx, rx) = channel::<actix::System>();
         let (tx2, rx2) = channel::<Addr<BuildCalculatorActor>>();
 
@@ -105,7 +111,7 @@ impl Application {
         let build_actor = rx2.recv().expect("cant get actor");
 
         let listener = TcpListener::bind(&addr)?;
-        let server = run(listener, build_actor)?;
+        let server = run(listener, build_actor, svc)?;
 
         Ok(Self { server, handle, rx })
     }
@@ -145,11 +151,17 @@ impl Application {
     }
 }
 
-fn run(listener: TcpListener, addr: Addr<BuildCalculatorActor>) -> Result<Server, std::io::Error> {
+fn run(
+    listener: TcpListener,
+    addr: Addr<BuildCalculatorActor>,
+    svc: HttpServiceLayer,
+) -> Result<Server, std::io::Error> {
     let rpc = JsonrpcServer::new()
         .with_data(Data::new(addr))
+        .with_data(Data::new(svc))
         .with_method("calculate_pob", calculate_pob)
         .with_method("get_build_price", get_build_price)
+        .with_method("get_build_match_items", get_build_matched_items)
         .finish();
 
     let server = HttpServer::new(move || {

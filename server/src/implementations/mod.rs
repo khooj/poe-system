@@ -6,6 +6,7 @@ pub mod pob;
 pub mod public_stash_retriever;
 pub mod public_stash_timer;
 pub mod wrapped_connection_pool;
+pub mod http_service_layer;
 
 use builds_repository::DieselBuildsRepository;
 use diesel::{
