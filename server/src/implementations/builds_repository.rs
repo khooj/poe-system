@@ -110,4 +110,15 @@ impl DieselBuildsRepository {
 
         Ok(())
     }
+
+    pub fn get_items_id_for_build(&self, id_: &str) -> Result<Vec<String>, BuildsRepositoryError> {
+        use crate::schema::builds_match::dsl::*;
+
+        let conn = self.conn.get()?;
+
+        Ok(builds_match
+            .filter(id.eq(id_))
+            .select(item_id)
+            .get_results::<String>(&conn)?)
+    }
 }

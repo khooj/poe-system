@@ -1,6 +1,5 @@
 use actix::prelude::*;
 use std::{collections::HashMap, convert::TryInto};
-use uuid::Uuid;
 
 use crate::{
     domain::{item::Item, PastebinBuild},
@@ -121,7 +120,7 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
 
         for (idx, (score, id)) in &item_match {
             let mtch = NewBuildMatch {
-                id: Uuid::new_v4().to_hyphenated().to_string(),
+                id: build.id.clone(),
                 idx: *idx as i32,
                 score: *score as i32,
                 item_id: id.clone(),

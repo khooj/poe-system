@@ -2,9 +2,7 @@ use actix::prelude::*;
 use jsonrpc_v2::{Data, Error, Params};
 use serde::Deserialize;
 
-use crate::{
-    actors::build_calculator::{BuildCalculatorActor, StartBuildCalculatingMsg},
-};
+use crate::actors::build_calculator::{BuildCalculatorActor, StartBuildCalculatingMsg};
 
 #[derive(Deserialize)]
 pub struct CalculatePob {
@@ -21,14 +19,23 @@ pub async fn calculate_pob(
     Params(params): Params<CalculatePob>,
     actor: Data<Addr<BuildCalculatorActor>>,
 ) -> Result<String, Error> {
-    match actor.try_send(StartBuildCalculatingMsg {
-        itemset: params.itemset,
-        pob_url: params.pob_url,
-    }) {
-        Ok(_) => Ok("".into()),
+    match actor
+        .send(StartBuildCalculatingMsg {
+            itemset: params.itemset,
+            pob_url: params.pob_url,
+        })
+        .await
+    {
+        Ok(k) => match k {
+            Ok(s) => Ok(s),
+            Err(_) => Err(Error::Provided {
+                code: 1,
+                message: "cant get build id",
+            }),
+        },
         Err(_) => Err(Error::Provided {
             code: 1,
-            message: "cant start actor: {}",
+            message: "cant start actor",
         }),
     }
 }
