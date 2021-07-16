@@ -8,19 +8,25 @@ use std::convert::{From, Into, TryFrom};
 use tracing::{event, Level};
 use uuid::Uuid;
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug)]
 #[table_name = "build_info"]
 pub struct NewBuild<'a> {
     pub id: String,
-    pub pob_url: &'a str,
-    pub itemset: &'a str,
+    pub pob_file_id: &'a str,
+    pub itemset: String,
+}
+
+impl<'a> NewBuild<'a> {
+    pub fn pob_file_id(&self) -> &str {
+        self.pob_file_id
+    }
 }
 
 #[derive(Queryable, Identifiable, Clone, Debug)]
 #[table_name = "build_info"]
 pub struct PobBuild {
     pub id: String,
-    pub pob_url: PastebinBuild,
+    pub pob_file_id: String,
     pub itemset: String,
 }
 
@@ -36,7 +42,7 @@ where
     }
 }
 
-#[derive(Insertable, AsChangeset)]
+#[derive(Insertable, AsChangeset, Debug)]
 #[table_name = "builds_match"]
 pub struct NewBuildMatch {
     pub id: String,
@@ -933,7 +939,7 @@ impl From<DomainItemFrom> for DomainItem {
 #[derive(Queryable, Debug, Clone)]
 pub struct PobFile {
     pub id: String,
-    pub url_token: String,
+    pub url_token: PastebinBuild,
     pub encoded_pob: String,
 }
 
@@ -941,6 +947,20 @@ pub struct PobFile {
 #[table_name = "pob_file"]
 pub struct NewPobFile<'a> {
     pub id: String,
-    pub url_token: &'a str,
+    url_token: &'a str,
     pub encoded_pob: &'a str,
+}
+
+impl<'a> NewPobFile<'a> {
+    pub fn new(id: String, url_token: &'a PastebinBuild, encoded_pob: &'a str) -> NewPobFile<'a> {
+        NewPobFile {
+            id,
+            url_token: url_token.as_ref(),
+            encoded_pob,
+        }
+    }
+
+    pub fn url_token(&self) -> &str {
+        self.url_token
+    }
 }

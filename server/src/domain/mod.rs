@@ -1,7 +1,7 @@
 pub mod item;
 
 use anyhow::Result;
-use std::convert::AsRef;
+use std::convert::{AsRef, Into};
 use std::ops::Deref;
 
 #[derive(Debug)]
@@ -38,6 +38,12 @@ impl PastebinBuild {
 impl AsRef<str> for PastebinBuild {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+impl Into<String> for PastebinBuild {
+    fn into(self) -> String {
+        self.as_ref().to_owned()
     }
 }
 

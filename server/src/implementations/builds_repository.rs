@@ -5,6 +5,7 @@ use crate::implementations::models::{NewBuild, NewPobFile, PobBuild, PobFile};
 use diesel::prelude::*;
 use thiserror::Error;
 use uuid::Uuid;
+use tracing::{instrument, event, Level};
 
 #[derive(Error, Debug)]
 pub enum BuildsRepositoryError {
@@ -22,10 +23,33 @@ pub struct DieselBuildsRepository {
 }
 
 impl DieselBuildsRepository {
-    pub fn save_new_build(
+    #[instrument(err, skip(self, pob), fields(id = ?pob.id, token = pob.url_token()))]
+    pub fn save_new_pob_file<'a>(
         &self,
-        pob: &PastebinBuild,
-        item_set: &str,
+        pob: NewPobFile<'a>,
+    ) -> Result<String, BuildsRepositoryError> {
+        use crate::schema::pob_file::dsl::*;
+
+        let conn = self.conn.get()?;
+
+        match pob_file
+            .select(id)
+            .filter(url_token.eq(pob.url_token()))
+            .first::<String>(&conn)
+        {
+            ok @ Ok(_) => Ok(ok?),
+            Err(e) => {
+                event!(Level::DEBUG, "got error while selecting pob: {}", e);
+                diesel::insert_into(pob_file).values(&pob).execute(&conn)?;
+                Ok(pob.id)
+            }
+        }
+    }
+
+    #[instrument(err, skip(self))]
+    pub fn save_new_build<'a>(
+        &self,
+        mut build: NewBuild<'a>,
     ) -> Result<String, BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
 
@@ -33,27 +57,27 @@ impl DieselBuildsRepository {
 
         let builds = build_info
             .select(id)
-            .filter(pob_url.eq(pob.as_ref()).and(itemset.eq(item_set)))
+            .filter(
+                pob_file_id
+                    .eq(build.pob_file_id())
+                    .and(itemset.eq(&build.itemset)),
+            )
             .load::<String>(&conn)?;
 
         if builds.len() > 0 {
             return Ok(builds[0].clone());
         }
 
-        let new_build = NewBuild {
-            // TODO: change to_string()
-            id: Uuid::new_v4().to_hyphenated().to_string(),
-            pob_url: pob,
-            itemset: item_set,
-        };
+        build.id = Uuid::new_v4().to_hyphenated().to_string();
 
         diesel::insert_into(build_info)
-            .values(&new_build)
+            .values(&build)
             .execute(&conn)?;
 
-        Ok(new_build.id.to_owned())
+        Ok(build.id)
     }
 
+    #[instrument(err, skip(self))]
     pub fn get_build(&self, id_: &str) -> Result<PobBuild, BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
 
@@ -71,6 +95,7 @@ impl DieselBuildsRepository {
         }
     }
 
+    #[instrument(err, skip(self))]
     pub fn get_build_by_url(
         &self,
         url: &PastebinBuild,
@@ -80,10 +105,11 @@ impl DieselBuildsRepository {
         let conn = self.conn.get()?;
 
         Ok(build_info
-            .filter(pob_url.eq(url.as_ref()))
+            .filter(pob_file_id.eq(url.as_ref()))
             .load::<PobBuild>(&conn)?)
     }
 
+    #[instrument(err, skip(self))]
     pub fn update_build(&self, build: &PobBuild) -> Result<(), BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
 
@@ -91,7 +117,7 @@ impl DieselBuildsRepository {
 
         diesel::update(build)
             .set((
-                pob_url.eq(build.pob_url.as_ref()),
+                pob_file_id.eq(&build.pob_file_id),
                 itemset.eq(&build.itemset),
             ))
             .execute(&conn)?;
@@ -99,6 +125,7 @@ impl DieselBuildsRepository {
         Ok(())
     }
 
+    #[instrument(err, skip(self))]
     pub fn new_build_match(&self, mtch: &NewBuildMatch) -> Result<(), BuildsRepositoryError> {
         use crate::schema::builds_match::dsl::*;
 
@@ -111,6 +138,7 @@ impl DieselBuildsRepository {
         Ok(())
     }
 
+    #[instrument(err, skip(self))]
     pub fn get_items_id_for_build(&self, id_: &str) -> Result<Vec<String>, BuildsRepositoryError> {
         use crate::schema::builds_match::dsl::*;
 
@@ -122,6 +150,7 @@ impl DieselBuildsRepository {
             .get_results::<String>(&conn)?)
     }
 
+    #[instrument(err, skip(self, pob), fields(id = ?pob.id, token = pob.url_token()))]
     pub fn save_pob_file(&self, pob: NewPobFile) -> Result<(), BuildsRepositoryError> {
         use crate::schema::pob_file::dsl::*;
 
@@ -130,6 +159,7 @@ impl DieselBuildsRepository {
         Ok(())
     }
 
+    #[instrument(err, skip(self))]
     pub fn get_pob_file(&self, id_: &str) -> Result<PobFile, BuildsRepositoryError> {
         use crate::schema::pob_file::dsl::*;
 

@@ -1,10 +1,11 @@
 use actix::prelude::*;
 use std::{collections::HashMap, convert::TryInto};
+use uuid::Uuid;
 
 use crate::{
     domain::{item::Item, PastebinBuild},
     implementations::{
-        models::{NewBuildMatch, PobBuild},
+        models::{NewBuild, NewBuildMatch, NewPobFile, PobBuild},
         pob::pob::Pob,
         BuildsRepository, ItemsRepository,
     },
@@ -34,12 +35,23 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
     fn handle(&mut self, msg: StartBuildCalculatingMsg, ctx: &mut Self::Context) -> Self::Result {
         // TODO: transactional work
         let pastebin = PastebinBuild::new(&msg.pob_url)?;
+        let pob_build = ureq::get(&pastebin.pastebin_raw_url())
+            .call()?
+            .into_string()?;
+
+        let new_pob = NewPobFile::new(format!("{}", Uuid::new_v4()), &pastebin, &pob_build);
+        let pob_id = self.repo.save_new_pob_file(new_pob)?;
+
         let mut builds = self.repo.get_build_by_url(&pastebin)?;
         let id = if builds.len() == 0 {
+            let new_build = NewBuild {
+                id: format!("{}", Uuid::new_v4()),
+                pob_file_id: &pob_id,
+                itemset: msg.itemset.unwrap_or(String::new()),
+            };
+
             // TODO: ignoring itemset for now
-            let id = self
-                .repo
-                .save_new_build(&pastebin, &msg.itemset.unwrap_or(String::new()))?;
+            let id = self.repo.save_new_build(new_build)?;
             let build = self.repo.get_build(&id)?;
             builds.push(build);
             id
@@ -68,12 +80,9 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
     fn handle(&mut self, msg: CalculateBuildAlgo, _ctx: &mut Self::Context) -> Self::Result {
         // TODO: need to fix unwrap()s
 
-        let pob_build = ureq::get(&msg.build.pob_url.pastebin_raw_url())
-            .call()?
-            .into_string()?;
-
         let mut build = msg.build;
-        let pob = Pob::from_pastebin_data(pob_build)?;
+        let pob = self.repo.get_pob_file(&build.pob_file_id)?;
+        let pob = Pob::from_pastebin_data(pob.encoded_pob)?;
         let pob_doc = pob.as_document()?;
         let itemsets = pob_doc.get_item_sets();
 

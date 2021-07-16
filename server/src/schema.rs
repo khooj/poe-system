@@ -1,4 +1,21 @@
 table! {
+    build_info (id) {
+        id -> Text,
+        itemset -> Text,
+        pob_file_id -> Text,
+    }
+}
+
+table! {
+    builds_match (id, idx) {
+        id -> Text,
+        idx -> Integer,
+        score -> Integer,
+        item_id -> Text,
+    }
+}
+
+table! {
     extended (item_id) {
         item_id -> Text,
         category -> Text,
@@ -108,6 +125,14 @@ table! {
 }
 
 table! {
+    pob_file (id) {
+        id -> Text,
+        url_token -> Text,
+        encoded_pob -> Text,
+    }
+}
+
+table! {
     properties (property_id, item_id) {
         property_id -> Text,
         item_id -> Text,
@@ -162,6 +187,9 @@ table! {
     }
 }
 
+joinable!(build_info -> pob_file (pob_file_id));
+joinable!(builds_match -> build_info (id));
+joinable!(builds_match -> items (item_id));
 joinable!(extended -> items (item_id));
 joinable!(hybrids -> hybrid_mods (hybrid_id));
 joinable!(hybrids -> items (item_id));
@@ -175,6 +203,8 @@ joinable!(subcategories -> items (item_id));
 joinable!(ultimatum_mods -> items (item_id));
 
 allow_tables_to_appear_in_same_query!(
+    build_info,
+    builds_match,
     extended,
     hybrid_mods,
     hybrids,
@@ -183,6 +213,7 @@ allow_tables_to_appear_in_same_query!(
     items,
     latest_stash_id,
     mods,
+    pob_file,
     properties,
     property_types,
     socketed_items,
