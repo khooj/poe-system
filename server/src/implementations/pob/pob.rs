@@ -64,6 +64,10 @@ impl ItemSet {
             items,
         })
     }
+
+    pub fn get_nth_item(&self, nth: usize) -> Option<&Item> {
+        self.items.iter().nth(nth)
+    }
 }
 
 impl TryInto<Item> for ParsedItem {
@@ -166,6 +170,25 @@ impl<'a> PobDocument<'a> {
         }
 
         itemsets
+    }
+
+    pub fn get_first_itemset(&self) -> Result<ItemSet, anyhow::Error> {
+        let itemsets = self.get_item_sets();
+
+        itemsets
+            .into_iter()
+            .nth(0)
+            .ok_or(anyhow::anyhow!("pob dont have itemsets"))
+    }
+
+    pub fn get_itemset(&self, title: &str) -> Result<ItemSet, anyhow::Error> {
+        if title.is_empty() {
+            return self.get_first_itemset()
+        }
+
+        let itemsets = self.get_item_sets();
+
+        itemsets.into_iter().find(|e| e.title == title).ok_or(anyhow::anyhow!("cant find itemset"))
     }
 }
 

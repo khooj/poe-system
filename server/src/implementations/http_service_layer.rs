@@ -1,4 +1,4 @@
-use super::builds_repository::BuildsRepositoryError;
+use super::{builds_repository::BuildsRepositoryError, pob::pob::Pob};
 use super::{BuildsRepository, ItemsRepository};
 use crate::ports::outbound::repository::RepositoryError;
 use serde::Serialize;
@@ -33,7 +33,7 @@ impl jsonrpc_v2::ErrorLike for ServiceError {
 
 #[derive(Serialize)]
 pub struct BuildMatches {
-    pub items: Vec<String>,
+    pub items: Vec<(String, String)>,
 }
 
 pub struct HttpServiceLayer {
@@ -43,10 +43,27 @@ pub struct HttpServiceLayer {
 
 impl HttpServiceLayer {
     pub async fn get_build_matches(&self, build_id: &str) -> Result<BuildMatches, ServiceError> {
+        let build = self.build_repo.get_build(build_id)?;
+        let pob_file = self.build_repo.get_pob_file(&build.id)?;
+        let pob = Pob::from_pastebin_data(pob_file.encoded_pob)?;
+        let pob_doc = pob.as_document()?;
+
+        let itemset = pob_doc.get_itemset(&build.itemset)?;
+
         let ids = self.build_repo.get_items_id_for_build(build_id)?;
         let items = self.item_repo.get_items_by_ids(ids)?;
         Ok(BuildMatches {
-            items: items.into_iter().map(|el| format!("{:?}", el)).collect(),
+            items: items
+                .into_iter()
+                .enumerate()
+                .map(|(idx, el)| {
+                    let itemset_item = match itemset.get_nth_item(idx) {
+                        Some(k) => format!("{:?}", k),
+                        None => String::new(),
+                    };
+                    (itemset_item, format!("{:?}", el))
+                })
+                .collect(),
         })
     }
 }
