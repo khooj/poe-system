@@ -4,8 +4,8 @@ use crate::domain::PastebinBuild;
 use crate::implementations::models::{NewBuild, NewPobFile, PobBuild, PobFile};
 use diesel::prelude::*;
 use thiserror::Error;
+use tracing::{event, instrument, Level};
 use uuid::Uuid;
-use tracing::{instrument, event, Level};
 
 #[derive(Error, Debug)]
 pub enum BuildsRepositoryError {
@@ -139,15 +139,15 @@ impl DieselBuildsRepository {
     }
 
     #[instrument(err, skip(self))]
-    pub fn get_items_id_for_build(&self, id_: &str) -> Result<Vec<String>, BuildsRepositoryError> {
+    pub fn get_items_id_for_build(&self, id_: &str) -> Result<Vec<(i32, String)>, BuildsRepositoryError> {
         use crate::schema::builds_match::dsl::*;
 
         let conn = self.conn.get()?;
 
         Ok(builds_match
             .filter(id.eq(id_))
-            .select(item_id)
-            .get_results::<String>(&conn)?)
+            .select((idx, item_id))
+            .get_results::<(i32, String)>(&conn)?)
     }
 
     #[instrument(err, skip(self, pob), fields(id = ?pob.id, token = pob.url_token()))]
@@ -165,5 +165,19 @@ impl DieselBuildsRepository {
 
         let conn = self.conn.get()?;
         Ok(pob_file.filter(id.eq(id_)).first::<PobFile>(&conn)?)
+    }
+
+    #[instrument(err, skip(self))]
+    pub fn get_pob_file_id_by_url(
+        &self,
+        token: &PastebinBuild,
+    ) -> Result<String, BuildsRepositoryError> {
+        use crate::schema::pob_file::dsl::*;
+
+        let conn = self.conn.get()?;
+        Ok(pob_file
+            .select(id)
+            .filter(url_token.eq(token.as_ref()))
+            .first::<String>(&conn)?)
     }
 }

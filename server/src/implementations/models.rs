@@ -26,8 +26,8 @@ impl<'a> NewBuild<'a> {
 #[table_name = "build_info"]
 pub struct PobBuild {
     pub id: String,
-    pub pob_file_id: String,
     pub itemset: String,
+    pub pob_file_id: String,
 }
 
 impl<DB, ST> Queryable<ST, DB> for PastebinBuild

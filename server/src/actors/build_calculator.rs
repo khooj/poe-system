@@ -35,12 +35,19 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
     fn handle(&mut self, msg: StartBuildCalculatingMsg, ctx: &mut Self::Context) -> Self::Result {
         // TODO: transactional work
         let pastebin = PastebinBuild::new(&msg.pob_url)?;
-        let pob_build = ureq::get(&pastebin.pastebin_raw_url())
-            .call()?
-            .into_string()?;
 
-        let new_pob = NewPobFile::new(format!("{}", Uuid::new_v4()), &pastebin, &pob_build);
-        let pob_id = self.repo.save_new_pob_file(new_pob)?;
+        let pob_id = match self.repo.get_pob_file_id_by_url(&pastebin) {
+            Ok(k) => k,
+            _ => {
+                let pob_build = ureq::get(&pastebin.pastebin_raw_url())
+                    .call()?
+                    .into_string()?;
+
+                let new_pob = NewPobFile::new(format!("{}", Uuid::new_v4()), &pastebin, &pob_build);
+                self.repo.save_new_pob_file(new_pob)?
+            }
+        };
+        event!(Level::DEBUG, "saved pob file with id {}", pob_id);
 
         let mut builds = self.repo.get_build_by_url(&pastebin)?;
         let id = if builds.len() == 0 {
