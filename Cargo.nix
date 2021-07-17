@@ -2193,7 +2193,7 @@ rec {
           { name = "tcl"; path = "src/bin/tcl.rs"; }
           { name = "lua"; path = "src/bin/lua.rs"; }
         ];
-        src = lib.cleanSourceWith { filter = sourceFilter;  src = ../embedding; };
+        src = lib.cleanSourceWith { filter = sourceFilter;  src = ./embedding; };
         authors = [
           "Igor Gilmutdinov <bladoff@gmail.com>"
         ];
@@ -4729,7 +4729,7 @@ rec {
           { name = "latest_stashes"; path = "src/bin/latest_stashes.rs"; }
           { name = "fuzzy_test"; path = "src/bin/fuzzy_test.rs"; }
         ];
-        src = lib.cleanSourceWith { filter = sourceFilter;  src = ./.; };
+        src = lib.cleanSourceWith { filter = sourceFilter;  src = ./server; };
         authors = [
           "Igor Gilmutdinov <bladoff@gmail.com>"
         ];
