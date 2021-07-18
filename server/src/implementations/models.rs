@@ -1,5 +1,7 @@
 use crate::domain::{item::Item as DomainItem, PastebinBuild, PastebinToken};
-use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty as ItemPropertyJson};
+use crate::ports::outbound::public_stash_retriever::{
+    Item as JsonItem, ItemProperty as ItemPropertyJson,
+};
 use crate::ports::outbound::repository::RepositoryError;
 use crate::schema::{build_info, builds_match, pob_file};
 use diesel::{backend::Backend, deserialize::Queryable};
@@ -8,21 +10,7 @@ use std::convert::{From, Into, TryFrom};
 use tracing::{event, Level};
 use uuid::Uuid;
 
-#[derive(Insertable, Debug)]
-#[table_name = "build_info"]
-pub struct NewBuild<'a> {
-    pub id: String,
-    pub pob_file_id: &'a str,
-    pub itemset: String,
-}
-
-impl<'a> NewBuild<'a> {
-    pub fn pob_file_id(&self) -> &str {
-        self.pob_file_id
-    }
-}
-
-#[derive(Queryable, Identifiable, Clone, Debug)]
+#[derive(Queryable, Insertable, Identifiable, Clone, Debug)]
 #[table_name = "build_info"]
 pub struct PobBuild {
     pub id: String,
@@ -42,9 +30,9 @@ where
     }
 }
 
-#[derive(Insertable, AsChangeset, Debug)]
+#[derive(Queryable, Insertable, AsChangeset, Debug)]
 #[table_name = "builds_match"]
-pub struct NewBuildMatch {
+pub struct BuildMatch {
     pub id: String,
     pub idx: i32,
     pub score: i32,
@@ -52,7 +40,7 @@ pub struct NewBuildMatch {
 }
 
 pub struct SplittedItem {
-    pub item: NewItem,
+    pub item: Item,
     pub mods: Option<Vec<NewMod>>,
     pub subcategories: Option<Vec<NewSubcategory>>,
     pub props: Option<Vec<Property>>,
@@ -64,14 +52,14 @@ pub struct SplittedItem {
     pub influence: Option<NewInfluence>,
 }
 
-impl TryFrom<Item> for SplittedItem {
+impl TryFrom<JsonItem> for SplittedItem {
     type Error = RepositoryError;
-    fn try_from(mut item: Item) -> Result<Self, Self::Error> {
+    fn try_from(mut item: JsonItem) -> Result<Self, Self::Error> {
         if item.id.is_none() {
             return Err(RepositoryError::Skipped);
         }
 
-        let raw = NewItem {
+        let raw = Item {
             account_id: String::new(),
             account_name: String::new(),
             stash_id: String::new(),
@@ -371,91 +359,9 @@ fn append_if_not_empty2<T>(mut vals: Option<Vec<T>>, mut to_insert: Vec<T>) -> O
     vals
 }
 
-#[derive(Queryable, Identifiable, Debug)]
+#[derive(Queryable, Identifiable, Insertable, Debug)]
 #[table_name = "items"]
-pub struct RawItem {
-    id: String,
-    base_type: String,
-    account_id: String,
-    account_name: String,
-    stash_id: String,
-    league: Option<String>,
-    name: String,
-    item_lvl: Option<i32>,
-    identified: bool,
-    inventory_id: Option<String>,
-    type_line: String,
-    abyss_jewel: Option<bool>,
-    corrupted: Option<bool>,
-    duplicated: Option<bool>,
-    elder: Option<bool>,
-    frame_type: Option<i32>,
-    h: i32,
-    w: i32,
-    x_coordinate: Option<i32>,
-    y_coordinaate: Option<i32>,
-    is_relic: Option<bool>,
-    note: Option<String>,
-    shaper: Option<bool>,
-    stack_size: Option<i32>,
-    max_stack_size: Option<i32>,
-    support: Option<bool>,
-    talisman_tier: Option<i32>,
-    verified: bool,
-    icon: String,
-    delve: Option<bool>,
-    fractured: Option<bool>,
-    synthesised: Option<bool>,
-    split: Option<bool>,
-    sec_descr_text: Option<String>,
-    veiled: Option<bool>,
-    descr_text: Option<String>,
-    prophecy_text: Option<String>,
-    replica: Option<bool>,
-    socket: Option<i32>,
-    colour: Option<String>,
-}
-
-#[derive(Clone, Copy)]
-pub enum ModType {
-    Utility = 0,
-    Implicit = 1,
-    Explicit = 2,
-    Crafted = 3,
-    Enchant = 4,
-    Fractured = 5,
-    Cosmetic = 6,
-    Veiled = 7,
-    ExplicitHybrid = 8,
-}
-
-#[derive(Clone, Copy)]
-pub enum PropertyType {
-    Properties = 0,
-    Requirements,
-    AdditionalProperties,
-    NextLevelRequirements,
-    NotableProperties,
-    Hybrid,
-}
-
-pub enum ValueType {
-    WhitePhysical = 0,
-    BlueModified = 1,
-    Fire = 4,
-    Cold = 5,
-    Lightning = 6,
-    Chaos = 7,
-}
-
-use crate::schema::{
-    extended, hybrid_mods, hybrids, incubated_item, influences, items, latest_stash_id, mods,
-    properties, property_types, socketed_items, sockets, subcategories, ultimatum_mods,
-};
-
-#[derive(Insertable, Debug)]
-#[table_name = "items"]
-pub struct NewItem {
+pub struct Item {
     pub id: String,
     pub base_type: String,
     pub account_id: String,
@@ -497,6 +403,43 @@ pub struct NewItem {
     pub socket: Option<i32>,
     pub colour: Option<String>,
 }
+
+#[derive(Clone, Copy)]
+pub enum ModType {
+    Utility = 0,
+    Implicit = 1,
+    Explicit = 2,
+    Crafted = 3,
+    Enchant = 4,
+    Fractured = 5,
+    Cosmetic = 6,
+    Veiled = 7,
+    ExplicitHybrid = 8,
+}
+
+#[derive(Clone, Copy)]
+pub enum PropertyType {
+    Properties = 0,
+    Requirements,
+    AdditionalProperties,
+    NextLevelRequirements,
+    NotableProperties,
+    Hybrid,
+}
+
+pub enum ValueType {
+    WhitePhysical = 0,
+    BlueModified = 1,
+    Fire = 4,
+    Cold = 5,
+    Lightning = 6,
+    Chaos = 7,
+}
+
+use crate::schema::{
+    extended, hybrid_mods, hybrids, incubated_item, influences, items, latest_stash_id, mods,
+    properties, property_types, socketed_items, sockets, subcategories, ultimatum_mods,
+};
 
 #[derive(Insertable)]
 #[table_name = "mods"]
@@ -642,7 +585,7 @@ pub struct RemoveItems<'a> {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug, Default, Clone)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "influences"]
 #[primary_key(item_id)]
 pub struct Influence {
@@ -656,7 +599,7 @@ pub struct Influence {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug, Default, Clone)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "extended"]
 #[primary_key(item_id)]
 pub struct Extended {
@@ -667,7 +610,7 @@ pub struct Extended {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "hybrids"]
 #[primary_key(hybrid_id, item_id)]
 pub struct Hybrid {
@@ -685,7 +628,7 @@ pub struct HybridModDb {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "incubated_item"]
 #[primary_key(item_id, name)]
 pub struct IncubatedItem {
@@ -697,7 +640,7 @@ pub struct IncubatedItem {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "ultimatum_mods"]
 #[primary_key(item_id, type_)]
 pub struct UltimatumMod {
@@ -707,7 +650,7 @@ pub struct UltimatumMod {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "sockets"]
 pub struct Socket {
     pub id: String,
@@ -718,7 +661,7 @@ pub struct Socket {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "socketed_items"]
 #[primary_key(item_id, socketed_item_id)]
 pub struct SocketedItem {
@@ -727,7 +670,7 @@ pub struct SocketedItem {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[belongs_to(PropertyTypeDb, foreign_key = "property_id")]
 #[table_name = "properties"]
 #[primary_key(property_id, item_id)]
@@ -750,7 +693,7 @@ pub struct PropertyTypeDb {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "subcategories"]
 pub struct Subcategory {
     pub id: String,
@@ -759,7 +702,7 @@ pub struct Subcategory {
 }
 
 #[derive(Identifiable, Queryable, Associations, Debug)]
-#[belongs_to(RawItem, foreign_key = "item_id")]
+#[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "mods"]
 pub struct Mod {
     pub id: String,
@@ -769,7 +712,7 @@ pub struct Mod {
 }
 
 type DomainItemFrom = (
-    RawItem,
+    Item,
     Vec<Influence>,
     Vec<Mod>,
     Vec<Extended>,

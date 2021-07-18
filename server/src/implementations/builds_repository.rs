@@ -1,7 +1,6 @@
-use super::models::NewBuildMatch;
+use super::models::{BuildMatch, NewPobFile, PobBuild, PobFile};
 use super::TypedConnectionPool;
 use crate::domain::PastebinBuild;
-use crate::implementations::models::{NewBuild, NewPobFile, PobBuild, PobFile};
 use diesel::prelude::*;
 use thiserror::Error;
 use tracing::{event, instrument, Level};
@@ -47,9 +46,9 @@ impl DieselBuildsRepository {
     }
 
     #[instrument(err, skip(self))]
-    pub fn save_new_build<'a>(
+    pub fn save_new_build(
         &self,
-        mut build: NewBuild<'a>,
+        mut build: PobBuild,
     ) -> Result<String, BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
 
@@ -59,7 +58,7 @@ impl DieselBuildsRepository {
             .select(id)
             .filter(
                 pob_file_id
-                    .eq(build.pob_file_id())
+                    .eq(&build.pob_file_id)
                     .and(itemset.eq(&build.itemset)),
             )
             .load::<String>(&conn)?;
@@ -126,7 +125,7 @@ impl DieselBuildsRepository {
     }
 
     #[instrument(err, skip(self))]
-    pub fn new_build_match(&self, mtch: &NewBuildMatch) -> Result<(), BuildsRepositoryError> {
+    pub fn new_build_match(&self, mtch: &BuildMatch) -> Result<(), BuildsRepositoryError> {
         use crate::schema::builds_match::dsl::*;
 
         let conn = self.conn.get()?;

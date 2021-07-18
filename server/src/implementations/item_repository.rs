@@ -1,6 +1,6 @@
 use super::models::{
     Extended, Hybrid, HybridModDb, IncubatedItem, Influence, ItemProperty, Mod, NewHybrid,
-    NewHybridMod, NewLatestStash, NewProperty, NewPropertyType, PropertyTypeDb, RawItem,
+    NewHybridMod, NewLatestStash, NewProperty, NewPropertyType, PropertyTypeDb, Item,
     RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
 };
 use super::TypedConnectionPool;
@@ -83,7 +83,7 @@ impl DieselItemRepository {
 
         let conn = self.conn.get()?;
 
-        let items = items_table.filter(query).load::<RawItem>(&conn)?;
+        let items = items_table.filter(query).load::<Item>(&conn)?;
 
         let influences = Influence::belonging_to(&items)
             .load::<Influence>(&conn)?
@@ -194,14 +194,14 @@ impl DieselItemRepository {
         &self,
         account_name_: &str,
         stash_id_: &str,
-    ) -> Result<Vec<RawItem>, RepositoryError> {
+    ) -> Result<Vec<Item>, RepositoryError> {
         use crate::schema::items::dsl::*;
 
         let conn = self.conn.get()?;
 
         Ok(items
             .filter(account_name.eq(account_name_).and(stash_id.eq(stash_id_)))
-            .load::<RawItem>(&conn)?)
+            .load::<Item>(&conn)?)
     }
 
     #[instrument(err, skip(self))]

@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     domain::{item::Item, PastebinBuild},
     implementations::{
-        models::{NewBuild, NewBuildMatch, NewPobFile, PobBuild},
+        models::{PobBuild, BuildMatch, NewPobFile},
         pob::pob::Pob,
         BuildsRepository, ItemsRepository,
     },
@@ -51,9 +51,10 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
 
         let mut builds = self.repo.get_build_by_url(&pastebin)?;
         let id = if builds.len() == 0 {
-            let new_build = NewBuild {
+            let new_build = PobBuild {
+                // TODO: inconsistent id assigning. Decide if it should be assigned in repo or domain
                 id: format!("{}", Uuid::new_v4()),
-                pob_file_id: &pob_id,
+                pob_file_id: pob_id,
                 itemset: msg.itemset.unwrap_or(String::new()),
             };
 
@@ -135,7 +136,7 @@ impl Handler<CalculateBuildAlgo> for BuildCalculatorActor {
         }
 
         for (idx, (score, id)) in &item_match {
-            let mtch = NewBuildMatch {
+            let mtch = BuildMatch {
                 id: build.id.clone(),
                 idx: *idx as i32,
                 score: *score as i32,
