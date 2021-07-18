@@ -1,10 +1,9 @@
-use crate::domain::{item::Item as DomainItem, PastebinBuild, PastebinToken};
+use crate::domain::{item::Item as DomainItem, PastebinBuild};
 use crate::ports::outbound::public_stash_retriever::{
     Item as JsonItem, ItemProperty as ItemPropertyJson,
 };
 use crate::ports::outbound::repository::RepositoryError;
 use crate::schema::{build_info, builds_match, pob_file};
-use diesel::{backend::Backend, deserialize::Queryable};
 use serde_json::json;
 use std::convert::{From, Into, TryFrom};
 use tracing::{event, Level};
@@ -16,18 +15,6 @@ pub struct PobBuild {
     pub id: String,
     pub itemset: String,
     pub pob_file_id: String,
-}
-
-impl<DB, ST> Queryable<ST, DB> for PastebinBuild
-where
-    DB: Backend,
-    String: Queryable<ST, DB>,
-{
-    type Row = <String as Queryable<ST, DB>>::Row;
-
-    fn build(row: Self::Row) -> Self {
-        PastebinBuild::from_token(PastebinToken::new(String::build(row)))
-    }
 }
 
 #[derive(Queryable, Insertable, AsChangeset, Debug)]
@@ -313,10 +300,7 @@ fn append_properties(
     vals
 }
 
-fn append_mods(
-    to_insert: Vec<(Option<Vec<String>>, ModType)>,
-    item_id: &str,
-) -> Option<Vec<Mod>> {
+fn append_mods(to_insert: Vec<(Option<Vec<String>>, ModType)>, item_id: &str) -> Option<Vec<Mod>> {
     let mut vals = None;
     for (ins, t) in to_insert {
         vals = append_mod(vals, ins, item_id, t);
@@ -437,7 +421,7 @@ pub enum ValueType {
 }
 
 use crate::schema::{
-    extended, hybrid_mods, hybrids, incubated_item, influences, items, mods, latest_stash_id,
+    extended, hybrid_mods, hybrids, incubated_item, influences, items, latest_stash_id, mods,
     properties, property_types, socketed_items, sockets, subcategories, ultimatum_mods,
 };
 
