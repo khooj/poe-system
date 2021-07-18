@@ -1,7 +1,7 @@
 use super::models::{
-    Extended, Hybrid, HybridModDb, IncubatedItem, Influence, ItemProperty, Mod, NewHybrid,
-    NewHybridMod, NewLatestStash, NewProperty, NewPropertyType, PropertyTypeDb, Item,
-    RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
+    Extended, HybridAssociation, HybridMod, IncubatedItem, Influence, Item, Mod, Property,
+    PropertyTypeDb, RemoveItems, Socket, SocketedItem, SplittedItem, Subcategory, UltimatumMod,
+    NewLatestStash
 };
 use super::TypedConnectionPool;
 use crate::domain::item::Item as DomainItem;
@@ -95,15 +95,15 @@ impl DieselItemRepository {
             .load::<Extended>(&conn)?
             .grouped_by(&items);
 
-        let hybrid = Hybrid::belonging_to(&items).load::<Hybrid>(&conn)?;
+        let hybrid = HybridAssociation::belonging_to(&items).load::<HybridAssociation>(&conn)?;
         let hybrid_mods = hybrid_mods_dsl::hybrid_mods
             .filter(hybrid_mods_dsl::id.eq_any(hybrid.iter().map(|e| &e.hybrid_id)))
-            .load::<HybridModDb>(&conn)?;
+            .load::<HybridMod>(&conn)?;
 
         let hybrid_mods = hybrid_mods
             .into_iter()
             .map(|el| (el.id.clone(), el))
-            .collect::<HashMap<String, HybridModDb>>();
+            .collect::<HashMap<String, HybridMod>>();
 
         let hybrid = hybrid.grouped_by(&items);
         let hybrid = hybrid
@@ -130,7 +130,7 @@ impl DieselItemRepository {
             .load::<SocketedItem>(&conn)?
             .grouped_by(&items);
 
-        let properties = ItemProperty::belonging_to(&items).load::<ItemProperty>(&conn)?;
+        let properties = Property::belonging_to(&items).load::<Property>(&conn)?;
         let property_types = property_types_dsl::property_types
             .filter(property_types_dsl::id.eq_any(properties.iter().map(|e| &e.property_id)))
             .load::<PropertyTypeDb>(&conn)?;
@@ -286,6 +286,7 @@ impl DieselItemRepository {
             .into_group_map_by(|el| el.item.account_id.clone());
 
         let conn = self.conn.get()?;
+        // TODO: switch to item-by-item inserts
         conn.transaction::<_, RepositoryError, _>(|| {
             // TODO: need somehow run set_stash_id method in this transaction
             let latest_stash = NewLatestStash {
@@ -361,7 +362,7 @@ impl DieselItemRepository {
                 insert_val2!(v, influence, influences_table, conn);
                 for mods in collect_val2!(v, props) {
                     for mod_ in mods {
-                        let new_prop = NewPropertyType {
+                        let new_prop = PropertyTypeDb {
                             id: Uuid::new_v4().to_hyphenated().to_string(),
                             name: mod_.name.clone(),
                             property_type: mod_.property_type,
@@ -392,7 +393,7 @@ impl DieselItemRepository {
                         };
 
                         diesel::replace_into(properties_table)
-                            .values(&NewProperty {
+                            .values(&Property {
                                 item_id: mod_.item_id.clone(),
                                 property_id: id_mod,
                                 progress: mod_.progress,
@@ -406,7 +407,7 @@ impl DieselItemRepository {
                 }
 
                 for mods in collect_val2!(v, hybrid) {
-                    let new_mod = NewHybridMod {
+                    let new_mod = HybridMod {
                         id: Uuid::new_v4().to_hyphenated().to_string(),
                         is_vaal_gem: mods.is_vaal_gem,
                         base_type_name: mods.base_type_name.clone(),
@@ -445,7 +446,7 @@ impl DieselItemRepository {
                     );
 
                     diesel::replace_into(hybrids_table)
-                        .values(&NewHybrid {
+                        .values(&HybridAssociation {
                             hybrid_id: id_mod.clone(),
                             item_id: mods.item_id.clone(),
                         })

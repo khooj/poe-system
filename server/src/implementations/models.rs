@@ -41,15 +41,15 @@ pub struct BuildMatch {
 
 pub struct SplittedItem {
     pub item: Item,
-    pub mods: Option<Vec<NewMod>>,
-    pub subcategories: Option<Vec<NewSubcategory>>,
-    pub props: Option<Vec<Property>>,
-    pub sockets: Option<Vec<NewSocket>>,
-    pub ultimatum: Option<Vec<NewUltimatumMod>>,
-    pub incubated: Option<NewIncubatedItem>,
-    pub hybrid: Option<HybridMod>,
-    pub extended: Option<NewExtended>,
-    pub influence: Option<NewInfluence>,
+    pub mods: Option<Vec<Mod>>,
+    pub subcategories: Option<Vec<Subcategory>>,
+    pub props: Option<Vec<FullProperty>>,
+    pub sockets: Option<Vec<Socket>>,
+    pub ultimatum: Option<Vec<UltimatumMod>>,
+    pub incubated: Option<IncubatedItem>,
+    pub hybrid: Option<FullHybridMod>,
+    pub extended: Option<Extended>,
+    pub influence: Option<Influence>,
 }
 
 impl TryFrom<JsonItem> for SplittedItem {
@@ -115,13 +115,13 @@ impl TryFrom<JsonItem> for SplittedItem {
             ],
             item.id.as_deref().unwrap(),
         );
-        let subcategories: Vec<NewSubcategory> = item
+        let subcategories: Vec<Subcategory> = item
             .extended
             .take()
             .and_then(|el| el.subcategories)
             .map_or(vec![], |v| v)
             .into_iter()
-            .map(|el| NewSubcategory {
+            .map(|el| Subcategory {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: item.id.as_ref().unwrap().clone(),
                 subcategory: el,
@@ -153,12 +153,12 @@ impl TryFrom<JsonItem> for SplittedItem {
             item.id.as_deref().unwrap(),
         );
 
-        let sockets: Vec<NewSocket> = item
+        let sockets: Vec<Socket> = item
             .sockets
             .take()
             .map_or(vec![], |v| v)
             .into_iter()
-            .map(|el| NewSocket {
+            .map(|el| Socket {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: item.id.as_ref().unwrap().clone(),
                 attr: el.attr,
@@ -172,12 +172,12 @@ impl TryFrom<JsonItem> for SplittedItem {
             None
         };
 
-        let ultimatum: Vec<NewUltimatumMod> = item
+        let ultimatum: Vec<UltimatumMod> = item
             .ultimatum_mods
             .take()
             .map_or(vec![], |v| v)
             .into_iter()
-            .map(|el| NewUltimatumMod {
+            .map(|el| UltimatumMod {
                 item_id: item.id.as_ref().unwrap().clone(),
                 tier: el.tier,
                 type_: el.mod_type,
@@ -190,7 +190,7 @@ impl TryFrom<JsonItem> for SplittedItem {
         };
 
         let incubated = if let Some(el) = item.incubated_item {
-            Some(NewIncubatedItem {
+            Some(IncubatedItem {
                 item_id: item.id.as_ref().unwrap().clone(),
                 level: el.level,
                 name: el.name,
@@ -231,7 +231,7 @@ impl TryFrom<JsonItem> for SplittedItem {
                 }
             }
 
-            Some(HybridMod {
+            Some(FullHybridMod {
                 item_id: item.id.as_ref().unwrap().clone(),
                 base_type_name: el.base_type_name,
                 is_vaal_gem: el.is_vaal_gem.unwrap_or(false),
@@ -242,7 +242,7 @@ impl TryFrom<JsonItem> for SplittedItem {
         };
 
         let extended = if let Some(el) = item.extended {
-            Some(NewExtended {
+            Some(Extended {
                 item_id: item.id.as_ref().unwrap().clone(),
                 category: el.category,
                 prefixes: el.prefixes,
@@ -253,7 +253,7 @@ impl TryFrom<JsonItem> for SplittedItem {
         };
 
         let influence = if let Some(el) = item.influences {
-            Some(NewInfluence {
+            Some(Influence {
                 item_id: item.id.as_ref().unwrap().clone(),
                 crusader: el.crusader.unwrap_or(false),
                 hunter: el.hunter.unwrap_or(false),
@@ -284,7 +284,7 @@ impl TryFrom<JsonItem> for SplittedItem {
 fn append_properties(
     to_insert: Vec<(Option<Vec<ItemPropertyJson>>, PropertyType)>,
     item_id: &str,
-) -> Option<Vec<Property>> {
+) -> Option<Vec<FullProperty>> {
     let mut vals = None;
     for (ins, t) in to_insert {
         // debug!("prop: {:?}", ins);
@@ -292,7 +292,7 @@ fn append_properties(
             vals,
             ins.map_or(vec![], |v| v)
                 .into_iter()
-                .map(|el| Property {
+                .map(|el| FullProperty {
                     item_id: String::from(item_id),
                     name: el.name,
                     progress: el.progress.map_or(None, |v| Some(v as f32)),
@@ -316,7 +316,7 @@ fn append_properties(
 fn append_mods(
     to_insert: Vec<(Option<Vec<String>>, ModType)>,
     item_id: &str,
-) -> Option<Vec<NewMod>> {
+) -> Option<Vec<Mod>> {
     let mut vals = None;
     for (ins, t) in to_insert {
         vals = append_mod(vals, ins, item_id, t);
@@ -325,17 +325,17 @@ fn append_mods(
 }
 
 fn append_mod(
-    vals: Option<Vec<NewMod>>,
+    vals: Option<Vec<Mod>>,
     to_insert: Option<Vec<String>>,
     item_id: &str,
     type_: ModType,
-) -> Option<Vec<NewMod>> {
+) -> Option<Vec<Mod>> {
     append_if_not_empty2(
         vals,
         to_insert
             .map_or(vec![], |v| v)
             .into_iter()
-            .map(|el| NewMod {
+            .map(|el| Mod {
                 id: Uuid::new_v4().to_hyphenated().to_string(),
                 item_id: String::from(item_id),
                 type_: type_ as i32,
@@ -437,29 +437,12 @@ pub enum ValueType {
 }
 
 use crate::schema::{
-    extended, hybrid_mods, hybrids, incubated_item, influences, items, latest_stash_id, mods,
+    extended, hybrid_mods, hybrids, incubated_item, influences, items, mods, latest_stash_id,
     properties, property_types, socketed_items, sockets, subcategories, ultimatum_mods,
 };
 
-#[derive(Insertable)]
-#[table_name = "mods"]
-pub struct NewMod {
-    pub id: String,
-    pub item_id: String,
-    pub type_: i32,
-    pub mod_: String,
-}
-
-#[derive(Insertable)]
-#[table_name = "subcategories"]
-pub struct NewSubcategory {
-    pub id: String,
-    pub item_id: String,
-    pub subcategory: String,
-}
-
 #[derive(Clone, Debug)]
-pub struct Property {
+pub struct FullProperty {
     pub item_id: String,
     pub property_type: i32,
     pub name: String,
@@ -468,106 +451,6 @@ pub struct Property {
     pub type_: Option<i32>,
     pub progress: Option<f32>,
     pub suffix: Option<String>,
-}
-
-#[derive(Insertable)]
-#[table_name = "property_types"]
-pub struct NewPropertyType {
-    pub id: String,
-    pub property_type: i32,
-    pub name: String,
-}
-
-#[derive(Insertable)]
-#[table_name = "properties"]
-pub struct NewProperty {
-    pub property_id: String,
-    pub item_id: String,
-    pub value_type: i32,
-    pub value: String,
-    pub type_: Option<i32>,
-    pub progress: Option<f32>,
-    pub suffix: Option<String>,
-}
-
-#[derive(Insertable)]
-#[table_name = "socketed_items"]
-pub struct NewSocketedItem {
-    pub item_id: String,
-    pub socketed_item_id: String,
-}
-
-#[derive(Insertable)]
-#[table_name = "sockets"]
-pub struct NewSocket {
-    pub id: String,
-    pub item_id: String,
-    pub s_group: i32,
-    pub attr: Option<String>,
-    pub s_colour: Option<String>,
-}
-
-#[derive(Insertable)]
-#[table_name = "ultimatum_mods"]
-pub struct NewUltimatumMod {
-    pub item_id: String,
-    pub type_: String,
-    pub tier: i32,
-}
-
-#[derive(Insertable)]
-#[table_name = "incubated_item"]
-pub struct NewIncubatedItem {
-    pub item_id: String,
-    pub name: String,
-    pub level: i32,
-    pub progress: i32,
-    pub total: i32,
-}
-
-#[derive(Debug)]
-pub struct HybridMod {
-    pub item_id: String,
-    pub is_vaal_gem: bool,
-    pub base_type_name: String,
-    pub sec_descr_text: Option<String>,
-}
-
-#[derive(Insertable)]
-#[table_name = "hybrids"]
-pub struct NewHybrid {
-    pub hybrid_id: String,
-    pub item_id: String,
-}
-
-#[derive(Insertable)]
-#[table_name = "hybrid_mods"]
-pub struct NewHybridMod {
-    pub id: String,
-    pub is_vaal_gem: bool,
-    pub base_type_name: String,
-    pub sec_descr_text: Option<String>,
-}
-
-#[derive(Insertable)]
-#[table_name = "extended"]
-pub struct NewExtended {
-    pub item_id: String,
-    pub category: String,
-    pub prefixes: Option<i32>,
-    pub suffixes: Option<i32>,
-}
-
-#[derive(Insertable)]
-#[table_name = "influences"]
-pub struct NewInfluence {
-    pub item_id: String,
-    pub warlord: bool,
-    pub crusader: bool,
-    pub redeemer: bool,
-    pub hunter: bool,
-    pub shaper: bool,
-    pub elder: bool,
 }
 
 #[derive(Insertable)]
@@ -584,7 +467,7 @@ pub struct RemoveItems<'a> {
     pub stash_id: &'a String,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug, Default, Clone)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug, Default, Clone)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "influences"]
 #[primary_key(item_id)]
@@ -598,7 +481,7 @@ pub struct Influence {
     pub elder: bool,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug, Default, Clone)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug, Default, Clone)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "extended"]
 #[primary_key(item_id)]
@@ -609,25 +492,33 @@ pub struct Extended {
     pub suffixes: Option<i32>,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "hybrids"]
 #[primary_key(hybrid_id, item_id)]
-pub struct Hybrid {
+pub struct HybridAssociation {
     pub hybrid_id: String,
     pub item_id: String,
 }
 
-#[derive(Identifiable, Queryable, Debug, Clone)]
+#[derive(Debug)]
+pub struct FullHybridMod {
+    pub item_id: String,
+    pub is_vaal_gem: bool,
+    pub base_type_name: String,
+    pub sec_descr_text: Option<String>,
+}
+
+#[derive(Identifiable, Queryable, Insertable, Debug, Clone)]
 #[table_name = "hybrid_mods"]
-pub struct HybridModDb {
+pub struct HybridMod {
     pub id: String,
     pub is_vaal_gem: bool,
     pub base_type_name: String,
     pub sec_descr_text: Option<String>,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "incubated_item"]
 #[primary_key(item_id, name)]
@@ -639,7 +530,7 @@ pub struct IncubatedItem {
     pub total: i32,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "ultimatum_mods"]
 #[primary_key(item_id, type_)]
@@ -649,7 +540,7 @@ pub struct UltimatumMod {
     pub tier: i32,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "sockets"]
 pub struct Socket {
@@ -660,7 +551,7 @@ pub struct Socket {
     pub s_colour: Option<String>,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "socketed_items"]
 #[primary_key(item_id, socketed_item_id)]
@@ -669,12 +560,12 @@ pub struct SocketedItem {
     pub socketed_item_id: String,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[belongs_to(PropertyTypeDb, foreign_key = "property_id")]
 #[table_name = "properties"]
 #[primary_key(property_id, item_id)]
-pub struct ItemProperty {
+pub struct Property {
     pub property_id: String,
     pub item_id: String,
     pub value_type: i32,
@@ -684,7 +575,7 @@ pub struct ItemProperty {
     pub suffix: Option<String>,
 }
 
-#[derive(Identifiable, Queryable, Debug, Clone)]
+#[derive(Identifiable, Queryable, Insertable, Debug, Clone)]
 #[table_name = "property_types"]
 pub struct PropertyTypeDb {
     pub id: String,
@@ -692,7 +583,7 @@ pub struct PropertyTypeDb {
     pub name: String,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "subcategories"]
 pub struct Subcategory {
@@ -701,7 +592,7 @@ pub struct Subcategory {
     pub subcategory: String,
 }
 
-#[derive(Identifiable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(Item, foreign_key = "item_id")]
 #[table_name = "mods"]
 pub struct Mod {
@@ -716,7 +607,7 @@ type DomainItemFrom = (
     Vec<Influence>,
     Vec<Mod>,
     Vec<Extended>,
-    Option<HybridModDb>,
+    Option<HybridMod>,
     Vec<IncubatedItem>,
     Vec<UltimatumMod>,
     Vec<Socket>,
@@ -834,7 +725,7 @@ impl Into<domain_item::Mod> for Mod {
     }
 }
 
-impl Into<domain_item::Hybrid> for HybridModDb {
+impl Into<domain_item::Hybrid> for HybridMod {
     fn into(self) -> domain_item::Hybrid {
         domain_item::Hybrid {
             is_vaal_gem: self.is_vaal_gem,
@@ -879,31 +770,24 @@ impl From<DomainItemFrom> for DomainItem {
     }
 }
 
-#[derive(Queryable, Debug, Clone)]
+#[derive(Queryable, Identifiable, Insertable, Debug, Clone)]
+#[table_name = "pob_file"]
 pub struct PobFile {
     pub id: String,
-    pub url_token: PastebinBuild,
+    url_token: String,
     pub encoded_pob: String,
 }
 
-#[derive(Insertable)]
-#[table_name = "pob_file"]
-pub struct NewPobFile<'a> {
-    pub id: String,
-    url_token: &'a str,
-    pub encoded_pob: &'a str,
-}
-
-impl<'a> NewPobFile<'a> {
-    pub fn new(id: String, url_token: &'a PastebinBuild, encoded_pob: &'a str) -> NewPobFile<'a> {
-        NewPobFile {
+impl PobFile {
+    pub fn new(id: String, url_token: &PastebinBuild, encoded_pob: &str) -> PobFile {
+        PobFile {
             id,
-            url_token: url_token.as_ref(),
-            encoded_pob,
+            url_token: url_token.as_ref().to_owned(),
+            encoded_pob: encoded_pob.to_owned(),
         }
     }
 
     pub fn url_token(&self) -> &str {
-        self.url_token
+        &self.url_token
     }
 }

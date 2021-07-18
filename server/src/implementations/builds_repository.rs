@@ -1,4 +1,4 @@
-use super::models::{BuildMatch, NewPobFile, PobBuild, PobFile};
+use super::models::{BuildMatch, PobBuild, PobFile};
 use super::TypedConnectionPool;
 use crate::domain::PastebinBuild;
 use diesel::prelude::*;
@@ -23,9 +23,9 @@ pub struct DieselBuildsRepository {
 
 impl DieselBuildsRepository {
     #[instrument(err, skip(self, pob), fields(id = ?pob.id, token = pob.url_token()))]
-    pub fn save_new_pob_file<'a>(
+    pub fn save_new_pob_file(
         &self,
-        pob: NewPobFile<'a>,
+        pob: PobFile,
     ) -> Result<String, BuildsRepositoryError> {
         use crate::schema::pob_file::dsl::*;
 
@@ -147,15 +147,6 @@ impl DieselBuildsRepository {
             .filter(id.eq(id_))
             .select((idx, item_id))
             .get_results::<(i32, String)>(&conn)?)
-    }
-
-    #[instrument(err, skip(self, pob), fields(id = ?pob.id, token = pob.url_token()))]
-    pub fn save_pob_file(&self, pob: NewPobFile) -> Result<(), BuildsRepositoryError> {
-        use crate::schema::pob_file::dsl::*;
-
-        let conn = self.conn.get()?;
-        diesel::insert_into(pob_file).values(&pob).execute(&conn)?;
-        Ok(())
     }
 
     #[instrument(err, skip(self))]

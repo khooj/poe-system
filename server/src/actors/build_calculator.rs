@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     domain::{item::Item, PastebinBuild},
     implementations::{
-        models::{PobBuild, BuildMatch, NewPobFile},
+        models::{PobBuild, BuildMatch, PobFile},
         pob::pob::Pob,
         BuildsRepository, ItemsRepository,
     },
@@ -43,7 +43,7 @@ impl Handler<StartBuildCalculatingMsg> for BuildCalculatorActor {
                     .call()?
                     .into_string()?;
 
-                let new_pob = NewPobFile::new(format!("{}", Uuid::new_v4()), &pastebin, &pob_build);
+                let new_pob = PobFile::new(format!("{}", Uuid::new_v4()), &pastebin, &pob_build);
                 self.repo.save_new_pob_file(new_pob)?
             }
         };
