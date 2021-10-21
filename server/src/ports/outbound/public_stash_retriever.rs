@@ -131,6 +131,22 @@ pub struct Item {
     pub inventory_id: Option<String>,
     pub socket: Option<i32>,
     pub colour: Option<String>,
+    pub logbook_mods: Option<Vec<LogbookMod>>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LogbookFaction {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LogbookMod {
+    pub name: String,
+    pub faction: LogbookFaction,
+    pub mods: Vec<String>,
 }
 
 fn default_str() -> Option<String> {

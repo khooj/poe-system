@@ -99,6 +99,7 @@ impl TryFrom<JsonItem> for SplittedItem {
                 (item.fractured_mods.take(), ModType::Fractured),
                 (item.cosmetic_mods.take(), ModType::Cosmetic),
                 (item.veiled_mods.take(), ModType::Veiled),
+                // (item.logbook_mods.clone().take(), ModType::Logbook),
             ],
             item.id.as_deref().unwrap(),
         );
@@ -399,6 +400,7 @@ pub enum ModType {
     Cosmetic = 6,
     Veiled = 7,
     ExplicitHybrid = 8,
+    Logbook = 9,
 }
 
 #[derive(Clone, Copy)]
@@ -609,9 +611,13 @@ impl Into<domain_item::League> for Option<String> {
             match l.as_ref() {
                 "Standard" => League::Standard,
                 "Hardcore" => League::Hardcore,
-                "Ultimatum" => League::TempStandard,
-                "HC Ultimatum" => League::TempHardcore,
-                _ => League::Standard,
+                n => {
+                    if n.contains("HC") {
+                        League::TempHardcore
+                    } else {
+                        League::TempStandard
+                    }
+                }
             }
         } else {
             League::Standard
