@@ -159,9 +159,7 @@ fn run(
     let rpc = JsonrpcServer::new()
         .with_data(Data::new(addr))
         .with_data(Data::new(svc))
-        .with_method("calculate_pob", calculate_pob)
-        .with_method("get_build_price", get_build_price)
-        .with_method("get_build_match_items", get_build_matched_items)
+        // .with_method()
         .finish();
 
     let server = HttpServer::new(move || {
