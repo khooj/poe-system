@@ -47,11 +47,9 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
 
     #[instrument(err, skip(self))]
     fn handle(&mut self, _: StartReceiveMsg, _: &mut Self::Context) -> Self::Result {
-        let res = self.repository.get_stash_id()?;
+        let res = self.repository.get_stash_id_blocking()?;
         info!("latest stash id from repo: {:?}", res.latest_stash_id);
-        let mut k = self
-            .client
-            .get_latest_stash(res.latest_stash_id.as_deref())?;
+        let mut k = self.client.get_latest_stash(Some(&res.latest_stash_id))?;
         info!("received stash with next id: {}", k.next_change_id);
         k.stashes = k
             .stashes
@@ -62,7 +60,7 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
                     .any(|l| l == el.league.as_ref().unwrap_or(&String::new()))
             })
             .collect();
-        self.repository.insert_raw_item(&k)?;
+        self.repository.insert_raw_item_blocking(&k)?;
         event!(Level::INFO, "successfully inserted");
         Ok(())
     }

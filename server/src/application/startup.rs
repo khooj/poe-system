@@ -1,9 +1,5 @@
-use crate::implementations::{
-    http_controller::{calculate_pob, get_build_matched_items, get_build_price},
-    http_service_layer::HttpServiceLayer,
-    BuildsRepository,
-};
-use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
+use crate::application::configuration::Settings;
+use crate::implementations::{http_service_layer::HttpServiceLayer, BuildsRepository};
 use crate::{
     actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
     implementations::public_stash_timer::PublicStashTimer, implementations::ItemsRepository,
@@ -42,11 +38,20 @@ impl Application {
             embedded_migrations::run(&conn).expect("cant migrate");
         }
 
-        let repo = ItemsRepository::new(pool.clone()).expect("cant create item repository");
+        let client_opts = mongodb::options::ClientOptions::parse(&configuration.mongo)
+            .await
+            .expect("cant parse mongo db url");
+        let client =
+            mongodb::Client::with_options(client_opts).expect("cant create mongodb client");
+        let repo = ItemsRepository {
+            client,
+            database: "poe-system".into(),
+        };
 
         if configuration.start_change_id.is_some() {
-            if let Err(_) = repo.get_stash_id() {
+            if let Err(_) = repo.get_stash_id().await {
                 repo.set_stash_id(configuration.start_change_id.as_ref().unwrap())
+                    .await
                     .expect("cant set stash id");
             }
         }
@@ -59,7 +64,6 @@ impl Application {
         };
 
         let (tx, rx) = channel::<actix::System>();
-        let (tx2, rx2) = channel::<Addr<BuildCalculatorActor>>();
 
         let addr = format!(
             "{}:{}",
@@ -78,14 +82,6 @@ impl Application {
             tx.send(system).expect("cant send running system");
 
             system_runner.block_on(async move {
-                let t = BuildCalculatorActor {
-                    item_repo: repo.clone(),
-                    repo: build_repo.clone(),
-                }
-                .start();
-
-                tx2.send(t.clone()).expect("cant send actor");
-
                 let actor = SyncArbiter::start(1, move || {
                     StashReceiverActor::new(
                         repo.clone(),
@@ -106,10 +102,8 @@ impl Application {
             system_runner.run()
         });
 
-        let build_actor = rx2.recv().expect("cant get actor");
-
         let listener = TcpListener::bind(&addr)?;
-        let server = run(listener, build_actor, svc)?;
+        let server = run(listener, svc)?;
 
         Ok(Self { server, handle, rx })
     }
@@ -149,13 +143,8 @@ impl Application {
     }
 }
 
-fn run(
-    listener: TcpListener,
-    addr: Addr<BuildCalculatorActor>,
-    svc: HttpServiceLayer,
-) -> Result<Server, std::io::Error> {
+fn run(listener: TcpListener, svc: HttpServiceLayer) -> Result<Server, std::io::Error> {
     let rpc = JsonrpcServer::new()
-        .with_data(Data::new(addr))
         .with_data(Data::new(svc))
         // .with_method()
         .finish();

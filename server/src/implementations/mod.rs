@@ -19,4 +19,4 @@ use wrapped_connection_pool::WrappedConnectionPool;
 pub type Conn = WrappedConnectionPool<SqliteConnection>;
 pub type TypedConnectionPool = Pool<ConnectionManager<Conn>>;
 pub type BuildsRepository = DieselBuildsRepository;
-pub type ItemsRepository = DieselItemRepository;
+pub type ItemsRepository = mongo::items_repository::ItemsRepository;

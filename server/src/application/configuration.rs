@@ -4,6 +4,7 @@ use std::convert::{TryFrom, TryInto};
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
     pub database: String,
+    pub mongo: String,
     pub application: ApplicationSettings,
     pub start_change_id: Option<String>,
 }
