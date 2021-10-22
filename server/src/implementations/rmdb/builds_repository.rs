@@ -1,6 +1,6 @@
-use super::models::{BuildMatch, PobBuild, PobFile};
-use super::TypedConnectionPool;
 use crate::domain::PastebinBuild;
+use crate::implementations::models::{BuildMatch, PobBuild, PobFile};
+use crate::implementations::TypedConnectionPool;
 use diesel::prelude::*;
 use thiserror::Error;
 use tracing::{event, instrument, Level};
@@ -23,10 +23,7 @@ pub struct DieselBuildsRepository {
 
 impl DieselBuildsRepository {
     #[instrument(err, skip(self, pob), fields(id = ?pob.id, token = pob.url_token()))]
-    pub fn save_new_pob_file(
-        &self,
-        pob: PobFile,
-    ) -> Result<String, BuildsRepositoryError> {
+    pub fn save_new_pob_file(&self, pob: PobFile) -> Result<String, BuildsRepositoryError> {
         use crate::schema::pob_file::dsl::*;
 
         let conn = self.conn.get()?;
@@ -46,10 +43,7 @@ impl DieselBuildsRepository {
     }
 
     #[instrument(err, skip(self))]
-    pub fn save_new_build(
-        &self,
-        mut build: PobBuild,
-    ) -> Result<String, BuildsRepositoryError> {
+    pub fn save_new_build(&self, mut build: PobBuild) -> Result<String, BuildsRepositoryError> {
         use crate::schema::build_info::dsl::*;
 
         let conn = self.conn.get()?;
@@ -138,7 +132,10 @@ impl DieselBuildsRepository {
     }
 
     #[instrument(err, skip(self))]
-    pub fn get_items_id_for_build(&self, id_: &str) -> Result<Vec<(i32, String)>, BuildsRepositoryError> {
+    pub fn get_items_id_for_build(
+        &self,
+        id_: &str,
+    ) -> Result<Vec<(i32, String)>, BuildsRepositoryError> {
         use crate::schema::builds_match::dsl::*;
 
         let conn = self.conn.get()?;

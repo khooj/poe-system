@@ -1,4 +1,5 @@
-use super::{builds_repository::BuildsRepositoryError, pob::pob::Pob};
+use super::pob::pob::Pob;
+use super::rmdb::builds_repository::BuildsRepositoryError;
 use super::{BuildsRepository, ItemsRepository};
 use crate::ports::outbound::repository::RepositoryError;
 use serde::Serialize;

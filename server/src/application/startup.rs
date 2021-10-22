@@ -1,12 +1,12 @@
 use crate::implementations::{
-    builds_repository::DieselBuildsRepository,
+    rmdb::builds_repository::DieselBuildsRepository,
     http_controller::{calculate_pob, get_build_matched_items, get_build_price},
     http_service_layer::HttpServiceLayer,
 };
 use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
 use crate::{
     actors::stash_receiver::StashReceiverActor,
-    implementations::item_repository::DieselItemRepository,
+    implementations::rmdb::item_repository::DieselItemRepository,
     implementations::public_stash_retriever::Client,
     implementations::public_stash_timer::PublicStashTimer,
 };

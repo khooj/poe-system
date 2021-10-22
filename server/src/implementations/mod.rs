@@ -1,19 +1,18 @@
-pub mod builds_repository;
 pub mod http_controller;
-pub mod item_repository;
 pub mod models;
 pub mod pob;
 pub mod public_stash_retriever;
 pub mod public_stash_timer;
 pub mod wrapped_connection_pool;
 pub mod http_service_layer;
+pub mod rmdb;
 
-use builds_repository::DieselBuildsRepository;
+use rmdb::builds_repository::DieselBuildsRepository;
 use diesel::{
     r2d2::{ConnectionManager, Pool},
     SqliteConnection,
 };
-use item_repository::DieselItemRepository;
+use rmdb::item_repository::DieselItemRepository;
 use wrapped_connection_pool::WrappedConnectionPool;
 
 pub type Conn = WrappedConnectionPool<SqliteConnection>;
