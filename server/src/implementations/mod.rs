@@ -5,7 +5,8 @@ pub mod public_stash_retriever;
 pub mod public_stash_timer;
 pub mod wrapped_connection_pool;
 pub mod http_service_layer;
-pub mod rmdb;
+mod rmdb;
+mod mongo;
 
 use rmdb::builds_repository::DieselBuildsRepository;
 use diesel::{

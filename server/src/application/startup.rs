@@ -1,14 +1,12 @@
 use crate::implementations::{
-    rmdb::builds_repository::DieselBuildsRepository,
     http_controller::{calculate_pob, get_build_matched_items, get_build_price},
     http_service_layer::HttpServiceLayer,
+    BuildsRepository,
 };
 use crate::{actors::build_calculator::BuildCalculatorActor, application::configuration::Settings};
 use crate::{
-    actors::stash_receiver::StashReceiverActor,
-    implementations::rmdb::item_repository::DieselItemRepository,
-    implementations::public_stash_retriever::Client,
-    implementations::public_stash_timer::PublicStashTimer,
+    actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
+    implementations::public_stash_timer::PublicStashTimer, implementations::ItemsRepository,
 };
 
 use actix::prelude::*;
@@ -44,7 +42,7 @@ impl Application {
             embedded_migrations::run(&conn).expect("cant migrate");
         }
 
-        let repo = DieselItemRepository::new(pool.clone()).expect("cant create item repository");
+        let repo = ItemsRepository::new(pool.clone()).expect("cant create item repository");
 
         if configuration.start_change_id.is_some() {
             if let Err(_) = repo.get_stash_id() {
@@ -53,7 +51,7 @@ impl Application {
             }
         }
 
-        let build_repo = DieselBuildsRepository { conn: pool.clone() };
+        let build_repo = BuildsRepository { conn: pool.clone() };
 
         let svc = HttpServiceLayer {
             item_repo: repo.clone(),
