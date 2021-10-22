@@ -1,0 +1,2437 @@
+{
+    "accountName": "Clintori5",
+    "id": "4dda2c28c82fef6b39b89dd46ecd00922287c31a9d15ccea77f9a4e1dbac88ec",
+    "items": [
+        {
+            "baseType": "Visored Sallet",
+            "explicitMods": [
+                "+61 to Accuracy Rating",
+                "+50 to Armour",
+                "+51 to maximum Life",
+                "Regenerate 3.5 Life per second",
+                "+22% to Lightning Resistance",
+                "Reflects 8 Physical Damage to Melee Attackers"
+            ],
+            "extended": {
+                "baseType": "Visored Sallet",
+                "category": "armour",
+                "prefixes": 3,
+                "subcategories": [
+                    "helmet"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Helmets/HelmetStrDex3.png?v=8c8eee44320ae5bebcd672bef70943ae&w=2&h=2&scale=1",
+            "id": "df36f83c636b282e21382c01eadd6103f7fc89077299e9bbd2889d194a3b9714",
+            "identified": true,
+            "ilvl": 35,
+            "inventoryId": "Stash1",
+            "league": "Standard",
+            "name": "Doom Halo",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Armour",
+                    "type": 16,
+                    "values": [
+                        [
+                            "114",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Evasion Rating",
+                    "type": 17,
+                    "values": [
+                        [
+                            "64",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "24",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "28",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "28",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                }
+            ],
+            "typeLine": "Visored Sallet",
+            "verified": false,
+            "w": 2,
+            "x": 0,
+            "y": 2
+        },
+        {
+            "baseType": "Conjurer Gloves",
+            "explicitMods": [
+                "+34 to Intelligence",
+                "Adds 1 to 23 Lightning Damage to Attacks",
+                "49% increased Energy Shield",
+                "+20% to Fire Resistance",
+                "+36% to Lightning Resistance",
+                "15% increased Stun and Block Recovery"
+            ],
+            "extended": {
+                "baseType": "Conjurer Gloves",
+                "category": "armour",
+                "prefixes": 2,
+                "subcategories": [
+                    "gloves"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Gloves/GlovesInt4.png?v=373419137bbd6b0e4ba9439b3ff1a7d5&w=2&h=2&scale=1",
+            "id": "e286dcf83c6de1628be0db0d21cd1733e20daf64a68577d5c64832832c991f2d",
+            "identified": true,
+            "ilvl": 68,
+            "inventoryId": "Stash2",
+            "league": "Standard",
+            "name": "Beast Palm",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Quality",
+                    "type": 6,
+                    "values": [
+                        [
+                            "+11%",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Energy Shield",
+                    "type": 18,
+                    "values": [
+                        [
+                            "56",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "55",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "79",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                },
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                }
+            ],
+            "typeLine": "Conjurer Gloves",
+            "verified": false,
+            "w": 2,
+            "x": 10,
+            "y": 10
+        },
+        {
+            "baseType": "Crimson Jewel",
+            "descrText": "Place into an allocated Jewel Socket on the Passive Skill Tree. Right click to remove from the Socket.",
+            "explicitMods": [
+                "45% reduced Totem Damage",
+                "Totems fire 2 additional Projectiles"
+            ],
+            "extended": {
+                "baseType": "Crimson Jewel",
+                "category": "jewels"
+            },
+            "flavourText": [
+                "\"If one is an annoyance\r",
+                "then a hundred is a threat.\"\r",
+                "- Ancient Karui Proverb"
+            ],
+            "frameType": 3,
+            "h": 1,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Jewels/RedKarui.png?v=63e9de0e301c2f0c0665d70d10a55152&w=1&h=1&scale=1",
+            "id": "d8ab9a0b7b76a07fa5799db865ecb674ef72c4582bf89cb3c49f743d0f47fc8e",
+            "identified": true,
+            "ilvl": 69,
+            "inventoryId": "Stash3",
+            "league": "Standard",
+            "name": "Rain of Splinters",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Limited to",
+                    "values": [
+                        [
+                            "1",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "typeLine": "Crimson Jewel",
+            "verified": false,
+            "w": 1,
+            "x": 9,
+            "y": 11
+        },
+        {
+            "baseType": "Plated Greaves",
+            "explicitMods": [
+                "87% increased Armour",
+                "+33% to Cold Resistance",
+                "+25% to Lightning Resistance",
+                "+25% to Chaos Resistance"
+            ],
+            "extended": {
+                "baseType": "Plated Greaves",
+                "category": "armour",
+                "prefixes": 1,
+                "subcategories": [
+                    "boots"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Boots/BootsStr3.png?v=98f1f6d1137161abc1ef30ee82dadc62&w=2&h=2&scale=1",
+            "id": "11dc8fbd11b7210d64132c65eff2d652194f7852281d10bfc55e9d07a0350d60",
+            "identified": true,
+            "ilvl": 73,
+            "inventoryId": "Stash4",
+            "league": "Standard",
+            "name": "Brood Tread",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Armour",
+                    "type": 16,
+                    "values": [
+                        [
+                            "144",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "48",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "44",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "S",
+                    "group": 1,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "S",
+                    "group": 1,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Plated Greaves",
+            "verified": false,
+            "w": 2,
+            "x": 8,
+            "y": 0
+        },
+        {
+            "baseType": "Decorative Axe",
+            "explicitMods": [
+                "80% increased Physical Damage",
+                "Adds 3 to 8 Physical Damage",
+                "0.6% of Physical Attack Damage Leeched as Life",
+                "Culling Strike",
+                "You gain Onslaught for 3 seconds on Culling Strike",
+                "Cannot be Chilled during Onslaught"
+            ],
+            "extended": {
+                "baseType": "Decorative Axe",
+                "category": "weapons",
+                "subcategories": [
+                    "oneaxe"
+                ]
+            },
+            "flavourText": [
+                "Relentless fury\r",
+                "Sunder my every foe\r",
+                "Fuel my boiling blood"
+            ],
+            "frameType": 3,
+            "h": 3,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Weapons/OneHandWeapons/OneHandAxes/RelentlessFury.png?v=a73ad02d8417880da8918a49e05a1161&w=2&h=3&scale=1",
+            "id": "9fa1977268fda478e833d9ea56fef1cbbbe093e52d4269f0e57f262acba19fb3",
+            "identified": true,
+            "ilvl": 62,
+            "inventoryId": "Stash5",
+            "league": "Standard",
+            "name": "Relentless Fury",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "One Handed Axe",
+                    "values": []
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Physical Damage",
+                    "type": 9,
+                    "values": [
+                        [
+                            "54-104",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Critical Strike Chance",
+                    "type": 12,
+                    "values": [
+                        [
+                            "5.00%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Attacks per Second",
+                    "type": 13,
+                    "values": [
+                        [
+                            "1.20",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Weapon Range",
+                    "type": 14,
+                    "values": [
+                        [
+                            "11",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "29",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "80",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "23",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Decorative Axe",
+            "verified": false,
+            "w": 2,
+            "x": 10,
+            "y": 7
+        },
+        {
+            "baseType": "Crimson Jewel",
+            "descrText": "Place into an allocated Jewel Socket on the Passive Skill Tree. Right click to remove from the Socket.",
+            "explicitMods": [
+                "3% increased Totem Life per 10 Strength Allocated in Radius",
+                "Totems cannot be Stunned"
+            ],
+            "extended": {
+                "baseType": "Crimson Jewel",
+                "category": "jewels"
+            },
+            "flavourText": [
+                "The strongest Karui tribes left the longest impressions on the land.\r",
+                "Their symbols served as guidance many generations\r",
+                "after their creators had been buried deep beneath the earth."
+            ],
+            "frameType": 3,
+            "h": 1,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Jewels/RedKarui2.png?v=7516bd44299cdd56dc68feb20f8561fb&w=1&h=1&scale=1",
+            "id": "3d070a69bb1748659fa010cee1c387812acfcd584e06b128f1679b6d8a7ee8d8",
+            "identified": true,
+            "ilvl": 38,
+            "inventoryId": "Stash6",
+            "league": "Standard",
+            "name": "Spire of Stone",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Limited to",
+                    "values": [
+                        [
+                            "1",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Radius",
+                    "type": 26,
+                    "values": [
+                        [
+                            "Large",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "typeLine": "Crimson Jewel",
+            "verified": false,
+            "w": 1,
+            "x": 8,
+            "y": 11
+        },
+        {
+            "baseType": "Sun Leather",
+            "explicitMods": [
+                "19% increased Evasion Rating",
+                "+59 to maximum Life",
+                "+27% to Fire Resistance",
+                "+19% to Lightning Resistance",
+                "21% increased Stun and Block Recovery",
+                "Reflects 24 Physical Damage to Melee Attackers"
+            ],
+            "extended": {
+                "baseType": "Sun Leather",
+                "category": "armour",
+                "prefixes": 3,
+                "subcategories": [
+                    "chest"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 3,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/BodyArmours/BodyDex3C.png?v=54c1559d59813905d1547099cf4c6950&w=2&h=3&scale=1",
+            "id": "06a5660fb8022e39cfd12a7552fc720f68166e5805f70dc9dba23d7a92587359",
+            "identified": true,
+            "ilvl": 40,
+            "inventoryId": "Stash7",
+            "league": "Standard",
+            "name": "Rift Mantle",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Quality",
+                    "type": 6,
+                    "values": [
+                        [
+                            "+11%",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Evasion Rating",
+                    "type": 17,
+                    "values": [
+                        [
+                            "421",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "32",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "91",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                }
+            ],
+            "typeLine": "Sun Leather",
+            "verified": false,
+            "w": 2,
+            "x": 8,
+            "y": 6
+        },
+        {
+            "baseType": "Fancy Foil",
+            "explicitMods": [
+                "Adds 27 to 43 Cold Damage",
+                "Adds 5 to 72 Lightning Damage",
+                "6% increased Attack Speed",
+                "10% reduced Enemy Stun Threshold",
+                "+14% to Lightning Resistance"
+            ],
+            "extended": {
+                "baseType": "Fancy Foil",
+                "category": "weapons",
+                "prefixes": 2,
+                "subcategories": [
+                    "onesword"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 4,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Weapons/OneHandWeapons/Rapiers/Rapier7.png?v=d4a9ff1bbae62362d78bc8d5a4484446&w=1&h=4&scale=1",
+            "id": "99790ebd358a25da06a0b76baf542f70591895ae3c1397ddd4adda650e8d8700",
+            "identified": true,
+            "ilvl": 52,
+            "implicitMods": [
+                "+20% to Global Critical Strike Multiplier"
+            ],
+            "inventoryId": "Stash8",
+            "league": "Standard",
+            "name": "Rapture Thirst",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "One Handed Sword",
+                    "values": []
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Physical Damage",
+                    "type": 9,
+                    "values": [
+                        [
+                            "28-51",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Elemental Damage",
+                    "type": 10,
+                    "values": [
+                        [
+                            "27-43",
+                            5
+                        ],
+                        [
+                            "5-72",
+                            6
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Critical Strike Chance",
+                    "type": 12,
+                    "values": [
+                        [
+                            "5.50%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Attacks per Second",
+                    "type": 13,
+                    "values": [
+                        [
+                            "1.70",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Weapon Range",
+                    "type": 14,
+                    "values": [
+                        [
+                            "14",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "52",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "167",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "D",
+                    "group": 1,
+                    "sColour": "G"
+                }
+            ],
+            "typeLine": "Fancy Foil",
+            "verified": false,
+            "w": 1,
+            "x": 7,
+            "y": 8
+        },
+        {
+            "baseType": "Solaris Circlet",
+            "explicitMods": [
+                "113% increased Energy Shield",
+                "+27 to maximum Mana",
+                "+16% to Fire Resistance",
+                "+37% to Lightning Resistance",
+                "Reflects 9 Physical Damage to Melee Attackers"
+            ],
+            "extended": {
+                "baseType": "Solaris Circlet",
+                "category": "armour",
+                "prefixes": 3,
+                "subcategories": [
+                    "helmet"
+                ],
+                "suffixes": 2
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Helmets/HelmetInt9.png?v=3aeebe40b6db3abe7e4d92e3402db35e&w=2&h=2&scale=1",
+            "id": "db1525a1a6e180fcd9474e853ee1dc2dd7ca17b7962f485942d3467d7fc1fcb0",
+            "identified": true,
+            "ilvl": 73,
+            "inventoryId": "Stash9",
+            "league": "Standard",
+            "name": "Pain Ward",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Energy Shield",
+                    "type": 18,
+                    "values": [
+                        [
+                            "121",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "59",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "122",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                },
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                }
+            ],
+            "typeLine": "Solaris Circlet",
+            "verified": false,
+            "w": 2,
+            "x": 2,
+            "y": 0
+        },
+        {
+            "baseType": "Velvet Slippers",
+            "explicitMods": [
+                "+5 to Strength",
+                "+7 to Dexterity",
+                "+8 to Intelligence",
+                "+14 to maximum Energy Shield",
+                "100% increased Rarity of Items found when on Low Life",
+                "10% increased Movement Speed"
+            ],
+            "extended": {
+                "baseType": "Velvet Slippers",
+                "category": "armour",
+                "subcategories": [
+                    "boots"
+                ]
+            },
+            "flavourText": [
+                "Wonders abound at death's door."
+            ],
+            "frameType": 3,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Boots/Wondertrap.png?v=e7188400f3fc7bf435f965d65031bc3d&w=2&h=2&scale=1",
+            "id": "644cf3eff17de14348d76f48712da7b6e8474d1afc7afbfe29b3eb7d9ce51ca8",
+            "identified": true,
+            "ilvl": 76,
+            "inventoryId": "Stash10",
+            "league": "Standard",
+            "name": "Wondertrap",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Energy Shield",
+                    "type": 18,
+                    "values": [
+                        [
+                            "22",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "9",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "21",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Velvet Slippers",
+            "verified": false,
+            "w": 2,
+            "x": 6,
+            "y": 6
+        },
+        {
+            "baseType": "Serrated Foil",
+            "explicitMods": [
+                "+23 to Strength",
+                "126% increased Physical Damage",
+                "Adds 1 to 3 Fire Damage",
+                "Adds 28 to 56 Cold Damage"
+            ],
+            "extended": {
+                "baseType": "Serrated Foil",
+                "category": "weapons",
+                "prefixes": 3,
+                "subcategories": [
+                    "onesword"
+                ],
+                "suffixes": 1
+            },
+            "frameType": 2,
+            "h": 4,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Weapons/OneHandWeapons/Rapiers/Rapier5.png?v=de96776c8c328cf5161fc4509a4a0900&w=1&h=4&scale=1",
+            "id": "39bbf0b14d0c51745eb5cb26e74563c7e35f50494d39ff4c91804e934a7625e7",
+            "identified": true,
+            "ilvl": 57,
+            "implicitMods": [
+                "+20% to Global Critical Strike Multiplier"
+            ],
+            "inventoryId": "Stash11",
+            "league": "Standard",
+            "name": "Maelström Fang",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "One Handed Sword",
+                    "values": []
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Physical Damage",
+                    "type": 9,
+                    "values": [
+                        [
+                            "47-111",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Elemental Damage",
+                    "type": 10,
+                    "values": [
+                        [
+                            "1-3",
+                            4
+                        ],
+                        [
+                            "28-56",
+                            5
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Critical Strike Chance",
+                    "type": 12,
+                    "values": [
+                        [
+                            "5.50%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Attacks per Second",
+                    "type": 13,
+                    "values": [
+                        [
+                            "1.60",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Weapon Range",
+                    "type": 14,
+                    "values": [
+                        [
+                            "14",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "46",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "149",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                }
+            ],
+            "typeLine": "Serrated Foil",
+            "verified": false,
+            "w": 1,
+            "x": 3,
+            "y": 5
+        },
+        {
+            "baseType": "Stiletto",
+            "explicitMods": [
+                "+20 to Dexterity",
+                "34% increased Physical Damage",
+                "Adds 3 to 9 Physical Damage",
+                "10% increased Attack Speed",
+                "10% chance to cause Bleeding on Hit",
+                "Extra gore"
+            ],
+            "extended": {
+                "baseType": "Stiletto",
+                "category": "weapons",
+                "subcategories": [
+                    "dagger"
+                ]
+            },
+            "flavourText": [
+                "\"I'm a painter, and crimson is my chosen hue.\"\r",
+                "- Coralito, Brotherhood of Silence"
+            ],
+            "frameType": 3,
+            "h": 3,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Weapons/OneHandWeapons/Daggers/BloodPlay.png?v=1d9ad022278fc17a3b40cb6ad739369d&w=1&h=3&scale=1",
+            "id": "c475bad867af2e192d9ffee766a343a3558657d0a059e6807a560a74ad961c48",
+            "identified": true,
+            "ilvl": 74,
+            "implicitMods": [
+                "30% increased Global Critical Strike Chance"
+            ],
+            "inventoryId": "Stash12",
+            "league": "Standard",
+            "name": "Bloodplay",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Dagger",
+                    "values": []
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Physical Damage",
+                    "type": 9,
+                    "values": [
+                        [
+                            "13-48",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Critical Strike Chance",
+                    "type": 12,
+                    "values": [
+                        [
+                            "6.10%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Attacks per Second",
+                    "type": 13,
+                    "values": [
+                        [
+                            "1.65",
+                            1
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Weapon Range",
+                    "type": 14,
+                    "values": [
+                        [
+                            "10",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "15",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "30",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "30",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "I",
+                    "group": 1,
+                    "sColour": "B"
+                }
+            ],
+            "typeLine": "Stiletto",
+            "verified": false,
+            "w": 1,
+            "x": 2,
+            "y": 9
+        },
+        {
+            "baseType": "Ebony Tower Shield",
+            "explicitMods": [
+                "Adds 8 to 19 Fire Damage to Spells and Attacks",
+                "142% increased Armour",
+                "+44% to Fire Resistance",
+                "25% of Physical Damage Converted to Fire Damage",
+                "10% chance to Curse Non-Cursed Enemies with Enfeeble on Hit, with 80% increased Effect"
+            ],
+            "extended": {
+                "baseType": "Ebony Tower Shield",
+                "category": "armour",
+                "subcategories": [
+                    "shield"
+                ]
+            },
+            "flavourText": [
+                "Fire dances with those who doubt\r",
+                "Licks the skin and flesh from the fearful\r",
+                "Where there is no fear\r",
+                "There is no flame"
+            ],
+            "frameType": 3,
+            "h": 4,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Shields/Chernobogspillar.png?v=5e149ba6061b1e66eed8676d88e6fc92&w=2&h=4&scale=1",
+            "id": "b9c65b8f10f62866b488a70d4f3ada5194d8f197aeaa9dcad6ab37b2662e0a31",
+            "identified": true,
+            "ilvl": 74,
+            "inventoryId": "Stash13",
+            "league": "Standard",
+            "name": "Chernobog's Pillar",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Chance to Block",
+                    "type": 15,
+                    "values": [
+                        [
+                            "25%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Armour",
+                    "type": 16,
+                    "values": [
+                        [
+                            "997",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "61",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "159",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Ebony Tower Shield",
+            "verified": false,
+            "w": 2,
+            "x": 0,
+            "y": 4
+        },
+        {
+            "baseType": "Carnal Boots",
+            "explicitMods": [
+                "+75 to maximum Life",
+                "14% increased Rarity of Items found",
+                "+21% to Cold Resistance",
+                "+26% to Lightning Resistance"
+            ],
+            "extended": {
+                "baseType": "Carnal Boots",
+                "category": "armour",
+                "prefixes": 2,
+                "subcategories": [
+                    "boots"
+                ],
+                "suffixes": 2
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Boots/BootsDexInt4.png?v=bfbd6b83d1a5a8dafbae030a0041b5fe&w=2&h=2&scale=1",
+            "id": "e913f1e9443a9edb91c9bf20ff9e93ccec75bee2d78b00ee7d4d2ce760215e2c",
+            "identified": true,
+            "ilvl": 73,
+            "inventoryId": "Stash14",
+            "league": "Standard",
+            "name": "Dire Trail",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Evasion Rating",
+                    "type": 17,
+                    "values": [
+                        [
+                            "99",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Energy Shield",
+                    "type": 18,
+                    "values": [
+                        [
+                            "19",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "55",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "52",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "52",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                }
+            ],
+            "typeLine": "Carnal Boots",
+            "verified": false,
+            "w": 2,
+            "x": 6,
+            "y": 0
+        },
+        {
+            "baseType": "Fossilised Spirit Shield",
+            "explicitMods": [
+                "111% increased Energy Shield",
+                "+70 to maximum Life",
+                "+7% to all Elemental Resistances",
+                "10% increased Stun and Block Recovery"
+            ],
+            "extended": {
+                "baseType": "Fossilised Spirit Shield",
+                "category": "armour",
+                "prefixes": 3,
+                "subcategories": [
+                    "shield"
+                ],
+                "suffixes": 1
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Shields/ShieldInt3.png?v=0b4ca72b3f1678f750402c910c3fb09c&w=2&h=2&scale=1",
+            "id": "874e026df6cd73ebcf41ff2e269d2d834840ea491d06a49f4c3b90910c936982",
+            "identified": true,
+            "ilvl": 68,
+            "implicitMods": [
+                "15% increased Spell Damage"
+            ],
+            "inventoryId": "Stash15",
+            "league": "Standard",
+            "name": "Foe Sanctuary",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Chance to Block",
+                    "type": 15,
+                    "values": [
+                        [
+                            "22%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Energy Shield",
+                    "type": 18,
+                    "values": [
+                        [
+                            "99",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "59",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "141",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                }
+            ],
+            "typeLine": "Fossilised Spirit Shield",
+            "verified": false,
+            "w": 2,
+            "x": 4,
+            "y": 10
+        },
+        {
+            "baseType": "Infernal Sword",
+            "extended": {
+                "baseType": "Infernal Sword",
+                "category": "weapons",
+                "subcategories": [
+                    "twosword"
+                ]
+            },
+            "frameType": 0,
+            "h": 4,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Weapons/TwoHandWeapons/TwoHandSwords/TwoHandSword7.png?v=0df46a4b4ecb5a84252877d5301bcaa6&w=2&h=4&scale=1",
+            "id": "106c97f2931322d325f4696996ae76868161cf185d20a6344f64e6ab5cae69cb",
+            "identified": true,
+            "ilvl": 68,
+            "implicitMods": [
+                "30% increased Global Accuracy Rating"
+            ],
+            "inventoryId": "Stash16",
+            "league": "Standard",
+            "name": "",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Two Handed Sword",
+                    "values": []
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Physical Damage",
+                    "type": 9,
+                    "values": [
+                        [
+                            "62-129",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Critical Strike Chance",
+                    "type": 12,
+                    "values": [
+                        [
+                            "5.00%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Attacks per Second",
+                    "type": 13,
+                    "values": [
+                        [
+                            "1.35",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Weapon Range",
+                    "type": 14,
+                    "values": [
+                        [
+                            "13",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "67",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "113",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "113",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Infernal Sword",
+            "verified": false,
+            "w": 2,
+            "x": 0,
+            "y": 8
+        },
+        {
+            "baseType": "Gladiator Helmet",
+            "explicitMods": [
+                "+186 to Accuracy Rating",
+                "+30 to Armour",
+                "+54 to maximum Life",
+                "8% increased Rarity of Items found",
+                "+27% to Lightning Resistance"
+            ],
+            "extended": {
+                "baseType": "Gladiator Helmet",
+                "category": "armour",
+                "prefixes": 2,
+                "subcategories": [
+                    "helmet"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Helmets/HelmetStr5.png?v=4847a085c6a733a943b018ed386061b5&w=2&h=2&scale=1",
+            "id": "e5d38363ae66f2184dcb81978e144c2a28fe02f8e43b57d022dd0cab355fad18",
+            "identified": true,
+            "ilvl": 69,
+            "inventoryId": "Stash17",
+            "league": "Standard",
+            "name": "Blood Corona",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Armour",
+                    "type": 16,
+                    "values": [
+                        [
+                            "204",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "35",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "75",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Gladiator Helmet",
+            "verified": false,
+            "w": 2,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "baseType": "Ironwood Buckler",
+            "explicitMods": [
+                "+13 to Dexterity",
+                "+276 to Evasion Rating",
+                "76% increased Evasion Rating",
+                "+26% to Chaos Resistance",
+                "16% increased Stun and Block Recovery"
+            ],
+            "extended": {
+                "baseType": "Ironwood Buckler",
+                "category": "armour",
+                "prefixes": 2,
+                "subcategories": [
+                    "shield"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Shields/ShieldDex2.png?v=958754f78c163c1a80befdca6e8ce7bf&w=2&h=2&scale=1",
+            "id": "75e06c214144b077e5a0ac5fc3f69dc5ebcf5a53294247aa210ac1d7e7f85ac0",
+            "identified": true,
+            "ilvl": 69,
+            "inventoryId": "Stash18",
+            "league": "Standard",
+            "name": "Soul Emblem",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Chance to Block",
+                    "type": 15,
+                    "values": [
+                        [
+                            "26%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Evasion Rating",
+                    "type": 17,
+                    "values": [
+                        [
+                            "979",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "57",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "136",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                }
+            ],
+            "typeLine": "Ironwood Buckler",
+            "verified": false,
+            "w": 2,
+            "x": 6,
+            "y": 2
+        },
+        {
+            "baseType": "Fluted Bascinet",
+            "explicitMods": [
+                "+37 to Dexterity",
+                "+61 to maximum Life",
+                "+38% to Cold Resistance",
+                "+12% to Lightning Resistance"
+            ],
+            "extended": {
+                "baseType": "Fluted Bascinet",
+                "category": "armour",
+                "prefixes": 1,
+                "subcategories": [
+                    "helmet"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Helmets/HelmetStrDex8.png?v=e041f1d30cb6e997023b09d2a822b7a6&w=2&h=2&scale=1",
+            "id": "52c96f349caeb6fbc42e3c965602cd8b9adca180d9f90857484feaa56d317c6b",
+            "identified": true,
+            "ilvl": 70,
+            "inventoryId": "Stash19",
+            "league": "Standard",
+            "name": "Dragon Crown",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Armour",
+                    "type": 16,
+                    "values": [
+                        [
+                            "160",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Evasion Rating",
+                    "type": 17,
+                    "values": [
+                        [
+                            "160",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "58",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "64",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "64",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                },
+                {
+                    "attr": "I",
+                    "group": 0,
+                    "sColour": "B"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                }
+            ],
+            "typeLine": "Fluted Bascinet",
+            "verified": false,
+            "w": 2,
+            "x": 10,
+            "y": 5
+        },
+        {
+            "baseType": "Colosseum Plate",
+            "explicitMods": [
+                "+26 to Strength",
+                "52% increased Armour",
+                "+54 to maximum Life",
+                "+34% to Fire Resistance"
+            ],
+            "extended": {
+                "baseType": "Colosseum Plate",
+                "category": "armour",
+                "prefixes": 2,
+                "subcategories": [
+                    "chest"
+                ],
+                "suffixes": 2
+            },
+            "frameType": 2,
+            "h": 3,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/BodyArmours/BodyStr2C.png?v=6331be7daaf903c16bf775688fe5d898&w=2&h=3&scale=1",
+            "id": "dfd816b177b3bccccd32f1236c2249014706d43c63de5e42be23efefaf9ebac5",
+            "identified": true,
+            "ilvl": 70,
+            "inventoryId": "Stash20",
+            "league": "Standard",
+            "name": "Victory Veil",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Armour",
+                    "type": 16,
+                    "values": [
+                        [
+                            "746",
+                            1
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "49",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Str",
+                    "values": [
+                        [
+                            "134",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "S",
+                    "group": 0,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Colosseum Plate",
+            "verified": false,
+            "w": 2,
+            "x": 2,
+            "y": 2
+        },
+        {
+            "baseType": "Leather Belt",
+            "explicitMods": [
+                "+13 to Strength",
+                "+22 to maximum Energy Shield",
+                "+16 to maximum Life",
+                "+31% to Lightning Resistance",
+                "11% increased Flask Life Recovery rate"
+            ],
+            "extended": {
+                "baseType": "Leather Belt",
+                "category": "accessories",
+                "prefixes": 3,
+                "subcategories": [
+                    "belt"
+                ],
+                "suffixes": 2
+            },
+            "frameType": 2,
+            "h": 1,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Belts/Belt3.png?v=a559821037f54c94dae053b90bcea363&w=2&h=1&scale=1",
+            "id": "caa3ba45e33a439ff50b8f5f0b36b0eba9aaee7b47208691329bc3557c0aa2fa",
+            "identified": true,
+            "ilvl": 60,
+            "implicitMods": [
+                "+34 to maximum Life"
+            ],
+            "inventoryId": "Stash21",
+            "league": "Standard",
+            "name": "Hypnotic Thread",
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "39",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "typeLine": "Leather Belt",
+            "verified": false,
+            "w": 2,
+            "x": 8,
+            "y": 10
+        },
+        {
+            "baseType": "Iron Mask",
+            "extended": {
+                "baseType": "Iron Mask",
+                "category": "armour",
+                "subcategories": [
+                    "helmet"
+                ]
+            },
+            "frameType": 3,
+            "h": 2,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/Helmets/MalachaisSimula.png?v=a1a53d27ef3ecd7d1c321229ff8eaa3f&w=2&h=2&scale=1",
+            "id": "a8e03289e4bce071d9aa64036f59292dbe8f9e9773c61831cfe4966726df6cc3",
+            "identified": false,
+            "ilvl": 72,
+            "inventoryId": "Stash22",
+            "league": "Standard",
+            "name": "",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Evasion Rating",
+                    "type": 17,
+                    "values": [
+                        [
+                            "48",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Energy Shield",
+                    "type": 18,
+                    "values": [
+                        [
+                            "10",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "21",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "21",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "I",
+                    "group": 1,
+                    "sColour": "B"
+                },
+                {
+                    "attr": "D",
+                    "group": 1,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "S",
+                    "group": 1,
+                    "sColour": "R"
+                }
+            ],
+            "typeLine": "Iron Mask",
+            "verified": false,
+            "w": 2,
+            "x": 10,
+            "y": 3
+        },
+        {
+            "baseType": "Necromancer Silks",
+            "explicitMods": [
+                "+95 to maximum Life",
+                "Regenerate 3.8 Life per second",
+                "+26 to maximum Mana",
+                "+24% to Fire Resistance",
+                "+33% to Lightning Resistance"
+            ],
+            "extended": {
+                "baseType": "Necromancer Silks",
+                "category": "armour",
+                "prefixes": 2,
+                "subcategories": [
+                    "chest"
+                ],
+                "suffixes": 3
+            },
+            "frameType": 2,
+            "h": 3,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Armours/BodyArmours/BodyInt2B.png?v=4b5543d6b4ed658ed53ba55837ff752a&w=2&h=3&scale=1",
+            "id": "f593c2615daba3f5d01b7de8a57afda523553606b5fa544b6b4f23c5e12f01bf",
+            "identified": true,
+            "ilvl": 68,
+            "inventoryId": "Stash23",
+            "league": "Standard",
+            "name": "Dread Curtain",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "Energy Shield",
+                    "type": 18,
+                    "values": [
+                        [
+                            "117",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "59",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Int",
+                    "values": [
+                        [
+                            "160",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "I",
+                    "group": 1,
+                    "sColour": "B"
+                }
+            ],
+            "typeLine": "Necromancer Silks",
+            "verified": false,
+            "w": 2,
+            "x": 4,
+            "y": 0
+        },
+        {
+            "baseType": "Apex Rapier",
+            "explicitMods": [
+                "Adds 40 to 65 Fire Damage",
+                "Adds 25 to 45 Cold Damage",
+                "Adds 3 to 94 Lightning Damage",
+                "+26% to Fire Resistance",
+                "+43 to Accuracy Rating"
+            ],
+            "extended": {
+                "baseType": "Apex Rapier",
+                "category": "weapons",
+                "prefixes": 3,
+                "subcategories": [
+                    "onesword"
+                ],
+                "suffixes": 2
+            },
+            "frameType": 2,
+            "h": 4,
+            "icon": "https://web.poecdn.com/image/Art/2DItems/Weapons/OneHandWeapons/Rapiers/Rapier8.png?v=f336e6e4d65ea524aaabe665da64003e&w=1&h=4&scale=1",
+            "id": "d34d68cbe1c1425f049c53c472293d4a0833587df1e99d486a66ec5edd3acea0",
+            "identified": true,
+            "ilvl": 67,
+            "implicitMods": [
+                "+35% to Global Critical Strike Multiplier"
+            ],
+            "inventoryId": "Stash24",
+            "league": "Standard",
+            "name": "Hate Thirst",
+            "properties": [
+                {
+                    "displayMode": 0,
+                    "name": "One Handed Sword",
+                    "values": []
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Physical Damage",
+                    "type": 9,
+                    "values": [
+                        [
+                            "29-67",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Elemental Damage",
+                    "type": 10,
+                    "values": [
+                        [
+                            "40-65",
+                            4
+                        ],
+                        [
+                            "25-45",
+                            5
+                        ],
+                        [
+                            "3-94",
+                            6
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Critical Strike Chance",
+                    "type": 12,
+                    "values": [
+                        [
+                            "5.70%",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Attacks per Second",
+                    "type": 13,
+                    "values": [
+                        [
+                            "1.40",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 0,
+                    "name": "Weapon Range",
+                    "type": 14,
+                    "values": [
+                        [
+                            "14",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "requirements": [
+                {
+                    "displayMode": 0,
+                    "name": "Level",
+                    "values": [
+                        [
+                            "55",
+                            0
+                        ]
+                    ]
+                },
+                {
+                    "displayMode": 1,
+                    "name": "Dex",
+                    "values": [
+                        [
+                            "176",
+                            0
+                        ]
+                    ]
+                }
+            ],
+            "socketedItems": [],
+            "sockets": [
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "D",
+                    "group": 0,
+                    "sColour": "G"
+                },
+                {
+                    "attr": "D",
+                    "group": 1,
+                    "sColour": "G"
+                }
+            ],
+            "typeLine": "Apex Rapier",
+            "verified": false,
+            "w": 1,
+            "x": 6,
+            "y": 8
+        },
+        {
+            "verified": false,
+            "w": 1,
+            "h": 1,
+            "icon": "https://web.poecdn.com/gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9BdGxhczJNYXBzL05ldy9TdHJhbmQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwibW4iOjExLCJtdCI6MTV9XQ/3e01845117/Strand.png",
+            "support": null,
+            "stackSize": null,
+            "maxStackSize": null,
+            "league": "Standard",
+            "id": "178a37ae4e60b011d5a7eb2962d3a0b497b71f9c6f2d34d08a56c777c8eec5d7",
+            "influences": null,
+            "elder": null,
+            "shaper": null,
+            "abyssJewel": null,
+            "delve": null,
+            "fractured": null,
+            "synthesised": null,
+            "sockets": null,
+            "socketedItems": null,
+            "name": "",
+            "typeLine": "Strand Map",
+            "baseType": "Strand Map",
+            "identified": true,
+            "itemLevel": null,
+            "note": null,
+            "lockedToCharacter": null,
+            "lockedToAccount": null,
+            "duplicated": null,
+            "split": null,
+            "corrupted": null,
+            "properties": [
+                {
+                    "name": "Map Tier",
+                    "values": [
+                        [
+                            "15",
+                            0
+                        ]
+                    ],
+                    "displayMode": 0,
+                    "progress": null,
+                    "type": 1,
+                    "suffix": null
+                },
+                {
+                    "name": "Atlas Region",
+                    "values": [
+                        [
+                            "Glennach Cairns",
+                            0
+                        ]
+                    ],
+                    "displayMode": 0,
+                    "progress": null,
+                    "type": null,
+                    "suffix": null
+                }
+            ],
+            "notableProperties": null,
+            "requirements": null,
+            "additionalProperties": null,
+            "nextItemRequirements": null,
+            "talismanTier": null,
+            "secDescrText": null,
+            "utilityMods": null,
+            "implicitMods": null,
+            "ultimatumMods": null,
+            "explicitMods": null,
+            "craftedMods": null,
+            "enchantMods": null,
+            "fracturedMods": null,
+            "cosmeticMods": null,
+            "veiledMods": null,
+            "veiled": null,
+            "descrText": "Travel to this Map by using it in a personal Map Device. Maps can only be used once.",
+            "prophecyText": null,
+            "isRelic": null,
+            "replica": null,
+            "incubatedItem": null,
+            "frameType": 0,
+            "hybrid": null,
+            "extended": {
+                "category": "maps",
+                "subcategories": null,
+                "prefixes": null,
+                "suffixes": null
+            },
+            "x": 11,
+            "y": 0,
+            "inventoryId": "Stash1",
+            "socket": null,
+            "colour": null,
+            "logbookMods": null
+        }
+    ],
+    "lastCharacterName": "Covretard",
+    "league": "Standard",
+    "public": true,
+    "stash": "1c",
+    "stashType": "PremiumStash"
+}
