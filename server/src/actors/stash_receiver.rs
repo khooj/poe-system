@@ -1,13 +1,11 @@
 use crate::implementations::{public_stash_retriever::Client, ItemsRepository};
-use crate::ports::outbound::{public_stash_retriever::Error, repository::RepositoryError};
+use crate::ports::outbound::{public_stash_retriever::Error};
 use actix::prelude::*;
 use thiserror::Error;
 use tracing::{error, event, info, instrument, Level};
 
 #[derive(Error, Debug)]
 pub enum ActorError {
-    #[error("repo error")]
-    RepoError(#[from] RepositoryError),
     #[error("client error")]
     ClientError(#[from] Error),
     #[error("skipping this iteration")]

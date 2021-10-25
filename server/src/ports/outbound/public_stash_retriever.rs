@@ -1,5 +1,4 @@
-use serde::{Deserialize, Serialize, Deserializer, de::Visitor};
-use serde_json::Value;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -11,6 +10,7 @@ pub struct ItemSocket {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(untagged)]
 pub enum PropertyValueType {
     Value(String),
     Type(i32),
@@ -20,42 +20,12 @@ pub enum PropertyValueType {
 #[serde(rename_all = "camelCase")]
 pub struct ItemProperty {
     pub name: String,
-    // #[serde(deserialize_with = "deserialize_prop")]
     pub values: Vec<Vec<PropertyValueType>>,
     pub display_mode: i32,
     pub progress: Option<f64>,
     #[serde(rename = "type")]
     pub item_type: Option<i32>,
     pub suffix: Option<String>,
-}
-
-struct VecVecVisitor;
-
-impl<'de> Visitor<'de> for VecVecVisitor {
-    type Value = Vec<Vec<Value>>;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("can't deserialize vec for prop")
-    }
-
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-            A: serde::de::SeqAccess<'de>, {
-        let inner = seq.next_element::<Vec<Value>>()?;
-        if inner.is_none() {
-            return Ok(vec![]);
-        }
-
-        let inner = inner.unwrap();
-        Ok(vec![inner])
-    }
-}
-
-fn deserialize_prop<'de, D>(des: D) -> Result<Vec<Vec<Value>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    des.deserialize_seq(VecVecVisitor)
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

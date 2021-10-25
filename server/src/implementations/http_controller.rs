@@ -20,13 +20,6 @@ pub struct BuildInfo {
     pub id: String,
 }
 
-// pub async fn get_build_matched_items(
-//     Params(params): Params<BuildInfo>,
-//     svc: Data<HttpServiceLayer>,
-// ) -> Result<BuildMatches, Error> {
-//     Ok(svc.get_build_matches(&params.id).await?)
-// }
-
 pub async fn get_build_price(Params(_): Params<BuildPrice>) -> Result<String, Error> {
     Ok("".into())
 }

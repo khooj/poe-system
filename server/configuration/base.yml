@@ -1,4 +1,3 @@
-database: "main.db"
 mongo: "mongodb://localhost:27017"
 start_change_id: "1298229149-1303699645-1259354766-1406959770-1353513412"
 application:

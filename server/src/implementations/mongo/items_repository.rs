@@ -1,4 +1,4 @@
-use crate::ports::outbound::public_stash_retriever::{Item, ItemProperty, PublicStashData};
+use crate::ports::outbound::public_stash_retriever::{Item, PublicStashData};
 use anyhow::Result;
 use mongodb::{
     bson::{doc, from_document, to_document},
@@ -6,15 +6,12 @@ use mongodb::{
     Client,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 use std::time::Duration;
 use tokio::runtime::Runtime;
 use tracing::{debug, error};
 
 #[derive(Deserialize, Serialize)]
 pub struct LatestStashId {
-    #[serde(rename = "_id")]
-    pub id: Option<String>,
     pub latest_stash_id: String,
 }
 
@@ -40,14 +37,11 @@ impl ItemsRepository {
             .max_time(Duration::from_secs(1))
             .build();
 
-        let result = col
-            .find_one(doc! { "latest_stash_id": { "$eq": id_ } }, opts)
-            .await?;
+        let result = col.find_one(doc! {}, opts).await?;
 
         if result.is_none() {
             let opts = InsertOneOptions::builder().build();
             let doc = to_document(&LatestStashId {
-                id: Some("uniqueid".into()),
                 latest_stash_id: id_.to_owned(),
             })?;
             let _ = col.insert_one(doc, opts).await?;
@@ -55,14 +49,8 @@ impl ItemsRepository {
         }
 
         let opts = UpdateOptions::builder().build();
-        let doc = result.unwrap();
-        let id = from_document::<LatestStashId>(doc)?;
-        let d = to_document(&LatestStashId {
-            id: id.id.clone(),
-            latest_stash_id: id_.to_owned(),
-        })?;
         let _ = col
-            .update_one(doc! { "_id": { "$eq": id.id.unwrap() }}, d, opts)
+            .update_one(doc! {}, doc! { "$set": {"latest_stash_id": id_} }, opts)
             .await?;
         Ok(())
     }
@@ -82,61 +70,6 @@ impl ItemsRepository {
     pub fn get_stash_id_blocking(&self) -> Result<LatestStashId> {
         let rt = Runtime::new()?;
         rt.block_on(self.get_stash_id())
-    }
-
-    fn check_type<T>(_: &T) -> &'static str {
-        std::any::type_name::<T>()
-    }
-
-    fn fix_unsigned(mut item: Item) -> Item {
-        let func = |props: Option<Vec<ItemProperty>>| {
-            if props.is_none() {
-                return props;
-            }
-
-            let props = props.unwrap();
-
-            // let props = props
-            //     .into_iter()
-            //     .map(|mut p| {
-            //         p.values = p
-            //             .values
-            //             .into_iter()
-            //             .map(|v| {
-            //                 v.into_iter()
-            //                     .map(|k| {
-            //                         if let Value::Number(n) = k {
-            //                             if n.is_u64() {
-            //                                 println!("u64 fix");
-            //                                 let p = n.as_i64().unwrap();
-            //                                 println!("p: {} {}", ItemsRepository::check_type(&p), p);
-            //                                 let s = json!(p);
-            //                                 println!("js: {} {:?}", ItemsRepository::check_type(&s), s);
-            //                                 s
-            //                             } else {
-            //                                 Value::Number(n)
-            //                             }
-            //                         } else {
-            //                             k
-            //                         }
-            //                     })
-            //                     .collect::<Vec<Value>>()
-            //             })
-            //             .collect::<Vec<_>>();
-            //         p
-            //     })
-            //     .collect::<Vec<_>>();
-
-            Some(props)
-        };
-
-        item.properties = func(item.properties);
-        item.notable_properties = func(item.notable_properties);
-        item.requirements = func(item.requirements);
-        item.additional_properties = func(item.additional_properties);
-        item.next_item_requirements = func(item.next_item_requirements);
-
-        item
     }
 
     pub async fn insert_raw_item(&self, public_data: &PublicStashData) -> Result<()> {
@@ -161,7 +94,7 @@ impl ItemsRepository {
 
             let mut items = vec![];
             for i in d.items.iter().map(|i| DbItem {
-                item: ItemsRepository::fix_unsigned(i.clone()),
+                item: i.clone(),
                 account_name: d.account_name.clone(),
                 stash: d.stash.clone(),
             }) {
@@ -207,7 +140,6 @@ mod test {
         let i = k
             .items
             .into_iter()
-            .map(|i| ItemsRepository::fix_unsigned(i))
             .filter_map(|e| match to_document(&e) {
                 Ok(k) => Some(k),
                 Err(e) => {

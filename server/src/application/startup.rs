@@ -1,5 +1,5 @@
 use crate::application::configuration::Settings;
-use crate::implementations::{http_service_layer::HttpServiceLayer };
+use crate::implementations::http_service_layer::HttpServiceLayer;
 use crate::{
     actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
     implementations::public_stash_timer::PublicStashTimer, implementations::ItemsRepository,
@@ -7,8 +7,6 @@ use crate::{
 
 use actix::prelude::*;
 use actix_web::{dev::Server, web, App, HttpServer};
-use diesel::r2d2::Pool;
-use diesel_migrations::embed_migrations;
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver};
@@ -17,8 +15,6 @@ use tracing::error;
 use tracing_actix_web::TracingLogger;
 
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
-
-embed_migrations!("migrations");
 
 pub struct Application {
     server: Server,
@@ -29,14 +25,6 @@ pub struct Application {
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         Application::setup_tracing();
-
-        // let manager = diesel::r2d2::ConnectionManager::new(&configuration.database);
-        // let pool = Pool::new(manager).expect("cant create diesel pool");
-
-        // {
-        //     let conn = pool.get().expect("cant get conn from pool");
-        //     embedded_migrations::run(&conn).expect("cant migrate");
-        // }
 
         let client_opts = mongodb::options::ClientOptions::parse(&configuration.mongo)
             .await
@@ -56,11 +44,8 @@ impl Application {
             }
         }
 
-        // let build_repo = BuildsRepository { conn: pool.clone() };
-
         let svc = HttpServiceLayer {
             item_repo: repo.clone(),
-            // build_repo: build_repo.clone(),
         };
 
         let (tx, rx) = channel::<actix::System>();
@@ -144,10 +129,7 @@ impl Application {
 }
 
 fn run(listener: TcpListener, svc: HttpServiceLayer) -> Result<Server, std::io::Error> {
-    let rpc = JsonrpcServer::new()
-        .with_data(Data::new(svc))
-        // .with_method()
-        .finish();
+    let rpc = JsonrpcServer::new().with_data(Data::new(svc)).finish();
 
     let server = HttpServer::new(move || {
         let rpc = rpc.clone();
