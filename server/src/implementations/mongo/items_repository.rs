@@ -84,6 +84,10 @@ impl ItemsRepository {
         rt.block_on(self.get_stash_id())
     }
 
+    fn check_type<T>(_: &T) -> &'static str {
+        std::any::type_name::<T>()
+    }
+
     fn fix_unsigned(mut item: Item) -> Item {
         let func = |props: Option<Vec<ItemProperty>>| {
             if props.is_none() {
@@ -92,31 +96,36 @@ impl ItemsRepository {
 
             let props = props.unwrap();
 
-            let props = props
-                .into_iter()
-                .map(|mut p| {
-                    p.values = p
-                        .values
-                        .into_iter()
-                        .map(|v| {
-                            v.into_iter()
-                                .map(|k| {
-                                    if let Value::Number(n) = k {
-                                        if n.is_u64() {
-                                            return json!(n.as_i64().unwrap());
-                                        } else {
-                                            Value::Number(n)
-                                        }
-                                    } else {
-                                        k
-                                    }
-                                })
-                                .collect::<Vec<Value>>()
-                        })
-                        .collect::<Vec<_>>();
-                    p
-                })
-                .collect::<Vec<_>>();
+            // let props = props
+            //     .into_iter()
+            //     .map(|mut p| {
+            //         p.values = p
+            //             .values
+            //             .into_iter()
+            //             .map(|v| {
+            //                 v.into_iter()
+            //                     .map(|k| {
+            //                         if let Value::Number(n) = k {
+            //                             if n.is_u64() {
+            //                                 println!("u64 fix");
+            //                                 let p = n.as_i64().unwrap();
+            //                                 println!("p: {} {}", ItemsRepository::check_type(&p), p);
+            //                                 let s = json!(p);
+            //                                 println!("js: {} {:?}", ItemsRepository::check_type(&s), s);
+            //                                 s
+            //                             } else {
+            //                                 Value::Number(n)
+            //                             }
+            //                         } else {
+            //                             k
+            //                         }
+            //                     })
+            //                     .collect::<Vec<Value>>()
+            //             })
+            //             .collect::<Vec<_>>();
+            //         p
+            //     })
+            //     .collect::<Vec<_>>();
 
             Some(props)
         };
@@ -199,9 +208,14 @@ mod test {
             .items
             .into_iter()
             .map(|i| ItemsRepository::fix_unsigned(i))
-            .filter_map(|e| to_document(&e).ok())
+            .filter_map(|e| match to_document(&e) {
+                Ok(k) => Some(k),
+                Err(e) => {
+                    println!("bson err: {:?}", e);
+                    None
+                }
+            })
             .collect::<Vec<_>>();
-        assert!(!i.is_empty());
         assert_eq!(i.len(), l);
         Ok(())
     }

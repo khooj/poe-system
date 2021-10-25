@@ -1,6 +1,6 @@
 use super::pob::pob::Pob;
-use super::rmdb::builds_repository::BuildsRepositoryError;
-use super::{BuildsRepository, ItemsRepository};
+// use super::rmdb::builds_repository::BuildsRepositoryError;
+use super::ItemsRepository;
 use crate::ports::outbound::repository::RepositoryError;
 use serde::Serialize;
 use thiserror::Error;
@@ -11,8 +11,8 @@ pub enum ServiceError {
     Anyhow(#[from] anyhow::Error),
     #[error("repo")]
     ItemRepo(#[from] RepositoryError),
-    #[error("repo")]
-    BuildRepo(#[from] BuildsRepositoryError),
+    // #[error("repo")]
+    // BuildRepo(#[from] BuildsRepositoryError),
 }
 
 impl jsonrpc_v2::ErrorLike for ServiceError {
@@ -27,7 +27,7 @@ impl jsonrpc_v2::ErrorLike for ServiceError {
         match self {
             ServiceError::Anyhow(e) => format!("{}", e),
             ServiceError::ItemRepo(e) => format!("{}", e),
-            ServiceError::BuildRepo(e) => format!("{}", e),
+            // ServiceError::BuildRepo(e) => format!("{}", e),
         }
     }
 }
@@ -39,7 +39,7 @@ pub struct BuildMatches {
 
 pub struct HttpServiceLayer {
     pub item_repo: ItemsRepository,
-    pub build_repo: BuildsRepository,
+    // pub build_repo: BuildsRepository,
 }
 
 impl HttpServiceLayer {

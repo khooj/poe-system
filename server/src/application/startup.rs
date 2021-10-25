@@ -1,5 +1,5 @@
 use crate::application::configuration::Settings;
-use crate::implementations::{http_service_layer::HttpServiceLayer, BuildsRepository};
+use crate::implementations::{http_service_layer::HttpServiceLayer };
 use crate::{
     actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
     implementations::public_stash_timer::PublicStashTimer, implementations::ItemsRepository,
@@ -30,13 +30,13 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         Application::setup_tracing();
 
-        let manager = diesel::r2d2::ConnectionManager::new(&configuration.database);
-        let pool = Pool::new(manager).expect("cant create diesel pool");
+        // let manager = diesel::r2d2::ConnectionManager::new(&configuration.database);
+        // let pool = Pool::new(manager).expect("cant create diesel pool");
 
-        {
-            let conn = pool.get().expect("cant get conn from pool");
-            embedded_migrations::run(&conn).expect("cant migrate");
-        }
+        // {
+        //     let conn = pool.get().expect("cant get conn from pool");
+        //     embedded_migrations::run(&conn).expect("cant migrate");
+        // }
 
         let client_opts = mongodb::options::ClientOptions::parse(&configuration.mongo)
             .await
@@ -56,11 +56,11 @@ impl Application {
             }
         }
 
-        let build_repo = BuildsRepository { conn: pool.clone() };
+        // let build_repo = BuildsRepository { conn: pool.clone() };
 
         let svc = HttpServiceLayer {
             item_repo: repo.clone(),
-            build_repo: build_repo.clone(),
+            // build_repo: build_repo.clone(),
         };
 
         let (tx, rx) = channel::<actix::System>();

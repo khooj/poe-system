@@ -1,6 +1,7 @@
 use crate::domain::{item::Item as DomainItem, PastebinBuild};
 use crate::ports::outbound::public_stash_retriever::{
     Item as JsonItem, ItemProperty as ItemPropertyJson,
+    PropertyValueType,
 };
 use crate::ports::outbound::repository::RepositoryError;
 use crate::schema::{build_info, builds_match, pob_file};
@@ -287,11 +288,11 @@ fn append_properties(
                     property_type: t as i32,
                     suffix: el.suffix,
                     type_: el.item_type,
-                    value: el.values.get(0).map_or(&vec![json!("")], |el| el)[0]
+                    value: el.values.get(0).map_or(&vec![PropertyValueType::Value(String::new())], |el| el)[0]
                         .as_str()
                         .unwrap()
                         .to_owned(),
-                    value_type: el.values.get(0).map_or(&vec![json!(""), json!(0)], |el| el)[1]
+                    value_type: el.values.get(0).map_or(&vec![PropertyValueType::Value(String::new()), PropertyValueType::Type(0)], |el| el)[1]
                         .as_i64()
                         .unwrap() as i32,
                 })
