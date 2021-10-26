@@ -9,9 +9,8 @@ base64 = "0.13.0"
 anyhow = "1.0.40"
 flate2 = "1.0"
 roxmltree = "0.14"
-actix = { version = "0.11.0" }
+actix = { version = "0.12" }
 actix_derive = "0.6.0"
-actix-rt = "2.2"
 governor = "0.3.2"
 tokio = { version = "1.8", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
@@ -34,7 +33,7 @@ tracing-log = "0.1"
 r2d2 = "0.8.9"
 strsim = "0.10"
 ureq = { version = "2", features = [ "json" ] }
-mongodb = { version = "1.2.3" }
+mongodb = { version = "2.0.1" }
 
 [dev-dependencies]
 temp-file = "0.1.6"

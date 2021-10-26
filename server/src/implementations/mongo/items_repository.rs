@@ -3,10 +3,10 @@ use anyhow::Result;
 use mongodb::{
     bson::{bson, doc, from_document, to_document},
     options::{
-        DeleteOptions, DistinctOptions, FindOneOptions, InsertManyOptions, InsertOneOptions,
-        UpdateOptions,
+        DeleteOptions, DistinctOptions, FindOneOptions, CreateIndexOptions, InsertManyOptions,
+        InsertOneOptions, UpdateOptions,
     },
-    Client,
+    Client, IndexModel,
 };
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -35,7 +35,18 @@ pub struct ItemsRepository {
 impl ItemsRepository {
     pub async fn new(client: Client, database: String) -> Result<ItemsRepository> {
         let db = client.database(&database);
-        let items_col = db.collection("items");
+        let items_col = db.collection::<DbItem>("items");
+        let _ = items_col
+            .create_index(
+                IndexModel::builder()
+                    .keys(doc! {
+                        "account_name": 1,
+                        "stash": 1,
+                    })
+                    .build(),
+                CreateIndexOptions::builder().build(),
+            )
+            .await?;
 
         Ok(ItemsRepository { client, database })
     }
@@ -172,7 +183,7 @@ impl ItemsRepository {
 
     pub async fn get_available_maps(&self) -> Result<Vec<String>> {
         let db = self.client.database(&self.database);
-        let col = db.collection("items");
+        let col = db.collection::<DbItem>("items");
 
         let opts = DistinctOptions::builder().build();
         let filter = doc! {

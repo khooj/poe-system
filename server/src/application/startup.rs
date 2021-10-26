@@ -5,11 +5,11 @@ use crate::{
     implementations::public_stash_timer::PublicStashTimer, implementations::ItemsRepository,
 };
 
-use actix::prelude::*;
+use actix::{Actor, SyncArbiter, System};
 use actix_web::{dev::Server, web, App, HttpServer};
 use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use std::net::TcpListener;
-use std::sync::mpsc::{channel, Receiver};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::{thread, thread::JoinHandle};
 use tracing::error;
 use tracing_actix_web::TracingLogger;
@@ -17,9 +17,10 @@ use tracing_actix_web::TracingLogger;
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
 
 pub struct Application {
-    server: Server,
-    handle: JoinHandle<Result<(), std::io::Error>>,
+    web_handle: JoinHandle<()>,
+    handle: JoinHandle<()>,
     rx: Receiver<System>,
+    rx2: Receiver<actix_web::rt::System>,
 }
 
 impl Application {
@@ -48,6 +49,7 @@ impl Application {
         };
 
         let (tx, rx) = channel::<actix::System>();
+        let (tx2, rx2) = channel::<actix_web::rt::System>();
 
         let addr = format!(
             "{}:{}",
@@ -61,9 +63,7 @@ impl Application {
             let repo = repo.clone();
             let system_runner = System::new();
 
-            let system = System::try_current().expect("cant get thread system");
-
-            tx.send(system).expect("cant send running system");
+            let system = System::current();
 
             system_runner.block_on(async move {
                 let actor = SyncArbiter::start(1, move || {
@@ -83,30 +83,49 @@ impl Application {
                     let _ = timer.start();
                 }
             });
-            system_runner.run()
+
+            tx.send(system).expect("cant send running system");
+            system_runner.run().unwrap()
         });
 
         let listener = TcpListener::bind(&addr)?;
-        let server = run(listener, svc)?;
+        let web_handle = run(tx2, listener, svc)?;
 
-        Ok(Self { server, handle, rx })
+        Ok(Self {
+            web_handle,
+            handle,
+            rx,
+            rx2,
+        })
     }
 
-    pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
-        let result = self.server.await;
+    pub async fn stop(self) -> Result<(), std::io::Error> {
         let system = self.rx.recv().expect("cant get system from child thread");
         system.stop();
-        let result2 = match self.handle.join() {
-            Ok(k) => k,
+        let system = self.rx2.recv().expect("cant get actix_rt system");
+        system.stop();
+
+        match self.handle.join() {
+            Ok(k) => {},
             Err(e) => {
                 error!("child thread panicked: {:?}", e);
-                Err(std::io::Error::new(
+                return Err(std::io::Error::new(
                     std::io::ErrorKind::Other,
                     "child thread panicked",
-                ))
+                ));
             }
         };
-        result.and(result2)
+        match self.web_handle.join() {
+            Ok(k) => {},
+            Err(e) => {
+                error!("child thread panicked: {:?}", e);
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "actix_rt child thread panicked",
+                ));
+            }
+        };
+        Ok(())
     }
 
     fn setup_tracing() {
@@ -127,22 +146,40 @@ impl Application {
     }
 }
 
-fn run(listener: TcpListener, svc: HttpServiceLayer) -> Result<Server, std::io::Error> {
-    let rpc = JsonrpcServer::new().with_data(Data::new(svc)).finish();
+fn run(
+    tx: Sender<actix_web::rt::System>,
+    listener: TcpListener,
+    svc: HttpServiceLayer,
+) -> Result<JoinHandle<()>, std::io::Error> {
+    let web_thread = thread::spawn(move || {
+        let rpc = JsonrpcServer::new().with_data(Data::new(svc)).finish();
+        let mut system = actix_web::rt::System::new("actix-web");
 
-    let server = HttpServer::new(move || {
-        let rpc = rpc.clone();
-        App::new()
-            .service(
-                web::service("/api")
-                    .guard(actix_web::guard::Post())
-                    .finish(rpc.into_web_service()),
-            )
-            .wrap(TracingLogger)
-    })
-    .workers(4)
-    .listen(listener)?
-    .run();
+        system.block_on(async move {
+            HttpServer::new(move || {
+                let rpc = rpc.clone();
+                App::new()
+                    .service(
+                        web::service("/api")
+                            .guard(actix_web::guard::Post())
+                            .finish(rpc.into_web_service()),
+                    )
+                    .wrap(TracingLogger)
+            })
+            .workers(4)
+            .listen(listener)
+            .expect("cant listen actix-web server")
+            .run()
+            .await
+            .expect("cant run actix-web server");
+        });
 
-    Ok(server)
+        let s = actix_web::rt::System::current();
+
+        tx.send(s).expect("cant send actix_rt system");
+
+        system.run().unwrap()
+    });
+
+    Ok(web_thread)
 }
