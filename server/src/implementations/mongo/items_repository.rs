@@ -28,11 +28,18 @@ pub struct DbItem {
 
 #[derive(Clone)]
 pub struct ItemsRepository {
-    pub client: Client,
-    pub database: String,
+    client: Client,
+    database: String,
 }
 
 impl ItemsRepository {
+    pub async fn new(client: Client, database: String) -> Result<ItemsRepository> {
+        let db = client.database(&database);
+        let items_col = db.collection("items");
+
+        Ok(ItemsRepository { client, database })
+    }
+
     pub async fn set_stash_id(&self, id_: &str) -> Result<()> {
         let db = self.client.database(&self.database);
         let col = db.collection("stash_id");
@@ -84,12 +91,12 @@ impl ItemsRepository {
         let col = db.collection("items");
 
         let mut new_items = vec![];
-        let mut delete_items = vec![];
+        let mut delete_stashes = vec![];
         let mut len = 0;
 
         debug!("processing items");
         for d in &public_data.stashes {
-            delete_items.push((d.account_name.as_ref(), d.stash.as_ref()));
+            delete_stashes.push((d.account_name.as_ref(), d.stash.as_ref()));
 
             let mut items = d
                 .items
@@ -123,9 +130,13 @@ impl ItemsRepository {
             return Err(anyhow::anyhow!("not all new items correctly processed"));
         }
 
-        debug!("making requests to mongo");
+        debug!(
+            "making requests to mongo: delete_stashes {} new_items {}",
+            delete_stashes.len(),
+            new_items.len()
+        );
         let opts = DeleteOptions::builder().build();
-        let filter = delete_items.into_iter().fold(bson!([]), |mut acc, x| {
+        let filter = delete_stashes.into_iter().fold(bson!([]), |mut acc, x| {
             let m = acc.as_array_mut().unwrap();
             m.push(bson!({
                 "account_name": { "$eq": x.0.unwrap() },
@@ -147,7 +158,7 @@ impl ItemsRepository {
             return Ok(());
         }
 
-        let opts = InsertManyOptions::builder().build();
+        let opts = InsertManyOptions::builder().ordered(false).build();
         let _ = col.insert_many(new_items, opts).await?;
 
         self.set_stash_id(&public_data.next_change_id).await?;

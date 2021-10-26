@@ -31,10 +31,9 @@ impl Application {
             .expect("cant parse mongo db url");
         let client =
             mongodb::Client::with_options(client_opts).expect("cant create mongodb client");
-        let repo = ItemsRepository {
-            client,
-            database: "poe-system".into(),
-        };
+        let repo = ItemsRepository::new(client, "poe-system".into())
+            .await
+            .expect("cant create items repository");
 
         if configuration.start_change_id.is_some() {
             if let Err(_) = repo.get_stash_id().await {
