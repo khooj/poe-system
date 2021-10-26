@@ -138,6 +138,19 @@ pub struct Item {
     pub socket: Option<i32>,
     pub colour: Option<String>,
     pub logbook_mods: Option<Vec<LogbookMod>>,
+    pub scourge_mods: Option<Vec<String>>,
+    pub scourged: Option<Scourged>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Scourged {
+    // 1-3 for items, 1-10 for maps
+    pub tier: i32,
+    // monster level required to progress
+    pub level: Option<i32>,
+    pub progress: Option<i32>,
+    pub total: Option<i32>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
