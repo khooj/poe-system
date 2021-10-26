@@ -35,7 +35,6 @@ r2d2 = "0.8.9"
 strsim = "0.10"
 ureq = { version = "2", features = [ "json" ] }
 mongodb = { version = "1.2.3" }
-bson = "2"
 
 [dev-dependencies]
 temp-file = "0.1.6"

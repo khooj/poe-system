@@ -1,13 +1,16 @@
 use crate::ports::outbound::public_stash_retriever::{Item, PublicStashData};
 use anyhow::Result;
 use mongodb::{
-    bson::{doc, from_document, to_document},
-    options::{DeleteOptions, FindOneOptions, InsertManyOptions, InsertOneOptions, UpdateOptions},
+    bson::{bson, doc, from_document, to_document},
+    options::{
+        DeleteOptions, DistinctOptions, FindOneOptions, InsertManyOptions, InsertOneOptions,
+        UpdateOptions,
+    },
     Client,
 };
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use tokio::runtime::Runtime;
+use tokio::runtime::Builder;
 use tracing::{debug, error};
 
 #[derive(Deserialize, Serialize)]
@@ -68,65 +71,117 @@ impl ItemsRepository {
     }
 
     pub fn get_stash_id_blocking(&self) -> Result<LatestStashId> {
-        let rt = Runtime::new()?;
+        let rt = Builder::new_current_thread().build()?;
         rt.block_on(self.get_stash_id())
     }
 
-    pub async fn insert_raw_item(&self, public_data: &PublicStashData) -> Result<()> {
+    pub async fn insert_raw_item(&self, public_data: PublicStashData) -> Result<()> {
+        self.insert_raw_item_impl2(public_data).await
+    }
+
+    async fn insert_raw_item_impl2(&self, public_data: PublicStashData) -> Result<()> {
         let db = self.client.database(&self.database);
         let col = db.collection("items");
 
+        let mut new_items = vec![];
+        let mut delete_items = vec![];
+        let mut len = 0;
+
+        debug!("processing items");
         for d in &public_data.stashes {
-            let opts = DeleteOptions::builder().build();
-            let r = col
-                .delete_many(
-                    doc! {
-                        "account_name": { "$eq": d.account_name.as_ref().unwrap() },
-                        "stash": { "$eq": d.stash.as_ref().unwrap() },
-                    },
-                    opts,
-                )
-                .await?;
+            delete_items.push((d.account_name.as_ref(), d.stash.as_ref()));
 
-            if d.items.is_empty() {
-                continue;
-            }
-
-            let mut items = vec![];
-            for i in d.items.iter().map(|i| DbItem {
-                item: i.clone(),
-                account_name: d.account_name.clone(),
-                stash: d.stash.clone(),
-            }) {
-                let d = match to_document(&i) {
-                    Ok(k) => k,
+            let mut items = d
+                .items
+                .iter()
+                .map(|i| DbItem {
+                    item: i.clone(),
+                    account_name: d.account_name.clone(),
+                    stash: d.stash.clone(),
+                })
+                .filter_map(|i| match to_document(&i) {
+                    Ok(k) => Some(k),
                     Err(e) => {
                         let js = serde_json::to_string(&i.item).unwrap();
                         debug!(item = ?i, js = %js);
-                        return Err(e.into());
+                        error!("error: {}", e);
+                        None
                     }
-                };
-                items.push(d);
-            }
-            debug!(items = ?items);
+                })
+                .collect::<Vec<_>>();
 
-            let opts = InsertManyOptions::builder().build();
-            let _ = col.insert_many(items, opts).await?;
+            len += d.items.len();
+
+            if items.is_empty() {
+                continue;
+            }
+
+            new_items.append(&mut items);
         }
+
+        if len != new_items.len() {
+            return Err(anyhow::anyhow!("not all new items correctly processed"));
+        }
+
+        debug!("making requests to mongo");
+        let opts = DeleteOptions::builder().build();
+        let filter = delete_items.into_iter().fold(bson!([]), |mut acc, x| {
+            let m = acc.as_array_mut().unwrap();
+            m.push(bson!({
+                "account_name": { "$eq": x.0.unwrap() },
+                "stash": { "$eq": x.1.unwrap() },
+            }));
+            acc
+        });
+
+        let _ = col
+            .delete_many(
+                doc! {
+                    "$or": filter.as_array().unwrap(),
+                },
+                opts,
+            )
+            .await?;
+
+        if new_items.is_empty() {
+            return Ok(());
+        }
+
+        let opts = InsertManyOptions::builder().build();
+        let _ = col.insert_many(new_items, opts).await?;
 
         self.set_stash_id(&public_data.next_change_id).await?;
         Ok(())
     }
 
-    pub fn insert_raw_item_blocking(&self, public_data: &PublicStashData) -> Result<()> {
-        let rt = Runtime::new()?;
+    pub fn insert_raw_item_blocking(&self, public_data: PublicStashData) -> Result<()> {
+        let rt = Builder::new_current_thread().build()?;
         rt.block_on(self.insert_raw_item(public_data))
+    }
+
+    pub async fn get_available_maps(&self) -> Result<Vec<String>> {
+        let db = self.client.database(&self.database);
+        let col = db.collection("items");
+
+        let opts = DistinctOptions::builder().build();
+        let filter = doc! {
+            "base_type": {
+                "$text": {
+                    "$search": "Map",
+                    "$caseSensetive": true,
+                },
+            },
+        };
+        let result = col.distinct("base_type", filter, opts).await?;
+        Ok(result
+            .into_iter()
+            .map(|el| el.as_str().unwrap().to_owned())
+            .collect())
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::ItemsRepository;
     use crate::ports::outbound::public_stash_retriever::PublicStashChange;
     use anyhow::Result;
     use mongodb::bson::to_document;

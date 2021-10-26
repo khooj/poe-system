@@ -58,7 +58,7 @@ impl Handler<StartReceiveMsg> for StashReceiverActor {
                     .any(|l| l == el.league.as_ref().unwrap_or(&String::new()))
             })
             .collect();
-        self.repository.insert_raw_item_blocking(&k)?;
+        self.repository.insert_raw_item_blocking(k)?;
         event!(Level::INFO, "successfully inserted");
         Ok(())
     }
