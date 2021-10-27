@@ -1,15 +1,15 @@
-use crate::ports::outbound::public_stash_retriever::{Item, PublicStashData};
+use crate::ports::outbound::public_stash_retriever::{Item, PropertyValueType, PublicStashData};
 use anyhow::Result;
 use mongodb::{
     bson::{bson, doc, from_document, to_document},
     options::{
-        DeleteOptions, DistinctOptions, FindOneOptions, CreateIndexOptions, InsertManyOptions,
-        InsertOneOptions, UpdateOptions,
+        CreateIndexOptions, DeleteOptions, DistinctOptions, FindOneOptions, FindOptions,
+        InsertManyOptions, InsertOneOptions, UpdateOptions,
     },
     Client, IndexModel,
 };
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{time::Duration, collections::HashSet};
 use tokio::runtime::Builder;
 use tracing::{debug, error};
 
@@ -37,13 +37,20 @@ impl ItemsRepository {
         let db = client.database(&database);
         let items_col = db.collection::<DbItem>("items");
         let _ = items_col
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! {
-                        "account_name": 1,
-                        "stash": 1,
-                    })
-                    .build(),
+            .create_indexes(
+                vec![
+                    IndexModel::builder()
+                        .keys(doc! {
+                            "account_name": 1,
+                            "stash": 1,
+                        })
+                        .build(),
+                    IndexModel::builder()
+                        .keys(doc! {
+                            "baseType": 1,
+                        })
+                        .build(),
+                ],
                 CreateIndexOptions::builder().build(),
             )
             .await?;
@@ -186,19 +193,61 @@ impl ItemsRepository {
         let col = db.collection::<DbItem>("items");
 
         let opts = DistinctOptions::builder().build();
-        let filter = doc! {
-            "base_type": {
-                "$text": {
-                    "$search": "Map",
-                    "$caseSensetive": true,
-                },
-            },
-        };
-        let result = col.distinct("base_type", filter, opts).await?;
-        Ok(result
+        let filter = doc! {};
+        let result = col.distinct("baseType", filter, opts).await?;
+        let result = result
             .into_iter()
             .map(|el| el.as_str().unwrap().to_owned())
-            .collect())
+            .collect::<Vec<_>>();
+
+        Ok(result.into_iter().filter(|el| el.contains("Map")).collect())
+    }
+
+    pub async fn get_map_tiers(&self, base_type: &str) -> Result<Vec<i32>> {
+        use futures_util::stream::StreamExt;
+
+        let db = self.client.database(&self.database);
+        let col = db.collection::<DbItem>("items");
+        let mut result = HashSet::new();
+
+        let opts = FindOptions::builder().build();
+        let filter = doc! {
+            "baseType": base_type,
+        };
+        let mut cursor = col.find(filter, opts).await?;
+        while let Some(k) = cursor.next().await {
+            if k.is_err() {
+                continue;
+            }
+
+            let k = k.unwrap();
+
+            if k.item.properties.is_none() {
+                continue;
+            }
+
+            for prop in k.item.properties.unwrap() {
+                if prop.name == "Map Tier" {
+                    let mut tier = None;
+                    for v in &prop.values[0] {
+                        match v {
+                            PropertyValueType::Value(s) => {
+                                tier = s.parse::<i32>().ok();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    if tier.is_none() {
+                        continue
+                    }
+
+                    result.insert(tier.unwrap());
+                }
+            }
+        }
+
+        Ok(result.into_iter().collect())
     }
 }
 

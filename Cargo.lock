@@ -1789,6 +1789,7 @@ dependencies = [
  "base64",
  "config",
  "flate2",
+ "futures-util",
  "governor",
  "itertools",
  "jsonrpc-v2",

@@ -1,4 +1,5 @@
 use crate::application::configuration::Settings;
+use crate::implementations::http_controller::get_maps_list;
 use crate::implementations::http_service_layer::HttpServiceLayer;
 use crate::{
     actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
@@ -106,7 +107,7 @@ impl Application {
         system.stop();
 
         match self.handle.join() {
-            Ok(k) => {},
+            Ok(k) => {}
             Err(e) => {
                 error!("child thread panicked: {:?}", e);
                 return Err(std::io::Error::new(
@@ -116,7 +117,7 @@ impl Application {
             }
         };
         match self.web_handle.join() {
-            Ok(k) => {},
+            Ok(k) => {}
             Err(e) => {
                 error!("child thread panicked: {:?}", e);
                 return Err(std::io::Error::new(
@@ -152,7 +153,10 @@ fn run(
     svc: HttpServiceLayer,
 ) -> Result<JoinHandle<()>, std::io::Error> {
     let web_thread = thread::spawn(move || {
-        let rpc = JsonrpcServer::new().with_data(Data::new(svc)).finish();
+        let rpc = JsonrpcServer::new()
+            .with_data(Data::new(svc))
+            .with_method("get_maps_list", get_maps_list)
+            .finish();
         let mut system = actix_web::rt::System::new("actix-web");
 
         system.block_on(async move {
