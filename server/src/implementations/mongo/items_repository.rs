@@ -3,15 +3,15 @@ use anyhow::Result;
 use mongodb::{
     bson::{bson, doc, from_document, to_document},
     options::{
-        CreateIndexOptions, DeleteOptions, DistinctOptions, FindOneOptions, FindOptions,
-        InsertManyOptions, InsertOneOptions, UpdateOptions,
+        AggregateOptions, CreateIndexOptions, DeleteOptions, DistinctOptions, FindOneOptions,
+        FindOptions, InsertManyOptions, InsertOneOptions, UpdateOptions,
     },
     Client, IndexModel,
 };
 use serde::{Deserialize, Serialize};
-use std::{time::Duration, collections::HashSet};
+use std::{collections::HashSet, time::Duration};
 use tokio::runtime::Builder;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 #[derive(Deserialize, Serialize)]
 pub struct LatestStashId {
@@ -35,6 +35,8 @@ pub struct ItemsRepository {
 impl ItemsRepository {
     pub async fn new(client: Client, database: String) -> Result<ItemsRepository> {
         let db = client.database(&database);
+        info!("creating indexes for items, please wait");
+
         let items_col = db.collection::<DbItem>("items");
         let _ = items_col
             .create_indexes(
@@ -50,6 +52,17 @@ impl ItemsRepository {
                             "baseType": 1,
                         })
                         .build(),
+                    IndexModel::builder()
+                        .keys(doc! {
+                            "id": 1,
+                        })
+                        .build(),
+                    // IndexModel::builder()
+                    //     .keys(doc! {
+                    //         "baseType": 1,
+                    //         "properties.name": 1,
+                    //     })
+                    //     .build(),
                 ],
                 CreateIndexOptions::builder().build(),
             )
@@ -210,40 +223,64 @@ impl ItemsRepository {
         let col = db.collection::<DbItem>("items");
         let mut result = HashSet::new();
 
-        let opts = FindOptions::builder().build();
-        let filter = doc! {
-            "baseType": base_type,
+        let mtch = doc! {
+            "$match": {
+                "baseType": base_type,
+            }
         };
-        let mut cursor = col.find(filter, opts).await?;
+        let grp = doc! {
+            "$group": {
+                "_id": "$baseType",
+                "tiers": { "$addToSet": { "$arrayElemAt": [ "$properties.values", 0 ] }}
+            }
+        };
+        let mut cursor = col
+            .aggregate(vec![mtch, grp], AggregateOptions::builder().build())
+            .await?;
+        // let mut cursor = col.find(filter, opts).await?;
         while let Some(k) = cursor.next().await {
+            debug!(k = ?k);
             if k.is_err() {
                 continue;
             }
 
             let k = k.unwrap();
 
-            if k.item.properties.is_none() {
+            let tiers = k.get("tiers");
+            debug!(tiers = ?tiers);
+
+            if tiers.is_none() {
                 continue;
             }
 
-            for prop in k.item.properties.unwrap() {
-                if prop.name == "Map Tier" {
-                    let mut tier = None;
-                    for v in &prop.values[0] {
-                        match v {
-                            PropertyValueType::Value(s) => {
-                                tier = s.parse::<i32>().ok();
-                            }
-                            _ => {}
+            let tiers = tiers.unwrap().as_array().unwrap();
+
+            for prop in tiers {
+                debug!(prop = ?prop);
+                let mut tier = None;
+
+                // unpack [ [ "12", 0 ] ]
+                for v in prop
+                    .as_array()
+                    .unwrap_or(&vec![])
+                    .get(0)
+                    .unwrap_or(&bson!([]))
+                    .as_array()
+                    .unwrap()
+                {
+                    match v.as_str() {
+                        Some(s) => {
+                            tier = s.parse::<i32>().ok();
                         }
+                        _ => {}
                     }
-
-                    if tier.is_none() {
-                        continue
-                    }
-
-                    result.insert(tier.unwrap());
                 }
+
+                if tier.is_none() {
+                    continue;
+                }
+
+                result.insert(tier.unwrap());
             }
         }
 

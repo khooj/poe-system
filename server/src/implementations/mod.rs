@@ -6,3 +6,6 @@ pub mod http_service_layer;
 mod mongo;
 
 pub type ItemsRepository = mongo::items_repository::ItemsRepository;
+pub type MapsRepository = mongo::maps_repository::MapsRepository;
+
+pub use mongo::items_repository::DbItem;
