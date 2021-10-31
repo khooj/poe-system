@@ -26,6 +26,17 @@ pub struct DbItem {
     pub stash: Option<String>,
 }
 
+pub struct MapRequest {
+    pub name: String,
+    pub count: i32,
+    pub tier: i32,
+}
+
+pub struct MapRequestResult {
+    pub account_name: String,
+    pub maps: Vec<DbItem>,
+}
+
 #[derive(Clone)]
 pub struct ItemsRepository {
     client: Client,
@@ -216,6 +227,8 @@ impl ItemsRepository {
         Ok(result.into_iter().filter(|el| el.contains("Map")).collect())
     }
 
+    // https://stackoverflow.com/questions/22932364/mongodb-group-values-by-multiple-fields
+    // rewrite some queries using this answer
     pub async fn get_map_tiers(&self, base_type: &str) -> Result<Vec<i32>> {
         use futures_util::stream::StreamExt;
 
@@ -285,6 +298,42 @@ impl ItemsRepository {
         }
 
         Ok(result.into_iter().collect())
+    }
+
+    pub async fn get_maps_data_by_account(
+        &self,
+        maps: Vec<MapRequest>,
+    ) -> Result<MapRequestResult> {
+        let db = self.client.database(&self.database);
+        let col = db.collection::<DbItem>("items");
+        let k = maps
+            .iter()
+            .map(|el| el.name.as_str())
+            .collect::<Vec<&str>>();
+
+        let p = col
+            .aggregate(
+                vec![
+                    doc! {
+                        "$match": {
+                            "baseType": { "$or": k },
+                        }
+                    },
+                    doc! {
+                        "$group": {
+                            "_id": "$account_name",
+                            "maps": {}
+                        }
+                    },
+                ],
+                AggregateOptions::builder().build(),
+            )
+            .await?;
+
+        Ok(MapRequestResult {
+            account_name: "".into(),
+            maps: vec![],
+        })
     }
 }
 

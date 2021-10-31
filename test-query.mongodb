@@ -1,0 +1,27 @@
+use('poe-system');
+
+const aggregation = [
+	{ $match: {
+			"baseType": { $in: [
+					"Haunted Mansion Map",
+					"Stagnation Map",
+					"Estuary Map",
+					"Dungeon Map"
+				]
+			}
+		}
+	},
+	{ $group: { _id: {
+				"account_name": "$account_name",
+				"baseType": "$baseType"
+			},
+			"values":  { $addToSet: { $arrayElemAt: [
+					"$properties.values",
+					0
+				]}
+			}
+		}
+	}
+]
+
+db.items.aggregate(aggregation);
