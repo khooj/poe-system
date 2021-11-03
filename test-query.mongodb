@@ -15,13 +15,66 @@ const aggregation = [
 				"account_name": "$account_name",
 				"baseType": "$baseType"
 			},
-			"values":  { $addToSet: { $arrayElemAt: [
+			"values":  { $push: { "tier": { $arrayElemAt: [
 					"$properties.values",
 					0
-				]}
+				]}}
 			}
 		}
 	}
-]
+];
 
-db.items.aggregate(aggregation);
+const aggregation2 = [
+	{ $match: {
+		"baseType": { $in: [
+				"Haunted Mansion Map",
+				"Stagnation Map",
+				"Estuary Map",
+				"Dungeon Map"
+			]
+		}
+	}},
+	{ $project: {
+		"account_name": true,
+		"baseType": true,
+		"note": true,
+		"stash": true,
+		"tier": {
+			$arrayElemAt: [
+				{
+					$arrayElemAt: [ 
+						{
+							$arrayElemAt: [ "$properties.values", 0 ] 
+						}, 
+						0
+					] 
+				},
+				0
+			]
+		}
+	}},
+	{ $group: {
+		_id: {
+			"account_name": "$account_name",
+			"baseType": "$baseType",
+			"tier": { $toInt: "$tier" }
+		},
+		"tierCount": { $sum: 1 },
+		"notes": { $addToSet: "$note" },
+		"stashes": { $addToSet: "$stash" },
+	}},
+	{ $group: {
+		_id: "$_id.account_name",
+		"maps": {
+			$push: {
+				"map": "$_id.baseType",
+				"count": "$tierCount",
+				"tier": "$_id.tier",
+				"prices": { $concatArrays: ["$notes", "$stashes" ] }
+			}
+		},
+		"count": { $sum: "$tierCount" },
+	}}
+];
+
+db.items.aggregate(aggregation2);
