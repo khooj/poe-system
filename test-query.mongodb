@@ -39,7 +39,7 @@ const aggregation2 = [
 		"baseType": true,
 		"note": true,
 		"stash": true,
-		"tier": {
+		"tier": { $toInt: {
 			$arrayElemAt: [
 				{
 					$arrayElemAt: [ 
@@ -51,30 +51,27 @@ const aggregation2 = [
 				},
 				0
 			]
-		}
+		}}
 	}},
 	{ $group: {
 		_id: {
 			"account_name": "$account_name",
-			"baseType": "$baseType",
-			"tier": { $toInt: "$tier" }
 		},
-		"tierCount": { $sum: 1 },
-		"notes": { $addToSet: "$note" },
-		"stashes": { $addToSet: "$stash" },
+		"maps": { $push: {
+			"name": "$baseType",
+			"tier": "$tier",
+			"note": "$note",
+			"stash": "$stash"
+		}}
 	}},
-	{ $group: {
-		_id: "$_id.account_name",
-		"maps": {
-			$push: {
-				"map": "$_id.baseType",
-				"count": "$tierCount",
-				"tier": "$_id.tier",
-				"prices": { $concatArrays: ["$notes", "$stashes" ] }
-			}
-		},
-		"count": { $sum: "$tierCount" },
-	}}
+	// { $group: {
+	// 	_id: "$_id.account_name",
+	// 	"maps": {
+	// 		$push: {
+	// 			"maps": "$maps",
+	// 		}
+	// 	},
+	// }}
 ];
 
 db.items.aggregate(aggregation2);
