@@ -2,7 +2,7 @@
   description = "rust workspace";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs?rev=3eb07eeafb52bcbf02ce800f032f18d666a9498d";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
     flake-compat = {
@@ -14,7 +14,7 @@
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     let
       myapp = "poe-system";
-      rust-version = "1.54.0";
+      rust-version = "1.61.0";
     in flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [

@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-
-use super::pob::pob::Pob;
 use super::ItemsRepository;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -84,15 +82,5 @@ impl HttpServiceLayer {
         }
 
         Ok(MapsTiers { maps: maps_hash })
-    }
-
-    pub async fn get_vendors_for_maps(
-        &self,
-        maps: MapsOrder,
-    ) -> Result<MapsOrderResult, ServiceError> {
-        let result = self
-            .item_repo
-            .get_maps_data_by_account(maps.maps.iter().map(|e| e.into()).collect())
-            .await?;
     }
 }
