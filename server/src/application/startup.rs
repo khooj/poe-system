@@ -2,7 +2,7 @@ use crate::application::configuration::Settings;
 use crate::implementations::http_controller::get_maps_list;
 use crate::implementations::http_service_layer::HttpServiceLayer;
 use crate::{
-    actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
+    application::actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
     implementations::public_stash_timer::PublicStashTimer, implementations::ItemsRepository,
 };
 

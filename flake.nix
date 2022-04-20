@@ -14,7 +14,7 @@
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     let
       myapp = "poe-system";
-      rust-version = "1.61.0";
+      rust-version = "1.60.0";
     in flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [

@@ -1,6 +1,6 @@
 use actix::prelude::*;
 
-use crate::actors::stash_receiver::{StartReceiveMsg, StashReceiverActor};
+use crate::application::actors::stash_receiver::{StartReceiveMsg, StashReceiverActor};
 
 pub struct PublicStashTimer {
     pub interval: std::time::Duration,
