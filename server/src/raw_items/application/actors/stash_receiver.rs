@@ -1,5 +1,7 @@
-use crate::implementations::{public_stash_retriever::Client, ItemsRepository};
-use crate::ports::outbound::{public_stash_retriever::Error};
+use crate::raw_items::infrastructure::{
+    public_stash_retriever::Client, repositories::mongo::items_repository::ItemsRepository,
+};
+use crate::raw_items::interfaces::public_stash_retriever::Error;
 use actix::prelude::*;
 use thiserror::Error;
 use tracing::{error, event, info, instrument, Level};

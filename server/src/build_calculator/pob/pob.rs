@@ -1,6 +1,5 @@
 use super::parser::{parse_pob_item, PobItem as ParsedItem};
-use crate::domain::types::{ItemLvl, League, Mod, ModType, Rarity};
-use crate::domain::item::Item;
+use crate::build_calculator::domain::{types::{ItemLvl, League, Mod, ModType, Rarity}, item::Item};
 use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
 use roxmltree::{Document, Node};

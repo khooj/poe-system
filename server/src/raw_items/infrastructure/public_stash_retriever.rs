@@ -1,4 +1,4 @@
-use crate::ports::outbound::public_stash_retriever::{Error, PublicStashData};
+use crate::raw_items::interfaces::public_stash_retriever::{Error, PublicStashData};
 use governor::{
     clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},

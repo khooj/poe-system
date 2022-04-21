@@ -1,4 +1,6 @@
-use crate::ports::outbound::public_stash_retriever::{Item, PropertyValueType, PublicStashData};
+use crate::raw_items::interfaces::public_stash_retriever::{
+    Item, PropertyValueType, PublicStashData,
+};
 use anyhow::Result;
 use mongodb::{
     bson::{bson, doc, from_document, to_document},
@@ -339,28 +341,8 @@ impl ItemsRepository {
 
 #[cfg(test)]
 mod test {
-    use crate::ports::outbound::public_stash_retriever::PublicStashChange;
     use anyhow::Result;
     use mongodb::bson::to_document;
 
     const EXAMPLE_STASH_CHANGE: &str = include_str!("example-stash.json");
-
-    #[test]
-    fn bson_doc_test() -> Result<()> {
-        let k: PublicStashChange = serde_json::from_str(&EXAMPLE_STASH_CHANGE)?;
-        let l = k.items.len();
-        let i = k
-            .items
-            .into_iter()
-            .filter_map(|e| match to_document(&e) {
-                Ok(k) => Some(k),
-                Err(e) => {
-                    println!("bson err: {:?}", e);
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-        assert_eq!(i.len(), l);
-        Ok(())
-    }
 }

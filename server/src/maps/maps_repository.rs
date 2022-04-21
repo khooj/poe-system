@@ -1,4 +1,3 @@
-use crate::ports::outbound::public_stash_retriever::{Item, PropertyValueType, PublicStashData};
 use anyhow::Result;
 use mongodb::{
     bson::{bson, doc, from_document, to_document},

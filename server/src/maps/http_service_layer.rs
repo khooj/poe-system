@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use super::ItemsRepository;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -68,19 +67,10 @@ pub struct MapsOrderResult {
     pub vendor: Vec<VendorMapInfo>,
 }
 
-pub struct HttpServiceLayer {
-    pub item_repo: ItemsRepository,
-}
+pub struct HttpServiceLayer {}
 
 impl HttpServiceLayer {
     pub async fn get_maps_list(&self) -> Result<MapsTiers, ServiceError> {
-        let mut maps_hash = HashMap::new();
-        let maps = self.item_repo.get_available_maps().await?;
-        for map in maps {
-            let tiers = self.item_repo.get_map_tiers(&map).await?;
-            maps_hash.insert(map, MapInfo { tiers });
-        }
-
-        Ok(MapsTiers { maps: maps_hash })
+        todo!()
     }
 }
