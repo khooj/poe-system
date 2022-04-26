@@ -1,4 +1,4 @@
-use poe_system::application::{configuration::get_configuration, startup::Application};
+use poe_system::{configuration::get_configuration, startup::Application};
 use tokio::signal;
 
 #[tokio::main]

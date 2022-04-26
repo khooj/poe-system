@@ -1,11 +1,8 @@
-use poe_system::implementations::public_stash_retriever::Client;
-use poe_system::ports::outbound::public_stash_retriever::Error;
-use poe_system::ports::outbound::public_stash_retriever::PublicStashData;
-use serde::Deserialize;
-use std::convert::TryFrom;
+use poe_system::infrastructure::public_stash_retriever::Client;
+use poe_system::interfaces::public_stash_retriever::Error;
 use std::io::BufRead;
 use std::io::{BufReader, BufWriter, Error as IoError, ErrorKind, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::{env::args, fs::OpenOptions};
 use tracing::{debug, info};
 use tracing_subscriber::fmt;
@@ -71,7 +68,10 @@ fn try_find_saved_id(latest_id: &str, dir: &Path) -> Option<String> {
         let mut data = vec![];
         let _ = buf.read_until(b',', &mut data);
         let data = String::from_utf8(data).expect("cant convert to valid string");
-        let data = data.strip_prefix("{\"next_change_id\":\"").expect("strip1").to_owned();
+        let data = data
+            .strip_prefix("{\"next_change_id\":\"")
+            .expect("strip1")
+            .to_owned();
         let data2 = data.strip_suffix("\",").expect("strip2");
         found_id = Some(data2.to_owned());
         debug!("iterate over id: {:?}", found_id);

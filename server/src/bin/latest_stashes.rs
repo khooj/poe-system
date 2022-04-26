@@ -1,5 +1,5 @@
-use poe_system::implementations::public_stash_retriever::Client;
-use poe_system::ports::outbound::public_stash_retriever::Error;
+use poe_system::infrastructure::public_stash_retriever::Client;
+use poe_system::interfaces::public_stash_retriever::Error;
 use std::io::{BufWriter, Write};
 use std::{env::args, fs::OpenOptions};
 use tracing::info;

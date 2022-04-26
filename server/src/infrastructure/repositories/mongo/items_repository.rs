@@ -1,4 +1,4 @@
-use crate::raw_items::interfaces::public_stash_retriever::{
+use crate::interfaces::public_stash_retriever::{
     Item, PropertyValueType, PublicStashData,
 };
 use anyhow::Result;

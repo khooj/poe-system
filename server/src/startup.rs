@@ -1,9 +1,11 @@
-use crate::application::configuration::Settings;
-use crate::implementations::http_controller::get_maps_list;
-use crate::implementations::http_service_layer::HttpServiceLayer;
+use crate::configuration::Settings;
 use crate::{
-    application::actors::stash_receiver::StashReceiverActor, implementations::public_stash_retriever::Client,
-    implementations::public_stash_timer::PublicStashTimer, implementations::ItemsRepository,
+    application::actors::{
+        public_stash_timer::PublicStashTimer, stash_receiver::StashReceiverActor,
+    },
+    infrastructure::{
+        public_stash_retriever::Client, repositories::mongo::items_repository::ItemsRepository,
+    },
 };
 
 use actix::{Actor, SyncArbiter, System};
@@ -44,10 +46,6 @@ impl Application {
                     .expect("cant set stash id");
             }
         }
-
-        let svc = HttpServiceLayer {
-            item_repo: repo.clone(),
-        };
 
         let (tx, rx) = channel::<actix::System>();
         let (tx2, rx2) = channel::<actix_web::rt::System>();
@@ -90,7 +88,7 @@ impl Application {
         });
 
         let listener = TcpListener::bind(&addr)?;
-        let web_handle = run(tx2, listener, svc)?;
+        let web_handle = run(tx2, listener)?;
 
         Ok(Self {
             web_handle,
@@ -150,13 +148,9 @@ impl Application {
 fn run(
     tx: Sender<actix_web::rt::System>,
     listener: TcpListener,
-    svc: HttpServiceLayer,
 ) -> Result<JoinHandle<()>, std::io::Error> {
     let web_thread = thread::spawn(move || {
-        let rpc = JsonrpcServer::new()
-            .with_data(Data::new(svc))
-            .with_method("get_maps_list", get_maps_list)
-            .finish();
+        let rpc = JsonrpcServer::new().finish();
         let mut system = actix_web::rt::System::new("actix-web");
 
         system.block_on(async move {
