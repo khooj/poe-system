@@ -1,6 +1,4 @@
-use crate::interfaces::public_stash_retriever::{
-    Item, PropertyValueType, PublicStashData,
-};
+use crate::interfaces::public_stash_retriever::{Item, PropertyValueType, PublicStashData};
 use anyhow::Result;
 use mongodb::{
     bson::{bson, doc, from_document, to_document},
@@ -26,17 +24,6 @@ pub struct DbItem {
     pub item: Item,
     pub account_name: Option<String>,
     pub stash: Option<String>,
-}
-
-pub struct MapRequest {
-    pub name: String,
-    pub count: i32,
-    pub tier: i32,
-}
-
-pub struct MapRequestResult {
-    pub account_name: String,
-    pub maps: Vec<DbItem>,
 }
 
 #[derive(Clone)]
@@ -212,130 +199,6 @@ impl ItemsRepository {
     pub fn insert_raw_item_blocking(&self, public_data: PublicStashData) -> Result<()> {
         let rt = Builder::new_current_thread().build()?;
         rt.block_on(self.insert_raw_item(public_data))
-    }
-
-    pub async fn get_available_maps(&self) -> Result<Vec<String>> {
-        let db = self.client.database(&self.database);
-        let col = db.collection::<DbItem>("items");
-
-        let opts = DistinctOptions::builder().build();
-        let filter = doc! {};
-        let result = col.distinct("baseType", filter, opts).await?;
-        let result = result
-            .into_iter()
-            .map(|el| el.as_str().unwrap().to_owned())
-            .collect::<Vec<_>>();
-
-        Ok(result.into_iter().filter(|el| el.contains("Map")).collect())
-    }
-
-    // https://stackoverflow.com/questions/22932364/mongodb-group-values-by-multiple-fields
-    // rewrite some queries using this answer
-    pub async fn get_map_tiers(&self, base_type: &str) -> Result<Vec<i32>> {
-        use futures_util::stream::StreamExt;
-
-        let db = self.client.database(&self.database);
-        let col = db.collection::<DbItem>("items");
-        let mut result = HashSet::new();
-
-        let mtch = doc! {
-            "$match": {
-                "baseType": base_type,
-            }
-        };
-        let grp = doc! {
-            "$group": {
-                "_id": "$baseType",
-                "tiers": { "$addToSet": { "$arrayElemAt": [ "$properties.values", 0 ] }}
-            }
-        };
-        let mut cursor = col
-            .aggregate(vec![mtch, grp], AggregateOptions::builder().build())
-            .await?;
-        // let mut cursor = col.find(filter, opts).await?;
-        while let Some(k) = cursor.next().await {
-            debug!(k = ?k);
-            if k.is_err() {
-                continue;
-            }
-
-            let k = k.unwrap();
-
-            let tiers = k.get("tiers");
-            debug!(tiers = ?tiers);
-
-            if tiers.is_none() {
-                continue;
-            }
-
-            let tiers = tiers.unwrap().as_array().unwrap();
-
-            for prop in tiers {
-                debug!(prop = ?prop);
-                let mut tier = None;
-
-                // unpack [ [ "12", 0 ] ]
-                for v in prop
-                    .as_array()
-                    .unwrap_or(&vec![])
-                    .get(0)
-                    .unwrap_or(&bson!([]))
-                    .as_array()
-                    .unwrap()
-                {
-                    match v.as_str() {
-                        Some(s) => {
-                            tier = s.parse::<i32>().ok();
-                        }
-                        _ => {}
-                    }
-                }
-
-                if tier.is_none() {
-                    continue;
-                }
-
-                result.insert(tier.unwrap());
-            }
-        }
-
-        Ok(result.into_iter().collect())
-    }
-
-    pub async fn get_maps_data_by_account(
-        &self,
-        maps: Vec<MapRequest>,
-    ) -> Result<MapRequestResult> {
-        let db = self.client.database(&self.database);
-        let col = db.collection::<DbItem>("items");
-        let k = maps
-            .iter()
-            .map(|el| el.name.as_str())
-            .collect::<Vec<&str>>();
-
-        let p = col
-            .aggregate(
-                vec![
-                    doc! {
-                        "$match": {
-                            "baseType": { "$or": k },
-                        }
-                    },
-                    doc! {
-                        "$group": {
-                            "_id": "$account_name",
-                            "maps": {}
-                        }
-                    },
-                ],
-                AggregateOptions::builder().build(),
-            )
-            .await?;
-
-        Ok(MapRequestResult {
-            account_name: "".into(),
-            maps: vec![],
-        })
     }
 }
 
