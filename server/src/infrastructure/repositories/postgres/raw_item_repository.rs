@@ -78,6 +78,40 @@ VALUES ($1, $2, $3, $4)
         Ok(())
     }
 
+    pub async fn insert_raw_item_bulk(
+        &self,
+        transaction: &mut PgTransaction<'_>,
+        acc: &str,
+        stash: &str,
+        items: &[&Item],
+    ) -> Result<()> {
+        unimplemented!()
+        // let ids = items
+        //     .iter()
+        //     .map(|e| e.id.as_ref().unwrap())
+        //     .collect::<Vec<&String>>();
+        // let accs = (0..=items.len())
+        //     .into_iter()
+        //     .map(|_| acc)
+        //     .collect::<Vec<&str>>();
+        // let sts = (0..=items.len())
+        //     .into_iter()
+        //     .map(|_| stash)
+        //     .collect::<Vec<&str>>();
+        // let _ = sqlx::query!(
+        //     r#"
+        // INSERT INTO raw_items (id, account_name, stash, item)
+        // SELECT * FROM UNNEST($1::varchar[], $2::varchar[], $3::varchar[], $4::jsonb[])"#,
+        //     &ids,
+        //     &accs,
+        //     &sts,
+        //     items,
+        // )
+        // .execute(&mut *transaction.transaction)
+        // .await?;
+        // Ok(())
+    }
+
     pub async fn delete_raw_item(
         &self,
         transaction: &mut PgTransaction<'_>,

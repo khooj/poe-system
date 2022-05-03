@@ -4,7 +4,7 @@ use crate::infrastructure::{
 use crate::interfaces::public_stash_retriever::Error;
 use std::time::{Duration, SystemTime};
 use thiserror::Error;
-use tracing::{error, event, info, instrument, Level};
+use tracing::{error, event, info, instrument, Level, debug};
 
 #[derive(Error, Debug)]
 pub enum StashReceiverError {
@@ -61,7 +61,7 @@ impl StashReceiver {
 
         for d in k.stashes {
             if d.account_name.is_none() || d.stash.is_none() {
-                info!("skipping stash because of empty account name or stash");
+                debug!("skipping stash because of empty account name or stash");
                 continue;
             }
             let acc = d.account_name.as_ref().unwrap();
