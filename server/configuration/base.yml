@@ -1,6 +1,6 @@
 database:
   type: postgres
-  dsn: postgres://localhost:5432/poe
+  dsn: postgres://admin:admin@localhost:5432/poe
 start_change_id: "1298229149-1303699645-1259354766-1406959770-1353513412"
 application:
   port: 3000

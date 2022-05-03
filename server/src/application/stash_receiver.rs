@@ -41,7 +41,8 @@ impl StashReceiver {
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap();
         info!("handling message: {}", now.as_secs());
-        let res = self.repository.get_stash_id().await?;
+        let mut t = self.repository.begin().await?;
+        let res = self.repository.get_stash_id(&mut t).await?;
         info!("latest stash id from repo: {:?}", res.latest_stash_id);
         // TODO: make async
         let mut k = self.client.get_latest_stash(Some(&res.latest_stash_id))?;
@@ -57,15 +58,42 @@ impl StashReceiver {
                 })
                 .collect();
         }
-        self.repository.insert_raw_item(k).await?;
+
+        for d in k.stashes {
+            if d.account_name.is_none() || d.stash.is_none() {
+                info!("skipping stash because of empty account name or stash");
+                continue;
+            }
+            let acc = d.account_name.as_ref().unwrap();
+            let stash = d.stash.as_ref().unwrap();
+
+            if d.items.len() == 0 {
+                self.repository.delete_raw_item(&mut t, acc, stash).await?;
+                continue;
+            }
+
+            for item in d.items {
+                let id = item.id.clone();
+                self.repository
+                    .insert_raw_item(&mut t, id.as_ref().unwrap(), acc, stash, item)
+                    .await?;
+            }
+        }
+        self.repository
+            .set_stash_id(&mut t, &k.next_change_id)
+            .await?;
+        t.commit().await?;
         event!(Level::INFO, "successfully inserted");
         Ok(())
     }
 
     pub async fn ensure_stash_id(&mut self, id: String) -> Result<(), anyhow::Error> {
-        if let Err(_) = self.repository.get_stash_id().await {
-            self.repository.set_stash_id(&id).await?;
+        let mut t = self.repository.begin().await?;
+        let r =  self.repository.get_stash_id(&mut t).await;
+        if r.is_err() {
+            self.repository.set_stash_id(&mut t, &id).await?;
         }
+        t.commit().await?;
         Ok(())
     }
 }

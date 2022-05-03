@@ -7,3 +7,7 @@ CREATE TABLE IF NOT EXISTS raw_items (
 	PRIMARY KEY(id)
 );
 CREATE INDEX account_name_stash_raw_items_index ON raw_items (account_name, stash);
+CREATE TABLE IF NOT EXISTS latest_stash (
+	stash_id VARCHAR NOT NULL,
+	PRIMARY KEY(stash_id)
+);
