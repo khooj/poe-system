@@ -1,9 +1,16 @@
+use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
 use std::convert::{TryFrom, TryInto};
 
+#[derive(Deserialize, Clone)]
+#[serde(tag = "type")]
+pub enum Database {
+    Postgres { dsn: String },
+}
+
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
-    pub mongo: String,
+    pub database: Database,
     pub application: ApplicationSettings,
     pub start_change_id: Option<String>,
 }

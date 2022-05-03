@@ -1588,6 +1588,7 @@ dependencies = [
  "actix-web",
  "actix_derive",
  "anyhow",
+ "async-trait",
  "base64",
  "config",
  "dotenv",

@@ -1,12 +1,11 @@
 use crate::configuration::Settings;
 use crate::{
     application::stash_receiver::StashReceiver,
-    infrastructure::{
-        public_stash_retriever::Client, repositories::mongo::items_repository::ItemsRepository,
-    },
+    infrastructure::{public_stash_retriever::Client, repositories::create_repositories},
 };
 
 use actix_web::{dev::Server, web, App, HttpServer};
+use sqlx::postgres::PgPool;
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::{thread, thread::JoinHandle};
@@ -26,21 +25,20 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         Application::setup_tracing();
 
-        let client_opts = mongodb::options::ClientOptions::parse(&configuration.mongo)
+        let (raw_items,) = create_repositories(&configuration.database)
             .await
-            .expect("cant parse mongo db url");
-        let client =
-            mongodb::Client::with_options(client_opts).expect("cant create mongodb client");
-        let repo = ItemsRepository::new(client, "poe-system".into())
-            .await
-            .expect("cant create items repository");
+            .expect("can't create repositories");
+
+        let client = Client::new(USER_AGENT.to_owned());
+
+        let mut stash_receiver =
+            StashReceiver::new(raw_items, client, configuration.application.only_leagues);
 
         if configuration.start_change_id.is_some() {
-            if let Err(_) = repo.get_stash_id().await {
-                repo.set_stash_id(configuration.start_change_id.as_ref().unwrap())
-                    .await
-                    .expect("cant set stash id");
-            }
+            stash_receiver
+                .ensure_stash_id(configuration.start_change_id.unwrap())
+                .await
+                .expect("can't insert start change id");
         }
 
         let addr = format!(
@@ -52,11 +50,6 @@ impl Application {
         let refresh_interval_secs = configuration.application.refresh_interval_secs;
 
         let listener = TcpListener::bind(&addr)?;
-
-        let client = Client::new(USER_AGENT.to_owned());
-
-        let stash_receiver =
-            StashReceiver::new(repo, client, configuration.application.only_leagues);
 
         Ok(Self {
             listener,
@@ -85,7 +78,11 @@ impl Application {
 
     // TODO: graceful shutdown?
     pub async fn run(self) -> Result<(), std::io::Error> {
-        let Application{listener: l, stash_receiver: mut sr, .. } = self;
+        let Application {
+            listener: l,
+            stash_receiver: mut sr,
+            ..
+        } = self;
         if self.enable {
             let mut interval =
                 tokio::time::interval(tokio::time::Duration::from_secs(self.interval));

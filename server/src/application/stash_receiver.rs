@@ -1,5 +1,5 @@
 use crate::infrastructure::{
-    public_stash_retriever::Client, repositories::mongo::items_repository::ItemsRepository,
+    public_stash_retriever::Client, repositories::postgres::raw_item_repository::RawItemRepository,
 };
 use crate::interfaces::public_stash_retriever::Error;
 use std::time::{Duration, SystemTime};
@@ -15,14 +15,14 @@ pub enum StashReceiverError {
 }
 
 pub struct StashReceiver {
-    repository: ItemsRepository,
+    repository: RawItemRepository,
     client: Client,
     only_leagues: Vec<String>,
 }
 
 impl StashReceiver {
     pub fn new(
-        repository: ItemsRepository,
+        repository: RawItemRepository,
         client: Client,
         only_leagues: Vec<String>,
     ) -> StashReceiver {
@@ -59,6 +59,13 @@ impl StashReceiver {
         }
         self.repository.insert_raw_item(k).await?;
         event!(Level::INFO, "successfully inserted");
+        Ok(())
+    }
+
+    pub async fn ensure_stash_id(&mut self, id: String) -> Result<(), anyhow::Error> {
+        if let Err(_) = self.repository.get_stash_id().await {
+            self.repository.set_stash_id(&id).await?;
+        }
         Ok(())
     }
 }

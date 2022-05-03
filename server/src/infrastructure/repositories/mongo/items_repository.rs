@@ -12,19 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, time::Duration};
 use tokio::runtime::Builder;
 use tracing::{debug, error, info};
-
-#[derive(Deserialize, Serialize)]
-pub struct LatestStashId {
-    pub latest_stash_id: String,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct DbItem {
-    #[serde(flatten)]
-    pub item: Item,
-    pub account_name: Option<String>,
-    pub stash: Option<String>,
-}
+use crate::infrastructure::repositories::{DbItem, LatestStashId};
 
 #[derive(Clone)]
 pub struct ItemsRepository {

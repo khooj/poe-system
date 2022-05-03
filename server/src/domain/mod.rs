@@ -1,5 +1,4 @@
 pub mod item;
-pub mod item_repository;
 pub mod types;
 pub mod pob;
 
