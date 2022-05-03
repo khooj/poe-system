@@ -1,16 +1,12 @@
 use crate::configuration::Settings;
 use crate::{
-    application::actors::{
-        public_stash_timer::PublicStashTimer, stash_receiver::StashReceiverActor,
-    },
+    application::stash_receiver::StashReceiver,
     infrastructure::{
         public_stash_retriever::Client, repositories::mongo::items_repository::ItemsRepository,
     },
 };
 
-use actix::{Actor, SyncArbiter, System};
 use actix_web::{dev::Server, web, App, HttpServer};
-use jsonrpc_v2::{Data, Server as JsonrpcServer};
 use std::net::TcpListener;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::{thread, thread::JoinHandle};
@@ -20,10 +16,10 @@ use tracing_actix_web::TracingLogger;
 const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
 
 pub struct Application {
-    web_handle: JoinHandle<()>,
-    handle: JoinHandle<()>,
-    rx: Receiver<System>,
-    rx2: Receiver<actix_web::rt::System>,
+    listener: TcpListener,
+    stash_receiver: StashReceiver,
+    interval: u64,
+    enable: bool,
 }
 
 impl Application {
@@ -47,9 +43,6 @@ impl Application {
             }
         }
 
-        let (tx, rx) = channel::<actix::System>();
-        let (tx2, rx2) = channel::<actix_web::rt::System>();
-
         let addr = format!(
             "{}:{}",
             configuration.application.host, configuration.application.port
@@ -58,73 +51,19 @@ impl Application {
         let enable_items_refresh = configuration.application.enable_items_refresh;
         let refresh_interval_secs = configuration.application.refresh_interval_secs;
 
-        let handle = thread::spawn(move || {
-            let repo = repo.clone();
-            let system_runner = System::new();
-
-            let system = System::current();
-
-            system_runner.block_on(async move {
-                let actor = SyncArbiter::start(1, move || {
-                    StashReceiverActor::new(
-                        repo.clone(),
-                        Client::new(USER_AGENT.to_owned().clone()),
-                        configuration.application.only_leagues.clone(),
-                    )
-                });
-
-                let timer = PublicStashTimer {
-                    actor: actor.clone(),
-                    interval: std::time::Duration::from_secs(refresh_interval_secs),
-                };
-
-                if enable_items_refresh {
-                    let _ = timer.start();
-                }
-            });
-
-            tx.send(system).expect("cant send running system");
-            system_runner.run().unwrap()
-        });
-
         let listener = TcpListener::bind(&addr)?;
-        let web_handle = run(tx2, listener)?;
+
+        let client = Client::new(USER_AGENT.to_owned());
+
+        let stash_receiver =
+            StashReceiver::new(repo, client, configuration.application.only_leagues);
 
         Ok(Self {
-            web_handle,
-            handle,
-            rx,
-            rx2,
+            listener,
+            stash_receiver,
+            interval: refresh_interval_secs,
+            enable: enable_items_refresh,
         })
-    }
-
-    pub async fn stop(self) -> Result<(), std::io::Error> {
-        let system = self.rx.recv().expect("cant get system from child thread");
-        system.stop();
-        let system = self.rx2.recv().expect("cant get actix_rt system");
-        system.stop();
-
-        match self.handle.join() {
-            Ok(k) => {}
-            Err(e) => {
-                error!("child thread panicked: {:?}", e);
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "child thread panicked",
-                ));
-            }
-        };
-        match self.web_handle.join() {
-            Ok(k) => {}
-            Err(e) => {
-                error!("child thread panicked: {:?}", e);
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "actix_rt child thread panicked",
-                ));
-            }
-        };
-        Ok(())
     }
 
     fn setup_tracing() {
@@ -143,41 +82,30 @@ impl Application {
         tracing_log::LogTracer::init().expect("cant set log tracer");
         tracing::subscriber::set_global_default(collector).expect("could not set global default");
     }
-}
 
-fn run(
-    tx: Sender<actix_web::rt::System>,
-    listener: TcpListener,
-) -> Result<JoinHandle<()>, std::io::Error> {
-    let web_thread = thread::spawn(move || {
-        let rpc = JsonrpcServer::new().finish();
-        let mut system = actix_web::rt::System::new("actix-web");
+    // TODO: graceful shutdown?
+    pub async fn run(self) -> Result<(), std::io::Error> {
+        let Application{listener: l, stash_receiver: mut sr, .. } = self;
+        if self.enable {
+            let mut interval =
+                tokio::time::interval(tokio::time::Duration::from_secs(self.interval));
+            tokio::spawn(async move {
+                loop {
+                    interval.tick().await;
+                    if let Err(e) = sr.receive().await {
+                        error!("{}", e);
+                    }
+                }
+            });
+        }
 
-        system.block_on(async move {
-            HttpServer::new(move || {
-                let rpc = rpc.clone();
-                App::new()
-                    .service(
-                        web::service("/api")
-                            .guard(actix_web::guard::Post())
-                            .finish(rpc.into_web_service()),
-                    )
-                    .wrap(TracingLogger)
-            })
+        HttpServer::new(move || App::new().wrap(TracingLogger::default()))
             .workers(4)
-            .listen(listener)
+            .listen(l)
             .expect("cant listen actix-web server")
             .run()
             .await
             .expect("cant run actix-web server");
-        });
-
-        let s = actix_web::rt::System::current();
-
-        tx.send(s).expect("cant send actix_rt system");
-
-        system.run().unwrap()
-    });
-
-    Ok(web_thread)
+        Ok(())
+    }
 }

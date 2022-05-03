@@ -1,1 +1,1 @@
-pub mod actors;
+pub mod stash_receiver;

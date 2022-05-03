@@ -9,10 +9,9 @@ base64 = "0.13.0"
 anyhow = "1.0.40"
 flate2 = "1.0"
 roxmltree = "0.14"
-actix = { version = "0.12" }
 actix_derive = "0.6.0"
 governor = "0.3.2"
-tokio = { version = "1.8", features = ["full"] }
+tokio = { version = "1.13.1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 thiserror = "1.0.24"
@@ -21,14 +20,13 @@ uuid = { version = "0.8.2", features = ["v4"] }
 num = "0.4.0"
 itertools = "0.10.0"
 nom = { version = "6.1.2", features = ["alloc"] }
-actix-web = "3"
-jsonrpc-v2 = { version = "0.10.1", features = ["actix-web-v3-integration"] }
+actix-web = "4"
 config = { version = "0.10.1", default-features = false, features = ["yaml"] }
 serde-aux = { version = "2.2.0" }
 lazy_static = "1.4.0"
 tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.2" }
-tracing-actix-web = { version = "0.2" }
+tracing-actix-web = { version = "0.5" }
 tracing-log = "0.1"
 r2d2 = "0.8.9"
 strsim = "0.10"
@@ -36,6 +34,7 @@ ureq = { version = "2", features = [ "json" ] }
 mongodb = { version = "2.0.1" }
 futures-util = "0.3"
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres", "macros", "migrate" ] }
+dotenv = "0.15"
 
 [dev-dependencies]
 temp-file = "0.1.6"

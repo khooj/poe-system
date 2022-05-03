@@ -49,20 +49,9 @@ impl ItemsRepository {
                         .build(),
                     IndexModel::builder()
                         .keys(doc! {
-                            "baseType": 1,
-                        })
-                        .build(),
-                    IndexModel::builder()
-                        .keys(doc! {
                             "id": 1,
                         })
                         .build(),
-                    // IndexModel::builder()
-                    //     .keys(doc! {
-                    //         "baseType": 1,
-                    //         "properties.name": 1,
-                    //     })
-                    //     .build(),
                 ],
                 CreateIndexOptions::builder().build(),
             )
@@ -106,11 +95,6 @@ impl ItemsRepository {
         result
             .ok_or(anyhow::anyhow!("cant find stash id"))
             .and_then(|r| from_document(r).map_err(|e| e.into()))
-    }
-
-    pub fn get_stash_id_blocking(&self) -> Result<LatestStashId> {
-        let rt = Builder::new_current_thread().build()?;
-        rt.block_on(self.get_stash_id())
     }
 
     pub async fn insert_raw_item(&self, public_data: PublicStashData) -> Result<()> {
@@ -169,6 +153,11 @@ impl ItemsRepository {
         let opts = DeleteOptions::builder().build();
         let filter = delete_stashes.into_iter().fold(bson!([]), |mut acc, x| {
             let m = acc.as_array_mut().unwrap();
+            if x.0.is_none() || x.1.is_none() {
+                debug!("ignoring some stash to delete because of empty account_name or/and stash");
+                return acc;
+            }
+
             m.push(bson!({
                 "account_name": { "$eq": x.0.unwrap() },
                 "stash": { "$eq": x.1.unwrap() },
@@ -194,11 +183,6 @@ impl ItemsRepository {
 
         self.set_stash_id(&public_data.next_change_id).await?;
         Ok(())
-    }
-
-    pub fn insert_raw_item_blocking(&self, public_data: PublicStashData) -> Result<()> {
-        let rt = Builder::new_current_thread().build()?;
-        rt.block_on(self.insert_raw_item(public_data))
     }
 }
 
