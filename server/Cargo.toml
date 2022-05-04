@@ -30,7 +30,7 @@ tracing-actix-web = { version = "0.5" }
 tracing-log = "0.1"
 r2d2 = "0.8.9"
 strsim = "0.10"
-ureq = { version = "2", features = [ "json" ] }
+reqwest = { version = "0.11", features = [ "json" ] }
 mongodb = { version = "2.0.1" }
 futures-util = "0.3"
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres", "macros", "migrate", "json" ] }

@@ -5,7 +5,8 @@ use std::{env::args, fs::OpenOptions};
 use tracing::info;
 use tracing_subscriber::fmt;
 
-fn main() -> Result<(), std::io::Error> {
+#[tokio::main]
+async fn main() -> Result<(), std::io::Error> {
     fmt::init();
 
     let args: Vec<String> = args().collect();
@@ -27,7 +28,7 @@ fn main() -> Result<(), std::io::Error> {
     let mut buf = BufWriter::new(f);
 
     loop {
-        let mut resp = match client.get_latest_stash(id.as_deref()) {
+        let mut resp = match client.get_latest_stash(id.as_deref()).await {
             Ok(r) => r,
             Err(e) => match e {
                 Error::NextCycle => continue,

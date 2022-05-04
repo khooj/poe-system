@@ -2,9 +2,8 @@ use crate::infrastructure::{
     public_stash_retriever::Client, repositories::postgres::raw_item_repository::RawItemRepository,
 };
 use crate::interfaces::public_stash_retriever::Error;
-use std::time::{Duration, SystemTime};
 use thiserror::Error;
-use tracing::{error, event, info, instrument, Level, debug};
+use tracing::{debug, error, event, info, instrument, Level};
 
 #[derive(Error, Debug)]
 pub enum StashReceiverError {
@@ -37,15 +36,10 @@ impl StashReceiver {
 impl StashReceiver {
     #[instrument(err, skip(self))]
     pub async fn receive(&mut self) -> Result<(), anyhow::Error> {
-        let now = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap();
-        info!("handling message: {}", now.as_secs());
         let mut t = self.repository.begin().await?;
         let res = self.repository.get_stash_id(&mut t).await?;
         info!("latest stash id from repo: {:?}", res.latest_stash_id);
-        // TODO: make async
-        let mut k = self.client.get_latest_stash(Some(&res.latest_stash_id))?;
+        let mut k = self.client.get_latest_stash(Some(&res.latest_stash_id)).await?;
         info!("received stash with next id: {}", k.next_change_id);
         if self.only_leagues.len() > 0 {
             k.stashes = k
@@ -87,9 +81,10 @@ impl StashReceiver {
         Ok(())
     }
 
+    #[instrument(err, skip(self))]
     pub async fn ensure_stash_id(&mut self, id: String) -> Result<(), anyhow::Error> {
         let mut t = self.repository.begin().await?;
-        let r =  self.repository.get_stash_id(&mut t).await;
+        let r = self.repository.get_stash_id(&mut t).await;
         if r.is_err() {
             self.repository.set_stash_id(&mut t, &id).await?;
         }

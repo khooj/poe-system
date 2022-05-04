@@ -1,17 +1,15 @@
 use crate::interfaces::public_stash_retriever::{Error, PublicStashData};
+use anyhow::Result;
 use governor::{
     clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},
     Quota, RateLimiter,
 };
+use reqwest::StatusCode;
 use std::num::NonZeroU32;
 use std::str::FromStr;
-use std::{
-    convert::TryFrom,
-    time::{Duration, Instant},
-};
-use tokio::time::Instant as TokioInstant;
-use tracing::info;
+use std::{convert::TryFrom, time::Duration};
+use tracing::{debug, info, error};
 
 #[derive(Debug)]
 struct Limits {
@@ -45,29 +43,27 @@ fn parse_header(limit: &str) -> Limits {
 }
 
 pub struct Client {
-    client: ureq::Agent,
+    client: reqwest::Client,
     limiter: Option<RateLimiter<NotKeyed, InMemoryState, DefaultClock>>,
     latest_limiter: Option<String>,
 }
 
-async fn _wait_for(d: u64) {
-    let until = Instant::now() + Duration::from_millis(d);
-    info!("waiting for {}", d);
-    tokio::time::sleep_until(TokioInstant::from_std(until)).await;
-}
-
 impl Client {
     pub fn new(user_agent: String) -> Client {
-        let client = ureq::AgentBuilder::new().user_agent(&user_agent).build();
+        let client = reqwest::ClientBuilder::new()
+            .user_agent(&user_agent)
+            .build()
+            .expect("can't build http client");
         Client {
             client,
             limiter: None,
             latest_limiter: None,
         }
     }
+
     fn reinit_limiter(&mut self, limiting: &str) {
         let limits = parse_header(&limiting);
-        info!("encountered new limits: {:?}", limits);
+        debug!("encountered new limits: {:?}", limits);
         let hit =
             NonZeroU32::try_from(limits.hit_count).map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
         let quota = Quota::with_period(limits.watching_time)
@@ -78,15 +74,9 @@ impl Client {
         self.latest_limiter = Some(limiting.to_owned());
     }
 
-    pub fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error> {
-        while let Some(rl) = &self.limiter {
-            let result = rl.check();
-
-            if let Err(_) = result {
-                std::thread::sleep(Duration::from_millis(100));
-            } else {
-                break;
-            }
+    pub async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error> {
+        if let Some(rl) = &self.limiter {
+            rl.until_ready().await;
         }
 
         let mut req = self
@@ -94,16 +84,24 @@ impl Client {
             .get("https://api.pathofexile.com/public-stash-tabs");
 
         if let Some(id) = id {
-            req = req.query("id", id);
+            req = req.query(&[("id", id)]);
         }
 
-        let resp = req.call()?;
+        let req = req.build()?;
+
+        let resp = self.client.execute(req).await?;
 
         let mut limiting = "1:1:60";
 
-        if let Some(l) = resp.header("X-Rate-Limit-Client") {
-            info!("limits header found");
-            limiting = l;
+        if let Some(l) = resp.headers().get("X-Rate-Limit-Client") {
+            debug!("limits header found");
+            limiting = match l.to_str() {
+                Ok(k) => k,
+                Err(e) => {
+                    error!("tostrerror, luck next time {}", e);
+                    return Err(Error::NextCycle);
+                }
+            };
         }
 
         if self.latest_limiter.is_some() && limiting != self.latest_limiter.as_ref().unwrap() {
@@ -114,21 +112,25 @@ impl Client {
             self.reinit_limiter(limiting);
         }
 
-        let limiting_state = resp.header("X-Rate-Limit-Client-State").unwrap_or("1:1:0");
-        info!("current limits state: {:?}", parse_header(limiting_state));
+        let limiting_state = resp
+            .headers()
+            .get("X-Rate-Limit-Client-State")
+            .map(|e| e.to_str().unwrap_or("1:1:0"))
+            .unwrap_or("1:1:0");
+        debug!("current limits state: {:?}", parse_header(limiting_state));
 
         let st = resp.status();
         match st {
-            429 => {
+            StatusCode::TOO_MANY_REQUESTS => {
                 let lims = parse_header(limiting);
-                std::thread::sleep(lims.penalty_time);
+                tokio::time::sleep(lims.penalty_time).await;
                 return Err(Error::NextCycle);
             }
-            0..=299 => {}
-            300..=u16::MAX => return Err(Error::StatusCode(st)),
+            x if x.is_success() => {}
+            x => return Err(Error::StatusCode(x.as_u16())),
         };
 
-        let body = resp.into_json::<PublicStashData>()?;
+        let body = resp.json::<PublicStashData>().await?;
 
         Ok(body)
     }

@@ -6,7 +6,8 @@ use std::io::{Error as IoError, ErrorKind};
 use tracing::info;
 use tracing_subscriber::fmt;
 
-fn main() -> Result<(), IoError> {
+#[tokio::main]
+async fn main() -> Result<(), IoError> {
     fmt::init();
 
     let args: Vec<String> = args().collect();
@@ -21,7 +22,7 @@ fn main() -> Result<(), IoError> {
         .expect("can't get latest id");
 
     loop {
-        let resp = match client.get_latest_stash(Some(&id)) {
+        let resp = match client.get_latest_stash(Some(&id)).await {
             Ok(r) => r,
             Err(e) => match e {
                 Error::NextCycle => continue,
