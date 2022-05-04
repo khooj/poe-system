@@ -39,7 +39,10 @@ impl StashReceiver {
         let mut t = self.repository.begin().await?;
         let res = self.repository.get_stash_id(&mut t).await?;
         info!("latest stash id from repo: {:?}", res.latest_stash_id);
-        let mut k = self.client.get_latest_stash(Some(&res.latest_stash_id)).await?;
+        let mut k = self
+            .client
+            .get_latest_stash(Some(&res.latest_stash_id))
+            .await?;
         info!("received stash with next id: {}", k.next_change_id);
         if self.only_leagues.len() > 0 {
             k.stashes = k

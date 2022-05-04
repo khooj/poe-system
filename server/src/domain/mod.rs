@@ -16,9 +16,9 @@ impl PastebinToken {
 }
 
 #[derive(Debug, Clone)]
-pub struct PastebinBuild(String);
+pub struct PastebinBuildUrl(String);
 
-impl PastebinBuild {
+impl PastebinBuildUrl {
     pub fn new(url: &str) -> Result<Self> {
         let token = url.split('/').collect::<Vec<_>>();
         let token = token
@@ -37,23 +37,15 @@ impl PastebinBuild {
     }
 }
 
-impl AsRef<str> for PastebinBuild {
+impl AsRef<str> for PastebinBuildUrl {
     fn as_ref(&self) -> &str {
         &self.0
     }
 }
 
-impl Into<String> for PastebinBuild {
+impl Into<String> for PastebinBuildUrl {
     fn into(self) -> String {
         self.as_ref().to_owned()
-    }
-}
-
-impl Deref for PastebinBuild {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 

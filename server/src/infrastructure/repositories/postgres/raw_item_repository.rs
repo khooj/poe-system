@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 use sqlx::{postgres::PgPool, types::Json, Postgres, Transaction};
 use std::ops::Deref;
 
-struct RawItem {
+pub struct RawItem {
     id: String,
     account_name: String,
     stash: String,
@@ -121,5 +121,21 @@ ON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"#,
             .await?;
             return Ok(());
         }
+    }
+
+    pub async fn get_raw_items_cursor(
+        &self,
+        base_types: &[&str],
+    ) -> futures_core::stream::BoxStream<'_, Result<RawItem, sqlx::Error>> {
+        sqlx::query_as!(
+            RawItem,
+            r#"
+SELECT id, account_name, stash, item as "item: Json<Item>" 
+FROM raw_items
+WHERE item['baseType'] ?| $1
+            "#,
+            base_types as _,
+        )
+        .fetch(&self.pool)
     }
 }
