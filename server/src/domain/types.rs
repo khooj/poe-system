@@ -1,6 +1,7 @@
 use anyhow::anyhow;
-use std::convert::TryFrom;
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
+use strum::EnumString;
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
@@ -15,12 +16,23 @@ pub enum __category_tmp {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString)]
+#[strum(ascii_case_insensitive)]
 pub enum Category {
+    Flasks,
     Accessories,
     Armour,
     Jewels,
     Weapons,
+    Maps,
+    Currency,
+    Logbook,
+    Heistmission,
+    Heistequipment,
+    Cards,
+    Monsters,
+    Gems,
+    Leaguestones,
 }
 
 impl Default for Category {
@@ -280,6 +292,26 @@ impl Default for League {
     }
 }
 
+impl From<String> for League {
+    fn from(t: String) -> League {
+        match t.as_ref() {
+            "Hardcore" => League::Hardcore,
+            x if x.contains("HC") => League::TempHardcore,
+            x if !x.contains("HC") => League::TempStandard,
+            _ => League::Standard,
+        }
+    }
+}
+
+impl From<Option<String>> for League {
+    fn from(t: Option<String>) -> League {
+        match t {
+            Some(k) => League::from(k),
+            None => League::Standard,
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum ItemLvl {
     No,
@@ -289,6 +321,15 @@ pub enum ItemLvl {
 impl From<i32> for ItemLvl {
     fn from(value: i32) -> Self {
         ItemLvl::Yes(value)
+    }
+}
+
+impl From<Option<i32>> for ItemLvl {
+    fn from(v: Option<i32>) -> Self {
+        match v {
+            Some(k) => ItemLvl::Yes(k),
+            None => ItemLvl::No,
+        }
     }
 }
 
@@ -310,16 +351,16 @@ pub enum Influence {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Subcategory {
-    Smth(String),
+    Empty,
 }
 
 impl Default for Subcategory {
     fn default() -> Self {
-        Subcategory::Smth("".into())
+        Subcategory::Empty
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Copy)]
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -330,6 +371,7 @@ pub enum ModType {
     Cosmetic = 6,
     Veiled = 7,
     ExplicitHybrid = 8,
+    Scourge = 9,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -339,7 +381,7 @@ pub struct Mod {
 }
 
 impl Mod {
-    pub fn from_str(value: &str, type_: ModType) -> Self {
+    pub fn from_str_type(value: &str, type_: ModType) -> Self {
         Mod {
             text: value.to_owned(),
             type_,

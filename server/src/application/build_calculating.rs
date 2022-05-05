@@ -13,6 +13,7 @@ use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument};
+use std::convert::TryInto;
 
 #[derive(Deserialize, Serialize)]
 struct CalculateBuildTaskData {
@@ -159,7 +160,7 @@ impl BuildCalculating {
             }
 
             let db_item = db_item.unwrap();
-            let db_item = if let Ok(k) = Item::try_from_dbitem(&db_item) {
+            let db_item = if let Ok(k) = db_item.try_into() {
                 k
             } else {
                 continue;

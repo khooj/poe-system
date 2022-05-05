@@ -1,4 +1,5 @@
 pub mod raw_item_repository;
+pub mod raw_item;
 pub mod task_repository;
 pub mod build_repository;
 

@@ -1,16 +1,9 @@
-use super::PgTransaction;
+use super::{PgTransaction, raw_item::RawItem};
 use crate::{
     infrastructure::repositories::LatestStashId, interfaces::public_stash_retriever::Item,
 };
 use anyhow::Result;
 use sqlx::{types::Json, PgPool};
-
-pub struct RawItem {
-    id: String,
-    account_name: String,
-    stash: String,
-    item: Json<Item>,
-}
 
 #[derive(Clone)]
 pub struct RawItemRepository {

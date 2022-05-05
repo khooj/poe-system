@@ -2,7 +2,6 @@ use super::types::{
     Category, Hybrid, Influence, ItemLvl, League, Mod, ModType, Rarity, Subcategory,
     Class,
 };
-use crate::infrastructure::repositories::postgres::raw_item_repository::RawItem;
 use anyhow::Result;
 use std::default::Default;
 use std::ops::Deref;
@@ -15,7 +14,6 @@ pub struct Item {
 
     pub item_lvl: ItemLvl,
     pub identified: bool,
-    pub rarity: Rarity,
     pub name: String,
     pub category: Category,
     pub subcategories: Vec<Subcategory>,
@@ -66,10 +64,6 @@ impl Item {
         let score = mods_scores.values().sum();
 
         SimilarityScore(score)
-    }
-
-    pub fn try_from_dbitem(item: &RawItem) -> Result<Self> {
-        todo!()
     }
 }
 

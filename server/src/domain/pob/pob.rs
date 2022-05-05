@@ -79,17 +79,16 @@ impl TryInto<Item> for ParsedItem {
         let mut mods: Vec<Mod> = self
             .implicits
             .iter()
-            .map(|e| Mod::from_str(e, ModType::Implicit))
+            .map(|e| Mod::from_str_type(e, ModType::Implicit))
             .collect();
         mods.extend(
             self.affixes
                 .iter()
-                .map(|e| Mod::from_str(e, ModType::Explicit)),
+                .map(|e| Mod::from_str_type(e, ModType::Explicit)),
         );
         Ok(Item {
             league: League::Standard,
             item_lvl,
-            rarity,
             name: self.name.to_owned(),
             base_type: self.base_line.to_owned(),
             ..Item::default()
