@@ -28,7 +28,7 @@ pub struct Item {
     pub class: Class,
 }
 
-#[derive(Default, PartialEq, PartialOrd)]
+#[derive(Default, PartialEq, PartialOrd, Debug)]
 pub struct SimilarityScore(i64);
 
 impl Deref for SimilarityScore {

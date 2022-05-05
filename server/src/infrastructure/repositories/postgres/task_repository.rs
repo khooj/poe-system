@@ -11,7 +11,7 @@ use sqlx::{
 };
 
 #[derive(sqlx::Type, Debug, PartialEq)]
-#[sqlx(rename_all = "lowercase")]
+#[sqlx(type_name = "task_type", rename_all = "lowercase")]
 pub enum TaskType {
     CalculateBuild,
 }
@@ -65,7 +65,7 @@ VALUES ($1, $2, $3, $4)
             task.task_type as _,
             task.data,
         )
-        .fetch_one(&mut *transaction.transaction)
+        .execute(&mut *transaction.transaction)
         .await?;
         Ok(task.id.to_string())
     }

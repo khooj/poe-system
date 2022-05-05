@@ -12,8 +12,8 @@ use crate::infrastructure::repositories::postgres::task_repository::{
 use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, instrument};
 use std::convert::TryInto;
+use tracing::{debug, error, info, instrument};
 
 #[derive(Deserialize, Serialize)]
 struct CalculateBuildTaskData {
@@ -22,6 +22,7 @@ struct CalculateBuildTaskData {
     league: String,
 }
 
+#[derive(Clone)]
 pub struct BuildCalculating {
     repository: RawItemRepository,
     tasks_repository: TaskRepository,
@@ -68,6 +69,7 @@ impl BuildCalculating {
             )
             .await?;
 
+        tr.commit().await?;
         Ok(id)
     }
 
@@ -79,6 +81,10 @@ impl BuildCalculating {
     #[instrument(err, skip(self))]
     pub async fn calculate_next_build(&self) -> Result<()> {
         let tasks = self.tasks_repository.get_latest_tasks(1).await?;
+        if tasks.is_empty() {
+            debug!("no new tasks found, iterating");
+            return Ok(());
+        }
         let task = tasks
             .first()
             .ok_or(anyhow!("can't get first task to process"))?;
@@ -112,6 +118,7 @@ impl BuildCalculating {
 
         let build_info: CalculateBuildTaskData = serde_json::from_value(data.clone())?;
         let build = self.fetch_pob(&build_info.url).await?;
+        info!("got pob");
         let build_doc = build.as_document()?;
         let itemset = if build_info.itemset.is_empty() {
             build_doc.get_first_itemset()?
@@ -122,7 +129,12 @@ impl BuildCalculating {
         let mut required_items = BuildItems::default();
         let mut found_items = BuildItems::default();
         for item in itemset.items() {
+            info!("searching similar item");
             let (found_item, score) = self.find_similar_item(item).await;
+            info!(
+                "calculated some score: for item {} found {} with score {:?}",
+                item.name, found_item.name, score
+            );
             match item.class {
                 Class::Helmet => {
                     required_items.helmet = item.clone();

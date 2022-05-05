@@ -37,8 +37,6 @@ impl TryInto<DomainItem> for RawItem {
             influences,
             fractured,
             synthesised,
-            additional_properties,
-            notable_properties,
             utility_mods,
             enchant_mods,
             scourge_mods,

@@ -4,6 +4,7 @@ use crate::{
     infrastructure::{public_stash_retriever::Client, repositories::create_repositories},
 };
 
+use crate::infrastructure::controller::new_build;
 use actix_web::{dev::Server, web, App, HttpServer};
 use std::net::TcpListener;
 use tracing::error;
@@ -82,6 +83,8 @@ impl Application {
 
     // TODO: graceful shutdown?
     pub async fn run(self) -> Result<(), std::io::Error> {
+        use tokio::time::{interval, Duration};
+
         let Application {
             listener: l,
             stash_receiver: mut sr,
@@ -89,8 +92,7 @@ impl Application {
             ..
         } = self;
         if self.enable {
-            let mut interval =
-                tokio::time::interval(tokio::time::Duration::from_secs(self.interval));
+            let mut interval = interval(Duration::from_secs(self.interval));
             tokio::spawn(async move {
                 loop {
                     interval.tick().await;
@@ -101,22 +103,30 @@ impl Application {
             });
         }
 
+        let bc1 = bc.clone();
         tokio::spawn(async move {
+            let mut interval = interval(Duration::from_millis(100));
             loop {
-                let ret = bc.calculate_next_build().await;
+                interval.tick().await;
+                let ret = bc1.calculate_next_build().await;
                 if let Err(e) = ret {
                     error!("error calculating next build: {}", e);
                 }
             }
         });
 
-        HttpServer::new(move || App::new().wrap(TracingLogger::default()))
-            .workers(4)
-            .listen(l)
-            .expect("cant listen actix-web server")
-            .run()
-            .await
-            .expect("cant run actix-web server");
+        HttpServer::new(move || {
+            App::new()
+                .wrap(TracingLogger::default())
+                .app_data(web::Data::new(bc.clone()))
+                .service(new_build)
+        })
+        .workers(4)
+        .listen(l)
+        .expect("cant listen actix-web server")
+        .run()
+        .await
+        .expect("cant run actix-web server");
         Ok(())
     }
 }

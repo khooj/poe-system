@@ -99,7 +99,7 @@ SELECT id, itemset, league,
 FROM builds
 WHERE id = $1
             "#,
-            id as _,
+            id as &str,
         )
         .fetch_one(&self.pool)
         .await?;
