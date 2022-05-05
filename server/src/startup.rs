@@ -1,14 +1,11 @@
 use crate::configuration::Settings;
 use crate::{
-    application::stash_receiver::StashReceiver,
+    application::{build_calculating::BuildCalculating, stash_receiver::StashReceiver},
     infrastructure::{public_stash_retriever::Client, repositories::create_repositories},
 };
 
 use actix_web::{dev::Server, web, App, HttpServer};
-use sqlx::postgres::PgPool;
 use std::net::TcpListener;
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::{thread, thread::JoinHandle};
 use tracing::error;
 use tracing_actix_web::TracingLogger;
 
@@ -19,20 +16,24 @@ pub struct Application {
     stash_receiver: StashReceiver,
     interval: u64,
     enable: bool,
+    build_calculating: BuildCalculating,
 }
 
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         Application::setup_tracing();
 
-        let (raw_items,) = create_repositories(&configuration.database)
+        let (raw_items, tasks, builds) = create_repositories(&configuration.database)
             .await
             .expect("can't create repositories");
 
         let client = Client::new(USER_AGENT.to_owned());
 
-        let mut stash_receiver =
-            StashReceiver::new(raw_items, client, configuration.application.only_leagues);
+        let mut stash_receiver = StashReceiver::new(
+            raw_items.clone(),
+            client,
+            configuration.application.only_leagues,
+        );
 
         if configuration.start_change_id.is_some() {
             stash_receiver
@@ -40,6 +41,8 @@ impl Application {
                 .await
                 .expect("can't insert start change id");
         }
+
+        let build_calculating = BuildCalculating::new(raw_items.clone(), tasks, builds);
 
         let addr = format!(
             "{}:{}",
@@ -56,6 +59,7 @@ impl Application {
             stash_receiver,
             interval: refresh_interval_secs,
             enable: enable_items_refresh,
+            build_calculating,
         })
     }
 
@@ -81,6 +85,7 @@ impl Application {
         let Application {
             listener: l,
             stash_receiver: mut sr,
+            build_calculating: bc,
             ..
         } = self;
         if self.enable {
@@ -95,6 +100,15 @@ impl Application {
                 }
             });
         }
+
+        tokio::spawn(async move {
+            loop {
+                let ret = bc.calculate_next_build().await;
+                if let Err(e) = ret {
+                    error!("error calculating next build: {}", e);
+                }
+            }
+        });
 
         HttpServer::new(move || App::new().wrap(TracingLogger::default()))
             .workers(4)

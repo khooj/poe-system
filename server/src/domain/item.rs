@@ -1,12 +1,14 @@
 use super::types::{
     Category, Hybrid, Influence, ItemLvl, League, Mod, ModType, Rarity, Subcategory,
+    Class,
 };
 use crate::infrastructure::repositories::postgres::raw_item_repository::RawItem;
 use anyhow::Result;
 use std::default::Default;
 use std::ops::Deref;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Item {
     pub id: String,
     pub league: League,
@@ -25,6 +27,7 @@ pub struct Item {
     pub synthesised: bool,
     pub mods: Vec<Mod>,
     pub hybrid: Hybrid,
+    pub class: Class,
 }
 
 #[derive(Default, PartialEq, PartialOrd)]

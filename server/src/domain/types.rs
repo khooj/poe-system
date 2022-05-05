@@ -1,7 +1,8 @@
 use anyhow::anyhow;
 use std::convert::TryFrom;
+use serde::{Deserialize, Serialize};
 
-#[allow(unused, non_camel_case_types)]
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub enum __category_tmp {
     Flasks,
@@ -14,8 +15,7 @@ pub enum __category_tmp {
     Other,
 }
 
-#[allow(unused)]
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Category {
     Accessories,
     Armour,
@@ -29,8 +29,7 @@ impl Default for Category {
     }
 }
 
-#[allow(unused)]
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Class {
     LifeFlask,
     ManaFlask,
@@ -267,7 +266,7 @@ enum BodyArmour {
     SacrificialGarb,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum League {
     Standard,
     Hardcore,
@@ -281,7 +280,7 @@ impl Default for League {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum ItemLvl {
     No,
     Yes(i32),
@@ -299,7 +298,7 @@ impl Default for ItemLvl {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Influence {
     Shaper,
     Elder,
@@ -309,7 +308,7 @@ pub enum Influence {
     Crusader,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Subcategory {
     Smth(String),
 }
@@ -320,7 +319,7 @@ impl Default for Subcategory {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -333,7 +332,7 @@ pub enum ModType {
     ExplicitHybrid = 8,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Mod {
     pub text: String,
     pub type_: ModType,
@@ -348,7 +347,7 @@ impl Mod {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Hybrid {
     pub is_vaal_gem: bool,
     pub base_type_name: String,
@@ -366,7 +365,7 @@ impl Default for Hybrid {
 }
 
 #[allow(unused)]
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Rarity {
     Normal,
     Magic,

@@ -1,0 +1,211 @@
+{
+  "db": "PostgreSQL",
+  "0fe166be347a8ee02a92642a2b78db89a51d5e379733b77ff6a019c84aa72594": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "account_name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "stash",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "item: Json<Item>",
+          "ordinal": 3,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "TextArray"
+        ]
+      }
+    },
+    "query": "\nSELECT id, account_name, stash, item as \"item: Json<Item>\" \nFROM raw_items\nWHERE item['baseType'] ?| $1\n            "
+  },
+  "340a0a67f691187d630b578289008ef4951eefd243db3b3f4455fdf1c378d246": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Timestamptz",
+          "Varchar",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\nINSERT INTO tasks (id, created_at, task_type, data)\nVALUES ($1, $2, $3, $4)\n            "
+  },
+  "4cd6555426929ac60c6b9d70674685fa6b826e9c72962c1f28cacaf1b8242617": {
+    "describe": {
+      "columns": [
+        {
+          "name": "stash_id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT stash_id FROM latest_stash LIMIT 1"
+  },
+  "4fa2b956de6ecf497b529237233e7eb537c729b1afb0500360ad09cb8b36aab1": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\nINSERT INTO raw_items (id, account_name, stash, item) \nVALUES ($1, $2, $3, $4)\n            "
+  },
+  "5a44a7220fc2c513c4b5922c6c55ec15c31c33849f134085cdbe11f882c6133c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Varchar",
+          "Varchar",
+          "Jsonb",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\nINSERT INTO builds (id, itemset, league, required, found)\nVALUES ($1, $2, $3, $4, $5)\n            "
+  },
+  "7823e9d8f7ab0560248f64d0987c54fdec9a772972d41a063a28649915618269": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar"
+        ]
+      }
+    },
+    "query": "\nINSERT INTO latest_stash (stash_id) \nVALUES ($1) \nON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"
+  },
+  "7b9cd173b8f189670f9eb5382b69cb952b874a554987ed3dbc4beede9a01af24": {
+    "describe": {
+      "columns": [
+        {
+          "name": "latest_stash_id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT stash_id as latest_stash_id FROM latest_stash LIMIT 1"
+  },
+  "98ade3952029d07878ca05b15e8114000f55ca45bd0f27712cc4cf8ae185f72c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\nDELETE FROM raw_items WHERE account_name = $1 AND stash = $2 \n            "
+  },
+  "b2d281037153ddcef2aa302bc5f80c3185e4409455af4c0519307b48dd62203c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "task_type: TaskType",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "data",
+          "ordinal": 3,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "\nSELECT id, created_at, task_type as \"task_type: TaskType\", data FROM tasks\nORDER BY created_at\nLIMIT $1 \n        "
+  },
+  "ced0240be2b2176d9f1c823a8ae0f6124c8884dc34e4a62e1d9f218b0f81d6d5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "UuidArray"
+        ]
+      }
+    },
+    "query": "DELETE FROM tasks WHERE id = ANY($1)"
+  },
+  "d4edce694a18995b5165962619637b14d6aff7d3b7c6b3d3db6b515ba3b36fa5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text"
+        ]
+      }
+    },
+    "query": "UPDATE latest_stash SET stash_id = $1 WHERE stash_id = $2"
+  }
+}

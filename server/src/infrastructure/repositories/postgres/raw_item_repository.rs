@@ -1,9 +1,9 @@
+use super::PgTransaction;
 use crate::{
     infrastructure::repositories::LatestStashId, interfaces::public_stash_retriever::Item,
 };
-use anyhow::{anyhow, Result};
-use sqlx::{postgres::PgPool, types::Json, Postgres, Transaction};
-use std::ops::Deref;
+use anyhow::Result;
+use sqlx::{types::Json, PgPool};
 
 pub struct RawItem {
     id: String,
@@ -12,24 +12,7 @@ pub struct RawItem {
     item: Json<Item>,
 }
 
-pub struct PgTransaction<'a> {
-    transaction: Transaction<'a, Postgres>,
-}
-
-impl<'a> Deref for PgTransaction<'a> {
-    type Target = Transaction<'a, Postgres>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.transaction
-    }
-}
-
-impl<'a> PgTransaction<'a> {
-    pub async fn commit(self) -> Result<()> {
-        Ok(self.transaction.commit().await?)
-    }
-}
-
+#[derive(Clone)]
 pub struct RawItemRepository {
     pool: PgPool,
 }
