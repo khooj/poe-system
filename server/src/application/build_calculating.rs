@@ -118,7 +118,7 @@ impl BuildCalculating {
 
         let build_info: CalculateBuildTaskData = serde_json::from_value(data.clone())?;
         let build = self.fetch_pob(&build_info.url).await?;
-        info!("got pob");
+        debug!("got pob");
         let build_doc = build.as_document()?;
         let itemset = if build_info.itemset.is_empty() {
             build_doc.get_first_itemset()?
@@ -129,9 +129,9 @@ impl BuildCalculating {
         let mut required_items = BuildItems::default();
         let mut found_items = BuildItems::default();
         for item in itemset.items() {
-            info!("searching similar item");
+            debug!("searching similar item");
             let (found_item, score) = self.find_similar_item(item).await;
-            info!(
+            debug!(
                 "calculated some score: for item {} found {} with score {:?}",
                 item.name, found_item.name, score
             );
@@ -157,7 +157,7 @@ impl BuildCalculating {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, item))]
     async fn find_similar_item(&self, item: &Item) -> (Item, SimilarityScore) {
         use crate::infrastructure::poe_data::BASE_ITEMS;
         use tokio_stream::StreamExt;
@@ -166,10 +166,12 @@ impl BuildCalculating {
         let mut result_item = Item::default();
         let alternate_types = BASE_ITEMS.get_alternate_types(&item.base_type);
         let mut cursor = self.repository.get_raw_items_cursor(&alternate_types).await;
+        debug!("start checking similar items");
         while let Some(db_item) = cursor.next().await {
             if db_item.is_err() {
                 continue;
             }
+            debug!("processing new db item");
 
             let db_item = db_item.unwrap();
             let db_item = if let Ok(k) = db_item.try_into() {

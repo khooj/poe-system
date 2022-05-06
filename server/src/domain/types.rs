@@ -41,7 +41,8 @@ impl Default for Category {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString)]
+#[strum(ascii_case_insensitive)]
 pub enum Class {
     LifeFlask,
     ManaFlask,

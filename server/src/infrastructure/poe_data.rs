@@ -24,6 +24,7 @@ pub struct Mod {
 pub struct BaseItem {
     pub item_class: String,
     pub name: String,
+    pub tags: Vec<String>,
 }
 
 fn initialize_data<T>(filename: &str) -> Result<T>
@@ -52,49 +53,73 @@ fn initialize_base_items(filename: &str) -> Vec<BaseItem> {
     }
 }
 
+struct PreparedItemInfo {
+    // map origin base_type to alternate base_types with same class
+    to_alternate_types_by_itemclass: Vec<String>,
+    item_class: String,
+}
+
 pub struct BaseTypesData {
-    base_type_to_idx: HashMap<String, usize>,
-    types: Vec<Vec<String>>,
+    base_type_to_data: HashMap<String, PreparedItemInfo>,
 }
 
 impl BaseTypesData {
     pub fn new(filename: &str) -> Self {
         let items = initialize_base_items(filename);
-        let mut types: HashMap<String, Vec<String>> = HashMap::new();
+        let mut alternate_types: HashMap<String, Vec<String>> = HashMap::new();
         for item in items {
-            let v = types.entry(item.item_class).or_default();
+            let v = alternate_types.entry(item.item_class).or_default();
             v.push(item.name.clone());
         }
 
-        let mut base_type_to_idx = HashMap::new();
-        let mut types_v = Vec::with_capacity(types.len());
-        types_v.resize(types.len(), vec![]);
+        let mut base_type_to_data = HashMap::new();
 
-        for (i, (_, v)) in types.into_iter().enumerate() {
+        for (i, (k, v)) in alternate_types.into_iter().enumerate() {
             for item in &v {
-                base_type_to_idx.entry(item.clone()).or_insert(i);
+                base_type_to_data
+                    .entry(item.clone())
+                    .or_insert(PreparedItemInfo {
+                        to_alternate_types_by_itemclass: v.clone(),
+                        item_class: k.clone(),
+                    });
             }
-
-            types_v[i] = v;
         }
 
-        BaseTypesData {
-            base_type_to_idx,
-            types: types_v,
-        }
+        BaseTypesData { base_type_to_data }
     }
 
     pub fn get_alternate_types(&self, base_type: &str) -> Vec<&str> {
-        let idx = self.base_type_to_idx[base_type];
-        self.types
-            .get(idx)
-            .unwrap()
+        let info = &self.base_type_to_data[base_type];
+        info.to_alternate_types_by_itemclass
             .iter()
             .map(|e| e.as_str())
             .collect()
+    }
+
+    pub fn get_item_class(&self, base_type: &str) -> &str {
+        &self.base_type_to_data[base_type].item_class
     }
 }
 
 lazy_static! {
     pub static ref BASE_ITEMS: BaseTypesData = BaseTypesData::new("base_items.min.json");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_base_items_const() {
+        dotenv::dotenv().ok();
+
+        let types = BASE_ITEMS.get_alternate_types("Champion Kite Shield");
+        assert!(types.contains(&"Plank Kite Shield"));
+        let types = BASE_ITEMS.get_alternate_types("The Porcupine");
+        assert!(types.contains(&"The Doctor"));
+
+        let item_class = BASE_ITEMS.get_item_class("Champion Kite Shield");
+        assert_eq!(item_class, "Shield");
+
+    }
 }
