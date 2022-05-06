@@ -292,9 +292,12 @@ enum BodyArmour {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum League {
     Standard,
+    SSFStandard,
     Hardcore,
+    SSFHardcore,
     TempStandard,
     TempHardcore,
+    Private(String),
 }
 
 impl Default for League {
@@ -307,9 +310,17 @@ impl From<String> for League {
     fn from(t: String) -> League {
         match t.as_ref() {
             "Hardcore" => League::Hardcore,
-            x if x.contains("HC") => League::TempHardcore,
-            x if !x.contains("HC") => League::TempStandard,
-            _ => League::Standard,
+            "Standard" => League::Standard,
+            "SSF Hardcore" => League::SSFHardcore,
+            "SSF Standard" => League::SSFStandard,
+            x if !x.contains("(PL") => {
+                if x.contains("HC") {
+                    League::TempHardcore
+                } else {
+                    League::TempStandard
+                }
+            }
+            x => League::Private(t),
         }
     }
 }

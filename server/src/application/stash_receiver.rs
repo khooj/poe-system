@@ -44,6 +44,10 @@ impl StashReceiver {
             .get_latest_stash(Some(&res.latest_stash_id))
             .await?;
         info!("received stash with next id: {}", k.next_change_id);
+        if k.stashes.is_empty() {
+            return Ok(());
+        }
+
         if self.only_leagues.len() > 0 {
             k.stashes = k
                 .stashes

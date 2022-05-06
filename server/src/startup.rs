@@ -65,7 +65,7 @@ impl Application {
     }
 
     fn setup_tracing() {
-        use tracing_subscriber::{fmt, prelude::*, registry::Registry, EnvFilter};
+        use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
         let fmt_subscriber = fmt::layer();
 
@@ -73,12 +73,18 @@ impl Application {
             .or_else(|_| EnvFilter::try_new("info"))
             .unwrap();
 
-        let collector = Registry::default()
-            .with(fmt_subscriber)
-            .with(env_subscriber);
+        let tracer = opentelemetry_jaeger::new_pipeline()
+            .with_service_name("poe-system")
+            .install_batch(opentelemetry::runtime::Tokio)
+            .expect("can't init opentelementry");
 
-        tracing_log::LogTracer::init().expect("cant set log tracer");
-        tracing::subscriber::set_global_default(collector).expect("could not set global default");
+        let opentelemetry_jaeger = tracing_opentelemetry::layer().with_tracer(tracer);
+        tracing_subscriber::registry()
+            .with(fmt_subscriber)
+            .with(env_subscriber)
+            .with(opentelemetry_jaeger)
+            .try_init()
+            .expect("can't init tracing subscribers");
     }
 
     // TODO: graceful shutdown?
