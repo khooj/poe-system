@@ -1,43 +1,5 @@
 {
   "db": "PostgreSQL",
-  "0fe166be347a8ee02a92642a2b78db89a51d5e379733b77ff6a019c84aa72594": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "account_name",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "stash",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "item: Json<Item>",
-          "ordinal": 3,
-          "type_info": "Jsonb"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "TextArray"
-        ]
-      }
-    },
-    "query": "\nSELECT id, account_name, stash, item as \"item: Json<Item>\" \nFROM raw_items\nWHERE item['baseType'] ?| $1\n            "
-  },
   "340a0a67f691187d630b578289008ef4951eefd243db3b3f4455fdf1c378d246": {
     "describe": {
       "columns": [],
@@ -110,6 +72,45 @@
       }
     },
     "query": "\nINSERT INTO builds (id, itemset, league, required, found)\nVALUES ($1, $2, $3, $4, $5)\n            "
+  },
+  "779811668ba9eebf350ab601270c72f4b93518f4b4a887bd0622f699a82fcd28": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "account_name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "stash",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "item: Json<Item>",
+          "ordinal": 3,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "TextArray",
+          "Text"
+        ]
+      }
+    },
+    "query": "\nSELECT id, account_name, stash, item as \"item: Json<Item>\" \nFROM raw_items\nWHERE item['baseType'] ?| $1 AND item['league']::text = $2\n            "
   },
   "7823e9d8f7ab0560248f64d0987c54fdec9a772972d41a063a28649915618269": {
     "describe": {

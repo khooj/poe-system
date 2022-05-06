@@ -320,7 +320,7 @@ impl From<String> for League {
                     League::TempStandard
                 }
             }
-            x => League::Private(t),
+            _ => League::Private(t),
         }
     }
 }

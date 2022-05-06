@@ -13,7 +13,7 @@ use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, trace, error, info, instrument};
 
 #[derive(Deserialize, Serialize)]
 struct CalculateBuildTaskData {
@@ -118,7 +118,7 @@ impl BuildCalculating {
 
         let build_info: CalculateBuildTaskData = serde_json::from_value(data.clone())?;
         let build = self.fetch_pob(&build_info.url).await?;
-        debug!("got pob");
+        trace!("got pob");
         let build_doc = build.as_document()?;
         let itemset = if build_info.itemset.is_empty() {
             build_doc.get_first_itemset()?
@@ -130,12 +130,8 @@ impl BuildCalculating {
         let mut found_items = BuildItems::default();
         for item in itemset.items() {
             let item = item.clone();
-            debug!("searching similar item");
-            let (found_item, score) = self.find_similar_item(&item).await;
-            debug!(
-                "calculated some score: for item {} found {} with score {:?}",
-                item.name, found_item.name, score
-            );
+            trace!("searching similar item");
+            let (found_item, score) = self.find_similar_item(&item, &build_info.league).await;
             match item.class {
                 Class::Helmet => {
                     required_items.helmet = item;
@@ -179,20 +175,20 @@ impl BuildCalculating {
     }
 
     #[instrument(skip(self, item))]
-    async fn find_similar_item(&self, item: &Item) -> (Item, SimilarityScore) {
+    async fn find_similar_item(&self, item: &Item, league: &str) -> (Item, SimilarityScore) {
         use crate::infrastructure::poe_data::BASE_ITEMS;
         use tokio_stream::StreamExt;
 
         let mut highscore = SimilarityScore::default();
         let mut result_item = Item::default();
         let alternate_types = BASE_ITEMS.get_alternate_types(&item.base_type);
-        let mut cursor = self.repository.get_raw_items_cursor(&alternate_types).await;
-        debug!("start checking similar items");
+        let mut cursor = self.repository.get_raw_items_cursor(&alternate_types, league).await;
+        info!("start checking similar items: {:?}", item);
         while let Some(db_item) = cursor.next().await {
             if db_item.is_err() {
                 continue;
             }
-            debug!("processing new db item");
+            trace!("processing new db item");
 
             let db_item = db_item.unwrap();
             let db_item = if let Ok(k) = db_item.try_into() {
@@ -203,11 +199,13 @@ impl BuildCalculating {
 
             let calc = item.calculate_similarity_score(&db_item);
             if calc > highscore {
+                info!("get higher score: {:?}", calc);
                 highscore = calc;
                 result_item = db_item;
             }
         }
 
+        info!("found item {:?} with score {:?}", result_item, highscore);
         (result_item, highscore)
     }
 

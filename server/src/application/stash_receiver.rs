@@ -3,7 +3,7 @@ use crate::infrastructure::{
 };
 use crate::interfaces::public_stash_retriever::Error;
 use thiserror::Error;
-use tracing::{debug, error, event, info, instrument, Level};
+use tracing::{debug, error, info, instrument, trace};
 
 #[derive(Error, Debug)]
 pub enum StashReceiverError {
@@ -38,31 +38,26 @@ impl StashReceiver {
     pub async fn receive(&mut self) -> Result<(), anyhow::Error> {
         let mut t = self.repository.begin().await?;
         let res = self.repository.get_stash_id(&mut t).await?;
-        info!("latest stash id from repo: {:?}", res.latest_stash_id);
+        trace!("latest stash id from repo: {:?}", res.latest_stash_id);
         let mut k = self
             .client
             .get_latest_stash(Some(&res.latest_stash_id))
             .await?;
-        info!("received stash with next id: {}", k.next_change_id);
+        trace!("received stash with next id: {}", k.next_change_id);
         if k.stashes.is_empty() {
             return Ok(());
         }
 
         if self.only_leagues.len() > 0 {
-            k.stashes = k
-                .stashes
-                .into_iter()
-                .filter(|el| {
-                    self.only_leagues
-                        .iter()
-                        .any(|l| l == el.league.as_ref().unwrap_or(&String::new()))
-                })
-                .collect();
+            k.stashes.retain(|el| {
+                self.only_leagues
+                    .contains(el.league.as_ref().unwrap_or(&String::new()))
+            });
         }
 
         for d in k.stashes {
             if d.account_name.is_none() || d.stash.is_none() {
-                debug!("skipping stash because of empty account name or stash");
+                trace!("skipping stash because of empty account name or stash");
                 continue;
             }
             let acc = d.account_name.as_ref().unwrap();
@@ -84,7 +79,7 @@ impl StashReceiver {
             .set_stash_id(&mut t, &k.next_change_id)
             .await?;
         t.commit().await?;
-        event!(Level::INFO, "successfully inserted");
+        trace!("successfully inserted");
         Ok(())
     }
 

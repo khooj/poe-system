@@ -102,15 +102,17 @@ ON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"#,
     pub async fn get_raw_items_cursor(
         &self,
         base_types: &[&str],
+        league: &str,
     ) -> futures_core::stream::BoxStream<'_, Result<RawItem, sqlx::Error>> {
         sqlx::query_as!(
             RawItem,
             r#"
 SELECT id, account_name, stash, item as "item: Json<Item>" 
 FROM raw_items
-WHERE item['baseType'] ?| $1
+WHERE item['baseType'] ?| $1 AND item['league']::text = $2
             "#,
             base_types as _,
+            league,
         )
         .fetch(&self.pool)
     }
