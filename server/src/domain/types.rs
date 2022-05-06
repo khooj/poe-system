@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use strum::EnumString;
@@ -66,8 +66,8 @@ pub enum Class {
     SupportSkillGem,
     Quiver,
     Belt,
-    Glove,
-    Boot,
+    Gloves,
+    Boots,
     BodyArmour,
     Helmet,
     Shield,
@@ -113,6 +113,16 @@ pub enum Class {
 impl Default for Class {
     fn default() -> Self {
         Class::LifeFlask
+    }
+}
+
+impl Class {
+    pub fn from_itemclass(itemclass: &str) -> Result<Class> {
+        use std::str::FromStr;
+
+        let mut s = itemclass.to_string();
+        s.retain(|c| !c.is_whitespace());
+        Ok(Class::from_str(&s)?)
     }
 }
 

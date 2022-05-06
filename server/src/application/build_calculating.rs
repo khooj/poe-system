@@ -129,16 +129,37 @@ impl BuildCalculating {
         let mut required_items = BuildItems::default();
         let mut found_items = BuildItems::default();
         for item in itemset.items() {
+            let item = item.clone();
             debug!("searching similar item");
-            let (found_item, score) = self.find_similar_item(item).await;
+            let (found_item, score) = self.find_similar_item(&item).await;
             debug!(
                 "calculated some score: for item {} found {} with score {:?}",
                 item.name, found_item.name, score
             );
             match item.class {
                 Class::Helmet => {
-                    required_items.helmet = item.clone();
+                    required_items.helmet = item;
                     found_items.helmet = found_item;
+                }
+                Class::BodyArmour => {
+                    required_items.body = item;
+                    found_items.body = found_item;
+                }
+                Class::Belt => {
+                    required_items.belt = item;
+                    found_items.belt = found_item;
+                }
+                Class::Gloves => {
+                    required_items.gloves = item;
+                    found_items.gloves = found_item;
+                }
+                Class::Boots => {
+                    required_items.boots = item;
+                    found_items.boots = found_item;
+                }
+                Class::Amulet => {
+                    required_items.amulet = item;
+                    found_items.amulet = found_item;
                 }
                 _ => {}
             }

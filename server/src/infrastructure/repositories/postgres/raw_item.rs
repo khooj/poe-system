@@ -1,5 +1,6 @@
 use crate::domain::item::Item as DomainItem;
 use crate::domain::types::{Category, Class, Influence, ItemLvl, League, Mod, ModType};
+use crate::infrastructure::poe_data::BASE_ITEMS;
 use crate::interfaces::public_stash_retriever::{Extended, Influences, Item};
 use sqlx::types::Json;
 use sqlx::types::Uuid;
@@ -93,6 +94,9 @@ impl TryInto<DomainItem> for RawItem {
         push_mods(&mut mods, fractured_mods, ModType::Fractured);
         push_mods(&mut mods, veiled_mods, ModType::Veiled);
 
+        let itemclass = BASE_ITEMS.get_item_class(&base_type);
+        let class = Class::from_itemclass(&itemclass)?;
+
         Ok(DomainItem {
             id,
             league,
@@ -107,6 +111,7 @@ impl TryInto<DomainItem> for RawItem {
             fractured,
             synthesised,
             mods,
+            class,
             ..DomainItem::default()
         })
     }
