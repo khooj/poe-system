@@ -3,10 +3,10 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
     character::complete::{alpha1, alphanumeric1, digit1, line_ending, not_line_ending},
-    combinator::{cut, map, map_res, opt},
+    combinator::{cut, eof, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
     multi::{length_count, many0, many_m_n},
-    sequence::{pair, preceded, terminated, delimited},
+    sequence::{delimited, pair, preceded, terminated},
     IResult,
 };
 use std::num::ParseIntError;
@@ -41,7 +41,7 @@ fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
 fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, &'a str, E> {
-    context("rarity", delimited(tag("Rarity: "), alpha1, line_ending))(i)
+    context("rarity", preceded(tag("Rarity: "), cut(alpha1)))(i)
 }
 
 fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -68,7 +68,7 @@ fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         }
     }
 
-    let (i, basetype) = base_type(i)?;
+    let (i, basetype) = preceded(line_ending, base_type)(i)?;
     return Ok((
         i,
         ItemValue::BaseType {
@@ -81,7 +81,7 @@ fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 fn base_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, &'a str, E> {
-    context("base_type", preceded(sp, cut(not_line_ending)))(i)
+    context("base_type", cut(not_line_ending))(i)
 }
 
 fn unique_id<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -146,10 +146,10 @@ where
     context(
         "implicits_count",
         length_count(
-            map(preceded(tag("Implicits: "), digit1), |out: &str| {
+            map(preceded(tag("Implicits: "), cut(digit1)), |out: &str| {
                 usize::from_str(out).unwrap_or(0usize)
             }),
-            preceded(sp, |i| affix(i, ModType::Implicit)),
+            preceded(alt((sp, line_ending)), |i| affix(i, ModType::Implicit)),
         ),
     )(i)
 }
@@ -160,12 +160,9 @@ fn skip_line_with_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, ItemValue, E> {
     context(
         "skip_line_tag",
-        preceded(
-            sp,
-            map(preceded(tag(t), cut(not_line_ending)), |_| {
-                ItemValue::SkipLine
-            }),
-        ),
+        map(preceded(tag(t), cut(not_line_ending)), |_| {
+            ItemValue::SkipLine
+        }),
     )(i)
 }
 
@@ -177,7 +174,7 @@ fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         "affix_internal",
         map(
             preceded(
-                alt((tag("{crafted}"), tag("{range:1}"))),
+                opt(alt((tag("{crafted}"), tag("{range:1}")))),
                 cut(not_line_ending),
             ),
             |e: &str| ItemValue::Affix {
@@ -225,10 +222,7 @@ fn item_value_header<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, ItemValue, E> {
     context(
         "item_value_header",
-        preceded(
-            sp,
-            alt((map(rarity, |s| ItemValue::Rarity(String::from(s))), name)),
-        ),
+        alt((map(rarity, |s| ItemValue::Rarity(String::from(s))), name)),
     )(i)
 }
 
@@ -240,18 +234,15 @@ fn item_value<
 ) -> IResult<&'a str, ItemValue, E> {
     context(
         "item_value",
-        preceded(
-            sp,
-            alt((
-                map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
-                map(item_lvl, ItemValue::ItemLevel),
-                map(level_req, ItemValue::LevelReq),
-                map(implicits, ItemValue::Implicits),
-                map(quality, ItemValue::Quality),
-                map(sockets, |s| ItemValue::Sockets(String::from(s))),
-                |i| affix(i, ModType::Explicit),
-            )),
-        ),
+        alt((
+            map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
+            map(item_lvl, ItemValue::ItemLevel),
+            map(level_req, ItemValue::LevelReq),
+            map(implicits, ItemValue::Implicits),
+            map(quality, ItemValue::Quality),
+            map(sockets, |s| ItemValue::Sockets(String::from(s))),
+            |i| affix(i, ModType::Explicit),
+        )),
     )(i)
 }
 
@@ -261,8 +252,9 @@ fn root<
 >(
     i: &'a str,
 ) -> IResult<&'a str, Vec<ItemValue>, E> {
-    let (i, mut header_vals) = many_m_n(2, 2, terminated(item_value_header, line_ending))(i)?;
-    let (i, mut vals) = many0(terminated(item_value, line_ending))(i)?;
+    let (i, mut header_vals) =
+        many_m_n(2, 2, delimited(sp, item_value_header, line_ending))(i)?;
+    let (i, mut vals) = many0(delimited(sp, item_value, line_ending))(i)?;
     let (i, end_val) = item_value(i)?;
     header_vals.append(&mut vals);
     header_vals.push(end_val);
@@ -345,8 +337,9 @@ mod test {
     #[test]
     fn implicits_check() -> Result<(), anyhow::Error> {
         use nom::error::VerboseError;
-        let i = "Implicits: 1\nAdds 2 Passive Skills";
-        let (_, ret) = implicits::<VerboseError<&str>>(i)?;
+        let i = "Implicits: 1\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
+        let (i, ret) = implicits::<VerboseError<&str>>(i)?;
+        assert_eq!(i, "\nAdds 3 Passive Skills");
         assert_eq!(
             ret,
             vec![ItemValue::Affix {
@@ -354,11 +347,17 @@ mod test {
                 type_: ModType::Implicit
             }]
         );
+
+        let i = "Implicits: 0\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
+        let (i, ret) = implicits::<VerboseError<&str>>(i)?;
+        assert_eq!(i, "\nAdds 2 Passive Skills\nAdds 3 Passive Skills");
+        assert!(ret.is_empty());
         Ok(())
     }
 
     #[test]
     fn simple_pob_item() -> Result<(), anyhow::Error> {
+        use nom::error::VerboseError;
         dotenv::dotenv().ok();
         let item = r#"
             Rarity: RARE
@@ -375,7 +374,7 @@ Added Small Passive Skills also grant: +5 to Maximum Energy Shield
 Added Small Passive Skills also grant: +5 to Strength
 1 Added Passive Skill is Elegant Form"#;
 
-        let (_, item) = parse_pob_item::<()>(&item)?;
+        let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
         assert_eq!(item.rarity, "RARE");
         assert_eq!(item.name, "Loath Cut");
         assert_eq!(item.base_line, "Small Cluster Jewel");
@@ -388,10 +387,10 @@ Added Small Passive Skills also grant: +5 to Strength
         assert_eq!(
             item.affixes,
             vec![
-                Mod::from_str_type("Adds 2 Passive Skills", ModType::Crafted),
+                Mod::from_str_type("Adds 2 Passive Skills", ModType::Implicit),
                 Mod::from_str_type(
                     "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits",
-                    ModType::Crafted
+                    ModType::Implicit,
                 ),
                 Mod::from_str_type(
                     "Added Small Passive Skills also grant: +3% to Chaos Resistance",
