@@ -108,6 +108,10 @@ pub enum Class {
     Blueprint,
     Trinket,
     HeistTarget,
+    // TODO: do i need this?
+    SmallClusterJewel,
+    MediumClusterJewel,
+    LargeClusterJewel,
 }
 
 impl Default for Class {
@@ -382,7 +386,7 @@ impl Default for Subcategory {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Copy)]
+#[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq)]
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -396,7 +400,7 @@ pub enum ModType {
     Scourge = 9,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub struct Mod {
     pub text: String,
     pub type_: ModType,

@@ -82,16 +82,6 @@ impl TryInto<Item> for ParsedItem {
     fn try_into(self) -> Result<Item, Self::Error> {
         let rarity: Rarity = self.rarity.try_into()?;
         let item_lvl: ItemLvl = self.item_lvl.into();
-        let mut mods: Vec<Mod> = self
-            .implicits
-            .iter()
-            .map(|e| Mod::from_str_type(e, ModType::Implicit))
-            .collect();
-        mods.extend(
-            self.affixes
-                .iter()
-                .map(|e| Mod::from_str_type(e, ModType::Explicit)),
-        );
 
         let itemclass = BASE_ITEMS.get_item_class(&self.base_line).ok_or(anyhow!(
             "can't get itemclass from basetype: {}",
@@ -102,7 +92,7 @@ impl TryInto<Item> for ParsedItem {
             item_lvl,
             name: self.name.to_owned(),
             base_type: self.base_line,
-            mods,
+            mods: self.affixes,
             class: match Class::from_itemclass(itemclass) {
                 Ok(k) => k,
                 Err(e) => {

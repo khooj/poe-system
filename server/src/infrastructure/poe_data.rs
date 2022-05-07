@@ -106,6 +106,10 @@ impl BaseTypesData {
             None => None,
         }
     }
+
+    pub fn get_all_itemclasses(&self) -> Vec<&str> {
+        self.base_type_to_data.keys().map(|e| e.as_str()).collect()
+    }
 }
 
 lazy_static! {

@@ -1,3 +1,4 @@
+use crate::domain::types::{Mod, ModType};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
@@ -5,27 +6,28 @@ use nom::{
     combinator::{cut, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
     multi::{many0, many_m_n},
-    sequence::{preceded, terminated},
+    sequence::{pair, preceded, terminated},
     IResult,
 };
 use std::num::ParseIntError;
 use std::str::FromStr;
 use tracing::info;
 
+use crate::infrastructure::poe_data::BASE_ITEMS;
+
 #[derive(Debug, PartialEq)]
 enum ItemValue {
     Rarity(String),
-    Name(String, Option<String>),
+    BaseType { base: String, name: String },
     ItemLevel(i32),
     LevelReq(i32),
-    Implicits(Vec<String>),
     UniqueId(String),
-    Affix(String),
+    Affix { type_: ModType, value: String },
+    Implicits(Vec<ItemValue>),
     Quality(i32),
     Sockets(String),
+    Influence(String),
 }
-
-static EMPTY_BASETYPES: &[&str] = &["Flask"];
 
 fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     let chars = " \t\r\n ";
@@ -43,15 +45,36 @@ fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, (&'a str, Option<&'a str>), E> {
+) -> IResult<&'a str, ItemValue, E> {
     let (i, name) = context("name", cut(not_line_ending))(i)?;
 
-    if !EMPTY_BASETYPES.iter().any(|el| name.contains(el)) {
-        let (i, basetype) = base_type(i)?;
-        return Ok((i, (name, Some(basetype))));
+    let all_itemclasses = BASE_ITEMS.get_all_itemclasses();
+    for itemclass in all_itemclasses {
+        // TODO: fix?
+        if itemclass.is_empty() {
+            continue;
+        }
+
+        if name.contains(itemclass) {
+            // its not a name, its a basetype
+            return Ok((
+                i,
+                ItemValue::BaseType {
+                    base: itemclass.to_string(),
+                    name: name.to_string(),
+                },
+            ));
+        }
     }
 
-    Ok((i, (name, None)))
+    let (i, basetype) = base_type(i)?;
+    return Ok((
+        i,
+        ItemValue::BaseType {
+            base: basetype.to_string(),
+            name: name.to_string(),
+        },
+    ));
 }
 
 fn base_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -115,7 +138,7 @@ where
     )(i)
 }
 
-fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<&'a str>, E>
+fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<ItemValue>, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
@@ -131,18 +154,29 @@ where
         many_m_n(
             implicits_count as usize,
             implicits_count as usize,
-            preceded(sp, affix),
+            preceded(sp, |i| affix(i, ModType::Implicit)),
         ),
     )(i)
 }
 
 fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, &'a str, E> {
-    context(
-        "affix",
-        preceded(opt(tag("{crafted}")), cut(not_line_ending)),
-    )(i)
+    default: ModType,
+) -> IResult<&'a str, ItemValue, E> {
+    let (i, (crafted, value)) =
+        context("affix", pair(opt(tag("{crafted}")), cut(not_line_ending)))(i)?;
+
+    Ok((
+        i,
+        ItemValue::Affix {
+            type_: if crafted.is_some() {
+                ModType::Crafted
+            } else {
+                default
+            },
+            value: value.to_string(),
+        },
+    ))
 }
 
 fn item_value_header<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -152,12 +186,7 @@ fn item_value_header<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         "item_value_header",
         preceded(
             sp,
-            alt((
-                map(rarity, |s| ItemValue::Rarity(String::from(s))),
-                map(name, |(n, b)| {
-                    ItemValue::Name(String::from(n), b.map(String::from))
-                }),
-            )),
+            alt((map(rarity, |s| ItemValue::Rarity(String::from(s))), name)),
         ),
     )(i)
 }
@@ -176,12 +205,10 @@ fn item_value<
                 map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
                 map(item_lvl, ItemValue::ItemLevel),
                 map(level_req, ItemValue::LevelReq),
-                map(implicits, |vals| {
-                    ItemValue::Implicits(vals.into_iter().map(String::from).collect())
-                }),
+                map(implicits, ItemValue::Implicits),
                 map(quality, ItemValue::Quality),
                 map(sockets, |s| ItemValue::Sockets(String::from(s))),
-                map(affix, |s| ItemValue::Affix(String::from(s))),
+                |i| affix(i, ModType::Explicit),
             )),
         ),
     )(i)
@@ -211,8 +238,7 @@ pub struct ParsedItem {
     pub lvl_req: i32,
     pub sockets: String,
     pub quality: i32,
-    pub implicits: Vec<String>,
-    pub affixes: Vec<String>,
+    pub affixes: Vec<Mod>,
 }
 
 pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, ParsedItem, E>
@@ -225,18 +251,31 @@ where
     for val in items {
         match val {
             ItemValue::Rarity(r) => item.rarity = r,
-            ItemValue::Name(name, Some(base)) => {
+            ItemValue::BaseType { base, name } => {
                 item.name = name;
                 item.base_line = base;
             }
-            ItemValue::Name(name, None) => item.name = name,
             ItemValue::UniqueId(id) => item.unique_id = id,
             ItemValue::ItemLevel(il) => item.item_lvl = il,
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
             ItemValue::Sockets(s) => item.sockets = s,
             ItemValue::Quality(q) => item.quality = q,
-            ItemValue::Implicits(implicits) => item.implicits = implicits,
-            ItemValue::Affix(affix) => item.affixes.push(affix),
+            ItemValue::Implicits(implicits) => {
+                item.affixes.extend(implicits.into_iter().map(|e| {
+                    if let ItemValue::Affix { value, type_ } = e {
+                        Mod { text: value, type_ }
+                    } else {
+                        Mod {
+                            text: "invalid".to_string(),
+                            type_: ModType::Cosmetic,
+                        }
+                    }
+                }))
+            }
+            ItemValue::Affix { value, type_ } => item.affixes.push(Mod { text: value, type_ }),
+            _ => {
+                todo!()
+            }
         };
     }
 
@@ -248,60 +287,17 @@ mod test {
     use super::*;
 
     #[test]
-    fn whitespace_test() {
-        assert!('\n'.is_whitespace());
-    }
-
-    #[test]
-    fn rarity_test() {
-        assert_eq!(rarity::<()>("Rarity: RARE"), Ok(("", "RARE")));
-        assert_eq!(rarity::<()>("Rarity: RARE\n"), Ok(("\n", "RARE")));
-    }
-
-    #[test]
-    fn name_base_line_test() {
-        assert_eq!(
-            name::<()>("Loath Cut\nSmall Jewel"),
-            Ok(("", ("Loath Cut", Some("Small Jewel"))))
-        );
-        assert_eq!(
-            name::<()>("Mega Flask\nSome affix"),
-            Ok(("\nSome affix", ("Mega Flask", None)))
-        );
-    }
-
-    #[test]
-    fn implicits_count_test() {
-        assert_eq!(implicits::<()>("Implicits: 0"), Ok(("", vec![])));
-        assert_eq!(
-            implicits::<()>("Implicits: 2\nAffix1\nAffix2"),
-            Ok(("", vec!["Affix1", "Affix2"]))
-        );
-        assert_eq!(
-            implicits::<()>(&"Implicits: no"),
-            Err(nom::Err::Failure(()))
-        );
-    }
-
-    #[test]
-    fn affix_test() {
-        assert_eq!(
-            affix::<()>("{crafted}Adds 2 Passive Skills"),
-            Ok(("", "Adds 2 Passive Skills"))
-        );
-        assert_eq!(
-            affix::<()>("Added Small Passive Skills also grant: +3% to Chaos Resistance\n"),
-            Ok((
-                "\n",
-                "Added Small Passive Skills also grant: +3% to Chaos Resistance"
-            ))
-        );
-
-        assert_eq!(affix::<()>(""), Ok(("", "")));
+    fn name_check() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
+        let i = "Loath Cut\nSmall Cluster Jewel";
+        let (_, ret) = name::<()>(i)?;
+        assert_eq!(ret, ItemValue::BaseType{ base: "Small Cluster Jewel".to_string(), name: "Loath Cut".to_string()});
+        Ok(())
     }
 
     #[test]
     fn simple_pob_item() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
         let item = r#"
             Rarity: RARE
 Loath Cut
@@ -328,19 +324,35 @@ Added Small Passive Skills also grant: +5 to Strength
         assert_eq!(item.item_lvl, 84);
         assert_eq!(item.lvl_req, 54);
         assert_eq!(
-            item.implicits,
+            item.affixes,
             vec![
-                "Adds 2 Passive Skills",
-                "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits"
+                Mod::from_str_type("Adds 2 Passive Skills", ModType::Crafted),
+                Mod::from_str_type(
+                    "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits",
+                    ModType::Crafted
+                ),
+                Mod::from_str_type(
+                    "Added Small Passive Skills also grant: +3% to Chaos Resistance",
+                    ModType::Explicit
+                ),
+                Mod::from_str_type(
+                    "Added Small Passive Skills also grant: +5 to Maximum Energy Shield",
+                    ModType::Explicit
+                ),
+                Mod::from_str_type(
+                    "Added Small Passive Skills also grant: +5 to Strength",
+                    ModType::Explicit
+                ),
+                Mod::from_str_type("1 Added Passive Skill is Elegant Form", ModType::Explicit),
             ]
         );
-        assert_eq!(item.affixes.len(), 4);
         Ok(())
     }
 
     #[test]
     fn pob_item1() -> Result<(), anyhow::Error> {
         use nom::error::VerboseError;
+        dotenv::dotenv().ok();
 
         let item = r#"
         			Rarity: MAGIC
@@ -353,7 +365,27 @@ Implicits: 0
 21% increased Movement Speed during Flask effect
 38% increased Duration"#;
 
-        let (_, _) = parse_pob_item::<VerboseError<&str>>(&item)?;
+        let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
+        assert_eq!(item.rarity, "MAGIC");
+        assert_eq!(item.name, "Experimenter's Silver Flask of Adrenaline");
+        assert_eq!(item.base_line, "Silver Flask");
+        assert_eq!(
+            item.unique_id,
+            "c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4"
+        );
+        assert_eq!(item.item_lvl, 53);
+        assert_eq!(item.lvl_req, 22);
+        assert_eq!(
+            item.affixes,
+            vec![
+                Mod::from_str_type(
+                    "21% increased Movement Speed during Flask effect",
+                    ModType::Explicit
+                ),
+                Mod::from_str_type("38% increased Duration", ModType::Explicit),
+            ]
+        );
+
         Ok(())
     }
 }
