@@ -252,8 +252,7 @@ fn root<
 >(
     i: &'a str,
 ) -> IResult<&'a str, Vec<ItemValue>, E> {
-    let (i, mut header_vals) =
-        many_m_n(2, 2, delimited(sp, item_value_header, line_ending))(i)?;
+    let (i, mut header_vals) = many_m_n(2, 2, delimited(sp, item_value_header, line_ending))(i)?;
     let (i, mut vals) = many0(delimited(sp, item_value, line_ending))(i)?;
     let (i, end_val) = item_value(i)?;
     header_vals.append(&mut vals);
@@ -306,9 +305,7 @@ where
                 }))
             }
             ItemValue::Affix { value, type_ } => item.affixes.push(Mod { text: value, type_ }),
-            _ => {
-                todo!()
-            }
+            _ => {}
         };
     }
 
