@@ -1,7 +1,6 @@
-use super::parser::{parse_pob_item, ParsedItem};
+use super::{parser::{parse_pob_item, ParsedItem}, item::Item};
 use crate::{
     domain::{
-        item::Item,
         types::{Class, ItemLvl, League, Mod, ModType, Rarity},
     },
     infrastructure::poe_data::BASE_ITEMS,

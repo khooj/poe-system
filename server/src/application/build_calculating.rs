@@ -1,5 +1,5 @@
 use crate::domain::item::{Item, SimilarityScore};
-use crate::domain::pob::pob::Pob;
+use crate::domain::pob::{pob::Pob, item::Item as PobItem};
 use crate::domain::types::Class;
 use crate::domain::PastebinBuildUrl;
 use crate::infrastructure::repositories::postgres::build_repository::{
@@ -132,6 +132,7 @@ impl BuildCalculating {
             let item = item.clone();
             trace!("searching similar item");
             let (found_item, score) = self.find_similar_item(&item, &build_info.league).await;
+            let item: Item = item.into();
             match item.class {
                 Class::Helmet => {
                     required_items.helmet = item;
@@ -175,7 +176,7 @@ impl BuildCalculating {
     }
 
     #[instrument(skip(self, item))]
-    async fn find_similar_item(&self, item: &Item, league: &str) -> (Item, SimilarityScore) {
+    async fn find_similar_item(&self, item: &PobItem, league: &str) -> (Item, SimilarityScore) {
         use crate::infrastructure::poe_data::BASE_ITEMS;
         use tokio_stream::StreamExt;
 
@@ -197,13 +198,13 @@ impl BuildCalculating {
             trace!("processing new db item");
 
             let db_item = db_item.unwrap();
-            let db_item = if let Ok(k) = db_item.try_into() {
+            let db_item: Item = if let Ok(k) = db_item.try_into() {
                 k
             } else {
                 continue;
             };
 
-            let calc = item.calculate_similarity_score(&db_item);
+            let calc = db_item.calculate_similarity_score_with_pob(item);
             if calc > highscore {
                 info!("get higher score: {:?}", calc);
                 highscore = calc;

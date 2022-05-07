@@ -2,6 +2,7 @@ use super::types::{
     Category, Hybrid, Influence, ItemLvl, League, Mod, ModType, Rarity, Subcategory,
     Class,
 };
+use super::pob::item::Item as PobItem;
 use anyhow::Result;
 use std::default::Default;
 use std::ops::Deref;
@@ -40,6 +41,32 @@ impl Deref for SimilarityScore {
 }
 
 impl Item {
+    pub fn calculate_similarity_score_with_pob(&self, item: &PobItem) -> SimilarityScore {
+        use itertools::Itertools;
+        use std::collections::HashMap;
+        use strsim::levenshtein;
+
+        let mods_scores = self
+            .mods
+            .iter()
+            .cartesian_product(item.mods.iter())
+            .group_by(|(el, _)| el.text.clone())
+            .into_iter()
+            .map(|(k, grp)| {
+                (
+                    k,
+                    grp.map(|(o, d)| levenshtein(&d.text, &o.text) as i64)
+                        .min()
+                        .unwrap_or(0i64),
+                )
+            })
+            .collect::<HashMap<String, i64>>();
+
+        let score = mods_scores.values().sum();
+
+        SimilarityScore(score)
+    }
+
     pub fn calculate_similarity_score(&self, item: &Item) -> SimilarityScore {
         use itertools::Itertools;
         use std::collections::HashMap;
