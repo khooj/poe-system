@@ -39,7 +39,7 @@ impl<'a> Pob {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ItemSet {
     title: String,
     id: i32,
@@ -198,6 +198,7 @@ impl<'a> PobDocument<'a> {
 #[cfg(test)]
 mod tests {
     const TESTPOB: &'static str = include_str!("pob.txt");
+    const TESTPOB2: &'static str = include_str!("pob2.txt");
 
     use super::Pob;
 
@@ -205,7 +206,20 @@ mod tests {
     fn parse_pob() -> Result<(), anyhow::Error> {
         dotenv::dotenv().ok();
         let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
-        let _ = pob.as_document()?;
+        let doc = pob.as_document()?;
+        let _ = doc.get_item_sets();
+        Ok(())
+    }
+
+    #[test]
+    fn parse_pob2() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
+        let pob = Pob::from_pastebin_data(TESTPOB2.to_owned())?;
+        let doc = pob.as_document()?;
+        // let sets = doc.get_item_sets();
+        // println!("sets names: {:?}", sets.iter().map(|e| &e.title).collect::<Vec<&String>>());
+        let set = doc.get_first_itemset()?;
+        println!("first itemset: {:?}", set);
         Ok(())
     }
 

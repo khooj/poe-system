@@ -27,6 +27,7 @@ enum ItemValue {
     Quality(i32),
     Sockets(String),
     Influence(String),
+    SkipLine,
 }
 
 fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {

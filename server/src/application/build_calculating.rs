@@ -82,7 +82,7 @@ impl BuildCalculating {
     pub async fn calculate_next_build(&self) -> Result<()> {
         let tasks = self.tasks_repository.get_latest_tasks(1).await?;
         if tasks.is_empty() {
-            debug!("no new tasks found, iterating");
+            trace!("no new tasks found, iterating");
             return Ok(());
         }
         let task = tasks
@@ -195,7 +195,6 @@ impl BuildCalculating {
             if db_item.is_err() {
                 continue;
             }
-            trace!("processing new db item");
 
             let db_item = db_item.unwrap();
             let db_item: Item = if let Ok(k) = db_item.try_into() {
@@ -204,6 +203,7 @@ impl BuildCalculating {
                 continue;
             };
 
+            debug!(req_item = ?item, db_item = ?db_item, "calculate similarity");
             let calc = db_item.calculate_similarity_score_with_pob(item);
             if calc > highscore {
                 info!("get higher score: {:?}", calc);
