@@ -72,7 +72,7 @@ pub enum Class {
     Helmet,
     Shield,
     StackableCurrency,
-    Scepter,
+    Sceptre,
     UtilityFlask,
     CriticalUtilityFlask,
     Map,

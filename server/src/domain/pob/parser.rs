@@ -10,6 +10,7 @@ use nom::{
 };
 use std::num::ParseIntError;
 use std::str::FromStr;
+use tracing::info;
 
 #[derive(Debug, PartialEq)]
 enum ItemValue {
@@ -201,7 +202,7 @@ fn root<
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct PobItem {
+pub struct ParsedItem {
     pub rarity: String,
     pub name: String,
     pub base_line: String,
@@ -214,12 +215,12 @@ pub struct PobItem {
     pub affixes: Vec<String>,
 }
 
-pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, PobItem, E>
+pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, ParsedItem, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
     let (i, items) = root(i)?;
-    let mut item = PobItem::default();
+    let mut item = ParsedItem::default();
 
     for val in items {
         match val {

@@ -6,6 +6,7 @@ use sqlx::types::Json;
 use sqlx::types::Uuid;
 use std::convert::TryInto;
 use std::str::FromStr;
+use anyhow::anyhow;
 
 pub struct RawItem {
     pub id: String,
@@ -94,7 +95,9 @@ impl TryInto<DomainItem> for RawItem {
         push_mods(&mut mods, fractured_mods, ModType::Fractured);
         push_mods(&mut mods, veiled_mods, ModType::Veiled);
 
-        let itemclass = BASE_ITEMS.get_item_class(&base_type);
+        let itemclass = BASE_ITEMS
+            .get_item_class(&base_type)
+            .ok_or(anyhow!("can't find itemclass for basetype: {}", base_type))?;
         let class = Class::from_itemclass(&itemclass)?;
 
         Ok(DomainItem {

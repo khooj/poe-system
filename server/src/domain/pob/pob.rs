@@ -1,5 +1,11 @@
-use super::parser::{parse_pob_item, PobItem as ParsedItem};
-use crate::domain::{types::{ItemLvl, League, Mod, ModType, Rarity}, item::Item};
+use super::parser::{parse_pob_item, ParsedItem};
+use crate::{
+    domain::{
+        item::Item,
+        types::{Class, ItemLvl, League, Mod, ModType, Rarity},
+    },
+    infrastructure::poe_data::BASE_ITEMS,
+};
 use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
 use roxmltree::{Document, Node};
@@ -8,7 +14,8 @@ use std::{
     convert::{TryFrom, TryInto},
     str::FromStr,
 };
-use tracing::{event, Level};
+use tracing::{error, info};
+use anyhow::anyhow;
 
 pub struct Pob {
     original: String,
@@ -86,25 +93,29 @@ impl TryInto<Item> for ParsedItem {
                 .iter()
                 .map(|e| Mod::from_str_type(e, ModType::Explicit)),
         );
+
+        let itemclass = BASE_ITEMS.get_item_class(&self.base_line).ok_or(anyhow!(
+            "can't get itemclass from basetype: {}",
+            self.base_line
+        ))?;
         Ok(Item {
             league: League::Standard,
             item_lvl,
             name: self.name.to_owned(),
-            base_type: self.base_line.to_owned(),
+            base_type: self.base_line,
+            mods,
+            class: match Class::from_itemclass(itemclass) {
+                Ok(k) => k,
+                Err(e) => {
+                    error!(
+                        "can't get class from given itemclass: {} with err: {}",
+                        itemclass, e
+                    );
+                    Class::default()
+                }
+            },
             ..Item::default()
         })
-    }
-}
-
-pub struct PobItem(String);
-
-impl TryFrom<PobItem> for Item {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PobItem) -> Result<Self, Self::Error> {
-        let (_, parsed_item) = parse_pob_item::<()>(&value.0)?;
-
-        Ok(parsed_item.try_into()?)
     }
 }
 
@@ -135,7 +146,7 @@ impl<'a> PobDocument<'a> {
         let items_node = match nodes.find(|&x| x.tag_name().name() == "Items") {
             Some(k) => k,
             None => {
-                event!(Level::INFO, "pob does not have any items");
+                info!("pob does not have any items");
                 return vec![];
             }
         };
@@ -144,11 +155,12 @@ impl<'a> PobDocument<'a> {
             if item.tag_name().name() == "Item" {
                 let id = item.attribute("id").unwrap();
                 let id = i32::from_str(id).unwrap();
-                let item_parsed = match Item::try_from(PobItem(item.text().unwrap().to_owned())) {
+                let (_, itm) =
+                    parse_pob_item::<()>(&item.text().unwrap_or("")).expect("can't parse item");
+                let item_parsed = match itm.try_into() {
                     Ok(k) => k,
                     Err(e) => {
-                        event!(
-                            Level::ERROR,
+                        error!(
                             "cant convert into domain item: {} with err: {}",
                             item.text().unwrap(),
                             e
@@ -182,12 +194,15 @@ impl<'a> PobDocument<'a> {
 
     pub fn get_itemset(&self, title: &str) -> Result<ItemSet, anyhow::Error> {
         if title.is_empty() {
-            return self.get_first_itemset()
+            return self.get_first_itemset();
         }
 
         let itemsets = self.get_item_sets();
 
-        itemsets.into_iter().find(|e| e.title == title).ok_or(anyhow::anyhow!("cant find itemset"))
+        itemsets
+            .into_iter()
+            .find(|e| e.title == title)
+            .ok_or(anyhow::anyhow!("cant find itemset"))
     }
 }
 
@@ -199,6 +214,7 @@ mod tests {
 
     #[test]
     fn parse_pob() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
         let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
         let _ = pob.as_document()?;
         Ok(())
@@ -206,6 +222,7 @@ mod tests {
 
     #[test]
     fn check_itemsets() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
         let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
         let doc = pob.as_document()?;
         let itemsets = doc.get_item_sets();
@@ -215,6 +232,7 @@ mod tests {
         assert_eq!(itemsets[1].title(), "TR Champ High Budget");
         assert_eq!(itemsets[1].id(), 2);
         assert_eq!(itemsets[0].items().len(), 18);
+        println!("{:?}", itemsets[0].items);
         Ok(())
     }
 }

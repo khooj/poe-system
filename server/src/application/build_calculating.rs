@@ -13,7 +13,7 @@ use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
-use tracing::{debug, trace, error, info, instrument};
+use tracing::{debug, trace, error, warn, info, instrument};
 
 #[derive(Deserialize, Serialize)]
 struct CalculateBuildTaskData {
@@ -181,7 +181,13 @@ impl BuildCalculating {
 
         let mut highscore = SimilarityScore::default();
         let mut result_item = Item::default();
-        let alternate_types = BASE_ITEMS.get_alternate_types(&item.base_type);
+        let alternate_types = match BASE_ITEMS.get_alternate_types(&item.base_type) {
+            Some(k) => k,
+            None => {
+                warn!("can't find alternate types, skipping this item");
+                return (result_item, highscore);
+            }
+        };
         let mut cursor = self.repository.get_raw_items_cursor(&alternate_types, league).await;
         info!("start checking similar items: {:?}", item);
         while let Some(db_item) = cursor.next().await {

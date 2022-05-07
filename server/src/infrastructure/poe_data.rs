@@ -88,16 +88,23 @@ impl BaseTypesData {
         BaseTypesData { base_type_to_data }
     }
 
-    pub fn get_alternate_types(&self, base_type: &str) -> Vec<&str> {
-        let info = &self.base_type_to_data[base_type];
-        info.to_alternate_types_by_itemclass
-            .iter()
-            .map(|e| e.as_str())
-            .collect()
+    pub fn get_alternate_types(&self, base_type: &str) -> Option<Vec<&str>> {
+        match self.base_type_to_data.get(base_type) {
+            Some(k) => Some(
+                k.to_alternate_types_by_itemclass
+                    .iter()
+                    .map(|e| e.as_str())
+                    .collect(),
+            ),
+            None => None,
+        }
     }
 
-    pub fn get_item_class(&self, base_type: &str) -> &str {
-        &self.base_type_to_data[base_type].item_class
+    pub fn get_item_class(&self, base_type: &str) -> Option<&str> {
+        match self.base_type_to_data.get(base_type) {
+            Some(k) => Some(&k.item_class),
+            None => None,
+        }
     }
 }
 
@@ -110,16 +117,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn check_base_items_const() {
+    fn check_base_items_const() -> Result<()> {
         dotenv::dotenv().ok();
 
-        let types = BASE_ITEMS.get_alternate_types("Champion Kite Shield");
+        let types = BASE_ITEMS
+            .get_alternate_types("Champion Kite Shield")
+            .ok_or(anyhow!("err"))?;
         assert!(types.contains(&"Plank Kite Shield"));
-        let types = BASE_ITEMS.get_alternate_types("The Porcupine");
+        let types = BASE_ITEMS
+            .get_alternate_types("The Porcupine")
+            .ok_or(anyhow!("err"))?;
         assert!(types.contains(&"The Doctor"));
 
-        let item_class = BASE_ITEMS.get_item_class("Champion Kite Shield");
+        let item_class = BASE_ITEMS
+            .get_item_class("Champion Kite Shield")
+            .ok_or(anyhow!("err"))?;
         assert_eq!(item_class, "Shield");
-
+        Ok(())
     }
 }
