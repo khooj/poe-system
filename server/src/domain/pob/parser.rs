@@ -5,8 +5,8 @@ use nom::{
     character::complete::{alpha1, alphanumeric1, digit1, line_ending, not_line_ending},
     combinator::{cut, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
-    multi::{many0, many_m_n},
-    sequence::{pair, preceded, terminated},
+    multi::{length_count, many0, many_m_n},
+    sequence::{pair, preceded, terminated, delimited},
     IResult,
 };
 use std::num::ParseIntError;
@@ -41,7 +41,7 @@ fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
 fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, &'a str, E> {
-    context("rarity", preceded(tag("Rarity: "), cut(alpha1)))(i)
+    context("rarity", delimited(tag("Rarity: "), alpha1, line_ending))(i)
 }
 
 fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -143,19 +143,47 @@ fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<ItemValue>, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
-    let (i, implicits_count) = context(
-        "implicits_count",
-        map_res(preceded(tag("Implicits: "), cut(digit1)), |out: &str| {
-            i32::from_str(out)
-        }),
-    )(i)?;
-
     context(
-        "implicits",
-        many_m_n(
-            implicits_count as usize,
-            implicits_count as usize,
+        "implicits_count",
+        length_count(
+            map(preceded(tag("Implicits: "), digit1), |out: &str| {
+                usize::from_str(out).unwrap_or(0usize)
+            }),
             preceded(sp, |i| affix(i, ModType::Implicit)),
+        ),
+    )(i)
+}
+
+fn skip_line_with_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+    t: &'a str,
+) -> IResult<&'a str, ItemValue, E> {
+    context(
+        "skip_line_tag",
+        preceded(
+            sp,
+            map(preceded(tag(t), cut(not_line_ending)), |_| {
+                ItemValue::SkipLine
+            }),
+        ),
+    )(i)
+}
+
+fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+    default: ModType,
+) -> IResult<&'a str, ItemValue, E> {
+    context(
+        "affix_internal",
+        map(
+            preceded(
+                alt((tag("{crafted}"), tag("{range:1}"))),
+                cut(not_line_ending),
+            ),
+            |e: &str| ItemValue::Affix {
+                value: e.to_string(),
+                type_: default,
+            },
         ),
     )(i)
 }
@@ -164,20 +192,32 @@ fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
     default: ModType,
 ) -> IResult<&'a str, ItemValue, E> {
-    let (i, (crafted, value)) =
-        context("affix", pair(opt(tag("{crafted}")), cut(not_line_ending)))(i)?;
+    context(
+        "affix",
+        preceded(
+            sp,
+            alt((
+                |i| skip_line_with_tag(i, "Prefix: "),
+                |i| skip_line_with_tag(i, "Suffix: "),
+                |i| skip_line_with_tag(i, "Crafted: "),
+                |i| affix_internal(i, default),
+            )),
+        ),
+    )(i)
+    // let (i, (crafted, value)) =
+    //     context("affix", pair(opt(tag("{crafted}")), cut(not_line_ending)))(i)?;
 
-    Ok((
-        i,
-        ItemValue::Affix {
-            type_: if crafted.is_some() {
-                ModType::Crafted
-            } else {
-                default
-            },
-            value: value.to_string(),
-        },
-    ))
+    // Ok((
+    //     i,
+    //     ItemValue::Affix {
+    //         type_: if crafted.is_some() {
+    //             ModType::Crafted
+    //         } else {
+    //             default
+    //         },
+    //         value: value.to_string(),
+    //     },
+    // ))
 }
 
 fn item_value_header<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -292,7 +332,28 @@ mod test {
         dotenv::dotenv().ok();
         let i = "Loath Cut\nSmall Cluster Jewel";
         let (_, ret) = name::<()>(i)?;
-        assert_eq!(ret, ItemValue::BaseType{ base: "Small Cluster Jewel".to_string(), name: "Loath Cut".to_string()});
+        assert_eq!(
+            ret,
+            ItemValue::BaseType {
+                base: "Small Cluster Jewel".to_string(),
+                name: "Loath Cut".to_string()
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn implicits_check() -> Result<(), anyhow::Error> {
+        use nom::error::VerboseError;
+        let i = "Implicits: 1\nAdds 2 Passive Skills";
+        let (_, ret) = implicits::<VerboseError<&str>>(i)?;
+        assert_eq!(
+            ret,
+            vec![ItemValue::Affix {
+                value: "Adds 2 Passive Skills".to_string(),
+                type_: ModType::Implicit
+            }]
+        );
         Ok(())
     }
 
