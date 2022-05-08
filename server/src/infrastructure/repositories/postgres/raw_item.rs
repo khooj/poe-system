@@ -8,6 +8,7 @@ use std::convert::TryInto;
 use std::str::FromStr;
 use anyhow::anyhow;
 
+#[derive(Debug)]
 pub struct RawItem {
     pub id: String,
     pub account_name: String,

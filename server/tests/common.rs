@@ -1,12 +1,9 @@
-use std::env;
-use testcontainers::{
-    clients::Cli,
-    images::generic::{GenericImage, Stream, WaitFor},
-    images::postgres::Postgres,
-    Container, Docker, Image, RunArgs,
+use testcontainers::{Container, Docker, Image};
+use poe_system::{
+    infrastructure::repositories::postgres::raw_item_repository::RawItemRepository,
+    interfaces::public_stash_retriever::PublicStashChange,
 };
-use tokio::process::*;
-use tokio::select;
+use anyhow::Result;
 
 pub struct ContainerDrop<'d, D: Docker, I: Image> {
     pub container: Container<'d, D, I>,
@@ -36,3 +33,23 @@ impl<'d, D: Docker, I: Image> Drop for ContainerDrop<'d, D, I> {
     }
 }
 
+const EXAMPLE_STASH_CHANGE: &'static str = include_str!("example-stash.json");
+
+pub async fn insert_raw_items(repo: &RawItemRepository) -> Result<()> {
+    let mut tr = repo.begin().await?;
+
+    let stash: PublicStashChange = serde_json::from_str(EXAMPLE_STASH_CHANGE)?;
+    for i in stash.items {
+        repo.insert_raw_item(
+            &mut tr,
+            i.id.as_ref().unwrap(),
+            stash.account_name.as_ref().unwrap(),
+            stash.stash.as_ref().unwrap(),
+            i.clone(),
+        )
+        .await?;
+    }
+
+    tr.commit().await?;
+    Ok(())
+}

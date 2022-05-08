@@ -150,6 +150,7 @@ impl BuildCalculating {
             let item: Item = item.into();
             match item.class {
                 Class::Helmet => {
+                    // println!("required: {:?}\nfound: {:?}", item, found_item);
                     required_items.helmet = item;
                     found_items.helmet = found_item;
                 }
@@ -195,6 +196,8 @@ impl BuildCalculating {
         use crate::infrastructure::poe_data::BASE_ITEMS;
         use tokio_stream::StreamExt;
 
+        debug!("check required item short: {} {}", item.name, item.base_type);
+        trace!(item = ?item, "checking required item");
         let mut highscore = SimilarityScore::default();
         let mut result_item = Item::default();
         let alternate_types = match BASE_ITEMS.get_alternate_types(&item.base_type) {
@@ -204,33 +207,43 @@ impl BuildCalculating {
                 return (result_item, highscore);
             }
         };
+        trace!("found alternate types: {:?}", alternate_types);
         let mut cursor = self
             .repository
             .get_raw_items_cursor(&alternate_types, league)
             .await;
-        info!("start checking similar items: {:?}", item);
         while let Some(db_item) = cursor.next().await {
             if db_item.is_err() {
-                continue;
+                match db_item {
+                    Err(e) => {
+                        error!(err = %e, "continue");
+                        continue;
+                    }
+                    _ => {}
+                }
             }
 
             let db_item = db_item.unwrap();
+            trace!(db_item = ?db_item, "db item before convert");
             let db_item: Item = if let Ok(k) = db_item.try_into() {
                 k
             } else {
                 continue;
             };
+            trace!(db_item = ?db_item, "db item after convert");
 
-            debug!(req_item = ?item, db_item = ?db_item, "calculate similarity");
+            debug!("calculate similarity with {} {}", db_item.name, db_item.base_type);
+            trace!(req_item = ?item, db_item = ?db_item, "calculate similarity");
             let calc = db_item.calculate_similarity_score_with_pob(item);
             if calc > highscore {
-                info!("get higher score: {:?}", calc);
+                trace!("get higher score: {:?}", calc);
                 highscore = calc;
                 result_item = db_item;
             }
         }
 
-        info!("found item {:?} with score {:?}", result_item, highscore);
+        debug!("found item {} {} with score {:?}", result_item.name, result_item.base_type, highscore);
+        trace!("found item {:?} with score {:?}", result_item, highscore);
         (result_item, highscore)
     }
 }

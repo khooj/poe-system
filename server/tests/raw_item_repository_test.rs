@@ -1,25 +1,17 @@
 mod common;
 
 use anyhow::Result;
-use common::ContainerDrop;
-use poe_system::interfaces::public_stash_retriever::Item;
+use common::{insert_raw_items, ContainerDrop};
 use poe_system::{
-    infrastructure::repositories::postgres::{
-        raw_item::RawItem, raw_item_repository::RawItemRepository,
-    },
-    interfaces::public_stash_retriever::PublicStashChange,
+    infrastructure::poe_data::BASE_ITEMS,
+    infrastructure::repositories::postgres::raw_item_repository::RawItemRepository,
 };
 use sqlx::PgPool;
-use testcontainers::{
-    clients::Cli,
-    images::generic::{GenericImage, Stream, WaitFor},
-    images::postgres::{Postgres, PostgresArgs},
-    Container, Docker, Image, RunArgs,
-};
+use testcontainers::{clients::Cli, images::postgres::Postgres, Docker};
 
 #[tokio::test]
 async fn raw_item_repository_test() -> Result<()> {
-    // env::set_var("RUST_LOG", "webdav_ss=debug,webdav_handler=debug");
+    dotenv::dotenv().ok();
     let image = Postgres::default().with_version(14);
 
     let docker = Cli::default();
@@ -36,31 +28,10 @@ async fn raw_item_repository_test() -> Result<()> {
     let repo = RawItemRepository::new(pool).await;
 
     insert_raw_items(&repo).await?;
-    check_get_raw_items(&repo, &["Visored Sallet", "Conjurer Gloves"], "Standard", 2).await?;
-    check_get_raw_items(&repo, &["Visored Sallet", "Conjurer Gloves"], "Hardcore", 0).await?;
-    check_get_raw_items(&repo, &["Visored Sallet", "Gloves"], "Standard", 1).await?;
+    let alternate_types = BASE_ITEMS.get_alternate_types("Visored Sallet").unwrap();
+    check_get_raw_items(&repo, &alternate_types, "Standard", 5).await?;
+    check_get_raw_items(&repo, &alternate_types, "Hardcore", 0).await?;
 
-    Ok(())
-}
-
-const EXAMPLE_STASH_CHANGE: &'static str = include_str!("example-stash.json");
-
-async fn insert_raw_items(repo: &RawItemRepository) -> Result<()> {
-    let mut tr = repo.begin().await?;
-
-    let stash: PublicStashChange = serde_json::from_str(EXAMPLE_STASH_CHANGE)?;
-    for i in stash.items {
-        repo.insert_raw_item(
-            &mut tr,
-            i.id.as_ref().unwrap(),
-            stash.account_name.as_ref().unwrap(),
-            stash.stash.as_ref().unwrap(),
-            i.clone(),
-        )
-        .await?;
-    }
-
-    tr.commit().await?;
     Ok(())
 }
 

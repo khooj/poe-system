@@ -2,7 +2,7 @@ mod common;
 mod server;
 
 use anyhow::Result;
-use common::ContainerDrop;
+use common::{insert_raw_items, ContainerDrop};
 use poe_system::application::build_calculating::BuildCalculating;
 use poe_system::infrastructure::repositories::postgres::build_repository::BuildRepository;
 use poe_system::infrastructure::repositories::postgres::task_repository::TaskRepository;
@@ -42,6 +42,9 @@ impl Repos {
 #[tokio::test]
 async fn build_calculating_test() -> Result<()> {
     dotenv::dotenv().ok();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
 
     let image = Postgres::default().with_version(14);
 
@@ -60,6 +63,8 @@ async fn build_calculating_test() -> Result<()> {
     let build_repo = BuildRepository::new(pool.clone());
     let tasks_repo = TaskRepository::new(pool);
 
+    insert_raw_items(&items_repo).await?;
+
     let repos = Repos {
         items: items_repo,
         tasks: tasks_repo,
@@ -74,13 +79,12 @@ async fn build_calculating_test() -> Result<()> {
 const POB1: &str = include_str!("pob.txt");
 
 async fn check_build_calculating(repos: &Repos) -> Result<()> {
-    let server =
-        server::http(|req| async move { 
-            assert_eq!(req.method(), "GET");
-            assert_eq!(req.uri(), "/asd");
+    let server = server::http(|req| async move {
+        assert_eq!(req.method(), "GET");
+        assert_eq!(req.uri(), "/asd");
 
-            http::Response::builder().body(POB1.into()).unwrap() 
-        });
+        http::Response::builder().body(POB1.into()).unwrap()
+    });
 
     let build_calc = repos.build_calculating(&server)?;
     println!("adding build for calc");
