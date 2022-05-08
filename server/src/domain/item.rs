@@ -1,12 +1,11 @@
-use super::types::{
-    Category, Hybrid, Influence, ItemLvl, League, Mod, ModType, Rarity, Subcategory,
-    Class,
-};
 use super::pob::item::Item as PobItem;
+use super::types::{
+    Category, Class, Hybrid, Influence, ItemLvl, League, Mod, ModType, Rarity, Subcategory,
+};
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::default::Default;
 use std::ops::Deref;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Item {
@@ -46,6 +45,14 @@ impl Item {
         use std::collections::HashMap;
         use strsim::levenshtein;
 
+        // not supported for now
+        if self.mods.is_empty() {
+            return SimilarityScore(0);
+        }
+
+        let single_mod_score: f32 = 1000.0 / self.mods.len() as f32;
+        let upper_levenstein_error = 50.0; // symbols
+
         let mods_scores = self
             .mods
             .iter()
@@ -55,14 +62,17 @@ impl Item {
             .map(|(k, grp)| {
                 (
                     k,
-                    grp.map(|(o, d)| levenshtein(&d.text, &o.text) as i64)
-                        .min()
-                        .unwrap_or(0i64),
+                    single_mod_score
+                        * (1.0 - (grp
+                            .map(|(o, d)| levenshtein(&d.text, &o.text) as f32)
+                            .reduce(f32::min)
+                            .unwrap_or(upper_levenstein_error)
+                            / upper_levenstein_error)),
                 )
             })
-            .collect::<HashMap<String, i64>>();
+            .collect::<HashMap<String, f32>>();
 
-        let score = mods_scores.values().sum();
+        let score: i64 = f32::floor(mods_scores.values().sum()) as i64;
 
         SimilarityScore(score)
     }

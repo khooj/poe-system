@@ -21,6 +21,7 @@ use testcontainers::{
     images::postgres::{Postgres, PostgresArgs},
     Container, Docker, Image, RunArgs,
 };
+use tracing::debug;
 
 struct Repos {
     items: RawItemRepository,
@@ -42,9 +43,9 @@ impl Repos {
 #[tokio::test]
 async fn build_calculating_test() -> Result<()> {
     dotenv::dotenv().ok();
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
+    // tracing_subscriber::fmt()
+    //     .with_max_level(tracing::Level::DEBUG)
+    //     .init();
 
     let image = Postgres::default().with_version(14);
 
@@ -96,8 +97,9 @@ async fn check_build_calculating(repos: &Repos) -> Result<()> {
     let build = build_calc.get_calculated_build(&id).await?;
     println!("id: {}", id);
     let helmet = build.found_items.0.helmet;
-    assert_eq!(&helmet.base_type, "Visored Sallet");
-    assert_eq!(&helmet.name, "Doom Halo");
+    debug!("required {:?}\nfound {:?}", build.required_items.0.helmet, helmet);
+    assert_eq!(&helmet.base_type, "Gladiator Helmet");
+    assert_eq!(&helmet.name, "Blood Corona");
 
     Ok(())
 }
