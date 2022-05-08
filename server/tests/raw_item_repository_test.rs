@@ -13,6 +13,7 @@ use sqlx::PgPool;
 use testcontainers::{
     clients::Cli,
     images::generic::{GenericImage, Stream, WaitFor},
+    images::postgres::{Postgres, PostgresArgs},
     Container, Docker, Image, RunArgs,
 };
 
@@ -20,23 +21,22 @@ use testcontainers::{
 async fn raw_item_repository_test() -> Result<()> {
     // env::set_var("RUST_LOG", "webdav_ss=debug,webdav_handler=debug");
 
-    let args = RunArgs::default().with_mapped_port((2345, 5432));
-    let image = GenericImage::new("postgres:14-alpine")
-        .with_wait_for(WaitFor::LogMessage {
-            message: "database system is ready to accept connections".into(),
-            stream: Stream::StdOut,
-        })
-        .with_env_var("POSTGRES_USER", "admin")
-        .with_env_var("POSTGRES_PASSWORD", "admin");
+    let image = Postgres::default().with_version(14);
 
     let docker = Cli::default();
-    let cont = docker.run_with_args(image, args);
+    let cont = docker.run(image);
+    let port = cont.get_host_port(5432).unwrap();
     let _cont = ContainerDrop { container: cont };
 
-    let pool = PgPool::connect("postgres://admin:admin@localhost:2345/admin").await?;
+    let pool = PgPool::connect(&format!(
+        "postgres://postgres:postgres@localhost:{}/postgres",
+        port
+    ))
+    .await?;
+    sqlx::migrate!().run(&pool).await?;
     let repo = RawItemRepository::new(pool).await;
 
-    // insert_raw_items(&repo).await?;
+    insert_raw_items(&repo).await?;
 
     Ok(())
 }
