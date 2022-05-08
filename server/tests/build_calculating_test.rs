@@ -13,6 +13,7 @@ use poe_system::{
     },
     interfaces::public_stash_retriever::PublicStashChange,
 };
+use server::Server;
 use sqlx::PgPool;
 use testcontainers::{
     clients::Cli,
@@ -21,8 +22,27 @@ use testcontainers::{
     Container, Docker, Image, RunArgs,
 };
 
+struct Repos {
+    items: RawItemRepository,
+    tasks: TaskRepository,
+    builds: BuildRepository,
+}
+
+impl Repos {
+    fn build_calculating(&self, server: &Server) -> Result<BuildCalculating> {
+        BuildCalculating::new_with_host(
+            self.items.clone(),
+            self.tasks.clone(),
+            self.builds.clone(),
+            &format!("http://{}", server.addr().to_string().as_str()),
+        )
+    }
+}
+
 #[tokio::test]
 async fn build_calculating_test() -> Result<()> {
+    dotenv::dotenv().ok();
+
     let image = Postgres::default().with_version(14);
 
     let docker = Cli::default();
@@ -39,15 +59,41 @@ async fn build_calculating_test() -> Result<()> {
     let items_repo = RawItemRepository::new(pool.clone()).await;
     let build_repo = BuildRepository::new(pool.clone());
     let tasks_repo = TaskRepository::new(pool);
-    let server =
-        server::http(|req| async move { http::Response::builder().body("asd".into()).unwrap() });
 
-    let build_calculating = BuildCalculating::new_with_host(
-        items_repo,
-        tasks_repo,
-        build_repo,
-        server.addr().to_string().as_str(),
-    );
+    let repos = Repos {
+        items: items_repo,
+        tasks: tasks_repo,
+        builds: build_repo,
+    };
+
+    check_build_calculating(&repos).await?;
+
+    Ok(())
+}
+
+const POB1: &str = include_str!("pob.txt");
+
+async fn check_build_calculating(repos: &Repos) -> Result<()> {
+    let server =
+        server::http(|req| async move { 
+            assert_eq!(req.method(), "GET");
+            assert_eq!(req.uri(), "/asd");
+
+            http::Response::builder().body(POB1.into()).unwrap() 
+        });
+
+    let build_calc = repos.build_calculating(&server)?;
+    println!("adding build for calc");
+
+    let id = build_calc
+        .add_build_for_calculating("http://customurl.com/asd", "", "Standard")
+        .await?;
+    build_calc.calculate_next_build().await?;
+    let build = build_calc.get_calculated_build(&id).await?;
+    println!("id: {}", id);
+    let helmet = build.found_items.0.helmet;
+    assert_eq!(&helmet.base_type, "Visored Sallet");
+    assert_eq!(&helmet.name, "Doom Halo");
 
     Ok(())
 }

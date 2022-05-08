@@ -31,11 +31,11 @@ pub struct BuildItems {
 }
 
 pub struct Build {
-    id: Uuid,
-    itemset: String,
-    league: String,
-    required_items: Json<BuildItems>,
-    found_items: Json<BuildItems>,
+    pub id: Uuid,
+    pub itemset: String,
+    pub league: String,
+    pub required_items: Json<BuildItems>,
+    pub found_items: Json<BuildItems>,
 }
 
 impl Build {
@@ -97,7 +97,7 @@ SELECT id, itemset, league,
     required as "required_items: Json<BuildItems>",
     found as "found_items: Json<BuildItems>"
 FROM builds
-WHERE id = $1
+WHERE id = $1::uuid
             "#,
             id as &str,
         )

@@ -155,50 +155,6 @@
     },
     "query": "\nDELETE FROM raw_items WHERE account_name = $1 AND stash = $2 \n            "
   },
-  "9f42a78180d12fd3dc14d054624987b7cb2c6d4e7dfc8b6feb542abb210f138c": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "itemset",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "league",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "required_items: Json<BuildItems>",
-          "ordinal": 3,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "found_items: Json<BuildItems>",
-          "ordinal": 4,
-          "type_info": "Jsonb"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\nSELECT id, itemset, league, \n    required as \"required_items: Json<BuildItems>\",\n    found as \"found_items: Json<BuildItems>\"\nFROM builds\nWHERE id = $1\n            "
-  },
   "b2d281037153ddcef2aa302bc5f80c3185e4409455af4c0519307b48dd62203c": {
     "describe": {
       "columns": [
@@ -270,5 +226,49 @@
       }
     },
     "query": "UPDATE latest_stash SET stash_id = $1 WHERE stash_id = $2"
+  },
+  "e09417c2cb4d8e49503216a4d730640b62e386c20d2cbcd6be662bb81966af6e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "itemset",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "league",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "required_items: Json<BuildItems>",
+          "ordinal": 3,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "found_items: Json<BuildItems>",
+          "ordinal": 4,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\nSELECT id, itemset, league, \n    required as \"required_items: Json<BuildItems>\",\n    found as \"found_items: Json<BuildItems>\"\nFROM builds\nWHERE id = $1::uuid\n            "
   }
 }
