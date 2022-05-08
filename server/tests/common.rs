@@ -2,6 +2,7 @@ use std::env;
 use testcontainers::{
     clients::Cli,
     images::generic::{GenericImage, Stream, WaitFor},
+    images::postgres::Postgres,
     Container, Docker, Image, RunArgs,
 };
 use tokio::process::*;
@@ -34,3 +35,4 @@ impl<'d, D: Docker, I: Image> Drop for ContainerDrop<'d, D, I> {
         self.container.rm();
     }
 }
+

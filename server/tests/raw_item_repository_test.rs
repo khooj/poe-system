@@ -20,7 +20,6 @@ use testcontainers::{
 #[tokio::test]
 async fn raw_item_repository_test() -> Result<()> {
     // env::set_var("RUST_LOG", "webdav_ss=debug,webdav_handler=debug");
-
     let image = Postgres::default().with_version(14);
 
     let docker = Cli::default();
@@ -37,6 +36,9 @@ async fn raw_item_repository_test() -> Result<()> {
     let repo = RawItemRepository::new(pool).await;
 
     insert_raw_items(&repo).await?;
+    check_get_raw_items(&repo, &["Visored Sallet", "Conjurer Gloves"], "Standard", 2).await?;
+    check_get_raw_items(&repo, &["Visored Sallet", "Conjurer Gloves"], "Hardcore", 0).await?;
+    check_get_raw_items(&repo, &["Visored Sallet", "Gloves"], "Standard", 1).await?;
 
     Ok(())
 }
@@ -59,5 +61,25 @@ async fn insert_raw_items(repo: &RawItemRepository) -> Result<()> {
     }
 
     tr.commit().await?;
+    Ok(())
+}
+
+async fn check_get_raw_items(
+    repo: &RawItemRepository,
+    types: &[&str],
+    league: &str,
+    len: usize,
+) -> Result<()> {
+    use tokio_stream::StreamExt;
+    let mut s = repo.get_raw_items_cursor(types, league).await;
+
+    let mut items = vec![];
+    while let Some(db_item) = s.next().await {
+        let db_item = db_item.unwrap();
+        items.push(db_item);
+    }
+
+    assert_eq!(items.len(), len);
+
     Ok(())
 }

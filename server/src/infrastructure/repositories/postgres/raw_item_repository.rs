@@ -109,7 +109,7 @@ ON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"#,
             r#"
 SELECT id, account_name, stash, item as "item: Json<Item>" 
 FROM raw_items
-WHERE item ->> 'baseType' = $1 AND item ->> 'league' = $2
+WHERE item['baseType'] ?| $1 AND item ->> 'league' = $2
             "#,
             base_types as _,
             league,
