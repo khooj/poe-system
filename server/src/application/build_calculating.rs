@@ -1,7 +1,8 @@
 use crate::domain::item::{Item, SimilarityScore};
-use crate::domain::pob::{pob::Pob, item::Item as PobItem};
+use crate::domain::pob::{item::Item as PobItem, pob::Pob};
 use crate::domain::types::Class;
 use crate::domain::PastebinBuildUrl;
+use crate::infrastructure::pob_retriever::HttpPobRetriever;
 use crate::infrastructure::repositories::postgres::build_repository::{
     Build, BuildItems, BuildRepository,
 };
@@ -13,7 +14,7 @@ use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
-use tracing::{debug, trace, error, warn, info, instrument};
+use tracing::{debug, error, info, instrument, trace, warn};
 
 #[derive(Deserialize, Serialize)]
 struct CalculateBuildTaskData {
@@ -27,7 +28,7 @@ pub struct BuildCalculating {
     repository: RawItemRepository,
     tasks_repository: TaskRepository,
     build_repository: BuildRepository,
-    http_client: reqwest::Client,
+    pob_retriever: HttpPobRetriever,
 }
 
 impl BuildCalculating {
@@ -40,8 +41,22 @@ impl BuildCalculating {
             repository,
             tasks_repository,
             build_repository,
-            http_client: reqwest::Client::new(),
+            pob_retriever: HttpPobRetriever::new(),
         }
+    }
+
+    pub fn new_with_host(
+        repository: RawItemRepository,
+        tasks_repository: TaskRepository,
+        build_repository: BuildRepository,
+        host: &str,
+    ) -> Result<Self> {
+        Ok(BuildCalculating {
+            repository,
+            tasks_repository,
+            build_repository,
+            pob_retriever: HttpPobRetriever::new_with_host(host)?,
+        })
     }
 }
 
@@ -117,7 +132,7 @@ impl BuildCalculating {
         }
 
         let build_info: CalculateBuildTaskData = serde_json::from_value(data.clone())?;
-        let build = self.fetch_pob(&build_info.url).await?;
+        let build = self.pob_retriever.get_pob(&build_info.url).await?;
         trace!("got pob");
         let build_doc = build.as_document()?;
         let itemset = if build_info.itemset.is_empty() {
@@ -189,7 +204,10 @@ impl BuildCalculating {
                 return (result_item, highscore);
             }
         };
-        let mut cursor = self.repository.get_raw_items_cursor(&alternate_types, league).await;
+        let mut cursor = self
+            .repository
+            .get_raw_items_cursor(&alternate_types, league)
+            .await;
         info!("start checking similar items: {:?}", item);
         while let Some(db_item) = cursor.next().await {
             if db_item.is_err() {
@@ -214,19 +232,5 @@ impl BuildCalculating {
 
         info!("found item {:?} with score {:?}", result_item, highscore);
         (result_item, highscore)
-    }
-
-    #[instrument(err, skip(self))]
-    async fn fetch_pob(&self, url: &str) -> Result<Pob> {
-        let pastebin = PastebinBuildUrl::new(url)?;
-        let resp = self
-            .http_client
-            .get(&pastebin.pastebin_raw_url())
-            .send()
-            .await?;
-
-        let body = resp.text().await?;
-
-        Ok(Pob::from_pastebin_data(body)?)
     }
 }
