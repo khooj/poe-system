@@ -2,3 +2,4 @@ test.json
 **/target
 /.vscode
 /slice1
+**/dist

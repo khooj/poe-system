@@ -1,8 +1,7 @@
 use super::pob::item::Item as PobItem;
 use super::types::{
-    Category, Class, Hybrid, Influence, ItemLvl, League, Mod, ModType, Rarity, Subcategory,
+    Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory,
 };
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::default::Default;
 use std::ops::Deref;
@@ -63,11 +62,12 @@ impl Item {
                 (
                     k,
                     single_mod_score
-                        * (1.0 - (grp
-                            .map(|(o, d)| levenshtein(&d.text, &o.text) as f32)
-                            .reduce(f32::min)
-                            .unwrap_or(upper_levenstein_error)
-                            / upper_levenstein_error)),
+                        * (1.0
+                            - (grp
+                                .map(|(o, d)| levenshtein(&d.text, &o.text) as f32)
+                                .reduce(f32::min)
+                                .unwrap_or(upper_levenstein_error)
+                                / upper_levenstein_error)),
                 )
             })
             .collect::<HashMap<String, f32>>();
@@ -107,6 +107,7 @@ impl Item {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::domain::types::ModType;
 
     #[test]
     fn check_self_similarity() -> anyhow::Result<()> {

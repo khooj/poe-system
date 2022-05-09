@@ -5,22 +5,11 @@ use anyhow::Result;
 use common::{insert_raw_items, ContainerDrop};
 use poe_system::application::build_calculating::BuildCalculating;
 use poe_system::infrastructure::repositories::postgres::build_repository::BuildRepository;
+use poe_system::infrastructure::repositories::postgres::raw_item_repository::RawItemRepository;
 use poe_system::infrastructure::repositories::postgres::task_repository::TaskRepository;
-use poe_system::interfaces::public_stash_retriever::Item;
-use poe_system::{
-    infrastructure::repositories::postgres::{
-        raw_item::RawItem, raw_item_repository::RawItemRepository,
-    },
-    interfaces::public_stash_retriever::PublicStashChange,
-};
 use server::Server;
 use sqlx::PgPool;
-use testcontainers::{
-    clients::Cli,
-    images::generic::{GenericImage, Stream, WaitFor},
-    images::postgres::{Postgres, PostgresArgs},
-    Container, Docker, Image, RunArgs,
-};
+use testcontainers::{clients::Cli, images::postgres::Postgres, Docker};
 use tracing::debug;
 
 struct Repos {
@@ -97,7 +86,10 @@ async fn check_build_calculating(repos: &Repos) -> Result<()> {
     let build = build_calc.get_calculated_build(&id).await?;
     println!("id: {}", id);
     let helmet = build.found_items.0.helmet;
-    debug!("required {:?}\nfound {:?}", build.required_items.0.helmet, helmet);
+    debug!(
+        "required {:?}\nfound {:?}",
+        build.required_items.0.helmet, helmet
+    );
     assert_eq!(&helmet.base_type, "Gladiator Helmet");
     assert_eq!(&helmet.name, "Blood Corona");
 

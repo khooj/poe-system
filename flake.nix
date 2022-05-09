@@ -23,14 +23,9 @@
             rustc = self.rust-bin.stable.${rust-version}.default.override {
               extensions =
                 [ "rust-src" "rustfmt-preview" "llvm-tools-preview" ];
+              targets = [ "x86_64-unknown-linux-gnu" "wasm32-unknown-unknown" ];
             };
             cargo = rustc;
-          })
-          (self: super: rec {
-            rustc-nightly =
-              self.rust-bin.nightly."2021-04-22".default.override {
-                extensions = [ "rustc-dev" "llvm-tools-preview" ];
-              };
           })
         ];
         pkgs = import nixpkgs { inherit system overlays; };
