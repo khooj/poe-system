@@ -43,6 +43,8 @@ async-trait = "0.1"
 futures-core = "0.3"
 strum = { version = "0.24", features = [ "derive" ] }
 url = "2"
+async-graphql = { version = "3", features = [ "tracing", "opentelemetry" ] }
+async-graphql-actix-web = "3"
 
 [dev-dependencies]
 temp-file = "0.1.6"

@@ -1,0 +1,830 @@
+/*Обнуление*/
+* {
+   padding: 0;
+   margin: 0;
+   border: 0;
+}
+
+*,
+*:before,
+*:after {
+   -moz-box-sizing: border-box;
+   -webkit-box-sizing: border-box;
+   box-sizing: border-box;
+}
+
+:focus,
+:active {
+   outline: none;
+}
+
+a:focus,
+a:active {
+   outline: none;
+}
+
+nav,
+footer,
+header,
+aside {
+   display: block;
+}
+
+html,
+body {
+   height: 100%;
+   width: 100%;
+   font-size: 100%;
+   line-height: 1;
+   font-size: 14px;
+   -ms-text-size-adjust: 100%;
+   -moz-text-size-adjust: 100%;
+   -webkit-text-size-adjust: 100%;
+}
+
+input,
+button,
+textarea {
+   font-family: inherit;
+}
+
+input::-ms-clear {
+   display: none;
+}
+
+button {
+   cursor: pointer;
+}
+
+button::-moz-focus-inner {
+   padding: 0;
+   border: 0;
+}
+
+a,
+a:visited {
+   text-decoration: none;
+
+}
+
+a:hover {
+   text-decoration: none;
+}
+
+ul li {
+   list-style: none;
+}
+
+img {
+   vertical-align: top;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+   font-size: inherit;
+   font-weight: inherit;
+}
+
+body {
+   height: 100%;
+}
+
+.container_main {
+   max-width: 100%;
+   min-height: 100%;
+   margin: 0 auto;
+   background-image: url(source/GAsxHR.jpg);
+   background-repeat: no-repeat;
+   background-size: cover;
+   display: flex;
+   flex-direction: column;
+}
+
+main {
+   flex: 1 1 auto;
+}
+
+header {
+   height: 8%;
+   text-align: center;
+}
+
+.logo {
+   margin: -30px;
+}
+
+.logoimg {
+   width: 235px;
+   height: 200px;
+}
+
+.footer {
+   max-height: 8%;
+   font-size: 18px;
+   color: rgb(154, 90, 25);
+   text-align: center;
+   padding: 30px;
+   font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+.thing_main {
+   width: 1440px;
+   display: flex;
+   flex-direction: row;
+   margin: 0 auto;
+}
+
+.thing_start {
+   width: 50%;
+   height: 800px;
+   background-image: url(source/MainInventory.png);
+   background-repeat: no-repeat;
+   background-size: 100%;
+   margin-right: 50px;
+   margin-top: 80px;
+   position: relative;
+}
+
+.thing_end {
+   width: 50%;
+   height: 800px;
+   background-image: url(source/MainInventory.png);
+   background-repeat: no-repeat;
+   background-size: 100%;
+   margin-top: 80px;
+   position: relative;
+}
+
+.price_pob {
+   display: flex;
+   flex-direction: column;
+   position: absolute;
+   top: 650px;
+   left: 50px;
+
+}
+
+.cost {
+   color: rgb(226, 122, 62);
+   font-size: 36px;
+   /* border: solid 5px rgb(70, 41, 3);
+border-radius: 8%; */
+   padding: 20px;
+   font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+   font-weight: 500;
+}
+
+img.pict {
+   width: 160px;
+   position: absolute;
+   left: 100px;
+   margin: -20px;
+   bottom: 4px;
+}
+
+.weapon_s_1 {
+
+   width: 110px;
+   height: 215px;
+   position: absolute;
+   left: 74px;
+   top: 127px;
+
+}
+
+.weapon_s_2 {
+
+   width: 110px;
+   height: 215px;
+   position: absolute;
+   left: 508px;
+   top: 127px;
+}
+
+.helmet_s_1 {
+   width: 110px;
+   height: 110px;
+   position: absolute;
+   left: 290px;
+   top: 110px;
+}
+
+
+.chest_s {
+   width: 110px;
+   height: 162px;
+   position: absolute;
+   top: 235px;
+   left: 290px;
+
+}
+
+.belt_s {
+   width: 110px;
+   height: 52px;
+   position: absolute;
+   top: 415px;
+   left: 290px;
+}
+
+.ring1_s {
+   width: 50px;
+   height: 50px;
+   position: absolute;
+   top: 295px;
+   left: 212px;
+}
+
+.ring2_s {
+   width: 50px;
+   height: 50px;
+   position: absolute;
+   top: 295px;
+   left: 428px;
+}
+
+.amulet_s {
+   width: 50px;
+   height: 50px;
+   position: absolute;
+   top: 227px;
+   left: 428px;
+}
+
+.gloves_s {
+   width: 110px;
+   height: 110px;
+   position: absolute;
+   top: 359px;
+   left: 155px;
+}
+
+.boots_s {
+   width: 110px;
+   height: 110px;
+   position: absolute;
+   top: 359px;
+   left: 427px;
+}
+
+.flask_start {
+   width: 270px;
+   height: 108px;
+   display: flex;
+   flex-direction: row;
+   position: absolute;
+   top: 483px;
+   left: 215px;
+}
+
+.flask {
+   width: 54px;
+   height: 108;
+   margin-right: 2px;
+}
+
+.nameblock {
+   width: 217px;
+   height: 26px;
+   position: absolute;
+   left: 235px;
+   top: 59px;
+   text-align: center;
+   font-size: 26px;
+   font: bold;
+   color: rgb(43, 41, 49);
+   font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+div.weapon_s_1_hover {
+   width: 300px;
+   background-color: rgba(9, 7, 1, 0.825);
+   position: absolute;
+   left: 120px;
+   bottom: 30px;
+   display: none;
+   font-size: 16px;
+   color: rgb(168, 148, 105);
+   padding: 10px;
+   font-family: Arial, Helvetica, sans-serif;
+   border: solid 2px grey;
+   text-align: center;
+   /* z-index: 0; */
+}
+
+.hover {
+   width: 300px;
+   background-color: rgba(9, 7, 1, 0.825);
+   font-size: 16px;
+   color: rgb(168, 148, 105);
+   padding: 10px;
+   font-family: Arial, Helvetica, sans-serif;
+   border: solid 2px grey;
+   text-align: center;
+   z-index: 1;
+}
+
+.tooltip {
+   font-size: 20px;
+   color: rgb(219, 140, 20);
+}
+
+.info {
+   font-size: 18px;
+   margin-top: 5px;
+   margin-bottom: 10px;
+   color: rgb(127, 80, 30);
+}
+
+a:hover div.weapon_s_1_hover {
+   display: block;
+}
+
+img.w1 {
+   display: block;
+   margin-top: 15%;
+   margin-left: 15%;
+   margin-bottom: 15%;
+}
+
+.helmet_s_1_hover {
+   position: absolute;
+   left: 20px;
+   display: none;
+}
+
+a:hover div.helmet_s_1_hover {
+   display: block;
+}
+
+.weapon_s_2_hover {
+   position: absolute;
+   left: 20px;
+   display: none;
+}
+
+a:hover div.weapon_s_2_hover {
+   display: block;
+}
+
+.chest_s_hover {
+   position: absolute;
+   left: 20px;
+   display: none;
+}
+
+a:hover div.chest_s_hover {
+   display: block;
+}
+
+.belt_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.belt_s_hover {
+   display: block;
+}
+
+.ring1_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.ring1_s_hover {
+   display: block;
+}
+
+.ring2_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.ring2_s_hover {
+   display: block;
+}
+
+.amulet_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.amulet_s_hover {
+   display: block;
+}
+
+.gloves_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.gloves_s_hover {
+   display: block;
+}
+
+.boots_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.boots_s_hover {
+   display: block;
+}
+
+.flask_1_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_1_s_hover {
+   display: block;
+}
+
+.tooltip_flask {
+   color: rgb(75, 75, 199);
+   font-size: 18px;
+   margin-bottom: 5px;
+}
+
+.info_flask {
+   color: rgb(136, 136, 119);
+   margin-bottom: 5px;
+}
+
+.flask_2_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_2_s_hover {
+   display: block;
+}
+
+.flask_3_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_3_s_hover {
+   display: block;
+}
+
+.flask_4_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_4_s_hover {
+   display: block;
+}
+
+.flask_5_s_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_5_s_hover {
+   display: block;
+}
+
+.weapon_e_1 {
+
+   width: 110px;
+   height: 215px;
+   position: absolute;
+   left: 74px;
+   top: 127px;
+
+}
+
+.weapon_e_2 {
+
+   width: 110px;
+   height: 215px;
+   position: absolute;
+   left: 508px;
+   top: 127px;
+}
+
+.helmet_e_1 {
+   width: 110px;
+   height: 110px;
+   position: absolute;
+   left: 290px;
+   top: 110px;
+}
+
+
+.chest_e {
+   width: 110px;
+   height: 162px;
+   position: absolute;
+   top: 235px;
+   left: 290px;
+
+}
+
+.belt_e {
+   width: 110px;
+   height: 52px;
+   position: absolute;
+   top: 415px;
+   left: 290px;
+}
+
+.ring1_e {
+   width: 50px;
+   height: 50px;
+   position: absolute;
+   top: 295px;
+   left: 212px;
+}
+
+.ring2_e {
+   width: 50px;
+   height: 50px;
+   position: absolute;
+   top: 295px;
+   left: 428px;
+}
+
+.amulet_e {
+   width: 50px;
+   height: 50px;
+   position: absolute;
+   top: 227px;
+   left: 428px;
+}
+
+.gloves_e {
+   width: 110px;
+   height: 110px;
+   position: absolute;
+   top: 359px;
+   left: 155px;
+}
+
+.boots_e {
+   width: 110px;
+   height: 110px;
+   position: absolute;
+   top: 359px;
+   left: 427px;
+}
+
+div.weapon_e_1_hover {
+   width: 300px;
+   background-color: rgba(9, 7, 1, 0.825);
+   position: absolute;
+   left: 120px;
+   bottom: 30px;
+   display: none;
+   font-size: 16px;
+   color: rgb(168, 148, 105);
+   padding: 10px;
+   font-family: Arial, Helvetica, sans-serif;
+   border: solid 2px grey;
+   text-align: center;
+   /* z-index: 0; */
+}
+
+a:hover div.weapon_e_1_hover {
+   display: block;
+}
+
+.helmet_e_1_hover {
+   position: absolute;
+   left: 20px;
+   display: none;
+}
+
+a:hover div.helmet_e_1_hover {
+   display: block;
+}
+
+.weapon_e_2_hover {
+   position: absolute;
+   left: 20px;
+   display: none;
+}
+
+a:hover div.weapon_e_2_hover {
+   display: block;
+}
+
+.chest_e_hover {
+   position: absolute;
+   left: 20px;
+   display: none;
+}
+
+a:hover div.chest_e_hover {
+   display: block;
+}
+
+.belt_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.belt_e_hover {
+   display: block;
+}
+
+.ring1_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.ring1_e_hover {
+   display: block;
+}
+
+.ring2_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.ring2_e_hover {
+   display: block;
+}
+
+.amulet_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.amulet_e_hover {
+   display: block;
+}
+
+.gloves_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.gloves_e_hover {
+   display: block;
+}
+
+.boots_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.boots_e_hover {
+   display: block;
+}
+
+.flask_1_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_1_e_hover {
+   display: block;
+}
+
+
+.flask_2_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_2_e_hover {
+   display: block;
+}
+
+.flask_3_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_3_e_hover {
+   display: block;
+}
+
+.flask_4_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_4_e_hover {
+   display: block;
+}
+
+.flask_5_e_hover {
+   position: absolute;
+   left: 20px;
+   bottom: 30px;
+   display: none;
+}
+
+a:hover div.flask_5_e_hover {
+   display: block;
+}
+
+.flask_end {
+   width: 270px;
+   height: 108px;
+   display: flex;
+   flex-direction: row;
+   position: absolute;
+   top: 483px;
+   left: 215px;
+}
+
+img.b1 {
+   display: block;
+   margin-top: 10%;
+   margin-left: 15%;
+}
+
+.container_start {
+   max-width: 100%;
+   min-height: 100%;
+   margin: 0 auto;
+   background-image: url(source/background1.jpg);
+   background-repeat: no-repeat;
+   background-size: cover;
+   display: flex;
+   flex-direction: column;
+}
+
+.upload {
+   position: absolute;
+   top: 75%;
+   left: 30%;
+   font-size: 36px;
+   color: bisque;
+   font-family: Arial, Helvetica, sans-serif;
+   font-weight: 600;
+}
+
+input {
+   width: 400px;
+   height: 30px;
+   border: solid 4px rgb(129, 74, 15);
+   border-radius: 5%;
+   margin-top: 20px;
+   border-color: rgb(113, 71, 8);
+   background-color: bisque;
+}
+
+.submit {
+   width: 80px;
+   height: 50px;
+   background-color: rgb(92, 13, 13);
+   border: solid 3px rgb(150, 9, 9);
+   border-radius: 7%;
+   font-size: 25px;
+   font-family: Arial, Helvetica, sans-serif;
+   font-weight: 600;
+
+}
