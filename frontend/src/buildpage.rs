@@ -1,4 +1,5 @@
 use yew::{prelude::*, props};
+use yew_hooks::prelude::*;
 
 #[derive(Properties, PartialEq, Clone, Default)]
 pub struct SharedItemProps {
@@ -366,6 +367,8 @@ pub struct Props {
 
 #[function_component(BuildPage)]
 pub fn build_page(props: &Props) -> Html {
+    let k = use_node_ref();
+    let s = use_size(k);
     html!(
        <div class={classes!("container_main")}>
            <header>

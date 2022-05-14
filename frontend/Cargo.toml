@@ -8,3 +8,7 @@ edition = "2018"
 [dependencies]
 yew = "0.19"
 yew-router = "0.16"
+yew-hooks = "0.1.56"
+#gloo = "0.7"
+serde = { version = "1", features = ["derive"] }
+
