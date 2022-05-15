@@ -25,6 +25,7 @@ pub struct Item {
     pub mods: Vec<Mod>,
     pub hybrid: Hybrid,
     pub class: Class,
+    pub image_link: String,
 }
 
 #[derive(Default, PartialEq, PartialOrd, Debug)]

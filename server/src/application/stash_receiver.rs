@@ -79,7 +79,7 @@ impl StashReceiver {
             .set_stash_id(&mut t, &k.next_change_id)
             .await?;
         t.commit().await?;
-        trace!("successfully inserted");
+        info!(id = %k.next_change_id, "successfully received and inserted");
         Ok(())
     }
 

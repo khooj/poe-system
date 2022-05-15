@@ -89,7 +89,7 @@ impl BuildCalculating {
     }
 
     #[instrument(err, skip(self))]
-    pub async fn get_calculated_build(&self, id: &str) -> Result<Build> {
+    pub async fn get_calculated_build(&self, id: &str) -> Result<Option<Build>> {
         Ok(self.build_repository.get_build(id).await?)
     }
 

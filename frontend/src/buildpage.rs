@@ -1,12 +1,11 @@
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
+use crate::make_request::{get_build, BuildsetInfo, ItemInfo};
+
 #[derive(Properties, PartialEq, Clone, Default)]
 pub struct SharedItemProps {
-    pub image_link: String,
-    pub name: String,
-    pub base_type: String,
-    pub mods: Vec<String>,
+    pub info: ItemInfo,
     pub item_class: String,
     pub item_hover_class: String,
     pub item_image_width: String,
@@ -15,21 +14,22 @@ pub struct SharedItemProps {
 
 #[function_component(Item)]
 pub fn item(props: &SharedItemProps) -> Html {
+    let item = &props.info;
     html! {
         <div class={classes!(&props.item_class)}>
             <a href="#" alt="пример">
-                <img class={classes!(&props.image_class)} src={props.image_link.clone()} width={props.item_image_width.clone()} alt="" />
+                <img class={classes!(&props.image_class)} src={item.image_link.clone()} width={props.item_image_width.clone()} alt="" />
                 <div class={classes!("hover", &props.item_hover_class)}>
                     <div class="tooltip">
-                        {&props.name} <br />
-                        {&props.base_type}
+                        {&item.name} <br />
+                        {&item.base_type}
                     </div>
                     <div class="info" >
                         { "Уклонение: 457" } <br />
                         { "Энерг. щит: 121" }
                     </div>
                     <div class="property">
-                        { for props.mods.iter().map(|e| html!(<>{e} <br /></>)) }
+                        { for item.mods.iter().map(|e| html!(<>{e} <br /></>)) }
                     </div>
                 </div>
             </a>
@@ -39,113 +39,76 @@ pub fn item(props: &SharedItemProps) -> Html {
 
 #[derive(Properties, PartialEq, Clone, Default)]
 pub struct ItemProps {
-    pub image_link: String,
-    pub name: String,
-    pub base_type: String,
-    pub mods: Vec<String>,
-    pub item_class: String,
-    pub item_hover_class: String,
-}
-
-impl Into<SharedItemProps> for ItemProps {
-    fn into(self) -> SharedItemProps {
-        let ItemProps {
-            image_link,
-            name,
-            base_type,
-            mods,
-            item_class,
-            item_hover_class,
-        } = self;
-        SharedItemProps {
-            image_link,
-            name,
-            base_type,
-            mods,
-            item_class,
-            item_hover_class,
-            ..SharedItemProps::default()
-        }
-    }
+    pub info: ItemInfo,
 }
 
 #[function_component(Weapon1)]
 pub fn weapon1(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="weapon_1" item_hover_class="weapon_1_hover" item_image_width="60" image_class="w1" ..props />
+        <Item info={props.info.clone()} item_class="weapon_1" item_hover_class="weapon_1_hover" item_image_width="60" image_class="w1" />
     }
 }
 
 #[function_component(Helmet)]
 pub fn helmet(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="helmet_1" item_hover_class="helmet_1_hover" item_image_width="90" image_class="w1" ..props />
+        <Item info={props.info.clone()} item_class="helmet_1" item_hover_class="helmet_1_hover" item_image_width="90" image_class="w1" />
     }
 }
 
 #[function_component(Weapon2)]
 pub fn weapon2(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="weapon_2" item_hover_class="weapon_2_hover" item_image_width="80" image_class="w1" ..props />
+        <Item info={props.info.clone()} item_class="weapon_2" item_hover_class="weapon_2_hover" item_image_width="80" image_class="w1" />
     }
 }
 
 #[function_component(Chest)]
 pub fn chest(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="chest" item_hover_class="chest_hover" item_image_width="80" image_class="w1" ..props />
+        <Item info={props.info.clone()} item_class="chest" item_hover_class="chest_hover" item_image_width="80" image_class="w1" />
     }
 }
 
 #[function_component(Ring1)]
 pub fn ring1(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="ring1" item_hover_class="ring1_hover" item_image_width="" ..props />
+        <Item info={props.info.clone()} item_class="ring1" item_hover_class="ring1_hover" item_image_width="" image_class="" />
     }
 }
 
 #[function_component(Ring2)]
 pub fn ring2(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="ring2" item_hover_class="ring2_hover" item_image_width="" ..props />
+        <Item info={props.info.clone()} item_class="ring2" item_hover_class="ring2_hover" item_image_width="" image_class="" />
     }
 }
 
 #[function_component(Belt)]
 pub fn belt(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="belt" item_hover_class="belt_hover" item_image_width="85" image_class="b1" ..props />
+        <Item info={props.info.clone()} item_class="belt" item_hover_class="belt_hover" item_image_width="85" image_class="b1" />
     }
 }
 
 #[function_component(Amulet)]
 pub fn amulet(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="amulet" item_hover_class="amulet_hover" item_image_width="" image_class="b1" ..props />
+        <Item info={props.info.clone()} item_class="amulet" item_hover_class="amulet_hover" item_image_width="" image_class="b1" />
     }
 }
 
 #[function_component(Gloves)]
 pub fn gloves(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="gloves" item_hover_class="gloves_hover" item_image_width="80" image_class="w1" ..props />
+        <Item info={props.info.clone()} item_class="gloves" item_hover_class="gloves_hover" item_image_width="80" image_class="w1" />
     }
 }
 
 #[function_component(Boots)]
 pub fn boots(props: &ItemProps) -> Html {
-    let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_class="boots" item_hover_class="boots_hover" item_image_width="80" image_class="w1" ..props />
+        <Item info={props.info.clone()} item_class="boots" item_hover_class="boots_hover" item_image_width="80" image_class="w1" />
     }
 }
 
@@ -256,6 +219,7 @@ pub fn price(props: &PriceProps) -> Html {
 struct BuildProps {
     name: String,
     build_class: String,
+    buildset: BuildsetInfo,
 }
 
 #[function_component(BuildInventory)]
@@ -263,13 +227,6 @@ fn build_inventory(props: &BuildProps) -> Html {
     let name = "Поход греха".to_string();
     let base_type = "Шевровые ботинки".to_string();
     let mods: Vec<String> = vec!["+21 к ловкости".into(), "+23 к интеллекту".into()];
-
-    let item_props = ItemProps {
-        name: name.clone(),
-        base_type: base_type.clone(),
-        mods: mods.clone(),
-        ..ItemProps::default()
-    };
 
     let flask_props = FlaskProps {
         name,
@@ -285,16 +242,17 @@ fn build_inventory(props: &BuildProps) -> Html {
                         <span>{&props.name}</span>
                     </div>
                 </div>
-                <Weapon1 image_link="source/pic/w1.png" ..item_props.clone() />
-                <Helmet image_link="source/pic/BoneHelm.png" ..item_props.clone() />
-                <Weapon2 image_link="source/pic/w2.png" ..item_props.clone() />
-                <Chest image_link="source/pic/chestr.png" ..item_props.clone() />
-                <Belt image_link="source/pic/AbyssBelt.png" ..item_props.clone() />
-                <Ring1 image_link="source/pic/ring1.png" ..item_props.clone() />
-                <Ring2 image_link="source/pic/Ring5.png" ..item_props.clone() />
-                <Amulet image_link="source/pic/TurquoiseAmulet.png" ..item_props.clone() />
-                <Gloves image_link="source/pic/glove.png" ..item_props.clone() />
-                <Boots image_link="source/pic/boot.png" ..item_props.clone() />
+                <Weapon1 info={props.buildset.weapon1.clone()} />
+                <Helmet info={props.buildset.helmet.clone()} />
+                <Weapon2 info={props.buildset.weapon2.clone()} />
+                <Chest info={props.buildset.body_armour.clone()} />
+                <Belt info={props.buildset.belt.clone()} />
+                <Ring1 info={props.buildset.ring1.clone()} />
+                <Ring2 info={props.buildset.ring2.clone()} />
+                <Amulet info={props.buildset.amulet.clone()} />
+                <Gloves info={props.buildset.gloves.clone()} />
+                <Boots info={props.buildset.boots.clone()} />
+
                 <Flasks class="flasks">
                     <Flask flask_class="flask_1" hover_class="flask_1_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
                     <Flask flask_class="flask_2" hover_class="flask_2_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
@@ -307,17 +265,22 @@ fn build_inventory(props: &BuildProps) -> Html {
     }
 }
 
+#[derive(Properties, PartialEq)]
+struct CustomBuildInventoryProps {
+    buildset: BuildsetInfo,
+}
+
 #[function_component(BuildInventoryLeft)]
-fn build_inventory_left() -> Html {
+fn build_inventory_left(props: &CustomBuildInventoryProps) -> Html {
     html! {
-        <BuildInventory build_class="thing_start" name={"POB Build"} />
+        <BuildInventory build_class="thing_start" name={"POB Build"} buildset={props.buildset.clone()} />
     }
 }
 
 #[function_component(BuildInventoryRight)]
-fn build_inventory_right() -> Html {
+fn build_inventory_right(props: &CustomBuildInventoryProps) -> Html {
     html! {
-        <BuildInventory build_class="thing_end" name={"END build"} />
+        <BuildInventory build_class="thing_end" name={"END build"} buildset={props.buildset.clone()} />
     }
 }
 
@@ -328,6 +291,48 @@ pub struct Props {
 
 #[function_component(BuildPage)]
 pub fn build_page(props: &Props) -> Html {
+    let id = props.id.clone();
+    let state = use_state(|| None);
+    let req = use_async(async move { get_build(&id).await });
+
+    {
+        let req = req.clone();
+        use_effect_with_deps(
+            move |_| {
+                req.run();
+                || ()
+            },
+            props.id.clone(),
+        );
+    }
+
+    {
+        let state = state.clone();
+        let req = req.clone();
+        use_effect_with_deps(move |req| {
+            if let Some(data) = &req.data {
+                state.set(data.clone());
+            }
+            || ()
+        }, req);
+    }
+
+    let body = {
+        if let Some(data) = &*state {
+            let data = data.clone();
+            html! {
+                <div class="thing_main">
+                    <BuildInventoryLeft buildset={data.required_items} />
+                    <BuildInventoryRight buildset={data.found_items} />
+                </div>
+            }
+        } else {
+            html! {
+                <div><span class="info_data">{ "Build not calculated yet" }</span></div>
+            }
+        }
+    };
+
     html!(
        <div class={classes!("container_main")}>
            <header>
@@ -336,10 +341,7 @@ pub fn build_page(props: &Props) -> Html {
                </div>
            </header>
            <main>
-                <div class="thing_main">
-                    <BuildInventoryLeft />
-                    <BuildInventoryRight />
-               </div>
+                { body }
            </main>
        </div>
     )

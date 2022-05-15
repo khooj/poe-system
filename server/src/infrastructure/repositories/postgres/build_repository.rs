@@ -30,6 +30,7 @@ pub struct BuildItems {
     pub gems: Vec<Item>,
 }
 
+#[derive(Serialize)]
 pub struct Build {
     pub id: Uuid,
     pub itemset: String,
@@ -89,7 +90,7 @@ VALUES ($1, $2, $3, $4, $5)
         Ok(())
     }
 
-    pub async fn get_build(&self, id: &str) -> Result<Build> {
+    pub async fn get_build(&self, id: &str) -> Result<Option<Build>> {
         let ret = sqlx::query_as!(
             Build,
             r#"
@@ -101,7 +102,7 @@ WHERE id = $1::uuid
             "#,
             id as &str,
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await?;
 
         Ok(ret)

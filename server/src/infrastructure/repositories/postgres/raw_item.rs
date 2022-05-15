@@ -1,5 +1,5 @@
 use crate::domain::item::Item as DomainItem;
-use crate::domain::types::{Category, Class, Influence, ItemLvl, League, Mod, ModType};
+use crate::domain::types::{Category, Class, Influence, ItemLvl, League, Mod, ModType, Hybrid};
 use crate::infrastructure::poe_data::BASE_ITEMS;
 use crate::interfaces::public_stash_retriever::{Extended, Influences, Item};
 use sqlx::types::Json;
@@ -48,6 +48,7 @@ impl TryInto<DomainItem> for RawItem {
             crafted_mods,
             fractured_mods,
             veiled_mods,
+            icon,
             ..
         } = self.item.0;
 
@@ -100,6 +101,7 @@ impl TryInto<DomainItem> for RawItem {
             .get_item_class(&base_type)
             .ok_or(anyhow!("can't find itemclass for basetype: {}", base_type))?;
         let class = Class::from_itemclass(&itemclass)?;
+        let image_link = icon;
 
         Ok(DomainItem {
             id,
@@ -116,7 +118,9 @@ impl TryInto<DomainItem> for RawItem {
             synthesised,
             mods,
             class,
-            ..DomainItem::default()
+            image_link,
+            subcategories: vec![],
+            hybrid: Hybrid::default(),
         })
     }
 }

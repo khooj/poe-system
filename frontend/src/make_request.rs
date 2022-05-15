@@ -49,13 +49,48 @@ pub async fn post_new_build(build: NewBuild) -> Result<String, Error> {
     Ok(resp.id)
 }
 
-#[derive(Deserialize)]
-pub struct BuildInfo {}
+#[derive(Deserialize, PartialEq, Default, Clone)]
+pub struct ItemInfo {
+    pub name: String,
+    pub base_type: String,
+    pub image_link: String,
+    pub mods: Vec<String>,
+}
 
-pub async fn get_build(id: &str) -> Result<BuildInfo, Error> {
-    let resp = make_get_request("/bui").await?;
-    Ok(resp
-        .json()
-        .await
-        .map_err(|e| Error::RequestError(e.to_string()))?)
+#[derive(Deserialize, PartialEq, Clone)]
+pub struct BuildsetInfo {
+    pub weapon1: ItemInfo,
+    pub weapon2: ItemInfo,
+    pub helmet: ItemInfo,
+    pub body_armour: ItemInfo,
+    pub belt: ItemInfo,
+    pub amulet: ItemInfo,
+    pub ring1: ItemInfo,
+    pub ring2: ItemInfo,
+    pub gloves: ItemInfo,
+    pub boots: ItemInfo,
+}
+
+#[derive(Deserialize, PartialEq, Clone)]
+pub struct BuildInfo {
+    pub required_items: BuildsetInfo,
+    pub found_items: BuildsetInfo,
+}
+
+#[derive(Deserialize)]
+struct NoBuildInfo;
+
+pub async fn get_build(id: &str) -> Result<Option<BuildInfo>, Error> {
+    let resp = make_get_request(&format!("/build/{}", id)).await?;
+    let data: Option<BuildInfo> = match resp.json().await {
+        Ok(k) => Some(k),
+        Err(e) => match resp.json::<NoBuildInfo>().await {
+            Ok(_) => None,
+            Err(e) => {
+                log::error!("cant deserialize json: {}", e);
+                return Err(Error::RequestError(e.to_string()));
+            }
+        },
+    };
+    Ok(data)
 }

@@ -84,6 +84,7 @@ async fn check_build_calculating(repos: &Repos) -> Result<()> {
         .await?;
     build_calc.calculate_next_build().await?;
     let build = build_calc.get_calculated_build(&id).await?;
+    let build = build.unwrap();
     println!("id: {}", id);
     let helmet = build.found_items.0.helmet;
     debug!(

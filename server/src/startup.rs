@@ -4,8 +4,8 @@ use crate::{
     infrastructure::{public_stash_retriever::Client, repositories::create_repositories},
 };
 
-use crate::infrastructure::controller::new_build;
-use actix_web::{dev::Server, web, App, HttpServer};
+use crate::infrastructure::controller::{get_build, new_build};
+use actix_web::{web, App, HttpServer};
 use std::net::TcpListener;
 use tracing::error;
 use tracing_actix_web::TracingLogger;
@@ -126,6 +126,7 @@ impl Application {
                 .wrap(TracingLogger::default())
                 .app_data(web::Data::new(bc.clone()))
                 .service(new_build)
+                .service(get_build)
         })
         .workers(4)
         .listen(l)

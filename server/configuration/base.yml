@@ -6,5 +6,5 @@ application:
   port: 8000
   host: 0.0.0.0
   refresh_interval_secs: 2
-  enable_items_refresh: no
+  enable_items_refresh: yes
   only_leagues: ["Sentinel"]
