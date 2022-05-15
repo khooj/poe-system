@@ -369,6 +369,7 @@ pub struct Props {
 pub fn build_page(props: &Props) -> Html {
     let k = use_node_ref();
     let s = use_size(k);
+    use_geolocation();
     html!(
        <div class={classes!("container_main")}>
            <header>

@@ -10,7 +10,6 @@ use tracing::error;
 #[derive(Deserialize)]
 struct NewBuild {
     url: String,
-    league: String,
     itemset: String,
 }
 
@@ -27,7 +26,7 @@ struct NewBuildId {
 #[post("/new")]
 pub async fn new_build(build_srv: Data<BuildCalculating>, new: Json<NewBuild>) -> HttpResponse {
     let id = build_srv
-        .add_build_for_calculating(&new.url, &new.itemset, &new.league)
+        .add_build_for_calculating(&new.url, &new.itemset, "Sentinel")
         .await;
 
     let id = match id {

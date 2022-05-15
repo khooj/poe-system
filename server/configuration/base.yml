@@ -3,8 +3,8 @@ database:
   dsn: postgres://admin:admin@localhost:5432/poe
 start_change_id: "1365553486-1371113583-1326823574-1474805498-1422264533"
 application:
-  port: 3000
+  port: 8000
   host: 0.0.0.0
   refresh_interval_secs: 2
   enable_items_refresh: no
-  only_leagues: ["Standard", "Archnemesis", "Sentinel"]
+  only_leagues: ["Sentinel"]

@@ -1,6 +1,6 @@
 mod home;
 mod buildpage;
-// mod make_request;
+mod make_request;
 
 use yew::prelude::*;
 use yew_router::prelude::*;
