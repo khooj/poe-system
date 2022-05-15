@@ -2,6 +2,7 @@ use super::make_request::{post_new_build, NewBuild};
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 use yew_router::prelude::*;
+use web_sys::HtmlInputElement;
 
 use super::Route;
 
@@ -28,8 +29,14 @@ pub fn home() -> Html {
 
         Callback::from(move |ev: yew::events::MouseEvent| {
             ev.prevent_default();
-            let id = noderef.get().unwrap().text_content().unwrap();
-            build_id.set(id);
+            let node = noderef.cast::<HtmlInputElement>();
+            let v = node.map(|node| node.value());
+            if v.is_none() {
+                log::error!("cant get input value");
+                return;
+            }
+
+            build_id.set(v.unwrap());
             build_request.run();
         })
     };

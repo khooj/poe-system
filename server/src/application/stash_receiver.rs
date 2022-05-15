@@ -3,7 +3,8 @@ use crate::infrastructure::{
 };
 use crate::interfaces::public_stash_retriever::Error;
 use thiserror::Error;
-use tracing::{debug, error, info, instrument, trace};
+use tracing::{error, info, instrument, trace};
+use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum StashReceiverError {
@@ -69,9 +70,11 @@ impl StashReceiver {
             }
 
             for item in d.items {
-                let id = item.id.clone();
+                // we cant be sure that every item have unique id
+                // so we generate it themselves
+                let id = Uuid::new_v4().to_string();
                 self.repository
-                    .insert_raw_item(&mut t, id.as_ref().unwrap(), acc, stash, item)
+                    .insert_raw_item(&mut t, &id, acc, stash, item)
                     .await?;
             }
         }

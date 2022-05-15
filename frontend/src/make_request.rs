@@ -78,19 +78,16 @@ pub struct BuildInfo {
 }
 
 #[derive(Deserialize)]
-struct NoBuildInfo;
+struct NoBuildInfo {
+    #[serde(flatten)]
+    data: Option<BuildInfo>,
+}
 
 pub async fn get_build(id: &str) -> Result<Option<BuildInfo>, Error> {
     let resp = make_get_request(&format!("/build/{}", id)).await?;
-    let data: Option<BuildInfo> = match resp.json().await {
-        Ok(k) => Some(k),
-        Err(e) => match resp.json::<NoBuildInfo>().await {
-            Ok(_) => None,
-            Err(e) => {
-                log::error!("cant deserialize json: {}", e);
-                return Err(Error::RequestError(e.to_string()));
-            }
-        },
-    };
-    Ok(data)
+    let data: NoBuildInfo = resp
+        .json()
+        .await
+        .map_err(|e| Error::RequestError(e.to_string()))?;
+    Ok(data.data)
 }

@@ -1073,6 +1073,7 @@ dependencies = [
  "serde",
  "thiserror",
  "wasm-logger",
+ "web-sys",
  "yew",
  "yew-hooks",
  "yew-router",
