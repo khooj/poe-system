@@ -1,10 +1,4 @@
-use super::{parser::{parse_pob_item, ParsedItem}, item::Item};
-use crate::{
-    domain::{
-        types::{Class, ItemLvl, League, Mod, ModType, Rarity},
-    },
-    infrastructure::poe_data::BASE_ITEMS,
-};
+use super::parser::{parse_pob_item, ParsedItem};
 use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
 use roxmltree::{Document, Node};
@@ -16,6 +10,7 @@ use std::{
 use tracing::{error, info};
 use anyhow::anyhow;
 use nom::error::VerboseError;
+use tracing::{instrument, trace};
 
 pub struct Pob {
     original: String,
@@ -26,6 +21,7 @@ impl<'a> Pob {
         Pob { original: data }
     }
 
+    #[instrument(level = "trace", err, skip(data))]
     pub fn from_pastebin_data(data: String) -> Result<Pob, anyhow::Error> {
         let tmp = decode_config(data, URL_SAFE)?;
         let mut decoder = ZlibDecoder::new(&tmp[..]);
@@ -44,11 +40,11 @@ impl<'a> Pob {
 pub struct ItemSet {
     title: String,
     id: i32,
-    items: Vec<Item>,
+    items: Vec<ParsedItem>,
 }
 
 impl ItemSet {
-    fn try_from(node: &Node, items_map: &HashMap<i32, Item>) -> Result<ItemSet, anyhow::Error> {
+    fn try_from(node: &Node, items_map: &HashMap<i32, ParsedItem>) -> Result<ItemSet, anyhow::Error> {
         let id = node
             .attribute("id")
             .ok_or(anyhow::anyhow!("cant get itemset id"))?;
@@ -62,7 +58,7 @@ impl ItemSet {
             if id == -1 || id == 0 {
                 continue;
             }
-            items.push(items_map.get(&id).unwrap_or(&Item::default()).clone());
+            items.push(items_map.get(&id).unwrap_or(&ParsedItem::default()).clone());
         }
 
         Ok(ItemSet {
@@ -72,44 +68,10 @@ impl ItemSet {
         })
     }
 
-    pub fn get_nth_item(&self, nth: usize) -> Option<&Item> {
+    pub fn get_nth_item(&self, nth: usize) -> Option<&ParsedItem> {
         self.items.iter().nth(nth)
     }
-}
 
-impl TryInto<Item> for ParsedItem {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> Result<Item, Self::Error> {
-        let rarity: Rarity = self.rarity.try_into()?;
-        let item_lvl: ItemLvl = self.item_lvl.into();
-
-        let itemclass = BASE_ITEMS.get_item_class(&self.base_line).ok_or(anyhow!(
-            "can't get itemclass from basetype: {}",
-            self.base_line
-        ))?;
-        Ok(Item {
-            league: League::Standard,
-            item_lvl,
-            name: self.name.to_owned(),
-            base_type: self.base_line,
-            mods: self.affixes,
-            class: match Class::from_itemclass(itemclass) {
-                Ok(k) => k,
-                Err(e) => {
-                    error!(
-                        "can't get class from given itemclass: {} with err: {}",
-                        itemclass, e
-                    );
-                    Class::default()
-                }
-            },
-            ..Item::default()
-        })
-    }
-}
-
-impl ItemSet {
     pub fn title(&self) -> &str {
         &self.title
     }
@@ -118,7 +80,7 @@ impl ItemSet {
         self.id
     }
 
-    pub fn items(&self) -> &Vec<Item> {
+    pub fn items(&self) -> &Vec<ParsedItem> {
         &self.items
     }
 }
@@ -131,7 +93,7 @@ pub struct PobDocument<'a> {
 impl<'a> PobDocument<'a> {
     pub fn get_item_sets(&self) -> Vec<ItemSet> {
         let mut itemsets = vec![];
-        let mut items: HashMap<i32, Item> = HashMap::new();
+        let mut items: HashMap<i32, ParsedItem> = HashMap::new();
         let mut nodes = self.doc.descendants();
         let items_node = match nodes.find(|&x| x.tag_name().name() == "Items") {
             Some(k) => k,
@@ -205,7 +167,7 @@ mod tests {
 
     #[test]
     fn parse_pob() -> Result<(), anyhow::Error> {
-        dotenv::dotenv().ok();
+        // dotenv::dotenv().ok();
         let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
         let doc = pob.as_document()?;
         let _ = doc.get_item_sets();
@@ -214,7 +176,7 @@ mod tests {
 
     #[test]
     fn parse_pob2() -> Result<(), anyhow::Error> {
-        dotenv::dotenv().ok();
+        // dotenv::dotenv().ok();
         let pob = Pob::from_pastebin_data(TESTPOB2.to_owned())?;
         let doc = pob.as_document()?;
         // let sets = doc.get_item_sets();
@@ -226,7 +188,7 @@ mod tests {
 
     #[test]
     fn check_itemsets() -> Result<(), anyhow::Error> {
-        dotenv::dotenv().ok();
+        // dotenv::dotenv().ok();
         let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
         let doc = pob.as_document()?;
         let itemsets = doc.get_item_sets();

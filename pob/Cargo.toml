@@ -1,0 +1,22 @@
+[package]
+name = "pob"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.13.0"
+anyhow = "1.0.40"
+flate2 = "1.0"
+roxmltree = "0.14"
+tracing = { version = "0.1" }
+nom = { version = "6.1.2", features = ["alloc"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+lazy_static = "1.4.0"
+url = "2"
+reqwest = { version = "0.11", features = [ "json" ] }
+
+[dev-dependencies]
+dotenv = "0.15"

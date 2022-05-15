@@ -1,8 +1,6 @@
 use crate::domain::item::{Item, SimilarityScore};
-use crate::domain::pob::{item::Item as PobItem, pob::Pob};
-use crate::domain::types::Class;
-use crate::domain::PastebinBuildUrl;
-use crate::infrastructure::pob_retriever::HttpPobRetriever;
+use crate::domain::types::{Class, ItemLvl, League, Mod, ModType, Rarity};
+use crate::infrastructure::poe_data::BASE_ITEMS;
 use crate::infrastructure::repositories::postgres::build_repository::{
     Build, BuildItems, BuildRepository,
 };
@@ -12,13 +10,51 @@ use crate::infrastructure::repositories::postgres::task_repository::{
 };
 use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
+use pob::pob::parser::ParsedItem;
+use pob::pob::{item::Item as PobItem, pob::Pob};
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use tracing::{debug, error, info, instrument, trace, warn};
 
+impl TryInto<Item> for ParsedItem {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<Item, Self::Error> {
+        let rarity: Rarity = self.rarity.try_into()?;
+        let item_lvl: ItemLvl = self.item_lvl.into();
+
+        let itemclass = BASE_ITEMS.get_item_class(&self.base_line).ok_or(anyhow!(
+            "can't get itemclass from basetype: {}",
+            self.base_line
+        ))?;
+        Ok(Item {
+            league: League::Standard,
+            item_lvl,
+            name: self.name.to_owned(),
+            base_type: self.base_line,
+            mods: self
+                .affixes
+                .into_iter()
+                .map(|el| Mod::from_str_u8(&el.text, el.type_ as u8))
+                .collect(),
+            class: match Class::from_itemclass(itemclass) {
+                Ok(k) => k,
+                Err(e) => {
+                    error!(
+                        "can't get class from given itemclass: {} with err: {}",
+                        itemclass, e
+                    );
+                    Class::default()
+                }
+            },
+            ..Item::default()
+        })
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 struct CalculateBuildTaskData {
-    url: String,
+    pobdata: String,
     itemset: String,
     league: String,
 }
@@ -28,7 +64,6 @@ pub struct BuildCalculating {
     repository: RawItemRepository,
     tasks_repository: TaskRepository,
     build_repository: BuildRepository,
-    pob_retriever: HttpPobRetriever,
 }
 
 impl BuildCalculating {
@@ -41,22 +76,7 @@ impl BuildCalculating {
             repository,
             tasks_repository,
             build_repository,
-            pob_retriever: HttpPobRetriever::new(),
         }
-    }
-
-    pub fn new_with_host(
-        repository: RawItemRepository,
-        tasks_repository: TaskRepository,
-        build_repository: BuildRepository,
-        host: &str,
-    ) -> Result<Self> {
-        Ok(BuildCalculating {
-            repository,
-            tasks_repository,
-            build_repository,
-            pob_retriever: HttpPobRetriever::new_with_host(host)?,
-        })
     }
 }
 
@@ -64,7 +84,7 @@ impl BuildCalculating {
     #[instrument(err, skip(self))]
     pub async fn add_build_for_calculating(
         &self,
-        url: &str,
+        pobdata: &str,
         itemset: &str,
         league: &str,
     ) -> Result<String> {
@@ -76,7 +96,7 @@ impl BuildCalculating {
                 Task::new(
                     TaskType::CalculateBuild,
                     serde_json::to_value(CalculateBuildTaskData {
-                        url: url.to_string(),
+                        pobdata: pobdata.to_string(),
                         itemset: itemset.to_string(),
                         league: league.to_string(),
                     })?,
@@ -131,9 +151,9 @@ impl BuildCalculating {
             ));
         }
 
+        trace!("deserializing task");
         let build_info: CalculateBuildTaskData = serde_json::from_value(data.clone())?;
-        let build = self.pob_retriever.get_pob(&build_info.url).await?;
-        trace!("got pob");
+        let build = Pob::from_pastebin_data(build_info.pobdata)?;
         let build_doc = build.as_document()?;
         let itemset = if build_info.itemset.is_empty() {
             build_doc.get_first_itemset()?
@@ -145,6 +165,13 @@ impl BuildCalculating {
         let mut found_items = BuildItems::default();
         for item in itemset.items() {
             let item = item.clone();
+            let item: Result<Item> = item.try_into();
+            if let Err(e) = item {
+                info!(err = %e, "can't convert parsed pob item to domain item");
+                continue;
+            }
+            let item = item.unwrap();
+
             trace!("searching similar item");
             let (found_item, score) = self.find_similar_item(&item, &build_info.league).await;
             let item: Item = item.into();
@@ -196,7 +223,10 @@ impl BuildCalculating {
         use crate::infrastructure::poe_data::BASE_ITEMS;
         use tokio_stream::StreamExt;
 
-        debug!("check required item short: {} {}", item.name, item.base_type);
+        debug!(
+            "check required item short: {} {}",
+            item.name, item.base_type
+        );
         trace!(item = ?item, "checking required item");
         let mut highscore = SimilarityScore::default();
         let mut result_item = Item::default();
@@ -232,7 +262,10 @@ impl BuildCalculating {
             };
             trace!(db_item = ?db_item, "db item after convert");
 
-            debug!("calculate similarity with {} {}", db_item.name, db_item.base_type);
+            debug!(
+                "calculate similarity with {} {}",
+                db_item.name, db_item.base_type
+            );
             trace!(req_item = ?item, db_item = ?db_item, "calculate similarity");
             let calc = db_item.calculate_similarity_score_with_pob(item);
             if calc > highscore {
@@ -242,7 +275,10 @@ impl BuildCalculating {
             }
         }
 
-        debug!("found item {} {} with score {:?}", result_item.name, result_item.base_type, highscore);
+        debug!(
+            "found item {} {} with score {:?}",
+            result_item.name, result_item.base_type, highscore
+        );
         trace!("found item {:?} with score {:?}", result_item, highscore);
         (result_item, highscore)
     }

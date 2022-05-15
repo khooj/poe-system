@@ -17,8 +17,8 @@ fn not_empty(s: &str) -> Result<(), ValidationError> {
 
 #[derive(Deserialize, Validate)]
 struct NewBuild {
-    #[validate(url, custom = "not_empty")]
-    url: String,
+    #[validate(custom = "not_empty")]
+    pobdata: String,
     itemset: String,
 }
 
@@ -40,7 +40,7 @@ pub async fn new_build(build_srv: Data<BuildCalculating>, new: Json<NewBuild>) -
     }
 
     let id = build_srv
-        .add_build_for_calculating(&new.url, &new.itemset, "Sentinel")
+        .add_build_for_calculating(&new.pobdata, &new.itemset, "Sentinel")
         .await;
 
     let id = match id {

@@ -413,6 +413,24 @@ impl Mod {
             type_,
         }
     }
+
+    pub fn from_str_u8(value: &str, type_: u8) -> Self {
+        let t = match type_ {
+            0 => ModType::Utility,
+            1 => ModType::Implicit,
+            2 => ModType::Explicit,
+            3 => ModType::Crafted,
+            4 => ModType::Enchant,
+            5 => ModType::Fractured,
+            6 => ModType::Cosmetic,
+            7 => ModType::Veiled,
+            8 => ModType::ExplicitHybrid,
+            9 => ModType::Scourge,
+            x => panic!("can't match modtype: {}", x),
+        };
+
+        Mod::from_str_type(value, t)
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
