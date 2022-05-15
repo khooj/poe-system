@@ -1,4 +1,4 @@
-use yew::{prelude::*, props};
+use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 #[derive(Properties, PartialEq, Clone, Default)]
@@ -73,7 +73,7 @@ impl Into<SharedItemProps> for ItemProps {
 pub fn weapon1(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="60" image_class="w1" ..props />
+        <Item item_class="weapon_1" item_hover_class="weapon_1_hover" item_image_width="60" image_class="w1" ..props />
     }
 }
 
@@ -81,7 +81,7 @@ pub fn weapon1(props: &ItemProps) -> Html {
 pub fn helmet(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="90" image_class="w1" ..props />
+        <Item item_class="helmet_1" item_hover_class="helmet_1_hover" item_image_width="90" image_class="w1" ..props />
     }
 }
 
@@ -89,7 +89,7 @@ pub fn helmet(props: &ItemProps) -> Html {
 pub fn weapon2(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="80" image_class="w1" ..props />
+        <Item item_class="weapon_2" item_hover_class="weapon_2_hover" item_image_width="80" image_class="w1" ..props />
     }
 }
 
@@ -97,7 +97,7 @@ pub fn weapon2(props: &ItemProps) -> Html {
 pub fn chest(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="80" image_class="w1" ..props />
+        <Item item_class="chest" item_hover_class="chest_hover" item_image_width="80" image_class="w1" ..props />
     }
 }
 
@@ -105,7 +105,7 @@ pub fn chest(props: &ItemProps) -> Html {
 pub fn ring1(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="" ..props />
+        <Item item_class="ring1" item_hover_class="ring1_hover" item_image_width="" ..props />
     }
 }
 
@@ -113,7 +113,7 @@ pub fn ring1(props: &ItemProps) -> Html {
 pub fn ring2(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="" ..props />
+        <Item item_class="ring2" item_hover_class="ring2_hover" item_image_width="" ..props />
     }
 }
 
@@ -121,7 +121,7 @@ pub fn ring2(props: &ItemProps) -> Html {
 pub fn belt(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="85" image_class="b1" ..props />
+        <Item item_class="belt" item_hover_class="belt_hover" item_image_width="85" image_class="b1" ..props />
     }
 }
 
@@ -129,7 +129,7 @@ pub fn belt(props: &ItemProps) -> Html {
 pub fn amulet(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="" image_class="b1" ..props />
+        <Item item_class="amulet" item_hover_class="amulet_hover" item_image_width="" image_class="b1" ..props />
     }
 }
 
@@ -137,7 +137,7 @@ pub fn amulet(props: &ItemProps) -> Html {
 pub fn gloves(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="80" image_class="w1" ..props />
+        <Item item_class="gloves" item_hover_class="gloves_hover" item_image_width="80" image_class="w1" ..props />
     }
 }
 
@@ -145,7 +145,7 @@ pub fn gloves(props: &ItemProps) -> Html {
 pub fn boots(props: &ItemProps) -> Html {
     let props: SharedItemProps = props.clone().into();
     html! {
-        <Item item_image_width="80" image_class="w1" ..props />
+        <Item item_class="boots" item_hover_class="boots_hover" item_image_width="80" image_class="w1" ..props />
     }
 }
 
@@ -253,23 +253,21 @@ pub fn price(props: &PriceProps) -> Html {
 }
 
 #[derive(Properties, PartialEq)]
-pub struct BuildProps {
-    pub name: String,
+struct BuildProps {
+    name: String,
+    build_class: String,
 }
 
-#[function_component(BuildInventoryLeft)]
-pub fn build_inventory_left(props: &BuildProps) -> Html {
+#[function_component(BuildInventory)]
+fn build_inventory(props: &BuildProps) -> Html {
     let name = "Поход греха".to_string();
     let base_type = "Шевровые ботинки".to_string();
-    let mods: Vec<String> = vec![
-        "+21 к ловкости".into(),
-        "+23 к интеллекту".into(),
-    ];
+    let mods: Vec<String> = vec!["+21 к ловкости".into(), "+23 к интеллекту".into()];
 
     let item_props = ItemProps {
-        name: name.clone(), 
-        base_type: base_type.clone(), 
-        mods: mods.clone(), 
+        name: name.clone(),
+        base_type: base_type.clone(),
+        mods: mods.clone(),
         ..ItemProps::default()
     };
 
@@ -281,82 +279,45 @@ pub fn build_inventory_left(props: &BuildProps) -> Html {
     };
 
     html! {
-            <div class="thing_start">
+            <div class={classes!(&props.build_class)}>
                 <div class="name_1">
                     <div class="pobname nameblock">
                         <span>{&props.name}</span>
                     </div>
                 </div>
-                <Weapon1 item_class="weapon_s_1" item_hover_class="weapon_s_1_hover" image_link="source/pic/w1.png" ..item_props.clone() />
-                <Helmet item_class="helmet_s_1" item_hover_class="helmet_s_1_hover" image_link="source/pic/BoneHelm.png" ..item_props.clone() />
-                <Weapon2 item_class="weapon_s_2" item_hover_class="weapon_s_2_hover" image_link="source/pic/w2.png" ..item_props.clone() />
-                <Chest item_class="chest_s" item_hover_class="chest_s_hover" image_link="source/pic/chestr.png" ..item_props.clone() />
-                <Belt item_class="belt_s" item_hover_class="belt_s_hover" image_link="source/pic/AbyssBelt.png" ..item_props.clone() />
-                <Ring1 item_class="ring1_s" item_hover_class="ring1_s_hover" image_link="source/pic/ring1.png" ..item_props.clone() />
-                <Ring2 item_class="ring2_s" item_hover_class="ring2_s_hover" image_link="source/pic/Ring5.png" ..item_props.clone() />
-                <Amulet item_class="amulet_s" item_hover_class="amulet_s_hover" image_link="source/pic/TurquoiseAmulet.png" ..item_props.clone() />
-                <Gloves item_class="gloves_s" item_hover_class="gloves_s_hover" image_link="source/pic/glove.png" ..item_props.clone() />
-                <Boots item_class="boots_s" item_hover_class="boots_s_hover" image_link="source/pic/boot.png" ..item_props.clone() />
-                <Flasks class="flask_start">
-                    <Flask flask_class="flask_1" hover_class="flask_1_s_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_2" hover_class="flask_2_s_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_3" hover_class="flask_3_s_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_4" hover_class="flask_4_s_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_5" hover_class="flask_5_s_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
+                <Weapon1 image_link="source/pic/w1.png" ..item_props.clone() />
+                <Helmet image_link="source/pic/BoneHelm.png" ..item_props.clone() />
+                <Weapon2 image_link="source/pic/w2.png" ..item_props.clone() />
+                <Chest image_link="source/pic/chestr.png" ..item_props.clone() />
+                <Belt image_link="source/pic/AbyssBelt.png" ..item_props.clone() />
+                <Ring1 image_link="source/pic/ring1.png" ..item_props.clone() />
+                <Ring2 image_link="source/pic/Ring5.png" ..item_props.clone() />
+                <Amulet image_link="source/pic/TurquoiseAmulet.png" ..item_props.clone() />
+                <Gloves image_link="source/pic/glove.png" ..item_props.clone() />
+                <Boots image_link="source/pic/boot.png" ..item_props.clone() />
+                <Flasks class="flasks">
+                    <Flask flask_class="flask_1" hover_class="flask_1_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
+                    <Flask flask_class="flask_2" hover_class="flask_2_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
+                    <Flask flask_class="flask_3" hover_class="flask_3_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
+                    <Flask flask_class="flask_4" hover_class="flask_4_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
+                    <Flask flask_class="flask_5" hover_class="flask_5_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
                 </Flasks>
                 <Price cost=140 />
             </div>
     }
 }
 
-#[function_component(BuildInventoryRight)]
-pub fn build_inventory_right(props: &BuildProps) -> Html {
-    let name = "Поход греха".to_string();
-    let base_type = "Шевровые ботинки".to_string();
-    let mods: Vec<String> = vec![
-        "+21 к ловкости".into(),
-        "+23 к интеллекту".into(),
-    ];
-
-    let item_props = ItemProps {
-        name: name.clone(), 
-        base_type: base_type.clone(), 
-        mods: mods.clone(), 
-        ..ItemProps::default()
-    };
-
-    let flask_props = FlaskProps {
-        name,
-        base_type,
-        mods,
-        ..FlaskProps::default()
-    };
-
+#[function_component(BuildInventoryLeft)]
+fn build_inventory_left() -> Html {
     html! {
-            <div class="thing_end">
-                <div class="name_1">
-                    <div class="pobname nameblock">
-                        <span>{&props.name}</span>
-                    </div>
-                </div>
-                <Weapon1 item_class="weapon_e_1" item_hover_class="weapon_e_1_hover" image_link="source/pic/w1.png" ..item_props.clone() />
-                <Helmet item_class="helmet_e_1" item_hover_class="helmet_e_1_hover" image_link="source/pic/BoneHelm.png" ..item_props.clone() />
-                <Weapon2 item_class="weapon_e_2" item_hover_class="weapon_e_2_hover" image_link="source/pic/w2.png" ..item_props.clone() />
-                <Chest item_class="chest_e" item_hover_class="chest_e_hover" image_link="source/pic/chestr.png" ..item_props.clone() />
-                <Belt item_class="belt_e" item_hover_class="belt_e_hover" image_link="source/pic/AbyssBelt.png" ..item_props.clone() />
-                <Ring1 item_class="ring1_e" item_hover_class="ring1_e_hover" image_link="source/pic/ring1.png" ..item_props.clone() />
-                <Ring2 item_class="ring2_e" item_hover_class="ring2_e_hover" image_link="source/pic/Ring5.png" ..item_props.clone() />
-                <Amulet item_class="amulet_e" item_hover_class="amulet_e_hover" image_link="source/pic/TurquoiseAmulet.png" ..item_props.clone() />
-                <Gloves item_class="gloves_e" item_hover_class="gloves_e_hover" image_link="source/pic/glove.png" ..item_props.clone() />
-                <Boots item_class="boots_e" item_hover_class="boots_e_hover" image_link="source/pic/boot.png" ..item_props.clone() />
-                <Flasks class="flask_end">
-                    <Flask flask_class="flask_1_e" hover_class="flask_1_e_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_2_e" hover_class="flask_2_e_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_3_e" hover_class="flask_3_e_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_4_e" hover_class="flask_4_e_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                    <Flask flask_class="flask_5_e" hover_class="flask_5_e_hover" image_link="source/pic/lifeflask12.png" ..flask_props.clone() />
-                </Flasks>
-            </div>
+        <BuildInventory build_class="thing_start" name={"POB Build"} />
+    }
+}
+
+#[function_component(BuildInventoryRight)]
+fn build_inventory_right() -> Html {
+    html! {
+        <BuildInventory build_class="thing_end" name={"END build"} />
     }
 }
 
@@ -367,9 +328,6 @@ pub struct Props {
 
 #[function_component(BuildPage)]
 pub fn build_page(props: &Props) -> Html {
-    let k = use_node_ref();
-    let s = use_size(k);
-    use_geolocation();
     html!(
        <div class={classes!("container_main")}>
            <header>
@@ -379,8 +337,8 @@ pub fn build_page(props: &Props) -> Html {
            </header>
            <main>
                 <div class="thing_main">
-                    <BuildInventoryLeft name={"POB Build".to_string()} />
-                    <BuildInventoryRight name={"END build".to_string()} />
+                    <BuildInventoryLeft />
+                    <BuildInventoryRight />
                </div>
            </main>
        </div>

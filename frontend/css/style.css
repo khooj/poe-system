@@ -186,7 +186,7 @@ img.pict {
    bottom: 4px;
 }
 
-.weapon_s_1 {
+.thing_start .weapon_1 {
 
    width: 110px;
    height: 215px;
@@ -196,7 +196,7 @@ img.pict {
 
 }
 
-.weapon_s_2 {
+.thing_start .weapon_2 {
 
    width: 110px;
    height: 215px;
@@ -205,7 +205,7 @@ img.pict {
    top: 127px;
 }
 
-.helmet_s_1 {
+.thing_start .helmet_1 {
    width: 110px;
    height: 110px;
    position: absolute;
@@ -214,7 +214,7 @@ img.pict {
 }
 
 
-.chest_s {
+.thing_start .chest {
    width: 110px;
    height: 162px;
    position: absolute;
@@ -223,7 +223,7 @@ img.pict {
 
 }
 
-.belt_s {
+.thing_start .belt {
    width: 110px;
    height: 52px;
    position: absolute;
@@ -231,7 +231,7 @@ img.pict {
    left: 290px;
 }
 
-.ring1_s {
+.thing_start .ring1 {
    width: 50px;
    height: 50px;
    position: absolute;
@@ -239,7 +239,7 @@ img.pict {
    left: 212px;
 }
 
-.ring2_s {
+.thing_start .ring2 {
    width: 50px;
    height: 50px;
    position: absolute;
@@ -247,7 +247,7 @@ img.pict {
    left: 428px;
 }
 
-.amulet_s {
+.thing_start .amulet {
    width: 50px;
    height: 50px;
    position: absolute;
@@ -255,7 +255,7 @@ img.pict {
    left: 428px;
 }
 
-.gloves_s {
+.thing_start .gloves {
    width: 110px;
    height: 110px;
    position: absolute;
@@ -263,7 +263,7 @@ img.pict {
    left: 155px;
 }
 
-.boots_s {
+.thing_start .boots {
    width: 110px;
    height: 110px;
    position: absolute;
@@ -271,7 +271,7 @@ img.pict {
    left: 427px;
 }
 
-.flask_start {
+.thing_start .flasks {
    width: 270px;
    height: 108px;
    display: flex;
@@ -300,20 +300,11 @@ img.pict {
    font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
-div.weapon_s_1_hover {
-   width: 300px;
-   background-color: rgba(9, 7, 1, 0.825);
+.thing_start div.weapon_1_hover {
    position: absolute;
    left: 120px;
    bottom: 30px;
    display: none;
-   font-size: 16px;
-   color: rgb(168, 148, 105);
-   padding: 10px;
-   font-family: Arial, Helvetica, sans-serif;
-   border: solid 2px grey;
-   text-align: center;
-   /* z-index: 0; */
 }
 
 .hover {
@@ -340,7 +331,7 @@ div.weapon_s_1_hover {
    color: rgb(127, 80, 30);
 }
 
-a:hover div.weapon_s_1_hover {
+a:hover div.weapon_1_hover {
    display: block;
 }
 
@@ -351,110 +342,110 @@ img.w1 {
    margin-bottom: 15%;
 }
 
-.helmet_s_1_hover {
+.thing_start .helmet_1_hover {
    position: absolute;
    left: 20px;
    display: none;
 }
 
-a:hover div.helmet_s_1_hover {
+a:hover div.helmet_1_hover {
    display: block;
 }
 
-.weapon_s_2_hover {
+.thing_start .weapon_2_hover {
    position: absolute;
    left: 20px;
    display: none;
 }
 
-a:hover div.weapon_s_2_hover {
+a:hover div.weapon_2_hover {
    display: block;
 }
 
-.chest_s_hover {
+.thing_start .chest_hover {
    position: absolute;
    left: 20px;
    display: none;
 }
 
-a:hover div.chest_s_hover {
+a:hover div.chest_hover {
    display: block;
 }
 
-.belt_s_hover {
+.thing_start .belt_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.belt_s_hover {
+a:hover div.belt_hover {
    display: block;
 }
 
-.ring1_s_hover {
+.thing_start .ring1_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.ring1_s_hover {
+a:hover div.ring1_hover {
    display: block;
 }
 
-.ring2_s_hover {
+.thing_start .ring2_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.ring2_s_hover {
+a:hover div.ring2_hover {
    display: block;
 }
 
-.amulet_s_hover {
+.thing_start .amulet_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.amulet_s_hover {
+a:hover div.amulet_hover {
    display: block;
 }
 
-.gloves_s_hover {
+.thing_start .gloves_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.gloves_s_hover {
+a:hover div.gloves_hover {
    display: block;
 }
 
-.boots_s_hover {
+.thing_start .boots_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.boots_s_hover {
+a:hover div.boots_hover {
    display: block;
 }
 
-.flask_1_s_hover {
+.thing_start .flask_1_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_1_s_hover {
+a:hover div.flask_1_hover {
    display: block;
 }
 
@@ -469,51 +460,51 @@ a:hover div.flask_1_s_hover {
    margin-bottom: 5px;
 }
 
-.flask_2_s_hover {
+.thing_start .flask_2_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_2_s_hover {
+a:hover div.flask_2_hover {
    display: block;
 }
 
-.flask_3_s_hover {
+.thing_start .flask_3_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_3_s_hover {
+a:hover div.flask_3_hover {
    display: block;
 }
 
-.flask_4_s_hover {
+.thing_start .flask_4_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_4_s_hover {
+a:hover div.flask_4_hover {
    display: block;
 }
 
-.flask_5_s_hover {
+.thing_start .flask_5_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_5_s_hover {
+a:hover div.flask_5_hover {
    display: block;
 }
 
-.weapon_e_1 {
+.thing_end .weapon_1 {
 
    width: 110px;
    height: 215px;
@@ -523,7 +514,7 @@ a:hover div.flask_5_s_hover {
 
 }
 
-.weapon_e_2 {
+.thing_end .weapon_2 {
 
    width: 110px;
    height: 215px;
@@ -532,7 +523,7 @@ a:hover div.flask_5_s_hover {
    top: 127px;
 }
 
-.helmet_e_1 {
+.thing_end .helmet_1 {
    width: 110px;
    height: 110px;
    position: absolute;
@@ -541,7 +532,7 @@ a:hover div.flask_5_s_hover {
 }
 
 
-.chest_e {
+.thing_end .chest {
    width: 110px;
    height: 162px;
    position: absolute;
@@ -550,7 +541,7 @@ a:hover div.flask_5_s_hover {
 
 }
 
-.belt_e {
+.thing_end .belt {
    width: 110px;
    height: 52px;
    position: absolute;
@@ -558,7 +549,7 @@ a:hover div.flask_5_s_hover {
    left: 290px;
 }
 
-.ring1_e {
+.thing_end .ring1 {
    width: 50px;
    height: 50px;
    position: absolute;
@@ -566,7 +557,7 @@ a:hover div.flask_5_s_hover {
    left: 212px;
 }
 
-.ring2_e {
+.thing_end .ring2 {
    width: 50px;
    height: 50px;
    position: absolute;
@@ -574,7 +565,7 @@ a:hover div.flask_5_s_hover {
    left: 428px;
 }
 
-.amulet_e {
+.thing_end .amulet {
    width: 50px;
    height: 50px;
    position: absolute;
@@ -582,7 +573,7 @@ a:hover div.flask_5_s_hover {
    left: 428px;
 }
 
-.gloves_e {
+.thing_end .gloves {
    width: 110px;
    height: 110px;
    position: absolute;
@@ -590,7 +581,7 @@ a:hover div.flask_5_s_hover {
    left: 155px;
 }
 
-.boots_e {
+.thing_end .boots {
    width: 110px;
    height: 110px;
    position: absolute;
@@ -598,179 +589,170 @@ a:hover div.flask_5_s_hover {
    left: 427px;
 }
 
-div.weapon_e_1_hover {
-   width: 300px;
-   background-color: rgba(9, 7, 1, 0.825);
+.thing_end div.weapon_1_hover {
    position: absolute;
    left: 120px;
    bottom: 30px;
    display: none;
-   font-size: 16px;
-   color: rgb(168, 148, 105);
-   padding: 10px;
-   font-family: Arial, Helvetica, sans-serif;
-   border: solid 2px grey;
-   text-align: center;
-   /* z-index: 0; */
 }
 
-a:hover div.weapon_e_1_hover {
+a:hover div.weapon_1_hover {
    display: block;
 }
 
-.helmet_e_1_hover {
+.thing_end .helmet_1_hover {
    position: absolute;
    left: 20px;
    display: none;
 }
 
-a:hover div.helmet_e_1_hover {
+a:hover div.helmet_1_hover {
    display: block;
 }
 
-.weapon_e_2_hover {
+.thing_end .weapon_2_hover {
    position: absolute;
    left: 20px;
    display: none;
 }
 
-a:hover div.weapon_e_2_hover {
+a:hover div.weapon_2_hover {
    display: block;
 }
 
-.chest_e_hover {
+.thing_end .chest_hover {
    position: absolute;
    left: 20px;
    display: none;
 }
 
-a:hover div.chest_e_hover {
+a:hover div.chest_hover {
    display: block;
 }
 
-.belt_e_hover {
+.thing_end .belt_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.belt_e_hover {
+a:hover div.belt_hover {
    display: block;
 }
 
-.ring1_e_hover {
+.thing_end .ring1_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.ring1_e_hover {
+a:hover div.ring1_hover {
    display: block;
 }
 
-.ring2_e_hover {
+.thing_end .ring2_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.ring2_e_hover {
+a:hover div.ring2_hover {
    display: block;
 }
 
-.amulet_e_hover {
+.thing_end .amulet_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.amulet_e_hover {
+a:hover div.amulet_hover {
    display: block;
 }
 
-.gloves_e_hover {
+.thing_end .gloves_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.gloves_e_hover {
+a:hover div.gloves_hover {
    display: block;
 }
 
-.boots_e_hover {
+.thing_end .boots_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.boots_e_hover {
+a:hover div.boots_hover {
    display: block;
 }
 
-.flask_1_e_hover {
+.thing_end .flask_1_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_1_e_hover {
+a:hover div.flask_1_hover {
    display: block;
 }
 
 
-.flask_2_e_hover {
+.thing_end .flask_2_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_2_e_hover {
+a:hover div.flask_2_hover {
    display: block;
 }
 
-.flask_3_e_hover {
+.thing_end .flask_3_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_3_e_hover {
+a:hover div.flask_3_hover {
    display: block;
 }
 
-.flask_4_e_hover {
+.thing_end .flask_4_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_4_e_hover {
+a:hover div.flask_4_hover {
    display: block;
 }
 
-.flask_5_e_hover {
+.thing_end .flask_5_hover {
    position: absolute;
    left: 20px;
    bottom: 30px;
    display: none;
 }
 
-a:hover div.flask_5_e_hover {
+a:hover div.flask_5_hover {
    display: block;
 }
 
-.flask_end {
+.thing_end .flasks {
    width: 270px;
    height: 108px;
    display: flex;
