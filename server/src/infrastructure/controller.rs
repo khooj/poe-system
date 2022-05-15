@@ -5,10 +5,19 @@ use actix_web::{
     HttpResponse,
 };
 use serde::{Deserialize, Serialize};
-use tracing::error;
+use tracing::{error, trace};
+use validator::{Validate, ValidationError};
 
-#[derive(Deserialize)]
+fn not_empty(s: &str) -> Result<(), ValidationError> {
+    if s.is_empty() {
+        return Err(ValidationError::new("empty string"));
+    }
+    Ok(())
+}
+
+#[derive(Deserialize, Validate)]
 struct NewBuild {
+    #[validate(url, custom = "not_empty")]
     url: String,
     itemset: String,
 }
@@ -25,6 +34,11 @@ struct NewBuildId {
 
 #[post("/new")]
 pub async fn new_build(build_srv: Data<BuildCalculating>, new: Json<NewBuild>) -> HttpResponse {
+    if let Err(e) = new.validate() {
+        trace!(err = %e, "error validating input");
+        return HttpResponse::BadRequest().finish();
+    }
+
     let id = build_srv
         .add_build_for_calculating(&new.url, &new.itemset, "Sentinel")
         .await;

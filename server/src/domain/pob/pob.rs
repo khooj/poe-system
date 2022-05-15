@@ -15,6 +15,7 @@ use std::{
 };
 use tracing::{error, info};
 use anyhow::anyhow;
+use nom::error::VerboseError;
 
 pub struct Pob {
     original: String,
@@ -145,7 +146,7 @@ impl<'a> PobDocument<'a> {
                 let id = item.attribute("id").unwrap();
                 let id = i32::from_str(id).unwrap();
                 let (_, itm) =
-                    parse_pob_item::<()>(&item.text().unwrap_or("")).expect("can't parse item");
+                    parse_pob_item::<VerboseError<&str>>(&item.text().unwrap_or("")).expect("can't parse item");
                 let item_parsed = match itm.try_into() {
                     Ok(k) => k,
                     Err(e) => {
