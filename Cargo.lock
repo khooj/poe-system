@@ -2363,24 +2363,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
 
 [[package]]
-name = "pob"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64",
- "dotenv",
- "flate2",
- "lazy_static",
- "nom 6.1.2",
- "reqwest",
- "roxmltree",
- "serde",
- "serde_json",
- "tracing",
- "url",
-]
-
-[[package]]
 name = "poe-system"
 version = "0.1.0"
 dependencies = [
@@ -2405,7 +2387,6 @@ dependencies = [
  "num",
  "opentelemetry",
  "opentelemetry-jaeger",
- "pob",
  "r2d2",
  "reqwest",
  "roxmltree",

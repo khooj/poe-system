@@ -117,7 +117,6 @@ impl Application {
                 let ret = bc1.calculate_next_build().await;
                 if let Err(e) = ret {
                     error!("error calculating next build: {}", e);
-                    tokio::time::sleep(Duration::from_secs(1)).await;
                 }
             }
         });

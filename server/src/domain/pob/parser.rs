@@ -1,3 +1,4 @@
+use crate::domain::types::{Mod, ModType};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
@@ -11,41 +12,8 @@ use nom::{
 use std::num::ParseIntError;
 use std::str::FromStr;
 use tracing::info;
-use serde::{Serialize, Deserialize};
 
-// TODO: deduplicate somehow
-use crate::poe_data::BASE_ITEMS;
-
-// TODO: deduplicate somehow
-#[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq)]
-pub enum ModType {
-    Utility = 0,
-    Implicit = 1,
-    Explicit = 2,
-    Crafted = 3,
-    Enchant = 4,
-    Fractured = 5,
-    Cosmetic = 6,
-    Veiled = 7,
-    ExplicitHybrid = 8,
-    Scourge = 9,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-pub struct Mod {
-    pub text: String,
-    pub type_: ModType,
-}
-
-impl Mod {
-    pub fn from_str_type(value: &str, type_: ModType) -> Self {
-        Mod {
-            text: value.to_owned(),
-            type_,
-        }
-    }
-
-}
+use crate::infrastructure::poe_data::BASE_ITEMS;
 
 #[derive(Debug, PartialEq)]
 enum ItemValue {

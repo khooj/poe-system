@@ -1,4 +1,4 @@
-use pob::pob::item::Item as PobItem;
+use super::pob::item::Item as PobItem;
 use super::types::{
     Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory,
 };

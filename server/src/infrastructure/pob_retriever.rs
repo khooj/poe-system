@@ -1,9 +1,8 @@
 use std::marker::PhantomData;
 
-use super::{pob::pob::Pob, pastebin::PastebinBuildUrl};
+use crate::domain::{pob::pob::Pob, PastebinBuildUrl};
 use anyhow::Result;
 use url::Url;
-use tracing::{instrument, trace};
 
 #[derive(Clone)]
 pub struct HttpPobRetriever {
@@ -28,7 +27,6 @@ impl HttpPobRetriever {
         })
     }
 
-    #[instrument(err, skip(self))]
     pub async fn get_pob(&self, url: &str) -> Result<Pob> {
         let url = if self.host.is_some() {
             let url = Url::parse(url)?;
@@ -39,10 +37,8 @@ impl HttpPobRetriever {
             pastebin.pastebin_raw_url()
         };
 
-        trace!(url = %url, "getting url");
         let resp = self.client.get(&url).send().await?;
 
-        trace!("getting response body");
         let body = resp.text().await?;
 
         Ok(Pob::from_pastebin_data(body)?)

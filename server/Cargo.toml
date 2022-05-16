@@ -46,7 +46,6 @@ url = "2"
 async-graphql = { version = "3", features = [ "tracing", "opentelemetry" ] }
 async-graphql-actix-web = "3"
 validator = { version = "0.15", features = ["derive"] }
-pob = { path = "../pob" }
 
 [dev-dependencies]
 temp-file = "0.1.6"
