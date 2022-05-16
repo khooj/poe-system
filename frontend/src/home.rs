@@ -16,7 +16,7 @@ pub fn home() -> Html {
     let build_data = use_state(|| "".to_string());
 
     let build_request = {
-        let pob_data = build_data.clone();
+        let pob_data_state = build_data.clone();
         let pob_data_ref = pob_data_ref.clone();
 
         use_async(async move {
@@ -41,12 +41,13 @@ pub fn home() -> Html {
             }
             let pob_data_node = pob_data_node.unwrap();
             let data = pob_data_node.value();
-            let pob_check = Pob::from_pastebin_data(data)?;
+            let _ = Pob::from_pastebin_data(data.clone())?;
 
-            pob_data.set(pob_check.raw_data().to_string());
+            log::info!("pob data2: {}", data);
+            pob_data_state.set(data.clone());
 
             post_new_build(NewBuild {
-                pob: (*pob_data).clone(),
+                pob: data,
                 itemset: "".into(),
             })
             .await

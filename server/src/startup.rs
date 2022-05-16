@@ -110,15 +110,18 @@ impl Application {
         }
 
         let bc1 = bc.clone();
-        tokio::spawn(async move {
-            let mut interval = interval(Duration::from_millis(100));
-            loop {
-                interval.tick().await;
-                let ret = bc1.calculate_next_build().await;
-                if let Err(e) = ret {
-                    error!("error calculating next build: {}", e);
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().expect("cant create runtime");
+            rt.block_on(async move {
+                let mut interval = interval(Duration::from_millis(100));
+                loop {
+                    interval.tick().await;
+                    let ret = bc1.calculate_next_build().await;
+                    if let Err(e) = ret {
+                        error!("error calculating next build: {}", e);
+                    }
                 }
-            }
+            });
         });
 
         HttpServer::new(move || {

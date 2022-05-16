@@ -45,7 +45,7 @@ impl BuildCalculating {
 }
 
 impl BuildCalculating {
-    #[instrument(err, skip(self))]
+    #[instrument(err, skip(self, pob))]
     pub async fn add_build_for_calculating(
         &self,
         pob: &str,
@@ -97,7 +97,7 @@ impl BuildCalculating {
         Ok(())
     }
 
-    #[instrument(err, skip(tr, self))]
+    #[instrument(err, skip(tr, data, self))]
     async fn calculate_build(
         &self,
         tr: &mut PgTransaction<'_>,
@@ -115,6 +115,7 @@ impl BuildCalculating {
             ));
         }
 
+        info!(id = %id, "started calculating build");
         let build_info: CalculateBuildTaskData = serde_json::from_value(data.clone())?;
         let build = Pob::from_pastebin_data(build_info.pob)?;
         let build_doc = build.as_document()?;
@@ -128,7 +129,7 @@ impl BuildCalculating {
         let mut found_items = BuildItems::default();
         for item in itemset.items() {
             let item = item.clone();
-            trace!("searching similar item");
+            info!(name = %item.name, basetype = %item.base_type, "searching similar item");
             let (found_item, score) = self.find_similar_item(&item, &build_info.league).await;
             let item: Item = item.into();
             match item.class {
@@ -159,6 +160,8 @@ impl BuildCalculating {
                 }
                 _ => {}
             }
+
+            info!("found item");
         }
 
         let result_build = Build::new(
@@ -170,6 +173,7 @@ impl BuildCalculating {
         )?;
 
         self.build_repository.new_build(tr, result_build).await?;
+        info!("end calculating build");
 
         Ok(())
     }

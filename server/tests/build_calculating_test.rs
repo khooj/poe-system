@@ -19,12 +19,11 @@ struct Repos {
 }
 
 impl Repos {
-    fn build_calculating(&self, server: &Server) -> Result<BuildCalculating> {
-        BuildCalculating::new_with_host(
+    fn build_calculating(&self, _server: &Server) -> BuildCalculating {
+        BuildCalculating::new(
             self.items.clone(),
             self.tasks.clone(),
             self.builds.clone(),
-            &format!("http://{}", server.addr().to_string().as_str()),
         )
     }
 }
@@ -67,20 +66,22 @@ async fn build_calculating_test() -> Result<()> {
 }
 
 const POB1: &str = include_str!("pob.txt");
+const POB3: &str = include_str!("pob3.txt");
 
 async fn check_build_calculating(repos: &Repos) -> Result<()> {
     let server = server::http(|req| async move {
         assert_eq!(req.method(), "GET");
         assert_eq!(req.uri(), "/asd");
 
+        // not used
         http::Response::builder().body(POB1.into()).unwrap()
     });
 
-    let build_calc = repos.build_calculating(&server)?;
+    let build_calc = repos.build_calculating(&server);
     println!("adding build for calc");
 
     let id = build_calc
-        .add_build_for_calculating("http://customurl.com/asd", "", "Standard")
+        .add_build_for_calculating(POB3, "", "Standard")
         .await?;
     build_calc.calculate_next_build().await?;
     let build = build_calc.get_calculated_build(&id).await?;

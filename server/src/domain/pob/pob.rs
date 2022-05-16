@@ -200,6 +200,7 @@ impl<'a> PobDocument<'a> {
 mod tests {
     const TESTPOB: &'static str = include_str!("pob.txt");
     const TESTPOB2: &'static str = include_str!("pob2.txt");
+    const TESTPOB3: &'static str = include_str!("pob3.txt");
 
     use super::Pob;
 
@@ -221,6 +222,19 @@ mod tests {
         // println!("sets names: {:?}", sets.iter().map(|e| &e.title).collect::<Vec<&String>>());
         let set = doc.get_first_itemset()?;
         println!("first itemset: {:?}", set);
+        Ok(())
+    }
+
+    #[test]
+    fn parse_pob3() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
+        let pob = Pob::from_pastebin_data(TESTPOB3.to_owned())?;
+        let doc = pob.as_document()?;
+        // let sets = doc.get_item_sets();
+        // println!("sets names: {:?}", sets.iter().map(|e| &e.title).collect::<Vec<&String>>());
+        let set = doc.get_first_itemset()?;
+        println!("first itemset: {:?}", set);
+        for i in set.items() {}
         Ok(())
     }
 
