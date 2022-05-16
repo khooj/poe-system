@@ -8,6 +8,8 @@ const API_ROOT: &str = dotenv_codegen::dotenv!("API_ROOT");
 pub enum Error {
     #[error("request error: {0}")]
     RequestError(String),
+    #[error("custom error: {0}")]
+    CustomError(String),
 }
 
 async fn make_get_request(path: &str) -> Result<Response, Error> {
@@ -29,9 +31,16 @@ where
         .map_err(|e| Error::RequestError(e.to_string()))?)
 }
 
+pub async fn get_text_body(url: &str) -> Result<Response, Error> {
+    Ok(Request::get(url)
+        .send()
+        .await
+        .map_err(|e| Error::RequestError(e.to_string()))?)
+}
+
 #[derive(Serialize)]
 pub struct NewBuild {
-    pub url: String,
+    pub pob: String,
     pub itemset: String,
 }
 

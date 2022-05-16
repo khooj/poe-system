@@ -1,21 +1,52 @@
-use super::make_request::{post_new_build, NewBuild};
+use crate::pob::Pob;
+
+use super::make_request::{post_new_build, Error, NewBuild};
+use super::pob_retriever::HttpPobRetriever;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 use yew_router::prelude::*;
-use web_sys::HtmlInputElement;
 
 use super::Route;
 
 #[function_component(Home)]
 pub fn home() -> Html {
     let history = use_history().unwrap();
-    let noderef = use_node_ref();
-    let build_id = use_state(|| "".to_string());
+    let pob_data_ref = use_node_ref();
+    let build_data = use_state(|| "".to_string());
+
     let build_request = {
-        let id = build_id.clone();
+        let pob_data = build_data.clone();
+        let pob_data_ref = pob_data_ref.clone();
+
         use_async(async move {
+            // let pastebin_node = pastebin_link_ref.cast::<HtmlInputElement>();
+            // let v = pastebin_node.map(|node| node.value());
+            // if v.is_none() {
+            //     log::error!("cant get input value");
+            //     return Err(Error::CustomError("can't get input value".to_string()));
+            // }
+
+            // let v = v.unwrap();
+
+            // let retr = HttpPobRetriever::new();
+            // let data = retr.get_pob(&v).await?;
+
+            let pob_data_node = pob_data_ref.cast::<HtmlInputElement>();
+            if pob_data_node.is_none() {
+                log::error!("can't get pob data ref node");
+                return Err(Error::CustomError(
+                    "can't get pob data ref node".to_string(),
+                ));
+            }
+            let pob_data_node = pob_data_node.unwrap();
+            let data = pob_data_node.value();
+            let pob_check = Pob::from_pastebin_data(data)?;
+
+            pob_data.set(pob_check.raw_data().to_string());
+
             post_new_build(NewBuild {
-                url: (*id).clone(),
+                pob: (*pob_data).clone(),
                 itemset: "".into(),
             })
             .await
@@ -23,20 +54,10 @@ pub fn home() -> Html {
     };
 
     let onclick = {
-        let noderef = noderef.clone();
-        let build_id = build_id.clone();
         let build_request = build_request.clone();
 
         Callback::from(move |ev: yew::events::MouseEvent| {
             ev.prevent_default();
-            let node = noderef.cast::<HtmlInputElement>();
-            let v = node.map(|node| node.value());
-            if v.is_none() {
-                log::error!("cant get input value");
-                return;
-            }
-
-            build_id.set(v.unwrap());
             build_request.run();
         })
     };
@@ -58,8 +79,8 @@ pub fn home() -> Html {
     html! {
         <div class="container_start">
             <form class="upload" action="" method="post" name="upload_build">
-                <label for="upload">{ "Ссылка на поб" }</label>
-                <input ref={noderef} type="text" name="pob" />
+                <label for="#">{ "Данные pob" }</label>
+                <input ref={pob_data_ref} type="text" name="pob" />
                 <button class="submit" type="submit" {onclick} disabled={build_request.loading}>{ "SEND" }</button>
             </form>
         </div>

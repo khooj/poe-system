@@ -1067,9 +1067,12 @@ name = "frontend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64",
  "dotenv_codegen",
+ "flate2",
  "gloo 0.7.0",
  "log",
+ "roxmltree",
  "serde",
  "thiserror",
  "wasm-logger",

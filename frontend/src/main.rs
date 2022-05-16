@@ -1,6 +1,8 @@
 mod home;
 mod buildpage;
 mod make_request;
+mod pob;
+mod pob_retriever;
 
 use yew::prelude::*;
 use yew_router::prelude::*;
