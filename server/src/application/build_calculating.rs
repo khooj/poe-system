@@ -18,7 +18,7 @@ use tracing::{debug, error, info, instrument, trace, warn};
 
 #[derive(Deserialize, Serialize)]
 struct CalculateBuildTaskData {
-    url: String,
+    pob: String,
     itemset: String,
     league: String,
 }
@@ -28,7 +28,6 @@ pub struct BuildCalculating {
     repository: RawItemRepository,
     tasks_repository: TaskRepository,
     build_repository: BuildRepository,
-    pob_retriever: HttpPobRetriever,
 }
 
 impl BuildCalculating {
@@ -41,22 +40,7 @@ impl BuildCalculating {
             repository,
             tasks_repository,
             build_repository,
-            pob_retriever: HttpPobRetriever::new(),
         }
-    }
-
-    pub fn new_with_host(
-        repository: RawItemRepository,
-        tasks_repository: TaskRepository,
-        build_repository: BuildRepository,
-        host: &str,
-    ) -> Result<Self> {
-        Ok(BuildCalculating {
-            repository,
-            tasks_repository,
-            build_repository,
-            pob_retriever: HttpPobRetriever::new_with_host(host)?,
-        })
     }
 }
 
@@ -64,7 +48,7 @@ impl BuildCalculating {
     #[instrument(err, skip(self))]
     pub async fn add_build_for_calculating(
         &self,
-        url: &str,
+        pob: &str,
         itemset: &str,
         league: &str,
     ) -> Result<String> {
@@ -76,7 +60,7 @@ impl BuildCalculating {
                 Task::new(
                     TaskType::CalculateBuild,
                     serde_json::to_value(CalculateBuildTaskData {
-                        url: url.to_string(),
+                        pob: pob.to_string(),
                         itemset: itemset.to_string(),
                         league: league.to_string(),
                     })?,
@@ -132,8 +116,7 @@ impl BuildCalculating {
         }
 
         let build_info: CalculateBuildTaskData = serde_json::from_value(data.clone())?;
-        let build = self.pob_retriever.get_pob(&build_info.url).await?;
-        trace!("got pob");
+        let build = Pob::from_pastebin_data(build_info.pob)?;
         let build_doc = build.as_document()?;
         let itemset = if build_info.itemset.is_empty() {
             build_doc.get_first_itemset()?
