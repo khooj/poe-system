@@ -1,0 +1,1 @@
+DROP INDEX raw_items_buildtype_league_idx;
