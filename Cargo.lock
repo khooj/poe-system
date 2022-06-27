@@ -2471,6 +2471,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "public_stash"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "governor",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "quanta"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

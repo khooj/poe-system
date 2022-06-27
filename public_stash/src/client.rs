@@ -1,17 +1,16 @@
-use crate::interfaces::public_stash_retriever::{Error, PublicStashData};
-use anyhow::Result;
+use super::models::{Error, PublicStashData};
 use governor::{
     clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},
-    Quota, RateLimiter,
+    Jitter, Quota, RateLimiter,
 };
 use reqwest::StatusCode;
 use std::num::NonZeroU32;
 use std::str::FromStr;
 use std::{convert::TryFrom, time::Duration};
-use tracing::{debug, info, error};
+use tracing::{debug, error};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Limits {
     hit_count: u32,
     watching_time: Duration,
@@ -45,7 +44,7 @@ fn parse_header(limit: &str) -> Limits {
 pub struct Client {
     client: reqwest::Client,
     limiter: Option<RateLimiter<NotKeyed, InMemoryState, DefaultClock>>,
-    latest_limiter: Option<String>,
+    latest_limits: Option<Limits>,
 }
 
 impl Client {
@@ -57,12 +56,11 @@ impl Client {
         Client {
             client,
             limiter: None,
-            latest_limiter: None,
+            latest_limits: None,
         }
     }
 
-    fn reinit_limiter(&mut self, limiting: &str) {
-        let limits = parse_header(&limiting);
+    fn reinit_limiter(&mut self, limits: Limits) {
         debug!("encountered new limits: {:?}", limits);
         let hit =
             NonZeroU32::try_from(limits.hit_count).map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
@@ -71,7 +69,7 @@ impl Client {
             .allow_burst(hit);
 
         self.limiter = Some(RateLimiter::direct(quota));
-        self.latest_limiter = Some(limiting.to_owned());
+        self.latest_limits = Some(limits);
     }
 
     pub async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error> {
@@ -104,12 +102,12 @@ impl Client {
             };
         }
 
-        if self.latest_limiter.is_some() && limiting != self.latest_limiter.as_ref().unwrap() {
-            self.reinit_limiter(limiting);
-        }
-
-        if self.limiter.is_none() {
-            self.reinit_limiter(limiting);
+        let limits = parse_header(&limiting);
+        let do_reinit_limiter =
+            self.latest_limits.is_some() && &limits != self.latest_limits.as_ref().unwrap();
+        let do_reinit_limiter = do_reinit_limiter || self.limiter.is_none();
+        if do_reinit_limiter {
+            self.reinit_limiter(limits);
         }
 
         let limiting_state = resp
@@ -122,8 +120,13 @@ impl Client {
         let st = resp.status();
         match st {
             StatusCode::TOO_MANY_REQUESTS => {
-                let lims = parse_header(limiting);
-                tokio::time::sleep(lims.penalty_time).await;
+                let rl = self.limiter.as_ref().unwrap();
+                let limits = self.latest_limits.as_ref().unwrap();
+                rl.until_ready_with_jitter(Jitter::new(
+                    limits.penalty_time,
+                    Duration::from_secs(1),
+                ))
+                .await;
                 return Err(Error::NextCycle);
             }
             x if x.is_success() => {}
