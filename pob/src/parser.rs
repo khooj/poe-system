@@ -1,4 +1,3 @@
-use crate::domain::types::{Mod, ModType};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
@@ -9,21 +8,20 @@ use nom::{
     sequence::{delimited, pair, preceded, terminated},
     IResult,
 };
+use tracing::info;
+use mods::{Mod, ModType};
+
 use std::num::ParseIntError;
 use std::str::FromStr;
-use tracing::info;
-
-use crate::infrastructure::poe_data::BASE_ITEMS;
 
 #[derive(Debug, PartialEq)]
 enum ItemValue {
     Rarity(String),
-    BaseType { base: String, name: String },
+    BaseType { name: String, base: String },
     ItemLevel(i32),
     LevelReq(i32),
     UniqueId(String),
-    Affix { type_: ModType, value: String },
-    Implicits(Vec<ItemValue>),
+    Affix(Mod),
     Quality(i32),
     Sockets(String),
     Influence(String),
