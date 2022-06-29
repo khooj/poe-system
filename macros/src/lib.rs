@@ -51,7 +51,7 @@ pub fn static_array_from_file(input: TokenStream) -> TokenStream {
         if sz == 0 {
             break;
         }
-        sv.push(s.clone());
+        sv.push(s.clone().trim().to_owned());
         s.clear();
     }
 

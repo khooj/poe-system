@@ -2,7 +2,9 @@ use mods::{Mod, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
-    character::complete::{alpha1, alphanumeric1, digit1, line_ending, not_line_ending},
+    character::complete::{
+        alpha1, alphanumeric1, digit1, line_ending, multispace0, not_line_ending,
+    },
     combinator::{cut, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
     multi::{length_count, many0, many_m_n},
