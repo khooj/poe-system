@@ -1,22 +1,36 @@
-use super::{parser::{parse_pob_item, ParsedItem}, item::Item};
-use crate::{
-    domain::{
-        types::{Class, ItemLvl, League, Mod, ModType, Rarity},
-    },
-    infrastructure::poe_data::BASE_ITEMS,
-};
+use super::parser::{parse_pob_item, ParsedItem};
 use base64::{decode_config, URL_SAFE};
 use flate2::read::ZlibDecoder;
-use roxmltree::{Document, Node};
-use std::{collections::HashMap, io::Read};
-use std::{
-    convert::{TryFrom, TryInto},
-    str::FromStr,
-};
-use tracing::{error, info};
-use anyhow::anyhow;
 use nom::error::VerboseError;
+use roxmltree::{Document, Node};
+use thiserror::Error;
+use tracing::{error, info};
 
+use std::str::FromStr;
+use std::{collections::HashMap, io::Read};
+
+#[derive(Error, Debug)]
+pub enum PobError {
+    #[error("wrong basetype: {0}")]
+    WrongBasetype(String),
+    #[error("parse error: {0}")]
+    Parse(String),
+    #[error("itemset not found: {0}")]
+    ItemsetNotFound(i32),
+    #[error("itemset name not found: {0}")]
+    ItemsetNameNotFound(String),
+
+    #[error("type error: {0}")]
+    TypeError(#[from] mods::TypeError),
+    #[error("xml error")]
+    XmlError(#[from] roxmltree::Error),
+    #[error("base64 error")]
+    Base64Error(#[from] base64::DecodeError),
+    #[error("io")]
+    IoError(#[from] std::io::Error),
+    #[error("int parse")]
+    ParseIntError(#[from] core::num::ParseIntError),
+}
 pub struct Pob {
     original: String,
 }
@@ -26,7 +40,7 @@ impl<'a> Pob {
         Pob { original: data }
     }
 
-    pub fn from_pastebin_data(data: String) -> Result<Pob, anyhow::Error> {
+    pub fn from_pastebin_data(data: String) -> Result<Pob, PobError> {
         let tmp = decode_config(data, URL_SAFE)?;
         let mut decoder = ZlibDecoder::new(&tmp[..]);
         let mut s = String::new();
@@ -34,7 +48,7 @@ impl<'a> Pob {
         Ok(Pob { original: s })
     }
 
-    pub fn as_document(&'a self) -> Result<PobDocument<'a>, anyhow::Error> {
+    pub fn as_document(&'a self) -> Result<PobDocument<'a>, PobError> {
         let doc = Document::parse(&self.original)?;
         Ok(PobDocument { doc })
     }
@@ -44,14 +58,14 @@ impl<'a> Pob {
 pub struct ItemSet {
     title: String,
     id: i32,
-    items: Vec<Item>,
+    items: Vec<ParsedItem>,
 }
 
 impl ItemSet {
-    fn try_from(node: &Node, items_map: &HashMap<i32, Item>) -> Result<ItemSet, anyhow::Error> {
+    fn try_from(node: &Node, items_map: &HashMap<i32, ParsedItem>) -> Result<ItemSet, PobError> {
         let id = node
             .attribute("id")
-            .ok_or(anyhow::anyhow!("cant get itemset id"))?;
+            .ok_or(PobError::Parse("can't get id from node".into()))?;
         let id = i32::from_str(id)?;
         let title = node.attribute("title").map_or("default", |v| v);
         let mut items = vec![];
@@ -62,7 +76,7 @@ impl ItemSet {
             if id == -1 || id == 0 {
                 continue;
             }
-            items.push(items_map.get(&id).unwrap_or(&Item::default()).clone());
+            items.push(items_map.get(&id).unwrap_or(&ParsedItem::default()).clone());
         }
 
         Ok(ItemSet {
@@ -72,44 +86,10 @@ impl ItemSet {
         })
     }
 
-    pub fn get_nth_item(&self, nth: usize) -> Option<&Item> {
+    pub fn get_nth_item(&self, nth: usize) -> Option<&ParsedItem> {
         self.items.iter().nth(nth)
     }
-}
 
-impl TryInto<Item> for ParsedItem {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> Result<Item, Self::Error> {
-        let rarity: Rarity = self.rarity.try_into()?;
-        let item_lvl: ItemLvl = self.item_lvl.into();
-
-        let itemclass = BASE_ITEMS.get_item_class(&self.base_line).ok_or(anyhow!(
-            "can't get itemclass from basetype: {}",
-            self.base_line
-        ))?;
-        Ok(Item {
-            league: League::Standard,
-            item_lvl,
-            name: self.name.to_owned(),
-            base_type: self.base_line,
-            mods: self.affixes,
-            class: match Class::from_itemclass(itemclass) {
-                Ok(k) => k,
-                Err(e) => {
-                    error!(
-                        "can't get class from given itemclass: {} with err: {}",
-                        itemclass, e
-                    );
-                    Class::default()
-                }
-            },
-            ..Item::default()
-        })
-    }
-}
-
-impl ItemSet {
     pub fn title(&self) -> &str {
         &self.title
     }
@@ -118,7 +98,7 @@ impl ItemSet {
         self.id
     }
 
-    pub fn items(&self) -> &Vec<Item> {
+    pub fn items(&self) -> &Vec<ParsedItem> {
         &self.items
     }
 }
@@ -131,7 +111,7 @@ pub struct PobDocument<'a> {
 impl<'a> PobDocument<'a> {
     pub fn get_item_sets(&self) -> Vec<ItemSet> {
         let mut itemsets = vec![];
-        let mut items: HashMap<i32, Item> = HashMap::new();
+        let mut items: HashMap<i32, ParsedItem> = HashMap::new();
         let mut nodes = self.doc.descendants();
         let items_node = match nodes.find(|&x| x.tag_name().name() == "Items") {
             Some(k) => k,
@@ -145,20 +125,9 @@ impl<'a> PobDocument<'a> {
             if item.tag_name().name() == "Item" {
                 let id = item.attribute("id").unwrap();
                 let id = i32::from_str(id).unwrap();
-                let (_, itm) =
-                    parse_pob_item::<VerboseError<&str>>(&item.text().unwrap_or("")).expect("can't parse item");
-                let item_parsed = match itm.try_into() {
-                    Ok(k) => k,
-                    Err(e) => {
-                        error!(
-                            "cant convert into domain item: {} with err: {}",
-                            item.text().unwrap(),
-                            e
-                        );
-                        continue;
-                    }
-                };
-                items.insert(id, item_parsed);
+                let (_, itm) = parse_pob_item::<VerboseError<&str>>(&item.text().unwrap_or(""))
+                    .expect("can't parse item");
+                items.insert(id, itm);
             }
         }
 
@@ -173,16 +142,16 @@ impl<'a> PobDocument<'a> {
         itemsets
     }
 
-    pub fn get_first_itemset(&self) -> Result<ItemSet, anyhow::Error> {
+    pub fn get_first_itemset(&self) -> Result<ItemSet, PobError> {
         let itemsets = self.get_item_sets();
 
         itemsets
             .into_iter()
             .nth(0)
-            .ok_or(anyhow::anyhow!("pob dont have itemsets"))
+            .ok_or(PobError::ItemsetNotFound(0))
     }
 
-    pub fn get_itemset(&self, title: &str) -> Result<ItemSet, anyhow::Error> {
+    pub fn get_itemset(&self, title: &str) -> Result<ItemSet, PobError> {
         if title.is_empty() {
             return self.get_first_itemset();
         }
@@ -192,7 +161,7 @@ impl<'a> PobDocument<'a> {
         itemsets
             .into_iter()
             .find(|e| e.title == title)
-            .ok_or(anyhow::anyhow!("cant find itemset"))
+            .ok_or(PobError::ItemsetNameNotFound(title.into()))
     }
 }
 
@@ -234,7 +203,7 @@ mod tests {
         // println!("sets names: {:?}", sets.iter().map(|e| &e.title).collect::<Vec<&String>>());
         let set = doc.get_first_itemset()?;
         println!("first itemset: {:?}", set);
-        for i in set.items() {}
+        for _ in set.items() {}
         Ok(())
     }
 

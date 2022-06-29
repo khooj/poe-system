@@ -56,7 +56,7 @@ pub fn static_array_from_file(input: TokenStream) -> TokenStream {
     }
 
     let tokens = quote! {
-        static #name: &[&'static str] = &[ #(#sv),* ];
+        pub static #name: &[&'static str] = &[ #(#sv),* ];
     };
 
     tokens.into()

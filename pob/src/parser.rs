@@ -1,15 +1,14 @@
+use mods::{Mod, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
     character::complete::{alpha1, alphanumeric1, digit1, line_ending, not_line_ending},
-    combinator::{cut, eof, map, map_res, opt},
+    combinator::{cut, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
     multi::{length_count, many0, many_m_n},
-    sequence::{delimited, pair, preceded, terminated},
+    sequence::{delimited, preceded},
     IResult,
 };
-use tracing::info;
-use mods::{Mod, ModType};
 
 use std::num::ParseIntError;
 use std::str::FromStr;
@@ -22,6 +21,7 @@ enum ItemValue {
     LevelReq(i32),
     UniqueId(String),
     Affix(Mod),
+    Implicits(Vec<ItemValue>),
     Quality(i32),
     Sockets(String),
     Influence(String),
@@ -47,8 +47,7 @@ fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, ItemValue, E> {
     let (i, name) = context("name", cut(not_line_ending))(i)?;
 
-    let all_itemclasses = BASE_ITEMS.get_all_itemclasses();
-    for itemclass in all_itemclasses {
+    for itemclass in BASE_TYPES {
         // TODO: fix?
         if itemclass.is_empty() {
             continue;
@@ -175,10 +174,7 @@ fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
                 opt(alt((tag("{crafted}"), tag("{range:1}")))),
                 cut(not_line_ending),
             ),
-            |e: &str| ItemValue::Affix {
-                value: e.to_string(),
-                type_: default,
-            },
+            |e: &str| ItemValue::Affix(Mod::from_str_type(&e, default)),
         ),
     )(i)
 }
@@ -292,8 +288,8 @@ where
             ItemValue::Quality(q) => item.quality = q,
             ItemValue::Implicits(implicits) => {
                 item.affixes.extend(implicits.into_iter().map(|e| {
-                    if let ItemValue::Affix { value, type_ } = e {
-                        Mod { text: value, type_ }
+                    if let ItemValue::Affix(m) = e {
+                        m
                     } else {
                         Mod {
                             text: "invalid".to_string(),
@@ -302,7 +298,7 @@ where
                     }
                 }))
             }
-            ItemValue::Affix { value, type_ } => item.affixes.push(Mod { text: value, type_ }),
+            ItemValue::Affix(m) => item.affixes.push(m),
             _ => {}
         };
     }
@@ -337,10 +333,10 @@ mod test {
         assert_eq!(i, "\nAdds 3 Passive Skills");
         assert_eq!(
             ret,
-            vec![ItemValue::Affix {
-                value: "Adds 2 Passive Skills".to_string(),
-                type_: ModType::Implicit
-            }]
+            vec![ItemValue::Affix(Mod::from_str_type(
+                "Adds 2 Passive Skills",
+                ModType::Implicit
+            ))]
         );
 
         let i = "Implicits: 0\nAdds 2 Passive Skills\nAdds 3 Passive Skills";

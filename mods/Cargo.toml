@@ -9,3 +9,4 @@ edition = "2021"
 strum = { version = "0.24", features = [ "derive" ] }
 serde = { version = "1", features = ["derive"] }
 thiserror = "1.0.24"
+macros = { path = "../macros" }
