@@ -1,7 +1,5 @@
-use super::{PgTransaction, raw_item::RawItem};
-use crate::{
-    infrastructure::repositories::LatestStashId, interfaces::public_stash_retriever::Item,
-};
+use super::{raw_item::RawItem, LatestStashId, PgTransaction};
+use public_stash::models::Item as ApiItem;
 use anyhow::Result;
 use sqlx::{types::Json, PgPool};
 
@@ -20,40 +18,37 @@ impl RawItemRepository {
         Ok(PgTransaction { transaction })
     }
 
-    pub async fn get_stash_id(&self, transaction: &mut PgTransaction<'_>) -> Result<LatestStashId> {
+    pub async fn get_stash_id(&self, transaction: &mut PgTransaction<'_>) -> Result<String> {
         let id = sqlx::query_as!(
             LatestStashId,
             "SELECT stash_id as latest_stash_id FROM latest_stash LIMIT 1",
         )
         .fetch_one(&mut *transaction.transaction)
         .await?;
-        Ok(id)
+        Ok(id.latest_stash_id)
     }
 
-    pub async fn insert_raw_item(
+    pub async fn insert_item(
         &self,
         transaction: &mut PgTransaction<'_>,
-        id: &str,
-        acc: &str,
-        stash: &str,
-        item: Item,
+        item: RawItem,
     ) -> Result<()> {
         let _ = sqlx::query!(
             r#"
 INSERT INTO raw_items (id, account_name, stash, item) 
 VALUES ($1, $2, $3, $4)
             "#,
-            id,
-            acc,
-            stash,
-            Json(item) as _,
+            item.id,
+            item.account_name,
+            item.stash,
+            Json(item.item) as _,
         )
         .execute(&mut *transaction.transaction)
         .await?;
         Ok(())
     }
 
-    pub async fn delete_raw_item(
+    pub async fn delete_item(
         &self,
         transaction: &mut PgTransaction<'_>,
         acc: &str,
@@ -99,7 +94,7 @@ ON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"#,
         }
     }
 
-    pub async fn get_raw_items_cursor(
+    pub async fn get_items_cursor(
         &self,
         base_types: &[&str],
         league: &str,
@@ -107,7 +102,7 @@ ON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"#,
         sqlx::query_as!(
             RawItem,
             r#"
-SELECT id, account_name, stash, item as "item: Json<Item>" 
+SELECT id, account_name, stash, item as "item: Json<ApiItem>" 
 FROM raw_items
 WHERE item->'baseType' ?| $1 AND item ->> 'league' = $2
             "#,

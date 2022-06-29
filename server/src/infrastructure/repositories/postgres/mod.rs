@@ -6,6 +6,12 @@ pub mod build_repository;
 use sqlx::{Postgres, Transaction};
 use std::ops::Deref;
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize)]
+struct LatestStashId {
+    pub latest_stash_id: String,
+}
 
 pub struct PgTransaction<'a> {
     transaction: Transaction<'a, Postgres>,

@@ -1,8 +1,9 @@
 use crate::configuration::Settings;
 use crate::{
     application::{build_calculating::BuildCalculating, stash_receiver::StashReceiver},
-    infrastructure::{public_stash_retriever::Client, repositories::create_repositories},
+    infrastructure::repositories::create_repositories,
 };
+use public_stash::client::Client;
 
 use crate::infrastructure::controller::{get_build, new_build};
 use actix_web::{web, App, HttpServer};

@@ -1,5 +1,44 @@
 {
   "db": "PostgreSQL",
+  "0b38122991c30617b80cac5776070c0b62ce515e149a1c264ca5b06466b03197": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "account_name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "stash",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "item: Json<ApiItem>",
+          "ordinal": 3,
+          "type_info": "Jsonb"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "TextArray",
+          "Text"
+        ]
+      }
+    },
+    "query": "\nSELECT id, account_name, stash, item as \"item: Json<ApiItem>\" \nFROM raw_items\nWHERE item->'baseType' ?| $1 AND item ->> 'league' = $2\n            "
+  },
   "340a0a67f691187d630b578289008ef4951eefd243db3b3f4455fdf1c378d246": {
     "describe": {
       "columns": [],
@@ -162,45 +201,6 @@
       }
     },
     "query": "\nSELECT id, created_at, task_type as \"task_type: TaskType\", data FROM tasks\nORDER BY created_at\nLIMIT $1 \n        "
-  },
-  "c3dec7d68954ca749f2c7e61f96a24c90c36b400e5ec061fb1eb1fa1b5bdc1f9": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "account_name",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "stash",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "item: Json<Item>",
-          "ordinal": 3,
-          "type_info": "Jsonb"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "TextArray",
-          "Text"
-        ]
-      }
-    },
-    "query": "\nSELECT id, account_name, stash, item as \"item: Json<Item>\" \nFROM raw_items\nWHERE item->'baseType' ?| $1 AND item ->> 'league' = $2\n            "
   },
   "ced0240be2b2176d9f1c823a8ae0f6124c8884dc34e4a62e1d9f218b0f81d6d5": {
     "describe": {

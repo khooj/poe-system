@@ -1,10 +1,7 @@
 pub mod item;
-pub mod types;
-pub mod pob;
 
 use anyhow::Result;
 use std::convert::{AsRef, Into};
-use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct PastebinToken(String);

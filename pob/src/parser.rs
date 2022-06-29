@@ -1,7 +1,7 @@
 use mods::{Mod, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_while},
+    bytes::complete::tag,
     character::complete::{
         alpha1, alphanumeric1, digit1, line_ending, multispace0, not_line_ending,
     },
@@ -28,14 +28,6 @@ enum ItemValue {
     Sockets(String),
     Influence(String),
     SkipLine,
-}
-
-fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    let chars = " \t\r\n ";
-
-    // nom combinators like `take_while` return a function. That function is the
-    // parser,to which we can pass the input
-    take_while(move |c| chars.contains(c))(i)
 }
 
 fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -148,7 +140,9 @@ where
             map(preceded(tag("Implicits: "), cut(digit1)), |out: &str| {
                 usize::from_str(out).unwrap_or(0usize)
             }),
-            preceded(alt((sp, line_ending)), |i| affix(i, ModType::Implicit)),
+            preceded(alt((multispace0, line_ending)), |i| {
+                affix(i, ModType::Implicit)
+            }),
         ),
     )(i)
 }
@@ -188,7 +182,7 @@ fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     context(
         "affix",
         preceded(
-            sp,
+            multispace0,
             alt((
                 |i| skip_line_with_tag(i, "Prefix: "),
                 |i| skip_line_with_tag(i, "Suffix: "),
@@ -248,8 +242,9 @@ fn root<
 >(
     i: &'a str,
 ) -> IResult<&'a str, Vec<ItemValue>, E> {
-    let (i, mut header_vals) = many_m_n(2, 2, delimited(sp, item_value_header, line_ending))(i)?;
-    let (i, mut vals) = many0(delimited(sp, item_value, line_ending))(i)?;
+    let (i, mut header_vals) =
+        many_m_n(2, 2, delimited(multispace0, item_value_header, line_ending))(i)?;
+    let (i, mut vals) = many0(delimited(multispace0, item_value, line_ending))(i)?;
     let (i, end_val) = item_value(i)?;
     header_vals.append(&mut vals);
     header_vals.push(end_val);

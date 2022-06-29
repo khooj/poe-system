@@ -1,7 +1,6 @@
-use std::marker::PhantomData;
-
-use crate::domain::{pob::pob::Pob, PastebinBuildUrl};
+use crate::domain::PastebinBuildUrl;
 use anyhow::Result;
+use pob::pob::Pob;
 use url::Url;
 
 #[derive(Clone)]
@@ -51,7 +50,7 @@ mod tests {
 
     #[test]
     fn check_api() {
-        let client = HttpPobRetriever::new();
-        let client2 = HttpPobRetriever::new_with_host("http://example.org").expect("fail");
+        let _ = HttpPobRetriever::new();
+        let _ = HttpPobRetriever::new_with_host("http://example.org").expect("fail");
     }
 }

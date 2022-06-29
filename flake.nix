@@ -45,6 +45,7 @@
           jq
           nixos-shell
           git
+          crate2nix
         ];
         nativeBuildInputs = with pkgs; [ rustc cargo pkgconfig nixpkgs-fmt ];
 
