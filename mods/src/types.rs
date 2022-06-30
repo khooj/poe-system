@@ -1,7 +1,13 @@
-use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use strum::EnumString;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum TypeError {
+    #[error("can't parse rarity: {0}")]
+    RarityParse(String),
+}
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
@@ -114,6 +120,12 @@ pub enum Class {
     LargeClusterJewel,
 }
 
+#[derive(Error, Debug)]
+pub enum ClassError {
+    #[error("parse error: {0}")]
+    ParseError(#[from] strum::ParseError),
+}
+
 impl Default for Class {
     fn default() -> Self {
         Class::LifeFlask
@@ -121,7 +133,7 @@ impl Default for Class {
 }
 
 impl Class {
-    pub fn from_itemclass(itemclass: &str) -> Result<Class> {
+    pub fn from_itemclass(itemclass: &str) -> Result<Class, ClassError> {
         use std::str::FromStr;
 
         let mut s = itemclass.to_string();
@@ -448,7 +460,7 @@ impl Default for Rarity {
 }
 
 impl TryFrom<String> for Rarity {
-    type Error = anyhow::Error;
+    type Error = TypeError;
 
     fn try_from(v: String) -> Result<Rarity, Self::Error> {
         match v.to_lowercase().as_str() {
@@ -456,7 +468,7 @@ impl TryFrom<String> for Rarity {
             "rare" => Ok(Rarity::Rare),
             "unique" => Ok(Rarity::Unique),
             "normal" => Ok(Rarity::Normal),
-            _ => Err(anyhow!("cant convert from {} to rarity enum", v)),
+            _ => Err(TypeError::RarityParse(v)),
         }
     }
 }

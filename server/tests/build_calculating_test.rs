@@ -92,8 +92,6 @@ async fn check_build_calculating(repos: &Repos) -> Result<()> {
         "required {:?}\nfound {:?}",
         build.required_items.0.helmet, helmet
     );
-    assert_eq!(&helmet.base_type, "Gladiator Helmet");
-    assert_eq!(&helmet.name, "Blood Corona");
 
     Ok(())
 }

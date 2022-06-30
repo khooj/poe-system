@@ -1,7 +1,7 @@
-use crate::infrastructure::{
-    public_stash_retriever::Client, repositories::postgres::raw_item_repository::RawItemRepository,
+use crate::infrastructure::repositories::postgres::{
+    raw_item::RawItem, raw_item_repository::RawItemRepository,
 };
-use crate::interfaces::public_stash_retriever::Error;
+use public_stash::{client::Client, models::Error as StashError};
 use thiserror::Error;
 use tracing::{error, info, instrument, trace};
 use uuid::Uuid;
@@ -9,7 +9,7 @@ use uuid::Uuid;
 #[derive(Error, Debug)]
 pub enum StashReceiverError {
     #[error("client error")]
-    ClientError(#[from] Error),
+    ClientError(#[from] StashError),
     #[error("skipping this iteration")]
     Skip,
 }
@@ -39,11 +39,8 @@ impl StashReceiver {
     pub async fn receive(&mut self) -> Result<(), anyhow::Error> {
         let mut t = self.repository.begin().await?;
         let res = self.repository.get_stash_id(&mut t).await?;
-        trace!("latest stash id from repo: {:?}", res.latest_stash_id);
-        let mut k = self
-            .client
-            .get_latest_stash(Some(&res.latest_stash_id))
-            .await?;
+        trace!("latest stash id from repo: {}", res);
+        let mut k = self.client.get_latest_stash(Some(&res)).await?;
         trace!("received stash with next id: {}", k.next_change_id);
         if k.stashes.is_empty() {
             return Ok(());
@@ -65,7 +62,7 @@ impl StashReceiver {
             let stash = d.stash.as_ref().unwrap();
 
             if d.items.len() == 0 {
-                self.repository.delete_raw_item(&mut t, acc, stash).await?;
+                self.repository.delete_item(&mut t, acc, stash).await?;
                 continue;
             }
 
@@ -74,7 +71,7 @@ impl StashReceiver {
                 // so we generate it themselves
                 let id = Uuid::new_v4().to_string();
                 self.repository
-                    .insert_raw_item(&mut t, &id, acc, stash, item)
+                    .insert_item(&mut t, RawItem::new(&id, acc, stash, item))
                     .await?;
             }
         }

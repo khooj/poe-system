@@ -1,12 +1,10 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::fs::File;
 use std::io::BufReader;
-use std::iter::FromIterator;
 use std::path::PathBuf;
 
 #[derive(Deserialize)]
@@ -119,6 +117,7 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::anyhow;
 
     #[test]
     fn check_base_items_const() -> Result<()> {

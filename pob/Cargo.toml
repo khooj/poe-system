@@ -1,0 +1,20 @@
+[package]
+name = "pob"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.13.0"
+flate2 = "1.0"
+roxmltree = "0.14"
+thiserror = "1.0.24"
+syn = { version = "1.0.48", features = ["full"]}
+nom = { version = "6.1.2", features = ["alloc"] }
+tracing = { version = "0.1" }
+mods = { path = "../mods" }
+
+[dev-dependencies]
+dotenv = "0.15"
+anyhow = "1"

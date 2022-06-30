@@ -1,5 +1,12 @@
 [workspace]
-members = [ "server", "frontend" ]
+members = [ 
+	"macros",
+	"server", 
+	"frontend",
+	"mods",
+	"public_stash",
+	"pob",
+]
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3

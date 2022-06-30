@@ -1,0 +1,7 @@
+error: cant open file: $WORKSPACE/target/tests/macros/file.txt
+ --> tests/ui/file_not_exist.rs:3:1
+  |
+3 | static_array_from_file!(TYPES, "file.txt");
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `static_array_from_file` (in Nightly builds, run with -Z macro-backtrace for more info)

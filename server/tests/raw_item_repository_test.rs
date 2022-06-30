@@ -42,7 +42,7 @@ async fn check_get_raw_items(
     len: usize,
 ) -> Result<()> {
     use tokio_stream::StreamExt;
-    let mut s = repo.get_raw_items_cursor(types, league).await;
+    let mut s = repo.get_items_cursor(types, league).await;
 
     let mut items = vec![];
     while let Some(db_item) = s.next().await {

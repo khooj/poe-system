@@ -1,9 +1,9 @@
-use testcontainers::{Container, Docker, Image};
-use poe_system::{
-    infrastructure::repositories::postgres::raw_item_repository::RawItemRepository,
-    interfaces::public_stash_retriever::PublicStashChange,
-};
 use anyhow::Result;
+use poe_system::infrastructure::repositories::postgres::{
+    raw_item::RawItem, raw_item_repository::RawItemRepository,
+};
+use public_stash::models::PublicStashChange;
+use testcontainers::{Container, Docker, Image};
 
 pub struct ContainerDrop<'d, D: Docker, I: Image> {
     pub container: Container<'d, D, I>,
@@ -40,12 +40,14 @@ pub async fn insert_raw_items(repo: &RawItemRepository) -> Result<()> {
 
     let stash: PublicStashChange = serde_json::from_str(EXAMPLE_STASH_CHANGE)?;
     for i in stash.items {
-        repo.insert_raw_item(
+        repo.insert_item(
             &mut tr,
-            i.id.as_ref().unwrap(),
-            stash.account_name.as_ref().unwrap(),
-            stash.stash.as_ref().unwrap(),
-            i.clone(),
+            RawItem::new(
+                i.id.as_ref().unwrap(),
+                stash.account_name.as_ref().unwrap(),
+                stash.stash.as_ref().unwrap(),
+                i.clone(),
+            ),
         )
         .await?;
     }

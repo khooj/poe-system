@@ -1,19 +1,30 @@
 use crate::domain::item::Item as DomainItem;
-use crate::domain::types::{Category, Class, Influence, ItemLvl, League, Mod, ModType, Hybrid};
-use crate::infrastructure::poe_data::BASE_ITEMS;
-use crate::interfaces::public_stash_retriever::{Extended, Influences, Item};
+use anyhow::anyhow;
+use mods::BASE_TYPES;
+use mods::{Category, Class, Hybrid, Influence, ItemLvl, League, Mod, ModType};
+use public_stash::models::{Extended, Item as ApiItem};
 use sqlx::types::Json;
 use sqlx::types::Uuid;
 use std::convert::TryInto;
 use std::str::FromStr;
-use anyhow::anyhow;
 
 #[derive(Debug)]
 pub struct RawItem {
     pub id: String,
     pub account_name: String,
     pub stash: String,
-    pub item: Json<Item>,
+    pub item: Json<ApiItem>,
+}
+
+impl RawItem {
+    pub fn new(id: &str, acc: &str, stash: &str, item: ApiItem) -> Self {
+        RawItem {
+            id: id.to_owned(),
+            account_name: acc.to_owned(),
+            stash: stash.to_owned(),
+            item: Json(item),
+        }
+    }
 }
 
 fn push_mods(mods: &mut Vec<Mod>, source: Option<Vec<String>>, type_: ModType) {
@@ -27,7 +38,7 @@ impl TryInto<DomainItem> for RawItem {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<DomainItem, Self::Error> {
-        let Item {
+        let ApiItem {
             id,
             league,
             item_level,
@@ -97,9 +108,10 @@ impl TryInto<DomainItem> for RawItem {
         push_mods(&mut mods, fractured_mods, ModType::Fractured);
         push_mods(&mut mods, veiled_mods, ModType::Veiled);
 
-        let itemclass = BASE_ITEMS
-            .get_item_class(&base_type)
-            .ok_or(anyhow!("can't find itemclass for basetype: {}", base_type))?;
+        let itemclass = base_type.clone();
+        if !BASE_TYPES.contains(&itemclass.as_ref()) {
+            return Err(anyhow!("incorrect itemclass: {}", itemclass));
+        }
         let class = Class::from_itemclass(&itemclass)?;
         let image_link = icon;
 

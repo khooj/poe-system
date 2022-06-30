@@ -215,7 +215,7 @@ pub enum Error {
 mod test {
     use super::PublicStashChange;
 
-    const EXAMPLE_STASH_CHANGE: &str = include_str!("example-stash.json");
+    const EXAMPLE_STASH_CHANGE: &str = include_str!("example-stash-influences.json");
     #[test]
     fn deserializing_public_stash_change() -> Result<(), anyhow::Error> {
         let _: PublicStashChange = serde_json::from_str(&EXAMPLE_STASH_CHANGE)?;

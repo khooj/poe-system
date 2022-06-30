@@ -1,8 +1,7 @@
-use super::pob::item::Item as PobItem;
-use super::types::{
-    Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory,
-};
+use mods::{Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory};
+use pob::parser::ParsedItem;
 use serde::{Deserialize, Serialize};
+
 use std::default::Default;
 use std::ops::Deref;
 
@@ -40,7 +39,7 @@ impl Deref for SimilarityScore {
 }
 
 impl Item {
-    pub fn calculate_similarity_score_with_pob(&self, item: &PobItem) -> SimilarityScore {
+    pub fn calculate_similarity_score_with_pob(&self, item: &ParsedItem) -> SimilarityScore {
         use itertools::Itertools;
         use std::collections::HashMap;
         use strsim::levenshtein;
@@ -56,7 +55,7 @@ impl Item {
         let mods_scores = self
             .mods
             .iter()
-            .cartesian_product(item.mods.iter())
+            .cartesian_product(item.affixes.iter())
             .group_by(|(el, _)| el.text.clone())
             .into_iter()
             .map(|(k, grp)| {
@@ -108,7 +107,7 @@ impl Item {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::domain::types::ModType;
+    use mods::ModType;
 
     #[test]
     fn check_self_similarity() -> anyhow::Result<()> {

@@ -1,41 +1,33 @@
-use crate::domain::types::{Mod, ModType};
+use mods::{Mod, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_while},
-    character::complete::{alpha1, alphanumeric1, digit1, line_ending, not_line_ending},
-    combinator::{cut, eof, map, map_res, opt},
+    bytes::complete::tag,
+    character::complete::{
+        alpha1, alphanumeric1, digit1, line_ending, multispace0, not_line_ending,
+    },
+    combinator::{cut, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
     multi::{length_count, many0, many_m_n},
-    sequence::{delimited, pair, preceded, terminated},
+    sequence::{delimited, preceded},
     IResult,
 };
+
 use std::num::ParseIntError;
 use std::str::FromStr;
-use tracing::info;
-
-use crate::infrastructure::poe_data::BASE_ITEMS;
 
 #[derive(Debug, PartialEq)]
 enum ItemValue {
     Rarity(String),
-    BaseType { base: String, name: String },
+    BaseType { name: String, base: String },
     ItemLevel(i32),
     LevelReq(i32),
     UniqueId(String),
-    Affix { type_: ModType, value: String },
+    Affix(Mod),
     Implicits(Vec<ItemValue>),
     Quality(i32),
     Sockets(String),
     Influence(String),
     SkipLine,
-}
-
-fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    let chars = " \t\r\n ";
-
-    // nom combinators like `take_while` return a function. That function is the
-    // parser,to which we can pass the input
-    take_while(move |c| chars.contains(c))(i)
 }
 
 fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -49,8 +41,7 @@ fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, ItemValue, E> {
     let (i, name) = context("name", cut(not_line_ending))(i)?;
 
-    let all_itemclasses = BASE_ITEMS.get_all_itemclasses();
-    for itemclass in all_itemclasses {
+    for itemclass in BASE_TYPES {
         // TODO: fix?
         if itemclass.is_empty() {
             continue;
@@ -149,7 +140,9 @@ where
             map(preceded(tag("Implicits: "), cut(digit1)), |out: &str| {
                 usize::from_str(out).unwrap_or(0usize)
             }),
-            preceded(alt((sp, line_ending)), |i| affix(i, ModType::Implicit)),
+            preceded(alt((multispace0, line_ending)), |i| {
+                affix(i, ModType::Implicit)
+            }),
         ),
     )(i)
 }
@@ -177,10 +170,7 @@ fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
                 opt(alt((tag("{crafted}"), tag("{range:1}")))),
                 cut(not_line_ending),
             ),
-            |e: &str| ItemValue::Affix {
-                value: e.to_string(),
-                type_: default,
-            },
+            |e: &str| ItemValue::Affix(Mod::from_str_type(&e, default)),
         ),
     )(i)
 }
@@ -192,7 +182,7 @@ fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     context(
         "affix",
         preceded(
-            sp,
+            multispace0,
             alt((
                 |i| skip_line_with_tag(i, "Prefix: "),
                 |i| skip_line_with_tag(i, "Suffix: "),
@@ -252,8 +242,9 @@ fn root<
 >(
     i: &'a str,
 ) -> IResult<&'a str, Vec<ItemValue>, E> {
-    let (i, mut header_vals) = many_m_n(2, 2, delimited(sp, item_value_header, line_ending))(i)?;
-    let (i, mut vals) = many0(delimited(sp, item_value, line_ending))(i)?;
+    let (i, mut header_vals) =
+        many_m_n(2, 2, delimited(multispace0, item_value_header, line_ending))(i)?;
+    let (i, mut vals) = many0(delimited(multispace0, item_value, line_ending))(i)?;
     let (i, end_val) = item_value(i)?;
     header_vals.append(&mut vals);
     header_vals.push(end_val);
@@ -294,8 +285,8 @@ where
             ItemValue::Quality(q) => item.quality = q,
             ItemValue::Implicits(implicits) => {
                 item.affixes.extend(implicits.into_iter().map(|e| {
-                    if let ItemValue::Affix { value, type_ } = e {
-                        Mod { text: value, type_ }
+                    if let ItemValue::Affix(m) = e {
+                        m
                     } else {
                         Mod {
                             text: "invalid".to_string(),
@@ -304,7 +295,7 @@ where
                     }
                 }))
             }
-            ItemValue::Affix { value, type_ } => item.affixes.push(Mod { text: value, type_ }),
+            ItemValue::Affix(m) => item.affixes.push(m),
             _ => {}
         };
     }
@@ -339,10 +330,10 @@ mod test {
         assert_eq!(i, "\nAdds 3 Passive Skills");
         assert_eq!(
             ret,
-            vec![ItemValue::Affix {
-                value: "Adds 2 Passive Skills".to_string(),
-                type_: ModType::Implicit
-            }]
+            vec![ItemValue::Affix(Mod::from_str_type(
+                "Adds 2 Passive Skills",
+                ModType::Implicit
+            ))]
         );
 
         let i = "Implicits: 0\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
