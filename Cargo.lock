@@ -3632,6 +3632,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tradeapi"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "governor",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "trust-dns-proto"
 version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

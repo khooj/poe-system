@@ -6,6 +6,7 @@ members = [
 	"mods",
 	"public_stash",
 	"pob",
+	"tradeapi",
 ]
 
 [profile.dev.package.sqlx-macros]
