@@ -3636,6 +3636,7 @@ name = "tradeapi"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "derivative",
  "governor",
  "reqwest",
  "serde",
