@@ -14,11 +14,11 @@
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     let
       myapp = "poe-system";
-      rust-version = "1.60.0";
+      rust-version = "1.62.0";
     in flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [
-          rust-overlay.overlay
+          rust-overlay.overlays.default
           (self: super: rec {
             rustc = self.rust-bin.stable.${rust-version}.default.override {
               extensions =

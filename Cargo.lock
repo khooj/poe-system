@@ -3636,8 +3636,9 @@ name = "tradeapi"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "derivative",
  "governor",
+ "lazy_static",
+ "macros",
  "reqwest",
  "serde",
  "serde_json",

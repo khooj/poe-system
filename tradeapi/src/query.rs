@@ -1,6 +1,7 @@
-use derivative::Derivative;
 use serde::Serialize;
 use thiserror::Error;
+
+use super::dist::{STATS_IDS, STAT_TO_ID};
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -10,11 +11,10 @@ struct StatQuery {
     filters: Vec<StatQueryFilter>,
 }
 
-#[derive(Serialize, Derivative)]
+#[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum StatQueryType {
-    #[derivative(Default)]
+    #[default]
     And,
     Count(i32),
     Not,
@@ -50,11 +50,10 @@ struct Status {
     option: StatusOption,
 }
 
-#[derive(Serialize, Derivative)]
+#[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum StatusOption {
-    #[derivative(Default)]
+    #[default]
     Online,
 }
 
@@ -64,11 +63,10 @@ struct SortOptions {
     price: Sort,
 }
 
-#[derive(Serialize, Derivative)]
+#[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum Sort {
-    #[derivative(Default)]
+    #[default]
     Asc,
     Desc,
 }
@@ -99,10 +97,6 @@ impl Builder {
             query: StatQuery::default(),
         }
     }
-
-    pub fn build(self) -> Result<String, BuilderError> {
-        Ok(serde_json::to_string(&self)?)
-    }
 }
 
 pub struct StatGroupBuilder {
@@ -126,13 +120,39 @@ impl StatGroupBuilder {
         self.builder
     }
 
-    pub fn try_add_raw_mod(
+    pub fn try_add_mod(
+        self,
+        text: &str,
+        min: Option<i32>,
+        max: Option<i32>,
+    ) -> Result<Self, BuilderError> {
+        if !STAT_TO_ID.contains_key(text) {
+            Err(BuilderError::UnknownMod(text.to_string()))
+        } else {
+            let id = STAT_TO_ID.get(text).unwrap().clone();
+            let s = self
+                .try_add_mod_id(&id, min, max)
+                .expect("should work after check");
+            Ok(s)
+        }
+    }
+
+    pub fn try_add_mod_id(
         mut self,
         text: &str,
         min: Option<i32>,
         max: Option<i32>,
     ) -> Result<Self, BuilderError> {
-        Err(BuilderError::UnknownMod(text.to_owned()))
+        if !STATS_IDS.contains(&text) {
+            Err(BuilderError::UnknownMod(text.to_string()))
+        } else {
+            self.query.filters.push(StatQueryFilter {
+                id: text.to_string(),
+                disabled: false,
+                value: StatQueryValues { max, min },
+            });
+            Ok(self)
+        }
     }
 }
 
@@ -145,15 +165,20 @@ mod tests {
         let query = Builder::new()
             .new_stat_group()
             .count(2)
-            .try_add_raw_mod("Energy Shield", None, None)
+            .try_add_mod("Cannot Leech Energy Shield", None, None)
             .unwrap()
-            .try_add_raw_mod("Life", Some(10), Some(45))
+            .try_add_mod_id("ultimatum.umod_7052", None, None)
+            .unwrap()
+            .try_add_mod(
+                "Grants # to Maximum Life per 2% Quality",
+                Some(10),
+                Some(45),
+            )
             .unwrap()
             .end()
             .new_stat_group()
-            .try_add_raw_mod("Attack Speed", None, None)
+            .try_add_mod("#% increased Attack Speed per 8% Quality", None, None)
             .unwrap()
-            .end()
-            .build();
+            .end();
     }
 }
