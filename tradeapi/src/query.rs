@@ -1,4 +1,7 @@
+use macros::{gen_min_max_method, gen_option_method};
 use serde::Serialize;
+use serde_json::{json, Value};
+use std::collections::HashMap;
 use thiserror::Error;
 
 use super::dist::{STATS_IDS, STAT_TO_ID};
@@ -39,8 +42,177 @@ struct StatQueryValues {
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
+struct Filters {
+    type_filters: Option<TypeFilters>,
+    weapon_filters: Option<WeaponFilters>,
+    socket_filters: Option<SocketFilters>,
+    misc_filters: Option<MiscFilters>,
+    armour_filters: Option<ArmourFilters>,
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+struct TypeFilters {
+    filters: HashMap<String, Value>,
+}
+
+impl TypeFilters {
+    fn set_category(&mut self, s: &str) {
+        let v = json!({
+            "option": s,
+        });
+        let m = self.filters.entry("category".to_string()).or_default();
+        *m = v;
+    }
+
+    fn set_rarity(&mut self, s: &str) {
+        let v = json!({
+            "option": s,
+        });
+        let m = self.filters.entry("rarity".to_string()).or_default();
+        *m = v;
+    }
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+struct WeaponFilters {
+    filters: HashMap<String, Value>,
+    disabled: bool,
+}
+
+impl WeaponFilters {
+    gen_min_max_method!(damage);
+    gen_min_max_method!(crit);
+    gen_min_max_method!(pdps);
+    gen_min_max_method!(aps);
+    gen_min_max_method!(dps);
+    gen_min_max_method!(edps);
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+struct SocketFilters {
+    disabled: bool,
+    filters: HashMap<String, Value>,
+}
+
+impl SocketFilters {
+    fn set_sockets(
+        &mut self,
+        min: Option<i32>,
+        max: Option<i32>,
+        r: Option<i32>,
+        g: Option<i32>,
+        b: Option<i32>,
+        w: Option<i32>,
+    ) {
+        let v = json!({
+            "min": min,
+            "max": max,
+            "r": r,
+            "g": g,
+            "b": b,
+            "w": w,
+        });
+        let m = self.filters.entry("sockets".to_string()).or_default();
+        *m = v;
+    }
+
+    fn set_links(
+        &mut self,
+        min: Option<i32>,
+        max: Option<i32>,
+        r: Option<i32>,
+        g: Option<i32>,
+        b: Option<i32>,
+        w: Option<i32>,
+    ) {
+        let v = json!({
+            "min": min,
+            "max": max,
+            "r": r,
+            "g": g,
+            "b": b,
+            "w": w,
+        });
+        let m = self.filters.entry("links".to_string()).or_default();
+        *m = v;
+    }
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+struct MiscFilters {
+    filters: HashMap<String, Value>,
+}
+
+impl MiscFilters {
+    gen_option_method!(corrupted);
+    gen_min_max_method!(quality);
+    gen_min_max_method!(gem_level);
+    gen_min_max_method!(ilvl);
+    gen_min_max_method!(gem_level_progress);
+    gen_min_max_method!(gem_alternative_quality);
+    gen_option_method!(fractured_item);
+    gen_option_method!(searing_item);
+    gen_option_method!(split);
+    gen_option_method!(veiled);
+    gen_min_max_method!(scourge_tier);
+    gen_min_max_method!(stored_experience);
+    gen_option_method!(synthesised_item);
+    gen_option_method!(tangled_item);
+    gen_option_method!(identified);
+    gen_option_method!(mirrored);
+    gen_option_method!(crafted);
+    gen_option_method!(enchanted);
+    gen_min_max_method!(talisman_tier);
+    gen_min_max_method!(stack_size);
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+struct ArmourFilters {
+    disabled: bool,
+    filters: HashMap<String, Value>,
+}
+
+impl ArmourFilters {
+    gen_min_max_method!(ar);
+    gen_min_max_method!(es);
+    gen_min_max_method!(block);
+    gen_min_max_method!(ev);
+    gen_min_max_method!(ward);
+    gen_min_max_method!(base_defence_percentile);
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+struct ReqFilters {
+    disabled: bool,
+    filters: HashMap<String, Value>,
+}
+
+impl ReqFilters {
+    gen_min_max_method!(lvl);
+    gen_min_max_method!(dex);
+    gen_min_max_method!(str);
+    gen_min_max_method!(int);
+
+    fn set_class(&mut self, class: &str) {
+        let v = json!({
+            "option": class,
+        });
+        let m = self.filters.entry(class.to_string()).or_default();
+        *m = v;
+    }
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
 struct Query {
     stats: Vec<StatQuery>,
+    filters: Filters,
     status: Status,
 }
 
@@ -155,6 +327,192 @@ impl StatGroupBuilder {
         }
     }
 }
+
+/*
+{
+    "query": {
+        "status": {
+            "option": "online"
+        },
+        "stats": [
+            {
+                "type": "and",
+                "filters": []
+            }
+        ],
+        "filters": {
+            "type_filters": {
+                "filters": {
+                    "category": {
+                        "option": "weapon.one"
+                    },
+                    "rarity": {
+                        "option": "magic"
+                    }
+                }
+            },
+            "weapon_filters": {
+                "disabled": false,
+                "filters": {
+                    "damage": {
+                        "min": 5
+                    },
+                    "crit": {
+                        "min": 5
+                    },
+                    "pdps": {
+                        "min": 5
+                    },
+                    "aps": {
+                        "min": 5
+                    },
+                    "dps": {
+                        "min": 5
+                    },
+                    "edps": {
+                        "min": 5
+                    }
+                }
+            },
+            "socket_filters": {
+                "disabled": false,
+                "filters": {
+                    "sockets": {
+                        "r": 1,
+                        "g": 1,
+                        "b": 1,
+                        "w": 1,
+                        "min": 1,
+                        "max": 2
+                    },
+                    "links": {
+                        "min": 1,
+                        "r": 1,
+                        "g": 1,
+                        "b": 1,
+                        "w": 1,
+                        "max": 2
+                    }
+                }
+            },
+            "misc_filters": {
+                "filters": {
+                    "corrupted": {
+                        "option": "true"
+                    },
+                    "quality": {
+                        "min": 1
+                    },
+                    "gem_level": {
+                        "min": 1
+                    },
+                    "ilvl": {
+                        "min": 1
+                    },
+                    "gem_level_progress": {
+                        "min": 1
+                    },
+                    "gem_alternate_quality": {
+                        "option": "1"
+                    },
+                    "fractured_item": {
+                        "option": "true"
+                    },
+                    "searing_item": {
+                        "option": "true"
+                    },
+                    "split": {
+                        "option": "true"
+                    },
+                    "veiled": {
+                        "option": "true"
+                    },
+                    "scourge_tier": {
+                        "min": 1,
+                        "max": 2
+                    },
+                    "stored_experience": {
+                        "min": 1,
+                        "max": 2
+                    },
+                    "synthesised_item": {
+                        "option": "true"
+                    },
+                    "tangled_item": {
+                        "option": "true"
+                    },
+                    "identified": {
+                        "option": "true"
+                    },
+                    "mirrored": {
+                        "option": "true"
+                    },
+                    "crafted": {
+                        "option": "true"
+                    },
+                    "enchanted": {
+                        "option": "true"
+                    },
+                    "talisman_tier": {
+                        "min": 1,
+                        "max": 2
+                    },
+                    "stack_size": {
+                        "min": 1,
+                        "max": 2
+                    }
+                }
+            },
+            "armour_filters": {
+                "disabled": false,
+                "filters": {
+                    "ar": {
+                        "min": 1
+                    },
+                    "es": {
+                        "min": 1
+                    },
+                    "block": {
+                        "min": 1
+                    },
+                    "ev": {
+                        "min": 1
+                    },
+                    "ward": {
+                        "min": 1
+                    },
+                    "base_defence_percentile": {
+                        "min": 1
+                    }
+                }
+            },
+            "req_filters": {
+                "disabled": false,
+                "filters": {
+                    "lvl": {
+                        "min": 1
+                    },
+                    "dex": {
+                        "min": 1
+                    },
+                    "class": {
+                        "option": "scion"
+                    },
+                    "str": {
+                        "min": 1
+                    },
+                    "int": {
+                        "min": 1
+                    }
+                }
+            }
+        }
+    },
+    "sort": {
+        "price": "asc"
+    }
+}
+ */
 
 #[cfg(test)]
 mod tests {
