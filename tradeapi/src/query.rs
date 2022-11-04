@@ -1,22 +1,69 @@
 use macros::{gen_min_max_method, gen_option_method};
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::{collections::HashMap};
 use thiserror::Error;
 
 use super::dist::{STATS_IDS, STAT_TO_ID};
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-struct StatQuery {
+pub struct StatQuery {
     disabled: bool,
+    #[serde(rename = "type")]
     typ: StatQueryType,
     filters: Vec<StatQueryFilter>,
 }
 
+impl StatQuery {
+    pub fn new() -> Self {
+        StatQuery::default()
+    }
+
+    pub fn set_type(mut self, typ: StatQueryType) -> Self {
+        self.typ = typ;
+        self
+    }
+
+    pub fn try_add_mod(
+        self,
+        text: &str,
+        min: Option<i32>,
+        max: Option<i32>,
+        option: Option<i32>,
+    ) -> Result<Self, BuilderError> {
+        if !STAT_TO_ID.contains_key(text) {
+            Err(BuilderError::UnknownMod(text.to_string()))
+        } else {
+            let id = STAT_TO_ID.get(text).unwrap().clone();
+            let s = self.try_add_mod_id(&id, min, max, option)?;
+            Ok(s)
+        }
+    }
+
+    pub fn try_add_mod_id(
+        mut self,
+        text: &str,
+        min: Option<i32>,
+        max: Option<i32>,
+        option: Option<i32>,
+    ) -> Result<Self, BuilderError> {
+        if !STATS_IDS.contains(&text) {
+            Err(BuilderError::UnknownMod(text.to_string()))
+        } else {
+            self.filters.push(StatQueryFilter {
+                id: text.to_string(),
+                disabled: false,
+                value: StatQueryValues { max, min, option },
+            });
+            Ok(self)
+        }
+    }
+}
+
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-enum StatQueryType {
+pub enum StatQueryType {
     #[default]
     And,
     Count(i32),
@@ -38,6 +85,7 @@ struct StatQueryFilter {
 struct StatQueryValues {
     min: Option<i32>,
     max: Option<i32>,
+    option: Option<i32>,
 }
 
 #[derive(Serialize, Default)]
@@ -48,35 +96,38 @@ struct Filters {
     socket_filters: Option<SocketFilters>,
     misc_filters: Option<MiscFilters>,
     armour_filters: Option<ArmourFilters>,
+    req_filters: Option<ReqFilters>,
 }
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-struct TypeFilters {
+pub struct TypeFilters {
     filters: HashMap<String, Value>,
 }
 
 impl TypeFilters {
-    fn set_category(&mut self, s: &str) {
+    fn set_category(mut self, s: &str) -> Self {
         let v = json!({
             "option": s,
         });
         let m = self.filters.entry("category".to_string()).or_default();
         *m = v;
+        self
     }
 
-    fn set_rarity(&mut self, s: &str) {
+    fn set_rarity(mut self, s: &str) -> Self {
         let v = json!({
             "option": s,
         });
         let m = self.filters.entry("rarity".to_string()).or_default();
         *m = v;
+        self
     }
 }
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-struct WeaponFilters {
+pub struct WeaponFilters {
     filters: HashMap<String, Value>,
     disabled: bool,
 }
@@ -92,21 +143,21 @@ impl WeaponFilters {
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-struct SocketFilters {
+pub struct SocketFilters {
     disabled: bool,
     filters: HashMap<String, Value>,
 }
 
 impl SocketFilters {
     fn set_sockets(
-        &mut self,
+        mut self,
         min: Option<i32>,
         max: Option<i32>,
         r: Option<i32>,
         g: Option<i32>,
         b: Option<i32>,
         w: Option<i32>,
-    ) {
+    ) -> Self {
         let v = json!({
             "min": min,
             "max": max,
@@ -117,17 +168,18 @@ impl SocketFilters {
         });
         let m = self.filters.entry("sockets".to_string()).or_default();
         *m = v;
+        self
     }
 
     fn set_links(
-        &mut self,
+        mut self,
         min: Option<i32>,
         max: Option<i32>,
         r: Option<i32>,
         g: Option<i32>,
         b: Option<i32>,
         w: Option<i32>,
-    ) {
+    ) -> Self {
         let v = json!({
             "min": min,
             "max": max,
@@ -138,12 +190,13 @@ impl SocketFilters {
         });
         let m = self.filters.entry("links".to_string()).or_default();
         *m = v;
+        self
     }
 }
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-struct MiscFilters {
+pub struct MiscFilters {
     filters: HashMap<String, Value>,
 }
 
@@ -172,7 +225,7 @@ impl MiscFilters {
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-struct ArmourFilters {
+pub struct ArmourFilters {
     disabled: bool,
     filters: HashMap<String, Value>,
 }
@@ -188,7 +241,7 @@ impl ArmourFilters {
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-struct ReqFilters {
+pub struct ReqFilters {
     disabled: bool,
     filters: HashMap<String, Value>,
 }
@@ -199,12 +252,13 @@ impl ReqFilters {
     gen_min_max_method!(str);
     gen_min_max_method!(int);
 
-    fn set_class(&mut self, class: &str) {
+    fn set_class(mut self, class: &str) -> Self {
         let v = json!({
             "option": class,
         });
         let m = self.filters.entry(class.to_string()).or_default();
         *m = v;
+        self
     }
 }
 
@@ -227,6 +281,7 @@ struct Status {
 enum StatusOption {
     #[default]
     Online,
+    Offline,
 }
 
 #[derive(Serialize, Default)]
@@ -263,68 +318,32 @@ impl Builder {
         Builder::default()
     }
 
-    pub fn new_stat_group(self) -> StatGroupBuilder {
-        StatGroupBuilder {
-            builder: self,
-            query: StatQuery::default(),
-        }
-    }
-}
-
-pub struct StatGroupBuilder {
-    builder: Builder,
-    query: StatQuery,
-}
-
-impl StatGroupBuilder {
-    pub fn count(mut self, v: i32) -> Self {
-        self.query.typ = StatQueryType::Count(v);
-        self
+    pub fn set_type_filters(&mut self, filters: TypeFilters) {
+        self.query.filters.type_filters = Some(filters);
     }
 
-    pub fn and(mut self) -> Self {
-        self.query.typ = StatQueryType::And;
-        self
+    pub fn set_weapon_filters(&mut self, filters: WeaponFilters) {
+        self.query.filters.weapon_filters = Some(filters);
     }
 
-    pub fn end(mut self) -> Builder {
-        self.builder.query.stats.push(self.query);
-        self.builder
+    pub fn set_socket_filters(&mut self, filters: SocketFilters) {
+        self.query.filters.socket_filters = Some(filters);
     }
 
-    pub fn try_add_mod(
-        self,
-        text: &str,
-        min: Option<i32>,
-        max: Option<i32>,
-    ) -> Result<Self, BuilderError> {
-        if !STAT_TO_ID.contains_key(text) {
-            Err(BuilderError::UnknownMod(text.to_string()))
-        } else {
-            let id = STAT_TO_ID.get(text).unwrap().clone();
-            let s = self
-                .try_add_mod_id(&id, min, max)
-                .expect("should work after check");
-            Ok(s)
-        }
+    pub fn set_misc_filters(&mut self, filters: MiscFilters) {
+        self.query.filters.misc_filters = Some(filters);
     }
 
-    pub fn try_add_mod_id(
-        mut self,
-        text: &str,
-        min: Option<i32>,
-        max: Option<i32>,
-    ) -> Result<Self, BuilderError> {
-        if !STATS_IDS.contains(&text) {
-            Err(BuilderError::UnknownMod(text.to_string()))
-        } else {
-            self.query.filters.push(StatQueryFilter {
-                id: text.to_string(),
-                disabled: false,
-                value: StatQueryValues { max, min },
-            });
-            Ok(self)
-        }
+    pub fn set_armour_filters(&mut self, filters: ArmourFilters) {
+        self.query.filters.armour_filters = Some(filters);
+    }
+
+    pub fn set_req_filters(&mut self, filters: ReqFilters) {
+        self.query.filters.req_filters = Some(filters);
+    }
+
+    pub fn add_stat_group(&mut self, group: StatQuery) {
+        self.query.stats.push(group);
     }
 }
 
@@ -516,27 +535,26 @@ impl StatGroupBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::Builder;
+    use super::*;
 
     #[test]
     fn usage() {
-        let query = Builder::new()
-            .new_stat_group()
-            .count(2)
-            .try_add_mod("Cannot Leech Energy Shield", None, None)
-            .unwrap()
-            .try_add_mod_id("ultimatum.umod_7052", None, None)
-            .unwrap()
-            .try_add_mod(
-                "Grants # to Maximum Life per 2% Quality",
-                Some(10),
-                Some(45),
-            )
-            .unwrap()
-            .end()
-            .new_stat_group()
-            .try_add_mod("#% increased Attack Speed per 8% Quality", None, None)
-            .unwrap()
-            .end();
+        let mut query = Builder::new();
+        query.add_stat_group(
+            StatQuery::new()
+                .set_type(StatQueryType::Count(2))
+                .try_add_mod("Cannot Leech Energy Shield", None, None, None)
+                .expect("err")
+                .try_add_mod_id("ultimatum.umod_7052", None, None, None)
+                .expect("err2"),
+        );
+        query.set_socket_filters(SocketFilters::default().set_links(
+            Some(1),
+            None,
+            None,
+            None,
+            None,
+            None,
+        ));
     }
 }

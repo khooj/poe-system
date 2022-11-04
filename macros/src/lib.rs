@@ -4,7 +4,7 @@ use std::{
 };
 
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{quote, format_ident};
 use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
@@ -77,17 +77,17 @@ impl Parse for GenSetMethod {
 #[proc_macro]
 pub fn gen_min_max_method(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as GenSetMethod);
-    let funcname = format!("set_{}", input.name);
-    let funcname = Ident::new(&funcname, input.name.span());
+    let funcname = format_ident!("set_{}", input.name);
     let name = syn::LitStr::new(&input.name.to_string(), input.name.span());
     let tokens = quote! {
-        fn #funcname(&mut self, min: Option<i32>, max: Option<i32>) {
+        fn #funcname(mut self, min: Option<i32>, max: Option<i32>) -> Self {
             let v = json!({
                 "min": min,
                 "max": max,
             });
             let m = self.filters.entry(#name.to_string()).or_default();
             *m = v;
+            self
         }
     };
     tokens.into()
@@ -96,16 +96,16 @@ pub fn gen_min_max_method(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn gen_option_method(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as GenSetMethod);
-    let funcname = format!("set_{}", input.name);
-    let funcname = Ident::new(&funcname, input.name.span());
+    let funcname = format_ident!("set_{}", input.name);
     let name = syn::LitStr::new(&input.name.to_string(), input.name.span());
     let tokens = quote! {
-        fn #funcname(&mut self, val: bool) {
+        fn #funcname(mut self, val: bool) -> Self {
             let v = json!({
                 "option": val,
             });
             let m = self.filters.entry(#name.to_string()).or_default();
             *m = v;
+            self
         }
     };
     tokens.into()
