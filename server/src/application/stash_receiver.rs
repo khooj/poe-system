@@ -66,6 +66,12 @@ impl StashReceiver {
                 continue;
             }
 
+            // doesnt work
+            // let items = d.items.into_iter().map(|m| {
+            //     let id = Uuid::new_v4().to_string();
+            //     RawItem::new(&id, acc, stash, m)
+            // }).collect();
+            // self.repository.insert_items(&mut t, items).await?;
             for item in d.items {
                 // we cant be sure that every item have unique id
                 // so we generate it themselves
