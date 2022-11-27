@@ -1,7 +1,7 @@
-use crate::pob::Pob;
+// use crate::pob::Pob;
 
 use super::make_request::{post_new_build, Error, NewBuild};
-use super::pob_retriever::HttpPobRetriever;
+// use super::pob_retriever::HttpPobRetriever;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
@@ -11,7 +11,7 @@ use super::Route;
 
 #[function_component(Home)]
 pub fn home() -> Html {
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     let pob_data_ref = use_node_ref();
     let build_data = use_state(|| "".to_string());
 
@@ -41,7 +41,6 @@ pub fn home() -> Html {
             }
             let pob_data_node = pob_data_node.unwrap();
             let data = pob_data_node.value();
-            let _ = Pob::from_pastebin_data(data.clone())?;
 
             log::info!("pob data2: {}", data);
             pob_data_state.set(data.clone());
@@ -66,10 +65,11 @@ pub fn home() -> Html {
     {
         let build_request1 = build_request.clone();
         let br = build_request.clone();
+        let history = history.clone();
         use_effect_with_deps(
             move |_| {
                 if let Some(d) = &build_request1.data {
-                    history.push(Route::Build { id: d.clone() });
+                    history.push(&Route::Build { id: d.clone() });
                 }
                 || ()
             },
@@ -77,12 +77,31 @@ pub fn home() -> Html {
         );
     }
 
+    let build_id_ref = use_node_ref();
+    let onclick_id = {
+        let build_id_ref = build_id_ref.clone();
+        Callback::from(move |ev: yew::events::MouseEvent| {
+            ev.prevent_default();
+            let build_id_node = build_id_ref.cast::<HtmlInputElement>();
+            if build_id_node.is_none() {
+                log::error!("can't get build id ref node");
+                return;
+            }
+            let build_id = build_id_node.unwrap();
+            let data = build_id.value();
+            history.push(&Route::Build { id: data.clone() });
+        })
+    };
+
     html! {
         <div class="container_start">
             <form class="upload" action="" method="post" name="upload_build">
-                <label for="#">{ "Данные pob" }</label>
-                <input ref={pob_data_ref} type="text" name="pob" />
+                <label for="pobdata">{ "Данные pob" }</label>
+                <input id="pobdata" ref={pob_data_ref} type="text" name="pob" />
                 <button class="submit" type="submit" {onclick} disabled={build_request.loading}>{ "SEND" }</button>
+                <label for="seebuild">{ "Посмотреть билд" }</label>
+                <input id="seebuild" ref={build_id_ref} type="text" name="buildid" />
+                <button class="submit" type="submit" onclick={onclick_id}>{ "see" }</button>
             </form>
         </div>
     }
