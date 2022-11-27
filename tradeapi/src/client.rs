@@ -1,15 +1,16 @@
-use super::models::{ItemsData, StaticData, StatsData};
+use crate::models::{ItemsData, StaticData, StatsData};
 use governor::{
     clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},
     Jitter, Quota, RateLimiter,
 };
 use reqwest::{StatusCode, Request};
-use std::num::NonZeroU32;
+use std::{num::NonZeroU32, collections::HashMap};
 use std::str::FromStr;
 use std::{convert::TryFrom, time::Duration};
 use thiserror::Error;
 use tracing::{debug, error};
+use crate::query::{Builder, BuilderError};
 
 #[derive(Error, Debug)]
 pub enum ClientError {
@@ -53,10 +54,30 @@ struct Limiter {
     latest_limits: Limits,
 }
 
+struct LimitPolicy(String);
+
+pub enum HttpVerb {
+    Post,
+    Get
+}
+
+pub struct ClientRequest<T> {
+    verb: HttpVerb,
+    url: String,
+    body: T,
+    query: Option<HashMap<String, String>>,
+}
+
+impl ClientRequest<T> {
+    pub fn new_post<B>(url: String, body: B, query: Option<HashMap<String, String>>) -> ClientRequest<B> {
+        ClientRequest { verb, url: url.to_string(), body, query }
+    }
+}
+
+
 pub struct Client {
     client: reqwest::Client,
-    limiter_search: Option<Limiter>,
-    limiter_fetch: Option<Limiter>,
+    limiters: HashMap<LimitPolicy, Limiter>,
 }
 
 impl Client {
@@ -67,8 +88,7 @@ impl Client {
             .expect("can't build http client");
         Client {
             client,
-            limiter_search: None,
-            limiter_fetch: None,
+            limiters: HashMap::new(),
         }
     }
 
@@ -88,9 +108,9 @@ impl Client {
         }
     }
 
-    async fn process_request<T>(&mut self, req: Request) -> Result<(T, Limiter), ClientError> {
-
+    pub async fn make_request(&mut self, request: ClientRequest) -> Result<U, ClientError> {
     }
+
 
     pub async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, ClientError> {
         if let Some(rl) = &self.limiter {
@@ -143,10 +163,10 @@ impl Client {
                 let rl = self.limiter.as_ref().unwrap();
                 let limits = self.latest_limits.as_ref().unwrap();
                 rl.until_ready_with_jitter(Jitter::new(
-                    limits.penalty_time,
-                    Duration::from_secs(1),
-                ))
-                .await;
+                        limits.penalty_time,
+                        Duration::from_secs(1),
+                        ))
+                    .await;
                 return Err(Error::NextCycle);
             }
             x if x.is_success() => {}

@@ -1,10 +1,10 @@
 use macros::{gen_min_max_method, gen_option_method};
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::{collections::HashMap};
+use std::collections::HashMap;
 use thiserror::Error;
 
-use super::dist::{STATS_IDS, STAT_TO_ID};
+use crate::dist::{STATS_IDS, STAT_TO_ID};
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
