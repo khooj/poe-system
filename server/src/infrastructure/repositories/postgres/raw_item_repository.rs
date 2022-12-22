@@ -36,14 +36,14 @@ impl RawItemRepository {
         let mut s = transaction
             .transaction
             .copy_in_raw(
-                "COPY raw_items (id, account_name, stash, item) FROM STDIN WITH (FORMAT TEXT);",
+                "COPY raw_items (id, account_name, stash, item) FROM STDIN WITH (DELIMITER ';', FORMAT CSV);"
             )
             .await?;
         for (idx, item) in items.iter().enumerate() {
-            if idx >= 1 {
-                break
-            }
-            if let Err(e) = s.send(item.as_csvline(idx + 1).as_bytes()).await {
+            // if idx >= 1 {
+            //     break;
+            // }
+            if let Err(e) = s.send(item.as_csvline(";", "\n").as_bytes()).await {
                 s.abort(e.to_string()).await?;
                 return Err(e.into());
             }
@@ -118,9 +118,9 @@ ON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"#,
         }
     }
 
-    pub async fn get_items_cursor(
-        &self,
-        base_types: &[&str],
+    pub async fn get_items_cursor<'a>(
+        &'a self,
+        base_types: &'a [&'a str],
         league: &str,
     ) -> futures_core::stream::BoxStream<'_, Result<RawItem, sqlx::Error>> {
         sqlx::query_as!(

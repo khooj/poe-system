@@ -26,10 +26,15 @@ impl RawItem {
         }
     }
 
-    pub fn as_csvline(&self, idx: usize) -> String {
+    pub fn as_csvline(&self, del: &str, end: &str) -> String {
         let s = serde_json::to_string(&self.item).expect("can't serialize to json");
-        let s = format!("{}\t{}\t{}\t{}", self.id, self.account_name, self.stash, s);
-        println!("{}", s);
+        let s = vec![
+            self.id.as_str(),
+            self.account_name.as_str(),
+            self.stash.as_str(),
+            s.as_str(),
+        ].join(del) + end;
+        // println!("{}", s);
         s
     }
 }

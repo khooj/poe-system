@@ -15,7 +15,7 @@ tokio = { version = "1.13.1", features = ["full"] }
 tokio-stream = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
-thiserror = "1.0.24"
+thiserror = "1.0"
 syn = { version = "1.0.48", features = ["full"]}
 uuid = { version = "0.8.2", features = ["v4"] }
 num = "0.4.0"
@@ -37,7 +37,7 @@ strsim = "0.10"
 reqwest = { version = "0.11", features = [ "json" ] }
 mongodb = { version = "2.0.1" }
 #futures-util = "0.3"
-sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres", "macros", "migrate", "json", "chrono", "uuid", "offline" ] }
+sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls", "postgres", "macros", "migrate", "json", "chrono", "uuid", "offline", "tls" ] }
 dotenv = "0.15"
 async-trait = "0.1"
 futures-core = "0.3"

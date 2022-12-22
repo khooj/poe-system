@@ -8,6 +8,7 @@ services:
   #     - "mongodata:/data/db"
 
   postgres:
+    #image: citusdata/citus:postgres_14
     image: postgres:14
     ports:
       - 5432:5432

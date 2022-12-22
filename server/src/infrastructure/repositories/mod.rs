@@ -1,7 +1,7 @@
 pub mod postgres;
 
 use crate::configuration::Database;
-use sqlx::postgres::PgPool;
+use sqlx::postgres::PgPoolOptions;
 
 pub type Repositories = (
     postgres::raw_item_repository::RawItemRepository,
@@ -12,7 +12,7 @@ pub type Repositories = (
 pub async fn create_repositories(db: &Database) -> anyhow::Result<Repositories> {
     match db {
         Database::Postgres { ref dsn } => {
-            let pool = PgPool::connect(dsn).await?;
+            let pool = PgPoolOptions::new().connect(dsn).await?;
             let raw_items =
                 postgres::raw_item_repository::RawItemRepository::new(pool.clone()).await;
             let tasks = postgres::task_repository::TaskRepository::new(pool.clone());
