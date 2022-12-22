@@ -1,6 +1,70 @@
 use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct ClientSearchResponse {
+    pub id: String,
+    pub complexity: i32,
+    pub result: Vec<String>,
+    pub total: i32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct ClientFetchResponse {
+    pub result: Vec<ClientFetchEntry>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct ClientFetchEntry {
+    pub id: String,
+    pub listing: ClientFetchListing,
+    pub item: ClientFetchItem,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct ClientFetchListing {
+    pub method: String,
+    pub indexed: String,
+    pub stash: StashInfo,
+    pub whisper: String,
+    pub whisper_token: String,
+    pub account: AccountInfo,
+    pub price: PriceInfo,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct StashInfo {
+    pub name: String,
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct AccountInfo {
+    pub name: String,
+    pub lastCharacterName: String,
+    pub realm: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct PriceInfo {
+    #[serde(rename = "type")]
+    pub typ: String,
+    pub amount: i32,
+    pub currency: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct ClientFetchItem {}
+
+#[derive(Deserialize)]
 pub struct ItemsData {
     pub result: Vec<DataItem>,
 }
