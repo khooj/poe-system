@@ -2,10 +2,9 @@ mod common;
 mod server;
 
 use anyhow::Result;
-use common::{insert_raw_items, ContainerDrop};
+use common::ContainerDrop;
 use poe_system::application::build_calculating::BuildCalculating;
 use poe_system::infrastructure::repositories::postgres::build_repository::BuildRepository;
-use poe_system::infrastructure::repositories::postgres::raw_item_repository::RawItemRepository;
 use poe_system::infrastructure::repositories::postgres::task_repository::TaskRepository;
 use server::Server;
 use sqlx::PgPool;
@@ -13,18 +12,13 @@ use testcontainers::{clients::Cli, images::postgres::Postgres, Docker};
 use tracing::debug;
 
 struct Repos {
-    items: RawItemRepository,
     tasks: TaskRepository,
     builds: BuildRepository,
 }
 
 impl Repos {
     fn build_calculating(&self, _server: &Server) -> BuildCalculating {
-        BuildCalculating::new(
-            self.items.clone(),
-            self.tasks.clone(),
-            self.builds.clone(),
-        )
+        BuildCalculating::new(self.tasks.clone(), self.builds.clone())
     }
 }
 
@@ -48,14 +42,10 @@ async fn build_calculating_test() -> Result<()> {
     ))
     .await?;
     sqlx::migrate!().run(&pool).await?;
-    let items_repo = RawItemRepository::new(pool.clone()).await;
     let build_repo = BuildRepository::new(pool.clone());
     let tasks_repo = TaskRepository::new(pool);
 
-    insert_raw_items(&items_repo).await?;
-
     let repos = Repos {
-        items: items_repo,
         tasks: tasks_repo,
         builds: build_repo,
     };

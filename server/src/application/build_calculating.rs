@@ -2,7 +2,6 @@ use crate::domain::item::{Item, SimilarityScore};
 use crate::infrastructure::repositories::postgres::build_repository::{
     Build, BuildItems, BuildRepository,
 };
-use crate::infrastructure::repositories::postgres::raw_item_repository::RawItemRepository;
 use crate::infrastructure::repositories::postgres::task_repository::{
     Task, TaskRepository, TaskType,
 };
@@ -23,19 +22,13 @@ struct CalculateBuildTaskData {
 
 #[derive(Clone)]
 pub struct BuildCalculating {
-    repository: RawItemRepository,
     tasks_repository: TaskRepository,
     build_repository: BuildRepository,
 }
 
 impl BuildCalculating {
-    pub fn new(
-        repository: RawItemRepository,
-        tasks_repository: TaskRepository,
-        build_repository: BuildRepository,
-    ) -> Self {
+    pub fn new(tasks_repository: TaskRepository, build_repository: BuildRepository) -> Self {
         BuildCalculating {
-            repository,
             tasks_repository,
             build_repository,
         }
@@ -167,42 +160,38 @@ impl BuildCalculating {
             }
         };
         trace!("found alternate types: {:?}", alternate_types);
-        let mut cursor = self
-            .repository
-            .get_items_cursor(&alternate_types, league)
-            .await;
-        while let Some(db_item) = cursor.next().await {
-            if db_item.is_err() {
-                match db_item {
-                    Err(e) => {
-                        error!(err = %e, "continue");
-                        continue;
-                    }
-                    _ => {}
-                }
-            }
+        // while let Some(db_item) = cursor.next().await {
+        //     if db_item.is_err() {
+        //         match db_item {
+        //             Err(e) => {
+        //                 error!(err = %e, "continue");
+        //                 continue;
+        //             }
+        //             _ => {}
+        //         }
+        //     }
 
-            let db_item = db_item.unwrap();
-            trace!(db_item = ?db_item, "db item before convert");
-            let db_item: Item = if let Ok(k) = db_item.try_into() {
-                k
-            } else {
-                continue;
-            };
-            trace!(db_item = ?db_item, "db item after convert");
+        //     let db_item = db_item.unwrap();
+        //     trace!(db_item = ?db_item, "db item before convert");
+        //     let db_item: Item = if let Ok(k) = db_item.try_into() {
+        //         k
+        //     } else {
+        //         continue;
+        //     };
+        //     trace!(db_item = ?db_item, "db item after convert");
 
-            debug!(
-                "calculate similarity with {} {}",
-                db_item.name, db_item.base_type
-            );
-            trace!(req_item = ?item, db_item = ?db_item, "calculate similarity");
-            let calc = db_item.calculate_similarity_score_with_pob(item);
-            if calc > highscore {
-                trace!("get higher score: {:?}", calc);
-                highscore = calc;
-                result_item = db_item;
-            }
-        }
+        //     debug!(
+        //         "calculate similarity with {} {}",
+        //         db_item.name, db_item.base_type
+        //     );
+        //     trace!(req_item = ?item, db_item = ?db_item, "calculate similarity");
+        //     let calc = db_item.calculate_similarity_score_with_pob(item);
+        //     if calc > highscore {
+        //         trace!("get higher score: {:?}", calc);
+        //         highscore = calc;
+        //         result_item = db_item;
+        //     }
+        // }
 
         debug!(
             "found item {} {} with score {:?}",

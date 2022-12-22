@@ -1,7 +1,4 @@
 use anyhow::Result;
-use poe_system::infrastructure::repositories::postgres::{
-    raw_item::RawItem, raw_item_repository::RawItemRepository,
-};
 use public_stash::models::PublicStashChange;
 use testcontainers::{Container, Docker, Image};
 
@@ -35,23 +32,23 @@ impl<'d, D: Docker, I: Image> Drop for ContainerDrop<'d, D, I> {
 
 const EXAMPLE_STASH_CHANGE: &'static str = include_str!("example-stash.json");
 
-pub async fn insert_raw_items(repo: &RawItemRepository) -> Result<()> {
-    let mut tr = repo.begin().await?;
+// pub async fn insert_raw_items(repo: &RawItemRepository) -> Result<()> {
+//     let mut tr = repo.begin().await?;
 
-    let stash: PublicStashChange = serde_json::from_str(EXAMPLE_STASH_CHANGE)?;
-    for i in stash.items {
-        repo.insert_item(
-            &mut tr,
-            RawItem::new(
-                i.id.as_ref().unwrap(),
-                stash.account_name.as_ref().unwrap(),
-                stash.stash.as_ref().unwrap(),
-                i.clone(),
-            ),
-        )
-        .await?;
-    }
+//     let stash: PublicStashChange = serde_json::from_str(EXAMPLE_STASH_CHANGE)?;
+//     for i in stash.items {
+//         repo.insert_item(
+//             &mut tr,
+//             RawItem::new(
+//                 i.id.as_ref().unwrap(),
+//                 stash.account_name.as_ref().unwrap(),
+//                 stash.stash.as_ref().unwrap(),
+//                 i.clone(),
+//             ),
+//         )
+//         .await?;
+//     }
 
-    tr.commit().await?;
-    Ok(())
-}
+//     tr.commit().await?;
+//     Ok(())
+// }
