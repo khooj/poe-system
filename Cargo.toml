@@ -3,10 +3,10 @@ members = [
 	"macros",
 	"server", 
 	"frontend",
-	"mods",
 	"public_stash",
 	"pob",
 	"tradeapi",
+	"domain"
 ]
 
 [profile.dev.package.sqlx-macros]

@@ -1,6 +1,6 @@
 use macros::static_array_from_file;
 
-static_array_from_file!(BASE_TYPES, "mods/src/base_types.txt");
+pub static BASE_TYPES: &[&'static str] = static_array_from_file!("domain/src/base_types.txt");
 
 #[cfg(test)]
 mod tests {

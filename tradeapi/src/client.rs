@@ -169,7 +169,7 @@ impl Client {
             .strip_suffix(",")
             .unwrap()
             .to_string();
-        let mut req = self.client.get(&format!(
+        let req = self.client.get(&format!(
             "https://www.pathofexile.com/api/trade/fetch/{}",
             v,
         ));

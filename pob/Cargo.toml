@@ -13,7 +13,7 @@ thiserror = "1.0.24"
 syn = { version = "1.0.48", features = ["full"]}
 nom = { version = "6.1.2", features = ["alloc"] }
 tracing = { version = "0.1" }
-mods = { path = "../mods" }
+#mods = { path = "../mods" }
 
 [dev-dependencies]
 dotenv = "0.15"

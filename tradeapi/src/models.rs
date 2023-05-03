@@ -47,7 +47,8 @@ pub struct StashInfo {
 #[serde(rename_all = "lowercase")]
 pub struct AccountInfo {
     pub name: String,
-    pub lastCharacterName: String,
+    #[serde(rename = "lastCharacterName")]
+    pub last_character_name: String,
     pub realm: String,
 }
 
@@ -62,7 +63,9 @@ pub struct PriceInfo {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub struct ClientFetchItem {}
+pub struct ClientFetchItem {
+    
+}
 
 #[derive(Deserialize)]
 pub struct ItemsData {
