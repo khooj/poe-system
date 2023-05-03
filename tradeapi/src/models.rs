@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Deserializer};
+use serde_json::Value;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -21,6 +24,8 @@ pub struct ClientFetchEntry {
     pub id: String,
     pub listing: ClientFetchListing,
     pub item: ClientFetchItem,
+    #[serde(flatten)]
+    pub rest: HashMap<String, Value>,
 }
 
 #[derive(Deserialize)]
@@ -33,6 +38,8 @@ pub struct ClientFetchListing {
     pub whisper_token: String,
     pub account: AccountInfo,
     pub price: PriceInfo,
+    #[serde(flatten)]
+    pub rest: HashMap<String, Value>,
 }
 
 #[derive(Deserialize)]
@@ -64,7 +71,8 @@ pub struct PriceInfo {
 #[derive(Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchItem {
-    
+    #[serde(flatten)]
+    pub rest: HashMap<String, Value>,
 }
 
 #[derive(Deserialize)]
