@@ -46,7 +46,7 @@ url = "2"
 async-graphql = { version = "3", features = [ "tracing", "opentelemetry" ] }
 async-graphql-actix-web = "3"
 validator = { version = "0.15", features = ["derive"] }
-#mods = { path = "../mods" }
+domain = { path = "../domain" }
 pob = { path = "../pob" }
 public_stash = { path = "../public_stash" }
 

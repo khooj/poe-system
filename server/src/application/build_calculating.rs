@@ -1,4 +1,3 @@
-use crate::domain::item::{Item, SimilarityScore};
 use crate::infrastructure::repositories::postgres::build_repository::{
     Build, BuildItems, BuildRepository,
 };
@@ -7,8 +6,8 @@ use crate::infrastructure::repositories::postgres::task_repository::{
 };
 use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
-use mods::Class;
-use pob::{parser::ParsedItem as PobItem, pob::Pob};
+use domain::{Class, Item, SimilarityScore};
+use pob::pob::Pob;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use tracing::{debug, error, info, instrument, trace, warn};
@@ -120,7 +119,7 @@ impl BuildCalculating {
         let found_items = BuildItems::default();
         for item in itemset.items() {
             let item = item.clone();
-            info!(name = %item.name, basetype = %item.base_line, "searching similar item");
+            info!(name = %item.name, basetype = %item.base_type, "searching similar item");
             let (found_item, score) = self.find_similar_item(&item, &build_info.league).await;
 
             info!("found item");
@@ -141,18 +140,18 @@ impl BuildCalculating {
     }
 
     #[instrument(skip(self, item))]
-    async fn find_similar_item(&self, item: &PobItem, league: &str) -> (Item, SimilarityScore) {
+    async fn find_similar_item(&self, item: &Item, league: &str) -> (Item, SimilarityScore) {
         use crate::infrastructure::poe_data::BASE_ITEMS;
         use tokio_stream::StreamExt;
 
         debug!(
             "check required item short: {} {}",
-            item.name, item.base_line
+            item.name, item.base_type
         );
         trace!(item = ?item, "checking required item");
         let mut highscore = SimilarityScore::default();
         let mut result_item = Item::default();
-        let alternate_types = match BASE_ITEMS.get_alternate_types(&item.base_line) {
+        let alternate_types = match BASE_ITEMS.get_alternate_types(&item.base_type) {
             Some(k) => k,
             None => {
                 warn!("can't find alternate types, skipping this item");

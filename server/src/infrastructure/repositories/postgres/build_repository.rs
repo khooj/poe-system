@@ -1,5 +1,5 @@
 use super::PgTransaction;
-use crate::domain::item::Item;
+use domain::Item;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
