@@ -350,7 +350,7 @@ impl From<Option<String>> for League {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub enum ItemLvl {
     No,
     Yes(i32),

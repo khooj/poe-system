@@ -1,5 +1,6 @@
-use super::parser::{parse_pob_item, ParsedItem};
+use super::parser::parse_pob_item;
 use base64::{decode_config, URL_SAFE};
+use domain::Item;
 use flate2::read::ZlibDecoder;
 use nom::error::VerboseError;
 use roxmltree::{Document, Node};
@@ -21,7 +22,7 @@ pub enum PobError {
     ItemsetNameNotFound(String),
 
     #[error("type error: {0}")]
-    TypeError(#[from] mods::TypeError),
+    TypeError(#[from] domain::TypeError),
     #[error("xml error")]
     XmlError(#[from] roxmltree::Error),
     #[error("base64 error")]
@@ -58,11 +59,11 @@ impl<'a> Pob {
 pub struct ItemSet {
     title: String,
     id: i32,
-    items: Vec<ParsedItem>,
+    items: Vec<Item>,
 }
 
 impl ItemSet {
-    fn try_from(node: &Node, items_map: &HashMap<i32, ParsedItem>) -> Result<ItemSet, PobError> {
+    fn try_from(node: &Node, items_map: &HashMap<i32, Item>) -> Result<ItemSet, PobError> {
         let id = node
             .attribute("id")
             .ok_or(PobError::Parse("can't get id from node".into()))?;
@@ -76,7 +77,7 @@ impl ItemSet {
             if id == -1 || id == 0 {
                 continue;
             }
-            items.push(items_map.get(&id).unwrap_or(&ParsedItem::default()).clone());
+            items.push(items_map.get(&id).unwrap_or(&Item::default()).clone());
         }
 
         Ok(ItemSet {
@@ -86,7 +87,7 @@ impl ItemSet {
         })
     }
 
-    pub fn get_nth_item(&self, nth: usize) -> Option<&ParsedItem> {
+    pub fn get_nth_item(&self, nth: usize) -> Option<&Item> {
         self.items.iter().nth(nth)
     }
 
@@ -98,7 +99,7 @@ impl ItemSet {
         self.id
     }
 
-    pub fn items(&self) -> &Vec<ParsedItem> {
+    pub fn items(&self) -> &Vec<Item> {
         &self.items
     }
 }
@@ -111,7 +112,7 @@ pub struct PobDocument<'a> {
 impl<'a> PobDocument<'a> {
     pub fn get_item_sets(&self) -> Vec<ItemSet> {
         let mut itemsets = vec![];
-        let mut items: HashMap<i32, ParsedItem> = HashMap::new();
+        let mut items: HashMap<i32, Item> = HashMap::new();
         let mut nodes = self.doc.descendants();
         let items_node = match nodes.find(|&x| x.tag_name().name() == "Items") {
             Some(k) => k,

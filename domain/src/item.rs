@@ -23,6 +23,10 @@ pub struct Item {
     pub hybrid: Hybrid,
     pub class: Class,
     pub image_link: String,
+    pub rarity: String,
+    pub lvl_req: i32,
+    pub sockets: String,
+    pub quality: i32,
 }
 
 #[derive(Default, PartialEq, PartialOrd, Debug)]

@@ -1,4 +1,4 @@
-use mods::{Mod, ModType, BASE_TYPES};
+use domain::{Item, Mod, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -251,40 +251,27 @@ fn root<
     Ok((i, header_vals))
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct ParsedItem {
-    pub rarity: String,
-    pub name: String,
-    pub base_line: String,
-    pub unique_id: String,
-    pub item_lvl: i32,
-    pub lvl_req: i32,
-    pub sockets: String,
-    pub quality: i32,
-    pub affixes: Vec<Mod>,
-}
-
-pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, ParsedItem, E>
+pub fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, Item, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
     let (i, items) = root(i)?;
-    let mut item = ParsedItem::default();
+    let mut item = Item::default();
 
     for val in items {
         match val {
             ItemValue::Rarity(r) => item.rarity = r,
             ItemValue::BaseType { base, name } => {
                 item.name = name;
-                item.base_line = base;
+                item.base_type = base;
             }
-            ItemValue::UniqueId(id) => item.unique_id = id,
-            ItemValue::ItemLevel(il) => item.item_lvl = il,
+            ItemValue::UniqueId(id) => item.id = id,
+            ItemValue::ItemLevel(il) => item.item_lvl = domain::ItemLvl::Yes(il),
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
             ItemValue::Sockets(s) => item.sockets = s,
             ItemValue::Quality(q) => item.quality = q,
             ItemValue::Implicits(implicits) => {
-                item.affixes.extend(implicits.into_iter().map(|e| {
+                item.mods.extend(implicits.into_iter().map(|e| {
                     if let ItemValue::Affix(m) = e {
                         m
                     } else {
@@ -295,7 +282,7 @@ where
                     }
                 }))
             }
-            ItemValue::Affix(m) => item.affixes.push(m),
+            ItemValue::Affix(m) => item.mods.push(m),
             _ => {}
         };
     }
@@ -365,15 +352,15 @@ Added Small Passive Skills also grant: +5 to Strength
         let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
         assert_eq!(item.rarity, "RARE");
         assert_eq!(item.name, "Loath Cut");
-        assert_eq!(item.base_line, "Small Cluster Jewel");
+        assert_eq!(item.base_type, "Small Cluster Jewel");
         assert_eq!(
-            item.unique_id,
+            item.id,
             "c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb"
         );
-        assert_eq!(item.item_lvl, 84);
+        assert_eq!(item.item_lvl, domain::ItemLvl::Yes(84));
         assert_eq!(item.lvl_req, 54);
         assert_eq!(
-            item.affixes,
+            item.mods,
             vec![
                 Mod::from_str_type("Adds 2 Passive Skills", ModType::Implicit),
                 Mod::from_str_type(
@@ -417,15 +404,15 @@ Implicits: 0
         let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
         assert_eq!(item.rarity, "MAGIC");
         assert_eq!(item.name, "Experimenter's Silver Flask of Adrenaline");
-        assert_eq!(item.base_line, "Silver Flask");
+        assert_eq!(item.base_type, "Silver Flask");
         assert_eq!(
-            item.unique_id,
+            item.id,
             "c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4"
         );
-        assert_eq!(item.item_lvl, 53);
+        assert_eq!(item.item_lvl, domain::ItemLvl::Yes(53));
         assert_eq!(item.lvl_req, 22);
         assert_eq!(
-            item.affixes,
+            item.mods,
             vec![
                 Mod::from_str_type(
                     "21% increased Movement Speed during Flask effect",
