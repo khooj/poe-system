@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use macros::static_array_from_file;
 use std::{collections::HashMap, env::current_dir};
 
-static_array_from_file!(STATS_IDS, "tradeapi/dist/stats_ids.txt");
+pub static STATS_IDS: &[&'static str] = static_array_from_file!("tradeapi/dist/stats_ids.txt");
 
 lazy_static! {
     pub static ref STAT_TO_ID: HashMap<String, String> = {
