@@ -6,7 +6,8 @@ members = [
 	"public_stash",
 	"pob",
 	"tradeapi",
-	"domain"
+	"domain",
+	"app/src-tauri"
 ]
 
 [profile.dev.package.sqlx-macros]

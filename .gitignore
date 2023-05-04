@@ -6,3 +6,4 @@ test.json
 poe.sql.xz
 .direnv
 slice1.tar
+app/node_modules
