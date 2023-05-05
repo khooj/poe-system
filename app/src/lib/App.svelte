@@ -1,5 +1,6 @@
 <script lang="ts">
-  import Greet from './lib/Greet.svelte'
+  import Greet from './Greet.svelte'
+  import Hello from './Hello.svelte'
 </script>
 
 <main class="container">
@@ -23,6 +24,9 @@
 
   <div class="row">
     <Greet />
+  </div>
+  <div>
+    <Hello />
   </div>
 
 

@@ -7,3 +7,4 @@ poe.sql.xz
 .direnv
 slice1.tar
 app/node_modules
+app/.svelte-kit
