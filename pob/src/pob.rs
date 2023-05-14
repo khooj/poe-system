@@ -1,6 +1,8 @@
+use crate::parser::{ParsedItem, ItemValue};
+
 use super::parser::parse_pob_item;
 use base64::{decode_config, URL_SAFE};
-use domain::Item;
+use domain::{Item, ModType, Mod};
 use flate2::read::ZlibDecoder;
 use nom::error::VerboseError;
 use roxmltree::{Document, Node};
@@ -112,7 +114,7 @@ pub struct PobDocument<'a> {
 impl<'a> PobDocument<'a> {
     pub fn get_item_sets(&self) -> Vec<ItemSet> {
         let mut itemsets = vec![];
-        let mut items: HashMap<i32, Item> = HashMap::new();
+        let mut items: HashMap<i32, ParsedItem> = HashMap::new();
         let mut nodes = self.doc.descendants();
         let items_node = match nodes.find(|&x| x.tag_name().name() == "Items") {
             Some(k) => k,
@@ -132,9 +134,30 @@ impl<'a> PobDocument<'a> {
             }
         }
 
+        let mut mods = vec![];
+        for (_, item) in &items {
+            for i in &item.mods {
+                if let ItemValue::Affix(v ) = i {
+                    mods.push(v);
+                }
+            }
+        }
+
+        let mods_processed = Mod::many_by_stat_or_invalid(&mods);
+        let mut items_processed = HashMap::with_capacity(items.len());
+        let mut mods_processed_iter = mods_processed.into_iter();
+
+        for (ii, parsed_item) in items {
+            let mut item = parsed_item.item;
+            for _ in parsed_item.mods {
+                item.mods.push(mods_processed_iter.next().unwrap());
+            }
+            items_processed.entry(ii).or_insert(item);
+        }
+
         for set in items_node.descendants() {
             if set.tag_name().name() == "ItemSet" {
-                if let Ok(s) = ItemSet::try_from(&set, &items) {
+                if let Ok(s) = ItemSet::try_from(&set, &items_processed) {
                     itemsets.push(s);
                 }
             }

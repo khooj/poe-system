@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, collections::LinkedList};
+use std::{collections::HashMap, convert::TryFrom};
 use strum::EnumString;
 use thiserror::Error;
 
@@ -463,23 +463,35 @@ impl Mod {
         }
     }
 
-    pub fn many_by_stat_or_invalid(values: &[(&str, ModType)]) -> Vec<Self> {
-        let mut result = Vec::with_capacity(values.len());
-        let mut idxs: Vec<(usize, bool)> = (0..values.len()).map(|i| (i, false)).collect();
-        for stat in STATS_SIMPLE {
-            for (idx, processed) in &mut idxs {
-                if *processed {
-                    continue
-                }
-                if Mod::is_stat_similar(stat, values[*idx].0) {
-                    *processed = true;
-                    result.push(Mod {
-                        stat_translation: stat.to_string(),
-                        type_: values[*idx].1,
-                        text: values[*idx].0.to_string(),
-                        _internal: crate::private::Private,
-                    });
-                }
+    fn cut_numbers(val: &str) -> String {
+        val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
+    }
+
+    pub fn many_by_stat_or_invalid(values: &[&(&str, ModType)]) -> Vec<Self> {
+        let types = STATS_SIMPLE
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (Self::cut_numbers(*e), idx))
+            .collect::<HashMap<String, usize>>();
+
+        let values2 = values
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (idx, Self::cut_numbers(e.0), e.1))
+            .collect::<Vec<(usize, String, ModType)>>();
+
+        let mut result = vec![Mod::invalid(); values.len()];
+        for val in values2 {
+            let stat_idx = if let Some(val) = types.get(&val.1) {
+                *val
+            } else {
+                continue;
+            };
+            result[val.0] = Mod {
+                stat_translation: STATS_SIMPLE[stat_idx].to_string(),
+                type_: val.2,
+                text: values[val.0].0.to_string(),
+                ..Default::default()
             }
         }
         result
@@ -535,5 +547,26 @@ impl TryFrom<String> for Rarity {
             "normal" => Ok(Rarity::Normal),
             _ => Err(TypeError::RarityParse(v)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Mod, ModType};
+
+    #[test]
+    fn mod_parse() {
+        let mods1 = vec![&("75% increased Spell Damage", ModType::Explicit)];
+        let mods2 = Mod::many_by_stat_or_invalid(&mods1);
+        assert_eq!(mods2.len(), 1);
+        assert_eq!(
+            mods2[0],
+            Mod {
+                stat_translation: "{0}% increased Spell Damage".to_string(),
+                text: "75% increased Spell Damage".to_string(),
+                type_: ModType::Explicit,
+                ..Default::default()
+            }
+        )
     }
 }
