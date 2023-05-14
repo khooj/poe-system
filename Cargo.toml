@@ -7,7 +7,6 @@ members = [
 	"pob",
 	"tradeapi",
 	"domain",
-	"app/src-tauri"
 ]
 
 [profile.dev.package.sqlx-macros]

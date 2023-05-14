@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
+use std::{convert::TryFrom, collections::LinkedList};
 use strum::EnumString;
 use thiserror::Error;
+
+use crate::STATS_SIMPLE;
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -410,20 +412,83 @@ pub enum ModType {
     Veiled = 7,
     ExplicitHybrid = 8,
     Scourge = 9,
+    Invalid = 100,
+}
+
+#[derive(Error, Debug)]
+pub enum ModError {
+    #[error("can't find mod by stat: {0}")]
+    StatError(String),
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub struct Mod {
     pub text: String,
     pub type_: ModType,
+    pub stat_translation: String,
+    #[serde(skip_serializing, skip_deserializing)]
+    _internal: crate::private::Private,
 }
 
 impl Mod {
-    pub fn from_str_type(value: &str, type_: ModType) -> Self {
-        Mod {
-            text: value.to_owned(),
-            type_,
+    fn is_stat_similar(val1: &str, val2: &str) -> bool {
+        use strsim::damerau_levenshtein;
+        damerau_levenshtein(val1, val2) < 7
+    }
+    pub fn by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
+        for i in STATS_SIMPLE {
+            if Mod::is_stat_similar(i, value) {
+                return Ok(Mod {
+                    stat_translation: i.to_string(),
+                    type_: typ,
+                    text: value.to_string(),
+                    _internal: crate::private::Private,
+                });
+            }
         }
+
+        return Err(ModError::StatError(value.to_string()));
+    }
+
+    pub fn by_stat_or_invalid(value: &str, typ: ModType) -> Self {
+        Mod::by_stat(value, typ).unwrap_or_default()
+    }
+
+    pub fn invalid() -> Self {
+        Mod {
+            stat_translation: String::new(),
+            type_: ModType::Invalid,
+            text: String::new(),
+            _internal: crate::private::Private,
+        }
+    }
+
+    pub fn many_by_stat_or_invalid(values: &[(&str, ModType)]) -> Vec<Self> {
+        let mut result = Vec::with_capacity(values.len());
+        let mut idxs: Vec<(usize, bool)> = (0..values.len()).map(|i| (i, false)).collect();
+        for stat in STATS_SIMPLE {
+            for (idx, processed) in &mut idxs {
+                if *processed {
+                    continue
+                }
+                if Mod::is_stat_similar(stat, values[*idx].0) {
+                    *processed = true;
+                    result.push(Mod {
+                        stat_translation: stat.to_string(),
+                        type_: values[*idx].1,
+                        text: values[*idx].0.to_string(),
+                        _internal: crate::private::Private,
+                    });
+                }
+            }
+        }
+        result
+    }
+}
+
+impl Default for Mod {
+    fn default() -> Self {
+        Mod::invalid()
     }
 }
 

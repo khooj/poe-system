@@ -16,14 +16,14 @@ use std::num::ParseIntError;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
-enum ItemValue {
+enum ItemValue<'a> {
     Rarity(String),
     BaseType { name: String, base: String },
     ItemLevel(i32),
     LevelReq(i32),
     UniqueId(String),
-    Affix(Mod),
-    Implicits(Vec<ItemValue>),
+    Affix(&'a str, ModType),
+    Implicits(Vec<ItemValue<'a>>),
     Quality(i32),
     Sockets(String),
     Influence(String),
@@ -150,7 +150,7 @@ where
 fn skip_line_with_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
     t: &'a str,
-) -> IResult<&'a str, ItemValue, E> {
+) -> IResult<&'a str, ItemValue<'a>, E> {
     context(
         "skip_line_tag",
         map(preceded(tag(t), cut(not_line_ending)), |_| {
@@ -162,7 +162,7 @@ fn skip_line_with_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
     default: ModType,
-) -> IResult<&'a str, ItemValue, E> {
+) -> IResult<&'a str, ItemValue<'a>, E> {
     context(
         "affix_internal",
         map(
@@ -170,7 +170,7 @@ fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
                 opt(alt((tag("{crafted}"), tag("{range:1}")))),
                 cut(not_line_ending),
             ),
-            |e: &str| ItemValue::Affix(Mod::from_str_type(&e, default)),
+            |e: &str| ItemValue::Affix(e, default),
         ),
     )(i)
 }
@@ -257,6 +257,7 @@ where
 {
     let (i, items) = root(i)?;
     let mut item = Item::default();
+    let mut mods = vec![];
 
     for val in items {
         match val {
@@ -270,22 +271,19 @@ where
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
             ItemValue::Sockets(s) => item.sockets = s,
             ItemValue::Quality(q) => item.quality = q,
-            ItemValue::Implicits(implicits) => {
-                item.mods.extend(implicits.into_iter().map(|e| {
-                    if let ItemValue::Affix(m) = e {
-                        m
-                    } else {
-                        Mod {
-                            text: "invalid".to_string(),
-                            type_: ModType::Cosmetic,
-                        }
-                    }
-                }))
-            }
-            ItemValue::Affix(m) => item.mods.push(m),
+            ItemValue::Implicits(implicits) => mods.extend(implicits.into_iter().map(|e| {
+                if let ItemValue::Affix(m, t) = e {
+                    (m, t)
+                } else {
+                    ("", ModType::Invalid)
+                }
+            })),
+            ItemValue::Affix(m, t) => mods.push((m, t)),
             _ => {}
         };
     }
+
+    item.mods = Mod::many_by_stat_or_invalid(&mods);
 
     Ok((i, item))
 }
@@ -317,10 +315,7 @@ mod test {
         assert_eq!(i, "\nAdds 3 Passive Skills");
         assert_eq!(
             ret,
-            vec![ItemValue::Affix(Mod::from_str_type(
-                "Adds 2 Passive Skills",
-                ModType::Implicit
-            ))]
+            vec![ItemValue::Affix("Adds 2 Passive Skills", ModType::Implicit)]
         );
 
         let i = "Implicits: 0\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
@@ -361,26 +356,26 @@ Added Small Passive Skills also grant: +5 to Strength
         assert_eq!(item.lvl_req, 54);
         assert_eq!(
             item.mods,
-            vec![
-                Mod::from_str_type("Adds 2 Passive Skills", ModType::Implicit),
-                Mod::from_str_type(
+            Mod::many_by_stat_or_invalid(&[
+                ("Adds 2 Passive Skills", ModType::Implicit),
+                (
                     "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits",
-                    ModType::Implicit,
+                    ModType::Implicit
                 ),
-                Mod::from_str_type(
+                (
                     "Added Small Passive Skills also grant: +3% to Chaos Resistance",
                     ModType::Explicit
                 ),
-                Mod::from_str_type(
+                (
                     "Added Small Passive Skills also grant: +5 to Maximum Energy Shield",
                     ModType::Explicit
                 ),
-                Mod::from_str_type(
+                (
                     "Added Small Passive Skills also grant: +5 to Strength",
                     ModType::Explicit
                 ),
-                Mod::from_str_type("1 Added Passive Skill is Elegant Form", ModType::Explicit),
-            ]
+                ("1 Added Passive Skill is Elegant Form", ModType::Explicit),
+            ])
         );
         Ok(())
     }
@@ -413,13 +408,13 @@ Implicits: 0
         assert_eq!(item.lvl_req, 22);
         assert_eq!(
             item.mods,
-            vec![
-                Mod::from_str_type(
+            Mod::many_by_stat_or_invalid(&[
+                (
                     "21% increased Movement Speed during Flask effect",
                     ModType::Explicit
                 ),
-                Mod::from_str_type("38% increased Duration", ModType::Explicit),
-            ]
+                ("38% increased Duration", ModType::Explicit),
+            ]),
         );
 
         Ok(())
