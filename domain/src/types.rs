@@ -426,15 +426,12 @@ pub struct Mod {
     pub text: String,
     pub type_: ModType,
     pub stat_translation: String,
+    pub stat_id: String,
     #[serde(skip_serializing, skip_deserializing)]
     _internal: crate::private::Private,
 }
 
 impl Mod {
-    fn is_stat_similar(val1: &str, val2: &str) -> bool {
-        use strsim::damerau_levenshtein;
-        damerau_levenshtein(val1, val2) < 7
-    }
     pub fn by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
         let v = crate::cut_numbers(&value);
         if let Some(idx) = STATS_CUTTED.get(&v) {
@@ -442,6 +439,7 @@ impl Mod {
                 stat_translation: STATS_CUTTED::get_original_stat(*idx),
                 type_: typ,
                 text: value.to_string(),
+                stat_id: STATS_CUTTED::get_stat_id(*idx),
                 ..Default::default()
             });
         }
@@ -458,6 +456,7 @@ impl Mod {
             stat_translation: String::new(),
             type_: ModType::Invalid,
             text: String::new(),
+            stat_id: String::new(),
             _internal: crate::private::Private,
         }
     }
@@ -477,9 +476,10 @@ impl Mod {
                 continue;
             };
             result[val.0] = Mod {
-                stat_translation: STATS_CUTTED::get_original_stat(val.0),
+                stat_translation: STATS_CUTTED::get_original_stat(stat_idx),
                 type_: val.2,
                 text: values[val.0].0.to_string(),
+                stat_id: STATS_CUTTED::get_stat_id(stat_idx),
                 ..Default::default()
             }
         }

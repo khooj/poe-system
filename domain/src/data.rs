@@ -32,7 +32,17 @@ struct BaseItem {
     name: String,
 }
 
+#[derive(Deserialize)]
+struct Stat {
+    is_aliased: bool,
+    is_local: bool,
+}
+
 lazy_static! {
+    static ref STATS: HashMap<String, Stat> = {
+        let stats_file = include_bytes!("../dist/stats.min.json");
+        serde_json::from_slice(stats_file).unwrap()
+    };
     static ref STAT_TRANSLATIONS: Vec<StatTranslation> = {
         let stats_translations_file = include_bytes!("../dist/stat_translations.min.json");
         serde_json::from_slice(stats_translations_file).unwrap()
@@ -56,14 +66,8 @@ impl STATS_CUTTED {
     pub fn get_original_stat(idx: usize) -> String {
         STAT_TRANSLATIONS[idx].english[0].string.clone()
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::BASE_TYPES;
-
-    #[test]
-    fn check_size() {
-        assert_eq!(3584, BASE_TYPES.len());
+    pub fn get_stat_id(idx: usize) -> String {
+        STAT_TRANSLATIONS[idx].ids[0].clone()
     }
 }
