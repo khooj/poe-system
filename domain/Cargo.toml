@@ -12,6 +12,7 @@ strsim = { version = "0.10.0", default-features = false }
 strum = { version = "0.24.1", features = [ "derive" ] }
 thiserror = "1"
 macros = { path = "../macros" }
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 anyhow = "1"

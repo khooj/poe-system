@@ -3,7 +3,7 @@ use std::{collections::HashMap, convert::TryFrom};
 use strum::EnumString;
 use thiserror::Error;
 
-use crate::STATS_SIMPLE;
+use crate::{STATS_CUTTED, STATS_SIMPLE};
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -463,26 +463,16 @@ impl Mod {
         }
     }
 
-    fn cut_numbers(val: &str) -> String {
-        val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
-    }
-
     pub fn many_by_stat_or_invalid(values: &[&(&str, ModType)]) -> Vec<Self> {
-        let types = STATS_SIMPLE
-            .iter()
-            .enumerate()
-            .map(|(idx, e)| (Self::cut_numbers(*e), idx))
-            .collect::<HashMap<String, usize>>();
-
         let values2 = values
             .iter()
             .enumerate()
-            .map(|(idx, e)| (idx, Self::cut_numbers(e.0), e.1))
+            .map(|(idx, e)| (idx, crate::cut_numbers(e.0), e.1))
             .collect::<Vec<(usize, String, ModType)>>();
 
         let mut result = vec![Mod::invalid(); values.len()];
         for val in values2 {
-            let stat_idx = if let Some(val) = types.get(&val.1) {
+            let stat_idx = if let Some(val) = STATS_CUTTED.get(&val.1) {
                 *val
             } else {
                 continue;

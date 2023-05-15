@@ -1,6 +1,5 @@
-mod base_types;
+mod data;
 mod item;
-mod stats;
 mod types;
 
 mod private {
@@ -8,7 +7,6 @@ mod private {
     pub struct Private;
 }
 
-pub use base_types::BASE_TYPES;
+pub use data::*;
 pub use item::{Item, SimilarityScore};
-pub use stats::STATS_SIMPLE;
 pub use types::*;
