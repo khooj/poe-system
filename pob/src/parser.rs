@@ -46,7 +46,7 @@ fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 ) -> IResult<&'a str, ItemValue, E> {
     let (i, name) = context("name", cut(not_line_ending))(i)?;
 
-    for itemclass in BASE_TYPES {
+    for itemclass in BASE_TYPES.iter() {
         // TODO: fix?
         if itemclass.is_empty() {
             continue;
@@ -318,7 +318,10 @@ mod test {
         assert_eq!(i, "\nAdds 3 Passive Skills");
         assert_eq!(
             ret,
-            vec![ItemValue::Affix(("Adds 2 Passive Skills", ModType::Implicit))]
+            vec![ItemValue::Affix((
+                "Adds 2 Passive Skills",
+                ModType::Implicit
+            ))]
         );
 
         let i = "Implicits: 0\nAdds 2 Passive Skills\nAdds 3 Passive Skills";

@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, convert::TryFrom};
+use std::convert::TryFrom;
 use strum::EnumString;
 use thiserror::Error;
 
-use crate::{STATS_CUTTED, STATS_SIMPLE};
+use crate::STATS_CUTTED;
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -436,15 +436,14 @@ impl Mod {
         damerau_levenshtein(val1, val2) < 7
     }
     pub fn by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
-        for i in STATS_SIMPLE {
-            if Mod::is_stat_similar(i, value) {
-                return Ok(Mod {
-                    stat_translation: i.to_string(),
-                    type_: typ,
-                    text: value.to_string(),
-                    _internal: crate::private::Private,
-                });
-            }
+        let v = crate::cut_numbers(&value);
+        if let Some(idx) = STATS_CUTTED.get(&v) {
+            return Ok(Mod {
+                stat_translation: STATS_CUTTED::get_original_stat(*idx),
+                type_: typ,
+                text: value.to_string(),
+                ..Default::default()
+            });
         }
 
         return Err(ModError::StatError(value.to_string()));
@@ -478,7 +477,7 @@ impl Mod {
                 continue;
             };
             result[val.0] = Mod {
-                stat_translation: STATS_SIMPLE[stat_idx].to_string(),
+                stat_translation: STATS_CUTTED::get_original_stat(val.0),
                 type_: val.2,
                 text: values[val.0].0.to_string(),
                 ..Default::default()
