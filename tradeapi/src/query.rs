@@ -35,7 +35,7 @@ impl StatQuery {
         if !STAT_TO_ID.contains_key(text) {
             Err(BuilderError::UnknownMod(text.to_string()))
         } else {
-            let id = STAT_TO_ID.get(text).unwrap().clone();
+            let id = STAT_TO_ID.get(text).unwrap().to_owned();
             let s = self.try_add_mod_id(&id, min, max, option)?;
             Ok(s)
         }

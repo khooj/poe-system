@@ -24,10 +24,11 @@ pub enum __category_tmp {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default)]
 #[strum(ascii_case_insensitive)]
 pub enum Category {
     Flasks,
+    #[default]
     Accessories,
     Armour,
     Jewels,
@@ -41,12 +42,6 @@ pub enum Category {
     Monsters,
     Gems,
     Leaguestones,
-}
-
-impl Default for Category {
-    fn default() -> Self {
-        Category::Accessories
-    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, EnumString)]

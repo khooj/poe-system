@@ -2,7 +2,7 @@ use std::fs::{copy, create_dir, metadata};
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if let Err(_) = metadata("dist") {
+    if metadata("dist").is_err() {
         create_dir("dist")?;
     }
     let files = [
