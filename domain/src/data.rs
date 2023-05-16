@@ -59,7 +59,7 @@ lazy_static! {
         serde_json::from_slice(base_items_file).unwrap()
     };
     pub static ref BASE_TYPES: Vec<&'static str> =
-        { BASE_ITEMS.iter().map(|(_, v)| v.name.as_str()).collect() };
+        BASE_ITEMS.iter().map(|(_, v)| v.name.as_str()).collect();
 }
 
 impl STATS_CUTTED {

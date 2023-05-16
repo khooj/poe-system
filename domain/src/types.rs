@@ -422,24 +422,29 @@ pub struct Mod {
     pub type_: ModType,
     pub stat_translation: String,
     pub stat_id: String,
+    pub numeric_value: Option<i32>,
     #[serde(skip_serializing, skip_deserializing)]
     _internal: crate::private::Private,
 }
 
 impl Mod {
     pub fn by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
-        let v = crate::cut_numbers(&value);
+        let v = crate::cut_numbers(value);
         if let Some(idx) = STATS_CUTTED.get(&v) {
+            let text = value.to_string();
+            let stat_translation = STATS_CUTTED::get_original_stat(*idx);
+            let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
             return Ok(Mod {
-                stat_translation: STATS_CUTTED::get_original_stat(*idx),
+                text,
+                stat_translation,
+                numeric_value,
                 type_: typ,
-                text: value.to_string(),
                 stat_id: STATS_CUTTED::get_stat_id(*idx),
                 ..Default::default()
             });
         }
 
-        return Err(ModError::StatError(value.to_string()));
+        Err(ModError::StatError(value.to_string()))
     }
 
     pub fn by_stat_or_invalid(value: &str, typ: ModType) -> Self {
@@ -452,8 +457,25 @@ impl Mod {
             type_: ModType::Invalid,
             text: String::new(),
             stat_id: String::new(),
+            numeric_value: None,
             _internal: crate::private::Private,
         }
+    }
+
+    fn cut_numeric_values(s: &str, template: &str) -> Option<i32> {
+        let idx = template.find('{')?;
+
+        let mut still_numeric = true;
+        let num = s.chars().skip(idx).fold(String::new(), |mut acc, x| {
+            if x.is_numeric() && still_numeric {
+                acc.push(x);
+            } else {
+                still_numeric = false;
+            }
+            acc
+        });
+
+        num.parse().ok()
     }
 
     pub fn many_by_stat_or_invalid(values: &[&(&str, ModType)]) -> Vec<Self> {
@@ -470,11 +492,15 @@ impl Mod {
             } else {
                 continue;
             };
+            let stat_translation = STATS_CUTTED::get_original_stat(stat_idx);
+            let text = values[val.0].0.to_string();
+            let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
             result[val.0] = Mod {
-                stat_translation: STATS_CUTTED::get_original_stat(stat_idx),
+                stat_translation,
                 type_: val.2,
-                text: values[val.0].0.to_string(),
+                text,
                 stat_id: STATS_CUTTED::get_stat_id(stat_idx),
+                numeric_value,
                 ..Default::default()
             }
         }
@@ -549,6 +575,8 @@ mod tests {
                 stat_translation: "{0}% increased Spell Damage".to_string(),
                 text: "75% increased Spell Damage".to_string(),
                 type_: ModType::Explicit,
+                numeric_value: Some(75),
+                stat_id: "spell_damage_+%".to_string(),
                 ..Default::default()
             }
         )
