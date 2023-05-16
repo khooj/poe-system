@@ -44,9 +44,10 @@ pub enum Category {
     Leaguestones,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default)]
 #[strum(ascii_case_insensitive)]
 pub enum Class {
+    #[default]
     LifeFlask,
     ManaFlask,
     HybridFlask,
@@ -121,12 +122,6 @@ pub enum Class {
 pub enum ClassError {
     #[error("parse error: {0}")]
     ParseError(#[from] strum::ParseError),
-}
-
-impl Default for Class {
-    fn default() -> Self {
-        Class::LifeFlask
-    }
 }
 
 impl Class {
@@ -302,8 +297,9 @@ enum BodyArmour {
     SacrificialGarb,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub enum League {
+    #[default]
     Standard,
     SSFStandard,
     Hardcore,
@@ -311,12 +307,6 @@ pub enum League {
     TempStandard,
     TempHardcore,
     Private(String),
-}
-
-impl Default for League {
-    fn default() -> Self {
-        League::Standard
-    }
 }
 
 impl From<String> for League {
@@ -347,8 +337,9 @@ impl From<Option<String>> for League {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
 pub enum ItemLvl {
+    #[default]
     No,
     Yes(i32),
 }
@@ -368,12 +359,6 @@ impl From<Option<i32>> for ItemLvl {
     }
 }
 
-impl Default for ItemLvl {
-    fn default() -> Self {
-        ItemLvl::No
-    }
-}
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Influence {
     Shaper,
@@ -384,15 +369,10 @@ pub enum Influence {
     Crusader,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub enum Subcategory {
+    #[default]
     Empty,
-}
-
-impl Default for Subcategory {
-    fn default() -> Self {
-        Subcategory::Empty
-    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq)]
@@ -514,36 +494,21 @@ impl Default for Mod {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct Hybrid {
     pub is_vaal_gem: bool,
     pub base_type_name: String,
     pub sec_descr_text: Option<String>,
 }
 
-impl Default for Hybrid {
-    fn default() -> Self {
-        Hybrid {
-            is_vaal_gem: false,
-            base_type_name: String::new(),
-            sec_descr_text: None,
-        }
-    }
-}
-
 #[allow(unused)]
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub enum Rarity {
+    #[default]
     Normal,
     Magic,
     Rare,
     Unique,
-}
-
-impl Default for Rarity {
-    fn default() -> Self {
-        Rarity::Normal
-    }
 }
 
 impl TryFrom<String> for Rarity {
