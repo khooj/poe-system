@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pob::pob::Pob;
+use pob::Pob;
 use url::Url;
 use std::convert::{AsRef, Into};
 

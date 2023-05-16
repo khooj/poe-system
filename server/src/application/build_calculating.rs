@@ -7,7 +7,7 @@ use crate::infrastructure::repositories::postgres::task_repository::{
 use crate::infrastructure::repositories::postgres::PgTransaction;
 use anyhow::{anyhow, Result};
 use domain::{Class, Item, SimilarityScore};
-use pob::pob::Pob;
+use pob::Pob;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use tracing::{debug, error, info, instrument, trace, warn};

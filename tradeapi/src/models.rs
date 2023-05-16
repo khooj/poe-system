@@ -12,13 +12,13 @@ pub struct ClientSearchResponse {
     pub total: i32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchResponse {
     pub result: Vec<ClientFetchEntry>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchEntry {
     pub id: String,
@@ -28,7 +28,7 @@ pub struct ClientFetchEntry {
     pub rest: HashMap<String, Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchListing {
     pub method: String,
@@ -42,7 +42,7 @@ pub struct ClientFetchListing {
     pub rest: HashMap<String, Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub struct StashInfo {
     pub name: String,
@@ -50,7 +50,7 @@ pub struct StashInfo {
     pub y: i32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub struct AccountInfo {
     pub name: String,
@@ -59,7 +59,7 @@ pub struct AccountInfo {
     pub realm: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub struct PriceInfo {
     #[serde(rename = "type")]
@@ -68,7 +68,7 @@ pub struct PriceInfo {
     pub currency: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchItem {
     #[serde(flatten)]

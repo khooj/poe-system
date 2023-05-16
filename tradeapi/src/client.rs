@@ -1,14 +1,14 @@
 use crate::limits::Limits;
 use crate::models::{ClientFetchResponse, ClientSearchResponse};
-use crate::query::{Builder, BuilderError};
+use crate::query::Builder;
 use governor::{
     clock::DefaultClock,
     state::{direct::NotKeyed, InMemoryState},
     Jitter, Quota, RateLimiter,
 };
-use reqwest::{header, Request, StatusCode};
-use std::str::FromStr;
-use std::{collections::HashMap, num::NonZeroU32};
+use reqwest::cookie::Jar;
+use reqwest::{Method, Request, RequestBuilder, StatusCode, Url};
+use std::num::NonZeroU32;
 use std::{convert::TryFrom, time::Duration};
 use thiserror::Error;
 use tracing::{debug, error};
@@ -23,6 +23,8 @@ pub enum ClientError {
     FailedCheck(String),
     #[error("status code: {0}")]
     StatusCode(u16),
+    #[error("incorrect args")]
+    IncorrectArgs,
 }
 
 struct Limit(Limits, RateLimiter<NotKeyed, InMemoryState, DefaultClock>);
@@ -37,17 +39,19 @@ pub struct Client {
 
 impl Client {
     pub fn new(user_agent: String, poesessid: &str, league: &str) -> Client {
-        let mut h = header::HeaderMap::new();
-        let mut poesessid = header::HeaderValue::from_str(poesessid)
-            .expect("can't create header value from poesessid");
-        poesessid.set_sensitive(true);
-        h.insert("POESESSID", poesessid);
+        let jar = Jar::default();
+        jar.add_cookie_str(
+            &format!("POESESSID={}", poesessid),
+            &"https://www.pathofexile.com".parse::<Url>().unwrap(),
+        );
 
         let client = reqwest::ClientBuilder::new()
-            .user_agent(&user_agent)
-            .default_headers(h)
+            .user_agent(user_agent)
+            .cookie_store(true)
+            .cookie_provider(jar.into())
             .build()
             .expect("can't build http client");
+
         Client {
             client,
             search_limiter: None,
@@ -82,7 +86,7 @@ impl Client {
             rl.until_ready().await;
         }
 
-        let mut req = self.client.post(&format!(
+        let mut req = self.client.post(format!(
             "https://www.pathofexile.com/api/trade/search/{}",
             self.league
         ));
@@ -113,7 +117,7 @@ impl Client {
             }
         }
 
-        let limits = Limits::parse_header(&limiting);
+        let limits = Limits::parse_header(limiting);
         let do_reinit_limiter =
             self.search_limiter.is_some() && limits != self.search_limiter.as_ref().unwrap().0;
         let do_reinit_limiter = do_reinit_limiter || self.search_limiter.is_none();
@@ -155,6 +159,7 @@ impl Client {
     pub async fn fetch_results(
         &mut self,
         ids: Vec<String>,
+        req_id: &str,
     ) -> Result<ClientFetchResponse, ClientError> {
         if self.failed_check.is_some() {
             return Err(ClientError::FailedCheck(self.failed_check.clone().unwrap()));
@@ -163,16 +168,26 @@ impl Client {
             rl.until_ready().await;
         }
 
+        if ids.is_empty() {
+            return Ok(ClientFetchResponse { result: vec![] });
+        }
+        if ids.len() > 5 {
+            return Err(ClientError::IncorrectArgs);
+        }
+
         let v = ids
             .iter()
             .fold(String::new(), |acc, el| acc + el + ",")
-            .strip_suffix(",")
+            .strip_suffix(',')
             .unwrap()
             .to_string();
-        let req = self.client.get(&format!(
-            "https://www.pathofexile.com/api/trade/fetch/{}",
-            v,
-        ));
+        let req = self
+            .client
+            .request(
+                Method::GET,
+                format!("https://www.pathofexile.com/api/trade/fetch/{}", v),
+            )
+            .query(&[("query", req_id)]);
 
         let req = req.build()?;
 
@@ -200,7 +215,7 @@ impl Client {
             }
         }
 
-        let limits = Limits::parse_header(&limiting);
+        let limits = Limits::parse_header(limiting);
         let do_reinit_limiter =
             self.fetch_limiter.is_some() && limits != self.fetch_limiter.as_ref().unwrap().0;
         let do_reinit_limiter = do_reinit_limiter || self.fetch_limiter.is_none();

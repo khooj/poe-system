@@ -91,11 +91,17 @@ struct StatQueryValues {
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
 struct Filters {
+    #[serde(skip_serializing_if = "Option::is_none")]
     type_filters: Option<TypeFilters>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     weapon_filters: Option<WeaponFilters>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     socket_filters: Option<SocketFilters>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     misc_filters: Option<MiscFilters>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     armour_filters: Option<ArmourFilters>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     req_filters: Option<ReqFilters>,
 }
 
@@ -106,7 +112,7 @@ pub struct TypeFilters {
 }
 
 impl TypeFilters {
-    fn set_category(mut self, s: &str) -> Self {
+    pub fn set_category(mut self, s: &str) -> Self {
         let v = json!({
             "option": s,
         });
@@ -115,7 +121,7 @@ impl TypeFilters {
         self
     }
 
-    fn set_rarity(mut self, s: &str) -> Self {
+    pub fn set_rarity(mut self, s: &str) -> Self {
         let v = json!({
             "option": s,
         });
@@ -265,9 +271,13 @@ impl ReqFilters {
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
 struct Query {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     stats: Vec<StatQuery>,
     filters: Filters,
     status: Status,
+    #[serde(rename = "type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    typ: Option<String>,
 }
 
 #[derive(Serialize, Default)]
@@ -344,6 +354,10 @@ impl Builder {
 
     pub fn add_stat_group(&mut self, group: StatQuery) {
         self.query.stats.push(group);
+    }
+
+    pub fn set_type(&mut self, s: &str) {
+        self.query.typ = Some(s.to_string());
     }
 }
 
