@@ -17,12 +17,17 @@ struct StatCategory {
 struct Stat {
     id: String,
     text: String,
-    option: Option<Vec<Options>>,
+    option: Option<Options>,
 }
 
 #[derive(Deserialize)]
 struct Options {
-    id: u8,
+    pub options: Vec<InnerOption>,
+}
+
+#[derive(Deserialize)]
+struct InnerOption {
+    id: u16,
     text: String,
 }
 

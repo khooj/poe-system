@@ -77,7 +77,7 @@ impl Client {
 
     pub async fn get_search_id(
         &mut self,
-        query: Builder,
+        query: &Builder,
     ) -> Result<ClientSearchResponse, ClientError> {
         if self.failed_check.is_some() {
             return Err(ClientError::FailedCheck(self.failed_check.clone().unwrap()));

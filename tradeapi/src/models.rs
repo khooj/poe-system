@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
 #[derive(Deserialize)]
@@ -18,7 +18,7 @@ pub struct ClientFetchResponse {
     pub result: Vec<ClientFetchEntry>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchEntry {
     pub id: String,
@@ -28,12 +28,12 @@ pub struct ClientFetchEntry {
     pub rest: HashMap<String, Value>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchListing {
     pub method: String,
     pub indexed: String,
-    pub stash: StashInfo,
+    pub stash: Option<StashInfo>,
     pub whisper: String,
     pub whisper_token: String,
     pub account: AccountInfo,
@@ -42,7 +42,7 @@ pub struct ClientFetchListing {
     pub rest: HashMap<String, Value>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct StashInfo {
     pub name: String,
@@ -50,7 +50,7 @@ pub struct StashInfo {
     pub y: i32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct AccountInfo {
     pub name: String,
@@ -59,20 +59,78 @@ pub struct AccountInfo {
     pub realm: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct PriceInfo {
     #[serde(rename = "type")]
     pub typ: String,
-    pub amount: i32,
+    pub amount: f32,
     pub currency: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct ClientFetchItem {
+    pub extended: FetchItemExtended,
+    #[serde(rename = "typeLine")]
+    pub type_line: String,
+    #[serde(rename = "baseType")]
+    pub base_type: String,
+    pub ilvl: i32,
+    pub id: String,
+    pub sockets: Option<Vec<SocketGroup>>,
     #[serde(flatten)]
     pub rest: HashMap<String, Value>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub struct FetchItemExtended {
+    pub dps: Option<f32>,
+    pub dps_aug: Option<bool>,
+    pub edps: Option<f32>,
+    pub hashes: Option<HashMap<String, Value>>,
+    pub mods: Option<FetchItemMods>,
+    pub pdps: Option<f32>,
+    pub pdps_aug: Option<bool>,
+    pub text: String,
+    #[serde(flatten)]
+    pub rest: HashMap<String, Value>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub struct FetchItemMods {
+    pub explicit: Option<Vec<FetchItemMod>>,
+    pub implicit: Option<Vec<FetchItemMod>>,
+    #[serde(flatten)]
+    pub rest: HashMap<String, Value>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub struct FetchItemMod {
+    pub level: i32,
+    pub magnitudes: Vec<FetchItemModInfo>,
+    pub name: String,
+    pub tier: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub struct FetchItemModInfo {
+    pub hash: String,
+    pub max: f32,
+    pub min: f32,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub struct SocketGroup {
+    pub attr: String,
+    pub group: i32,
+    #[serde(rename = "sColour")]
+    pub s_colour: String,
 }
 
 #[derive(Deserialize)]
@@ -167,15 +225,22 @@ pub struct StaticItem {
 
 #[cfg(test)]
 mod tests {
-    use super::{ItemsData, StaticData, StatsData};
-    static DATA: &'static str = include_str!("../dist/items.json");
-    static STATS_DATA: &'static str = include_str!("../dist/stats.json");
-    static STATIC_DATA: &'static str = include_str!("../dist/static.json");
+    use super::{ClientFetchResponse, ItemsData, StaticData, StatsData};
+    static DATA: &str = include_str!("../dist/items.json");
+    static STATS_DATA: &str = include_str!("../dist/stats.json");
+    static STATIC_DATA: &str = include_str!("../dist/static.json");
 
     #[test]
     fn check_data() {
-        let _: ItemsData = serde_json::from_str(&DATA).unwrap();
-        let _: StatsData = serde_json::from_str(&STATS_DATA).unwrap();
-        let _: StaticData = serde_json::from_str(&STATIC_DATA).unwrap();
+        let _: ItemsData = serde_json::from_str(DATA).unwrap();
+        let _: StatsData = serde_json::from_str(STATS_DATA).unwrap();
+        let _: StaticData = serde_json::from_str(STATIC_DATA).unwrap();
+    }
+
+    static TESTCASE1: &str = include_str!("testcase1.json");
+
+    #[test]
+    fn testcase1() {
+        let _: ClientFetchResponse = serde_json::from_str(TESTCASE1).unwrap();
     }
 }
