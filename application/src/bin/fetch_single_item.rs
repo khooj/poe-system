@@ -1,14 +1,17 @@
 use std::{
+    cell::RefCell,
     io,
     time::{Duration, Instant},
 };
 
 use application::*;
+use clipboard::{ClipboardContext, ClipboardProvider};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use pob::{Pob, PobError};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -17,9 +20,9 @@ use tui::{
     widgets::{Block, Borders, Tabs, Widget},
     Frame, Terminal,
 };
-use tui_textarea::{Input, Key, TextArea};
+use tui_textarea::{CursorMove, Input, Key, TextArea};
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq)]
 enum AppTab {
     #[default]
     EnterBuild,
@@ -36,10 +39,27 @@ enum ProcessInput {
     Exit,
 }
 
-#[derive(Default)]
+const ERROR_BLINK_DURATION: Duration = Duration::from_secs(1);
+const TICK_RATE: Duration = Duration::from_millis(100);
+
 struct App<'a> {
     current_tab: usize,
     enter_build_textarea: TextArea<'a>,
+    error_build_input: Option<PobError>,
+    error_build_input_blick: Duration,
+    pob: Pob,
+}
+
+impl<'a> Default for App<'a> {
+    fn default() -> Self {
+        App {
+            current_tab: 0,
+            enter_build_textarea: TextArea::default(),
+            error_build_input_blick: Duration::ZERO,
+            error_build_input: None,
+            pob: Pob::new(String::new()),
+        }
+    }
 }
 
 impl<'a> App<'a> {
@@ -50,7 +70,19 @@ impl<'a> App<'a> {
         app
     }
 
-    pub fn on_tick(&mut self) {}
+    pub fn on_tick(&mut self) {
+        self.error_build_input_blick = self.error_build_input_blick.saturating_sub(TICK_RATE);
+        if self.error_build_input_blick.is_zero() {
+            self.error_build_input = None;
+        }
+
+        let block_style = match self.error_build_input {
+            Some(_) => Style::default().fg(Color::Red),
+            None => Style::default(),
+        };
+        let block = Block::default().style(block_style);
+        self.enter_build_textarea.set_block(block);
+    }
 
     pub fn next(&mut self) {
         self.current_tab += 1;
@@ -84,14 +116,42 @@ impl<'a> App<'a> {
         }
     }
 
+    fn switch_to_tab(&mut self, tab: AppTab) {
+        self.current_tab = TABS_IDX.iter().find(|e| e.1 == tab).unwrap().0;
+    }
+
     fn enter_build_input(&mut self, input: Input) -> ProcessInput {
         match input {
             Input {
                 key: Key::Enter, ..
-            } => {}
-            input => {
-                self.enter_build_textarea.input(input);
+            } => {
+                let pob = Pob::from_pastebin_data(self.enter_build_textarea.lines()[0].clone());
+                if pob.is_err() {
+                    self.error_build_input = pob.err();
+                    self.error_build_input_blick = ERROR_BLINK_DURATION;
+                } else {
+                    self.error_build_input = None;
+                    self.pob = pob.unwrap();
+                    self.switch_to_tab(AppTab::BuildResults);
+                }
             }
+            Input {
+                key: Key::Char('v'),
+                ctrl: true,
+                ..
+            } => {
+                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+                let content = ctx.get_contents().unwrap();
+                self.enter_build_textarea.insert_str(content);
+            }
+            Input {
+                key: Key::Char('d'),
+                ..
+            } => {
+                self.enter_build_textarea.move_cursor(CursorMove::Head);
+                self.enter_build_textarea.delete_line_by_end();
+            }
+            _ => {}
         };
         ProcessInput::Cycle
     }
@@ -199,9 +259,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let tick_rate = Duration::from_millis(250);
     let app = App::new();
-    let res = run_app(&mut terminal, app, tick_rate);
+    let res = run_app(&mut terminal, app, TICK_RATE);
 
     disable_raw_mode()?;
     execute!(
