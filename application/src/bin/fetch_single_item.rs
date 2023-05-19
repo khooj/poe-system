@@ -1,6 +1,11 @@
 use std::{
     cell::RefCell,
     io,
+    sync::{
+        mpsc::{self, Receiver},
+        Arc, Mutex,
+    },
+    thread::{self, JoinHandle},
     time::{Duration, Instant},
 };
 
@@ -17,7 +22,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Tabs, Widget},
+    widgets::{Block, Borders, Gauge, Tabs, Widget},
     Frame, Terminal,
 };
 use tui_textarea::{CursorMove, Input, Key, TextArea};
@@ -47,7 +52,9 @@ struct App<'a> {
     enter_build_textarea: TextArea<'a>,
     error_build_input: Option<PobError>,
     error_build_input_blick: Duration,
-    pob: Pob,
+    calculating_state: CalculatingState,
+    progress: Arc<Mutex<usize>>,
+    calc_err: Arc<Mutex<Option<Result<(), CalculateBuildError>>>>,
 }
 
 impl<'a> Default for App<'a> {
@@ -57,7 +64,9 @@ impl<'a> Default for App<'a> {
             enter_build_textarea: TextArea::default(),
             error_build_input_blick: Duration::ZERO,
             error_build_input: None,
-            pob: Pob::new(String::new()),
+            calculating_state: CalculatingState::default(),
+            progress: Arc::new(Mutex::new(0)),
+            calc_err: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -120,19 +129,52 @@ impl<'a> App<'a> {
         self.current_tab = TABS_IDX.iter().find(|e| e.1 == tab).unwrap().0;
     }
 
+    fn run_calculating_build(&mut self) {
+        let (tx, rx) = mpsc::channel();
+        let (tx_res, rx_res) = mpsc::channel();
+        let cb = self.calculating_state.clone();
+        let _ = thread::spawn(move || {
+            let mut builder = tokio::runtime::Builder::new_multi_thread();
+            let rt = builder.enable_all().build().unwrap();
+            rt.block_on(async move {
+                let res = cb.calculate_build_cost(tx).await;
+                tx_res.send(res).unwrap();
+            })
+        });
+
+        let calc_err = self.calc_err.clone();
+        let progress = self.progress.clone();
+        let _ = thread::spawn(move || loop {
+            let p = rx.try_recv().ok();
+            if let Some(p) = p {
+                let mut pg = progress.lock().unwrap();
+                *pg += p;
+            }
+            let mut res_err = calc_err.lock().unwrap();
+            let recv_err = rx_res.try_recv();
+            if let Ok(ok) = recv_err {
+                *res_err = Some(ok);
+                return;
+            }
+            thread::sleep(Duration::from_millis(250));
+        });
+    }
+
     fn enter_build_input(&mut self, input: Input) -> ProcessInput {
         match input {
             Input {
                 key: Key::Enter, ..
             } => {
-                let pob = Pob::from_pastebin_data(self.enter_build_textarea.lines()[0].clone());
-                if pob.is_err() {
-                    self.error_build_input = pob.err();
+                let res = self
+                    .calculating_state
+                    .parse_pob(self.enter_build_textarea.lines()[0].clone());
+                if res.is_err() {
+                    self.error_build_input = res.err();
                     self.error_build_input_blick = ERROR_BLINK_DURATION;
                 } else {
                     self.error_build_input = None;
-                    self.pob = pob.unwrap();
                     self.switch_to_tab(AppTab::BuildResults);
+                    self.run_calculating_build();
                 }
             }
             Input {
@@ -248,11 +290,15 @@ fn enter_build_widget<'a>(app: &'a App) -> impl Widget + 'a {
 }
 
 fn build_results_widget(app: &App) -> impl Widget {
-    Block::default()
+    let pg = app.progress.lock().unwrap();
+    let ratio = (*pg as f64) / (app.calculating_state.max_progress() as f64);
+    Gauge::default()
+        .block(Block::default().title("progress").borders(Borders::ALL))
+        .gauge_style(Style::default().fg(Color::Magenta))
+        .ratio(ratio)
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;

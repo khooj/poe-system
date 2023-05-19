@@ -34,6 +34,7 @@ pub enum PobError {
     #[error("int parse")]
     ParseIntError(#[from] core::num::ParseIntError),
 }
+#[derive(Clone)]
 pub struct Pob {
     original: String,
 }
