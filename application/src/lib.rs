@@ -24,6 +24,8 @@ pub enum CalculateBuildError {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 enum CompareOption {
     SameBase,
+    SameSockets,
+    ModSimilarity { idx: i32, percent: i32 },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

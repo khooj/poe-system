@@ -2,7 +2,6 @@
 members = [ 
 	"macros",
 	"server", 
-	"frontend",
 	"public_stash",
 	"pob",
 	"tradeapi",
