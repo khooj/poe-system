@@ -2,7 +2,7 @@
   description = "rust workspace";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?rev=2caf4ef5005ecc68141ecb4aac271079f7371c44";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
@@ -10,7 +10,7 @@
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     let
       myapp = "poe-system";
-      rust-version = "1.69.0";
+      rust-version = "1.70.0";
     in
     flake-utils.lib.eachDefaultSystem (system:
       let
@@ -24,7 +24,6 @@
                 [ "rust-src" "llvm-tools-preview" "rust-analysis" ];
               targets = [ "wasm32-unknown-unknown" ];
           })
-          rust-analyzer
           trunk
 
           sqlite
@@ -51,6 +50,7 @@
           libsoup
           webkitgtk
           librsvg
+          hashrat
         ];
         nativeBuildInputs = with pkgs; [ pkg-config nixpkgs-fmt ];
         libs = with pkgs; [
@@ -76,7 +76,6 @@
 
             shellHook = ''
               export PATH=$PATH:$HOME/.cargo/bin:$PWD/app/node_modules/.bin
-              export LD_LIBRARY_PATH=${lib.makeLibraryPath libs}
             '';
           };
       });

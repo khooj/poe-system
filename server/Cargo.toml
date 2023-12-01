@@ -13,8 +13,8 @@ actix_derive = "0.6.0"
 governor = "0.3.2"
 tokio = { version = "1.13.1", features = ["full"] }
 tokio-stream = "0.1"
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1" }
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
 thiserror = "1.0"
 syn = { version = "1.0.48", features = ["full"]}
 uuid = { version = "0.8.2", features = ["v4"] }
@@ -49,6 +49,8 @@ validator = { version = "0.15", features = ["derive"] }
 domain = { path = "../domain" }
 pob = { path = "../pob" }
 public_stash = { path = "../public_stash" }
+clap = { version = "4.4.10", features = ["derive"] }
+zstd = "0.13.0"
 
 [dev-dependencies]
 temp-file = "0.1.6"

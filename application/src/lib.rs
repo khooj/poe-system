@@ -65,31 +65,27 @@ fn parse_price(listing: ClientFetchListing) -> ItemCost {
     }
 }
 
-const ITEMSET_FILENAME: &str = "saved_itemset.json";
-
 #[derive(Clone)]
 pub struct CalculatingState {
-    pob: Arc<Mutex<Pob>>,
+    pob: Pob,
 }
 
 impl Default for CalculatingState {
     fn default() -> Self {
         CalculatingState {
-            pob: Arc::new(Mutex::new(Pob::new(String::new()))),
+            pob: Pob::new(String::new()),
         }
     }
 }
 
 impl CalculatingState {
     pub fn parse_pob(&mut self, data: String) -> Result<(), PobError> {
-        let mut pob = self.pob.lock().unwrap();
-        *pob = Pob::from_pastebin_data(data)?;
+        self.pob = Pob::from_pastebin_data(data)?;
         Ok(())
     }
 
     pub fn max_progress(&self) -> usize {
-        let pob = self.pob.lock().unwrap();
-        if let Ok(doc) = pob.as_document() {
+        if let Ok(doc) = self.pob.as_document() {
             if let Ok(itemset) = doc.get_first_itemset() {
                 return itemset.items().len();
             }
@@ -99,16 +95,15 @@ impl CalculatingState {
 
     pub async fn calculate_build_cost(
         &self,
-        sender: Sender<usize>,
+        itemset_filename: &str,
     ) -> Result<(), CalculateBuildError> {
         let mut itemset;
         {
-            let pob = self.pob.lock().unwrap();
-            let pob_doc = pob.as_document()?;
+            let pob_doc = self.pob.as_document()?;
             let first_itemset = pob_doc.get_first_itemset()?;
 
-            itemset = if std::fs::metadata(ITEMSET_FILENAME).is_ok() {
-                let f = std::fs::read(ITEMSET_FILENAME).unwrap();
+            itemset = if std::fs::metadata(itemset_filename).is_ok() {
+                let f = std::fs::read(itemset_filename).unwrap();
                 let i: Vec<CompareItem> = serde_json::from_slice(&f).unwrap();
                 i
             } else {
@@ -126,14 +121,13 @@ impl CalculatingState {
         let mut api_client = Client::new(
             "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0".to_string(),
             &poesessid,
-            "Crucible",
+            "Ancestor",
         );
 
         let mut result_itemset = vec![];
         for mut compare_item in itemset {
             if compare_item.tried {
                 result_itemset.push(compare_item);
-                sender.send(1).unwrap();
                 continue;
             }
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
@@ -181,9 +175,8 @@ impl CalculatingState {
             compare_item.cost = Some(parse_price(item.listing));
             compare_item.tried = true;
             result_itemset.push(compare_item);
-            sender.send(1).unwrap();
             let wr = serde_json::to_vec(&result_itemset).unwrap();
-            std::fs::write(ITEMSET_FILENAME, wr).unwrap();
+            std::fs::write(itemset_filename, wr).unwrap();
         }
 
         Ok(())
