@@ -12,8 +12,7 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Args::parse();
 
-    let mut state = CalculatingState::default();
-    state.parse_pob(cli.pob.unwrap())?;
+    let state = CalculatingState::parse_pob(cli.pob.unwrap())?;
     state
         .calculate_build_cost(cli.output.as_ref().unwrap())
         .await?;

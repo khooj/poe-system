@@ -51,6 +51,7 @@ pob = { path = "../pob" }
 public_stash = { path = "../public_stash" }
 clap = { version = "4.4.10", features = ["derive"] }
 zstd = "0.13.0"
+scylla = "0.10.1"
 
 [dev-dependencies]
 temp-file = "0.1.6"

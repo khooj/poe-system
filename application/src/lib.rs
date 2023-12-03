@@ -1,13 +1,15 @@
 use std::{
     env::{self, VarError},
     io::{BufWriter, Write},
-    sync::{mpsc::Sender, Arc, Mutex},
+    rc::Rc,
+    sync::{mpsc::Sender, Arc},
 };
 
 use domain::Item;
 use pob::{Pob, PobError};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use tokio::sync::Mutex;
 use tradeapi::{
     models::{ClientFetchItem, ClientFetchListing},
     query::{Builder, BuilderError, StatQuery, StatQueryType, TypeFilters},
@@ -25,35 +27,17 @@ pub enum CalculateBuildError {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-enum CompareOption {
+pub enum CompareOption {
     SameBase,
     SameSockets,
     ModSimilarity { idx: i32, percent: i32 },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-enum ItemCost {
+pub enum ItemCost {
     Chaos(f32),
     Divine(f32),
     Another(String, f32),
-}
-
-#[derive(Default, Debug, Serialize, Deserialize, Clone)]
-struct CompareItem {
-    original_item: Item,
-    compare_options: Vec<CompareOption>,
-    found_item: Option<ClientFetchItem>,
-    cost: Option<ItemCost>,
-    tried: bool,
-}
-
-impl CompareItem {
-    pub fn new(item: Item) -> Self {
-        CompareItem {
-            original_item: item,
-            ..Default::default()
-        }
-    }
 }
 
 fn parse_price(listing: ClientFetchListing) -> ItemCost {
@@ -65,28 +49,47 @@ fn parse_price(listing: ClientFetchListing) -> ItemCost {
     }
 }
 
+pub struct FoundItem {
+    item: ClientFetchItem,
+    original_item: Item,
+    price: ItemCost,
+}
+
 #[derive(Clone)]
 pub struct CalculatingState {
     pob: Pob,
-}
-
-impl Default for CalculatingState {
-    fn default() -> Self {
-        CalculatingState {
-            pob: Pob::new(String::new()),
-        }
-    }
+    client: Arc<Mutex<Client>>,
 }
 
 impl CalculatingState {
-    pub fn parse_pob(&mut self, data: String) -> Result<(), PobError> {
-        self.pob = Pob::from_pastebin_data(data)?;
-        Ok(())
+    pub fn parse_pob(data: String) -> Result<Self, PobError> {
+        let pob = Pob::from_pastebin_data(data)?;
+        let poesessid = env::var("POESESSID").unwrap();
+        let mut client = Client::new(
+            "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0".to_string(),
+            &poesessid,
+            "Standard",
+        );
+        Ok(CalculatingState {
+            pob,
+            client: Arc::new(Mutex::new(client)),
+        })
     }
 
-    pub fn max_progress(&self) -> usize {
+    pub fn itemsets(&self) -> Vec<String> {
         if let Ok(doc) = self.pob.as_document() {
-            if let Ok(itemset) = doc.get_first_itemset() {
+            doc.get_item_sets()
+                .into_iter()
+                .map(|f| f.title().to_string())
+                .collect()
+        } else {
+            vec![]
+        }
+    }
+
+    pub fn max_progress(&self, itemset_title: &str) -> usize {
+        if let Ok(doc) = self.pob.as_document() {
+            if let Ok(itemset) = doc.get_itemset(itemset_title) {
                 return itemset.items().len();
             }
         }
@@ -95,49 +98,29 @@ impl CalculatingState {
 
     pub async fn calculate_build_cost(
         &self,
-        itemset_filename: &str,
-    ) -> Result<(), CalculateBuildError> {
-        let mut itemset;
-        {
-            let pob_doc = self.pob.as_document()?;
-            let first_itemset = pob_doc.get_first_itemset()?;
-
-            itemset = if std::fs::metadata(itemset_filename).is_ok() {
-                let f = std::fs::read(itemset_filename).unwrap();
-                let i: Vec<CompareItem> = serde_json::from_slice(&f).unwrap();
-                i
+        itemset: &str,
+    ) -> Result<Vec<FoundItem>, CalculateBuildError> {
+        let mut result_itemset = vec![];
+        let itemset = if let Ok(doc) = self.pob.as_document() {
+            if let Ok(itemset) = doc.get_itemset(itemset) {
+                itemset.items().clone()
             } else {
                 vec![]
-            };
-            if itemset.is_empty() {
-                for item in first_itemset.items() {
-                    let compare_item = CompareItem::new(item.clone());
-                    itemset.push(compare_item);
-                }
             }
-        }
+        } else {
+            vec![]
+        };
 
-        let poesessid = env::var("POESESSID")?;
-        let mut api_client = Client::new(
-            "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0".to_string(),
-            &poesessid,
-            "Ancestor",
-        );
-
-        let mut result_itemset = vec![];
-        for mut compare_item in itemset {
-            if compare_item.tried {
-                result_itemset.push(compare_item);
-                continue;
-            }
+        for compare_item in itemset {
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
             let mut builder = Builder::new();
-            builder.set_type(&compare_item.original_item.base_type);
+            builder.set_type(&compare_item.base_type);
 
             let search_id;
             loop {
-                match api_client.get_search_id(&builder).await {
+                let mut client = self.client.lock().await;
+                match client.get_search_id(&builder).await {
                     Ok(k) => {
                         search_id = k;
                         break;
@@ -149,7 +132,8 @@ impl CalculatingState {
 
             let results;
             loop {
-                let r = api_client
+                let mut client = self.client.lock().await;
+                let r = client
                     .fetch_results(
                         search_id.result.iter().take(5).cloned().collect(),
                         &search_id.id,
@@ -171,14 +155,14 @@ impl CalculatingState {
             }
 
             let item = results.result[0].clone();
-            compare_item.found_item = Some(item.item);
-            compare_item.cost = Some(parse_price(item.listing));
-            compare_item.tried = true;
-            result_itemset.push(compare_item);
-            let wr = serde_json::to_vec(&result_itemset).unwrap();
-            std::fs::write(itemset_filename, wr).unwrap();
+            let price = parse_price(item.listing);
+            result_itemset.push(FoundItem {
+                original_item: compare_item,
+                item: item.item,
+                price,
+            });
         }
 
-        Ok(())
+        Ok(result_itemset)
     }
 }

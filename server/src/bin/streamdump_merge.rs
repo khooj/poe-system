@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
 use public_stash::models::PublicStashData;
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::PathBuf;
@@ -113,6 +112,22 @@ fn load_ndjson_zstd_2(filepath: &str) -> Result<(), anyhow::Error> {
         let l = l.unwrap();
         let data: Stash = serde_json::from_str(&l)?;
         println!("read change: {}", data.next_change_id);
+    }
+    Ok(())
+}
+
+fn load_ndjson_cb<F>(filepath: &str, cb: F) -> Result<(), anyhow::Error>
+where
+    F: Fn(&PublicStashData) -> Result<(), anyhow::Error>,
+{
+    let f = std::fs::File::open(filepath)?;
+    let z = zstd::Decoder::new(f)?;
+    let z = std::io::BufReader::new(z);
+    use std::io::BufRead;
+    for l in z.lines() {
+        let l = l.unwrap();
+        let data: PublicStashData = serde_json::from_str(&l)?;
+        cb(&data)?;
     }
     Ok(())
 }

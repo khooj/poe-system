@@ -28,6 +28,10 @@ services:
       - 6832:6832/udp
       - 16686:16686
 
+  scylla:
+    image: scylladb/scylla
+    command: --smp 1
+
 volumes:
   # mongodata:
   postgresdata:
