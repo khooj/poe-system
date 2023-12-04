@@ -1,11 +1,10 @@
 use std::{
     env::{self, VarError},
-    io::{BufWriter, Write},
-    rc::Rc,
-    sync::{mpsc::Sender, Arc},
+    sync::Arc,
 };
 
 use domain::Item;
+use futures::future;
 use pob::{Pob, PobError};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -24,6 +23,8 @@ pub enum CalculateBuildError {
     ClientError(#[from] ClientError),
     #[error("var error: {0}")]
     VarError(#[from] VarError),
+    #[error("item not found")]
+    NotFound,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -49,10 +50,11 @@ fn parse_price(listing: ClientFetchListing) -> ItemCost {
     }
 }
 
+#[derive(Clone)]
 pub struct FoundItem {
-    item: ClientFetchItem,
-    original_item: Item,
-    price: ItemCost,
+    pub item: ClientFetchItem,
+    pub original_item: Item,
+    pub price: ItemCost,
 }
 
 #[derive(Clone)]
@@ -65,7 +67,7 @@ impl CalculatingState {
     pub fn parse_pob(data: String) -> Result<Self, PobError> {
         let pob = Pob::from_pastebin_data(data)?;
         let poesessid = env::var("POESESSID").unwrap();
-        let mut client = Client::new(
+        let client = Client::new(
             "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0".to_string(),
             &poesessid,
             "Standard",
@@ -87,6 +89,14 @@ impl CalculatingState {
         }
     }
 
+    pub fn items(&self, itemset: &str) -> Vec<Item> {
+        if let Ok(doc) = self.pob.as_document() {
+            doc.get_itemset(itemset).unwrap().items().clone()
+        } else {
+            vec![]
+        }
+    }
+
     pub fn max_progress(&self, itemset_title: &str) -> usize {
         if let Ok(doc) = self.pob.as_document() {
             if let Ok(itemset) = doc.get_itemset(itemset_title) {
@@ -96,73 +106,70 @@ impl CalculatingState {
         0
     }
 
+    pub async fn calculate_item_cost(
+        &self,
+        compare_item: Item,
+    ) -> Result<FoundItem, CalculateBuildError> {
+        let mut builder = Builder::new();
+        builder.set_type(&compare_item.base_type);
+
+        let search_id;
+        loop {
+            let mut client = self.client.lock().await;
+            match client.get_search_id(&builder).await {
+                Ok(k) => {
+                    search_id = k;
+                    break;
+                }
+                Err(ClientError::NextCycle) => continue,
+                e @ Err(..) => e?,
+            };
+        }
+
+        let results;
+        loop {
+            let mut client = self.client.lock().await;
+            let r = client
+                .fetch_results(
+                    search_id.result.iter().take(5).cloned().collect(),
+                    &search_id.id,
+                )
+                .await;
+
+            match r {
+                Ok(k) => {
+                    results = k;
+                    break;
+                }
+                Err(ClientError::NextCycle) => continue,
+                e @ Err(..) => e?,
+            };
+        }
+
+        if results.result.is_empty() {
+            return Err(CalculateBuildError::NotFound);
+        }
+
+        let item = results.result[0].clone();
+        let price = parse_price(item.listing);
+        Ok(FoundItem {
+            original_item: compare_item,
+            item: item.item,
+            price,
+        })
+    }
+
     pub async fn calculate_build_cost(
         &self,
         itemset: &str,
     ) -> Result<Vec<FoundItem>, CalculateBuildError> {
-        let mut result_itemset = vec![];
-        let itemset = if let Ok(doc) = self.pob.as_document() {
-            if let Ok(itemset) = doc.get_itemset(itemset) {
-                itemset.items().clone()
-            } else {
-                vec![]
-            }
+        let items = if let Ok(doc) = self.pob.as_document() {
+            doc.get_itemset(itemset).unwrap().items().clone()
         } else {
             vec![]
         };
 
-        for compare_item in itemset {
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-
-            let mut builder = Builder::new();
-            builder.set_type(&compare_item.base_type);
-
-            let search_id;
-            loop {
-                let mut client = self.client.lock().await;
-                match client.get_search_id(&builder).await {
-                    Ok(k) => {
-                        search_id = k;
-                        break;
-                    }
-                    Err(ClientError::NextCycle) => continue,
-                    e @ Err(..) => e?,
-                };
-            }
-
-            let results;
-            loop {
-                let mut client = self.client.lock().await;
-                let r = client
-                    .fetch_results(
-                        search_id.result.iter().take(5).cloned().collect(),
-                        &search_id.id,
-                    )
-                    .await;
-
-                match r {
-                    Ok(k) => {
-                        results = k;
-                        break;
-                    }
-                    Err(ClientError::NextCycle) => continue,
-                    e @ Err(..) => e?,
-                };
-            }
-
-            if results.result.is_empty() {
-                continue;
-            }
-
-            let item = results.result[0].clone();
-            let price = parse_price(item.listing);
-            result_itemset.push(FoundItem {
-                original_item: compare_item,
-                item: item.item,
-                price,
-            });
-        }
-
-        Ok(result_itemset)
+        let fs = items.into_iter().map(|i| self.calculate_item_cost(i));
+        future::try_join_all(fs).await
     }
 }
