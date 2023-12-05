@@ -100,7 +100,7 @@ fn parse_price(listing: ClientFetchListing) -> ItemCost {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct FoundItem {
     pub item: ClientFetchItem,
     pub original_item: Item,
@@ -114,7 +114,7 @@ pub struct CalculatingState {
 }
 
 impl CalculatingState {
-    pub fn parse_pob(data: String) -> Result<Self, PobError> {
+    pub fn parse_pastebin(data: String) -> Result<Self, PobError> {
         let pob = Pob::from_pastebin_data(data)?;
         let poesessid = env::var("POESESSID").unwrap();
         let client = Client::new(
