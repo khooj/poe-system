@@ -1,6 +1,6 @@
 use crate::configuration::Settings;
 use crate::{
-    application::{build_calculating::BuildCalculating, stash_receiver::StashReceiver},
+    application::build_calculating::BuildCalculating,
     infrastructure::repositories::create_repositories,
 };
 use public_stash::client::Client;
@@ -15,7 +15,6 @@ const USER_AGENT: &str = "OAuth poe-system/0.0.1 (contact: bladoff@gmail.com)";
 
 pub struct Application {
     listener: TcpListener,
-    stash_receiver: StashReceiver,
     interval: u64,
     enable: bool,
     build_calculating: BuildCalculating,
@@ -25,26 +24,15 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
         Application::setup_tracing();
 
-        let (raw_items, tasks, builds) = create_repositories(&configuration.database)
+        let (tasks, builds) = create_repositories(&configuration.database)
             .await
             .expect("can't create repositories");
 
         let client = Client::new(USER_AGENT.to_owned());
 
-        let mut stash_receiver = StashReceiver::new(
-            raw_items.clone(),
-            client,
-            configuration.application.only_leagues,
-        );
+        if configuration.start_change_id.is_some() {}
 
-        if configuration.start_change_id.is_some() {
-            stash_receiver
-                .ensure_stash_id(configuration.start_change_id.unwrap())
-                .await
-                .expect("can't insert start change id");
-        }
-
-        let build_calculating = BuildCalculating::new(raw_items.clone(), tasks, builds);
+        let build_calculating = BuildCalculating::new(tasks, builds);
 
         let addr = format!(
             "{}:{}",
@@ -58,7 +46,6 @@ impl Application {
 
         Ok(Self {
             listener,
-            stash_receiver,
             interval: refresh_interval_secs,
             enable: enable_items_refresh,
             build_calculating,
@@ -94,21 +81,9 @@ impl Application {
 
         let Application {
             listener: l,
-            stash_receiver: mut sr,
             build_calculating: bc,
             ..
         } = self;
-        if self.enable {
-            let mut interval = interval(Duration::from_secs(self.interval));
-            tokio::spawn(async move {
-                loop {
-                    interval.tick().await;
-                    if let Err(e) = sr.receive().await {
-                        error!("{}", e);
-                    }
-                }
-            });
-        }
 
         let bc1 = bc.clone();
         std::thread::spawn(move || {

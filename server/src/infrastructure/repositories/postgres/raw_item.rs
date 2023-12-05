@@ -25,6 +25,18 @@ impl RawItem {
             item: Json(item),
         }
     }
+
+    pub fn as_csvline(&self, del: &str, end: &str) -> String {
+        let s = serde_json::to_string(&self.item).expect("can't serialize to json");
+        let s = vec![
+            self.id.as_str(),
+            self.account_name.as_str(),
+            self.stash.as_str(),
+            s.as_str(),
+        ].join(del) + end;
+        // println!("{}", s);
+        s
+    }
 }
 
 fn push_mods(mods: &mut Vec<Mod>, source: Option<Vec<String>>, type_: ModType) {

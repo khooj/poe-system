@@ -3,6 +3,8 @@ use std::convert::TryFrom;
 use strum::EnumString;
 use thiserror::Error;
 
+use crate::STATS_CUTTED;
+
 #[derive(Error, Debug)]
 pub enum TypeError {
     #[error("can't parse rarity: {0}")]
@@ -22,10 +24,11 @@ pub enum __category_tmp {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default)]
 #[strum(ascii_case_insensitive)]
 pub enum Category {
     Flasks,
+    #[default]
     Accessories,
     Armour,
     Jewels,
@@ -41,15 +44,10 @@ pub enum Category {
     Leaguestones,
 }
 
-impl Default for Category {
-    fn default() -> Self {
-        Category::Accessories
-    }
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default)]
 #[strum(ascii_case_insensitive)]
 pub enum Class {
+    #[default]
     LifeFlask,
     ManaFlask,
     HybridFlask,
@@ -124,12 +122,6 @@ pub enum Class {
 pub enum ClassError {
     #[error("parse error: {0}")]
     ParseError(#[from] strum::ParseError),
-}
-
-impl Default for Class {
-    fn default() -> Self {
-        Class::LifeFlask
-    }
 }
 
 impl Class {
@@ -305,8 +297,9 @@ enum BodyArmour {
     SacrificialGarb,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub enum League {
+    #[default]
     Standard,
     SSFStandard,
     Hardcore,
@@ -314,12 +307,6 @@ pub enum League {
     TempStandard,
     TempHardcore,
     Private(String),
-}
-
-impl Default for League {
-    fn default() -> Self {
-        League::Standard
-    }
 }
 
 impl From<String> for League {
@@ -350,8 +337,9 @@ impl From<Option<String>> for League {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
 pub enum ItemLvl {
+    #[default]
     No,
     Yes(i32),
 }
@@ -371,12 +359,6 @@ impl From<Option<i32>> for ItemLvl {
     }
 }
 
-impl Default for ItemLvl {
-    fn default() -> Self {
-        ItemLvl::No
-    }
-}
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Influence {
     Shaper,
@@ -387,15 +369,10 @@ pub enum Influence {
     Crusader,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub enum Subcategory {
+    #[default]
     Empty,
-}
-
-impl Default for Subcategory {
-    fn default() -> Self {
-        Subcategory::Empty
-    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq)]
@@ -410,53 +387,128 @@ pub enum ModType {
     Veiled = 7,
     ExplicitHybrid = 8,
     Scourge = 9,
+    Invalid = 100,
+}
+
+#[derive(Error, Debug)]
+pub enum ModError {
+    #[error("can't find mod by stat: {0}")]
+    StatError(String),
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub struct Mod {
     pub text: String,
     pub type_: ModType,
+    pub stat_translation: String,
+    pub stat_id: String,
+    pub numeric_value: Option<i32>,
+    #[serde(skip_serializing, skip_deserializing)]
+    _internal: crate::private::Private,
 }
 
 impl Mod {
-    pub fn from_str_type(value: &str, type_: ModType) -> Self {
-        Mod {
-            text: value.to_owned(),
-            type_,
+    pub fn by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
+        let v = crate::cut_numbers(value);
+        if let Some(idx) = STATS_CUTTED.get(&v) {
+            let text = value.to_string();
+            let stat_translation = STATS_CUTTED::get_original_stat(*idx);
+            let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
+            return Ok(Mod {
+                text,
+                stat_translation,
+                numeric_value,
+                type_: typ,
+                stat_id: STATS_CUTTED::get_stat_id(*idx),
+                ..Default::default()
+            });
         }
+
+        Err(ModError::StatError(value.to_string()))
+    }
+
+    pub fn by_stat_or_invalid(value: &str, typ: ModType) -> Self {
+        Mod::by_stat(value, typ).unwrap_or_default()
+    }
+
+    pub fn invalid() -> Self {
+        Mod {
+            stat_translation: String::new(),
+            type_: ModType::Invalid,
+            text: String::new(),
+            stat_id: String::new(),
+            numeric_value: None,
+            _internal: crate::private::Private,
+        }
+    }
+
+    fn cut_numeric_values(s: &str, template: &str) -> Option<i32> {
+        let idx = template.find('{')?;
+
+        let mut still_numeric = true;
+        let num = s.chars().skip(idx).fold(String::new(), |mut acc, x| {
+            if x.is_numeric() && still_numeric {
+                acc.push(x);
+            } else {
+                still_numeric = false;
+            }
+            acc
+        });
+
+        num.parse().ok()
+    }
+
+    pub fn many_by_stat_or_invalid(values: &[&(&str, ModType)]) -> Vec<Self> {
+        let values2 = values
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (idx, crate::cut_numbers(e.0), e.1))
+            .collect::<Vec<(usize, String, ModType)>>();
+
+        let mut result = vec![Mod::invalid(); values.len()];
+        for val in values2 {
+            let stat_idx = if let Some(val) = STATS_CUTTED.get(&val.1) {
+                *val
+            } else {
+                continue;
+            };
+            let stat_translation = STATS_CUTTED::get_original_stat(stat_idx);
+            let text = values[val.0].0.to_string();
+            let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
+            result[val.0] = Mod {
+                stat_translation,
+                type_: val.2,
+                text,
+                stat_id: STATS_CUTTED::get_stat_id(stat_idx),
+                numeric_value,
+                ..Default::default()
+            }
+        }
+        result
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+impl Default for Mod {
+    fn default() -> Self {
+        Mod::invalid()
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct Hybrid {
     pub is_vaal_gem: bool,
     pub base_type_name: String,
     pub sec_descr_text: Option<String>,
 }
 
-impl Default for Hybrid {
-    fn default() -> Self {
-        Hybrid {
-            is_vaal_gem: false,
-            base_type_name: String::new(),
-            sec_descr_text: None,
-        }
-    }
-}
-
 #[allow(unused)]
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub enum Rarity {
+    #[default]
     Normal,
     Magic,
     Rare,
     Unique,
-}
-
-impl Default for Rarity {
-    fn default() -> Self {
-        Rarity::Normal
-    }
 }
 
 impl TryFrom<String> for Rarity {
@@ -470,5 +522,28 @@ impl TryFrom<String> for Rarity {
             "normal" => Ok(Rarity::Normal),
             _ => Err(TypeError::RarityParse(v)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Mod, ModType};
+
+    #[test]
+    fn mod_parse() {
+        let mods1 = vec![&("75% increased Spell Damage", ModType::Explicit)];
+        let mods2 = Mod::many_by_stat_or_invalid(&mods1);
+        assert_eq!(mods2.len(), 1);
+        assert_eq!(
+            mods2[0],
+            Mod {
+                stat_translation: "{0}% increased Spell Damage".to_string(),
+                text: "75% increased Spell Damage".to_string(),
+                type_: ModType::Explicit,
+                numeric_value: Some(75),
+                stat_id: "spell_damage_+%".to_string(),
+                ..Default::default()
+            }
+        )
     }
 }

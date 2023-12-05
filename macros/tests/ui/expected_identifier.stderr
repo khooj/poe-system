@@ -1,5 +1,0 @@
-error: expected identifier
- --> tests/ui/expected_identifier.rs:3:25
-  |
-3 | static_array_from_file!("TYPES", "file.txt");
-  |                         ^^^^^^^

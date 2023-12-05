@@ -4,3 +4,7 @@ test.json
 /slice1
 **/dist
 poe.sql.xz
+.direnv
+slice1.tar
+app/node_modules
+app/.svelte-kit

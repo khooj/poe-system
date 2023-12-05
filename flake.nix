@@ -5,48 +5,31 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
   };
 
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     let
       myapp = "poe-system";
-      rust-version = "1.62.0";
+      rust-version = "1.70.0";
     in
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays2 = [
-          rust-overlay.overlays.default
-          (self: super: rec {
-            rustc = self.rust-bin.stable.${rust-version}.default.override {
-              extensions =
-                [ "rust-src" "rustfmt" "llvm-tools-preview" "rust-analysis" "clippy" "rust-std" ];
-              targets = [ "x86_64-unknown-linux-gnu" "wasm32-unknown-unknown" ];
-            };
-            cargo = rustc;
-          })
-        ];
         overlays = [ rust-overlay.overlays.default ];
         pkgs = import nixpkgs { inherit system overlays; };
         lib = pkgs.lib;
 
-        buildInputs = with pkgs; with rust-bin.stable.${rust-version}; [
-          rustc
-          cargo
-          rustfmt
-          clippy
-          rust-std
-          rust-analyzer
+        buildInputs = with pkgs; [
+          (rust-bin.stable.${rust-version}.default.override {
+              extensions =
+                [ "rust-src" "llvm-tools-preview" "rust-analysis" ];
+              targets = [ "wasm32-unknown-unknown" ];
+          })
+          trunk
 
-          sccache
           sqlite
           postgresql
           mysql
           openssl
-          pkg-config
           cmake
           zlib
           gnumake
@@ -56,8 +39,32 @@
           git
           crate2nix
           vscodium
+          nodejs
+          curl
+
+          wget
+          dbus
+          openssl_3
+          glib
+          gtk3
+          libsoup
+          webkitgtk
+          librsvg
+          hashrat
         ];
-        nativeBuildInputs = with pkgs; [ rustc cargo pkgconfig nixpkgs-fmt ];
+        nativeBuildInputs = with pkgs; [ pkg-config nixpkgs-fmt ];
+        libs = with pkgs; [
+          webkitgtk
+          gtk3
+          cairo
+          gdk-pixbuf
+          glib
+          dbus
+          openssl_3
+          librsvg
+          vulkan-loader
+          llvmPackages_15.llvm
+        ];
 
       in
       rec {
@@ -68,8 +75,7 @@
             inherit nativeBuildInputs;
 
             shellHook = ''
-              export RUSTC_WRAPPER="${pkgs.sccache}/bin/sccache"
-              export PATH=$PATH:$HOME/.cargo/bin
+              export PATH=$PATH:$HOME/.cargo/bin:$PWD/app/node_modules/.bin
             '';
           };
       });

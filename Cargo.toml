@@ -2,12 +2,10 @@
 members = [ 
 	"macros",
 	"server", 
-	"frontend",
-	"mods",
 	"public_stash",
 	"pob",
 	"tradeapi",
+	"domain",
+	"application"
 ]
-
-[profile.dev.package.sqlx-macros]
-opt-level = 3
+resolver = "2"

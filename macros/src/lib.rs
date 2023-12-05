@@ -4,27 +4,21 @@ use std::{
 };
 
 use proc_macro::TokenStream;
-use quote::{quote, format_ident};
+use quote::{format_ident, quote};
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input,
-    token::Comma,
-    Ident, LitStr,
+    parse_macro_input, Ident, LitStr,
 };
 
 struct StaticMacro {
-    array_name: Ident,
     filename: String,
 }
 
 impl Parse for StaticMacro {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let name: Ident = input.parse()?;
-        let _: Comma = input.parse()?;
         let filename: LitStr = input.parse()?;
 
         Ok(StaticMacro {
-            array_name: name,
             filename: filename.value(),
         })
     }
@@ -33,7 +27,6 @@ impl Parse for StaticMacro {
 #[proc_macro]
 pub fn static_array_from_file(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as StaticMacro);
-    let name = input.array_name;
     let filename = input.filename;
 
     let mut c = env::current_dir().unwrap();
@@ -56,7 +49,7 @@ pub fn static_array_from_file(input: TokenStream) -> TokenStream {
     }
 
     let tokens = quote! {
-        pub static #name: &[&'static str] = &[ #(#sv),* ];
+        { &[ #(#sv),* ] }
     };
 
     tokens.into()

@@ -1,4 +1,7 @@
-mod models;
-// mod query;
+mod client;
 mod dist;
-// mod client;
+mod limits;
+pub mod models;
+pub mod query;
+
+pub use client::{Client, ClientError};

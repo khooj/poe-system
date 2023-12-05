@@ -1,6 +1,6 @@
 use super::{raw_item::RawItem, LatestStashId, PgTransaction};
-use public_stash::models::Item as ApiItem;
 use anyhow::Result;
+use public_stash::models::Item as ApiItem;
 use sqlx::{types::Json, PgPool};
 
 #[derive(Clone)]
@@ -26,6 +26,30 @@ impl RawItemRepository {
         .fetch_one(&mut *transaction.transaction)
         .await?;
         Ok(id.latest_stash_id)
+    }
+
+    pub async fn insert_items(
+        &self,
+        transaction: &mut PgTransaction<'_>,
+        items: Vec<RawItem>,
+    ) -> Result<()> {
+        let mut s = transaction
+            .transaction
+            .copy_in_raw(
+                "COPY raw_items (id, account_name, stash, item) FROM STDIN WITH (DELIMITER ';', FORMAT CSV);"
+            )
+            .await?;
+        for (idx, item) in items.iter().enumerate() {
+            // if idx >= 1 {
+            //     break;
+            // }
+            if let Err(e) = s.send(item.as_csvline(";", "\n").as_bytes()).await {
+                s.abort(e.to_string()).await?;
+                return Err(e.into());
+            }
+        }
+        Ok(s.finish().await.map(|_| ())?)
+        // s.send(data)
     }
 
     pub async fn insert_item(
@@ -94,9 +118,9 @@ ON CONFLICT (stash_id) DO UPDATE SET stash_id = $1"#,
         }
     }
 
-    pub async fn get_items_cursor(
-        &self,
-        base_types: &[&str],
+    pub async fn get_items_cursor<'a>(
+        &'a self,
+        base_types: &'a [&'a str],
         league: &str,
     ) -> futures_core::stream::BoxStream<'_, Result<RawItem, sqlx::Error>> {
         sqlx::query_as!(

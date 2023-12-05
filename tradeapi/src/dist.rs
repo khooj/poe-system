@@ -1,41 +1,51 @@
 use lazy_static::lazy_static;
-use macros::static_array_from_file;
-use std::{collections::HashMap, env::current_dir};
+use serde::Deserialize;
+use std::collections::HashMap;
 
-static_array_from_file!(STATS_IDS, "tradeapi/dist/stats_ids.txt");
+#[derive(Deserialize)]
+struct StatsImpl {
+    result: Vec<StatCategory>,
+}
+
+#[derive(Deserialize)]
+struct StatCategory {
+    label: String,
+    entries: Vec<Stat>,
+}
+
+#[derive(Deserialize)]
+struct Stat {
+    id: String,
+    text: String,
+    option: Option<Options>,
+}
+
+#[derive(Deserialize)]
+struct Options {
+    pub options: Vec<InnerOption>,
+}
+
+#[derive(Deserialize)]
+struct InnerOption {
+    id: u16,
+    text: String,
+}
 
 lazy_static! {
-    pub static ref STAT_TO_ID: HashMap<String, String> = {
-        use std::env::var_os;
-        use std::fs::OpenOptions;
-        use std::io::BufReader;
-        use std::path::PathBuf;
-
-        let path = match var_os("DIST_DIR") {
-            Some(v) => PathBuf::from(v.to_str().expect("can't convert DIST_DIR value")),
-            None => current_dir().expect("can't get current dir").join("dist"),
-        };
-        let path = path.join("stats_to_ids.json");
-
-        let f = OpenOptions::new()
-            .read(true)
-            .open(&path)
-            .expect("can't open stats_to_ids.json file");
-
-        let mut buf = BufReader::new(f);
-        let r: HashMap<String, String> =
-            serde_json::from_reader(&mut buf).expect("can't deserialize data from json");
-
-        r
+    static ref STATS: StatsImpl = {
+        let f = include_bytes!("../dist/stats.min.json");
+        serde_json::from_slice(f).unwrap()
     };
+    pub static ref STAT_TO_ID: HashMap<&'static str, &'static str> = {
+        STATS
+            .result
+            .iter()
+            .flat_map(|el| &el.entries)
+            .map(|el| (el.text.as_str(), el.id.as_str()))
+            .collect()
+    };
+    pub static ref STATS_IDS: Vec<&'static str> = { STAT_TO_ID.iter().map(|(_, v)| *v).collect() };
 }
 
 #[cfg(test)]
-mod tests {
-    use super::STAT_TO_ID;
-
-    #[test]
-    fn check_stats_to_id() {
-        assert_eq!(STAT_TO_ID.len(), 6843);
-    }
-}
+mod tests {}

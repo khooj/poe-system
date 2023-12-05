@@ -66,14 +66,20 @@ impl StashReceiver {
                 continue;
             }
 
-            for item in d.items {
-                // we cant be sure that every item have unique id
-                // so we generate it themselves
+            // doesnt work
+            let items = d.items.into_iter().map(|m| {
                 let id = Uuid::new_v4().to_string();
-                self.repository
-                    .insert_item(&mut t, RawItem::new(&id, acc, stash, item))
-                    .await?;
-            }
+                RawItem::new(&id, acc, stash, m)
+            }).collect();
+            self.repository.insert_items(&mut t, items).await?;
+            // for item in d.items {
+            //     // we cant be sure that every item have unique id
+            //     // so we generate it themselves
+            //     let id = Uuid::new_v4().to_string();
+            //     self.repository
+            //         .insert_item(&mut t, RawItem::new(&id, acc, stash, item))
+            //         .await?;
+            // }
         }
         self.repository
             .set_stash_id(&mut t, &k.next_change_id)
