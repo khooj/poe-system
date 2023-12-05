@@ -1,5 +1,8 @@
 use super::types::{Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::cmp::Eq;
+use std::collections::HashMap;
 use std::default::Default;
 use std::ops::Deref;
 
@@ -40,7 +43,60 @@ impl Deref for SimilarityScore {
     }
 }
 
-impl Item {}
+pub struct Sockets {
+    groups: Vec<SocketGroup>,
+}
+
+impl Sockets {
+    pub fn max_links(&self) -> usize {
+        self.groups
+            .iter()
+            .map(|s| s.sockets.len())
+            .max()
+            .unwrap_or_default()
+    }
+
+    pub fn colors(&self) -> HashMap<SocketColor, usize> {
+        self.groups.iter().flat_map(|s| s.sockets.clone()).counts()
+    }
+}
+
+pub struct SocketGroup {
+    sockets: Vec<SocketColor>,
+}
+
+#[derive(Hash, PartialEq, Eq, Clone)]
+pub enum SocketColor {
+    R,
+    G,
+    B,
+    W,
+    NotSupported,
+}
+
+impl Item {
+    pub fn sockets(&self) -> Sockets {
+        let links: Vec<&str> = self.sockets.split(' ').collect();
+        let l = links
+            .into_iter()
+            .map(|l| {
+                let scks: Vec<&str> = l.split('-').collect();
+                let s = scks
+                    .into_iter()
+                    .map(|s| match s {
+                        "R" => SocketColor::R,
+                        "G" => SocketColor::G,
+                        "B" => SocketColor::B,
+                        "W" => SocketColor::W,
+                        _ => SocketColor::NotSupported,
+                    })
+                    .collect();
+                SocketGroup { sockets: s }
+            })
+            .collect();
+        Sockets { groups: l }
+    }
+}
 
 #[cfg(test)]
 mod test {

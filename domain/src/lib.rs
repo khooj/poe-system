@@ -8,5 +8,5 @@ mod private {
 }
 
 pub use data::*;
-pub use item::{Item, SimilarityScore};
+pub use item::*;
 pub use types::*;

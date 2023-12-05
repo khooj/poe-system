@@ -4,6 +4,8 @@ use serde::Deserialize;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::PathBuf;
+use std::sync::Mutex;
+use thiserror::Error;
 
 #[derive(Subcommand, Debug)]
 enum Commands {
@@ -19,6 +21,10 @@ enum Commands {
         filename: String,
         #[arg(short)]
         method: i32,
+    },
+    ShowFirstItems {
+        filename: String,
+        count: usize,
     },
 }
 
@@ -116,9 +122,17 @@ fn load_ndjson_zstd_2(filepath: &str) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+#[derive(Error, Debug)]
+enum CbError {
+    #[error("stop")]
+    StopError,
+    #[error("everything")]
+    EverythingError(#[from] anyhow::Error),
+}
+
 fn load_ndjson_cb<F>(filepath: &str, cb: F) -> Result<(), anyhow::Error>
 where
-    F: Fn(&PublicStashData) -> Result<(), anyhow::Error>,
+    F: Fn(&PublicStashData) -> Result<(), CbError>,
 {
     let f = std::fs::File::open(filepath)?;
     let z = zstd::Decoder::new(f)?;
@@ -127,9 +141,33 @@ where
     for l in z.lines() {
         let l = l.unwrap();
         let data: PublicStashData = serde_json::from_str(&l)?;
-        cb(&data)?;
+        match cb(&data) {
+            Err(CbError::StopError) => return Ok(()),
+            e => e?,
+        }
     }
     Ok(())
+}
+
+fn show_first_items(filepath: &str, count: usize) -> Result<(), anyhow::Error> {
+    let cur_count = Mutex::new(0usize);
+    load_ndjson_cb(filepath, |stash| {
+        let mut c = cur_count.lock().unwrap();
+        for st in &stash.stashes {
+            for it in &st.items {
+                if *c >= count {
+                    return Err(CbError::StopError);
+                }
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&it)
+                        .map_err(|e| CbError::EverythingError(e.into()))?
+                );
+                *c += 1;
+            }
+        }
+        Ok(())
+    })
 }
 
 fn main() -> Result<(), anyhow::Error> {
@@ -152,6 +190,9 @@ fn main() -> Result<(), anyhow::Error> {
                 2 => load_ndjson_zstd_2(&filename)?,
                 _ => panic!("select method 1,2"),
             };
+        }
+        Commands::ShowFirstItems { filename, count } => {
+            show_first_items(&filename, count)?;
         }
     };
     Ok(())

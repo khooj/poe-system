@@ -36,7 +36,7 @@ impl StatQuery {
             Err(BuilderError::UnknownMod(text.to_string()))
         } else {
             let id = STAT_TO_ID.get(text).unwrap().to_owned();
-            let s = self.try_add_mod_id(&id, min, max, option)?;
+            let s = self.try_add_mod_id(id, min, max, option)?;
             Ok(s)
         }
     }
@@ -155,14 +155,14 @@ pub struct SocketFilters {
 }
 
 impl SocketFilters {
-    fn set_sockets(
+    pub fn set_sockets(
         mut self,
-        min: Option<i32>,
-        max: Option<i32>,
-        r: Option<i32>,
-        g: Option<i32>,
-        b: Option<i32>,
-        w: Option<i32>,
+        min: Option<&usize>,
+        max: Option<&usize>,
+        r: Option<&usize>,
+        g: Option<&usize>,
+        b: Option<&usize>,
+        w: Option<&usize>,
     ) -> Self {
         let v = json!({
             "min": min,
@@ -177,14 +177,14 @@ impl SocketFilters {
         self
     }
 
-    fn set_links(
+    pub fn set_links(
         mut self,
-        min: Option<i32>,
-        max: Option<i32>,
-        r: Option<i32>,
-        g: Option<i32>,
-        b: Option<i32>,
-        w: Option<i32>,
+        min: Option<usize>,
+        max: Option<usize>,
+        r: Option<usize>,
+        g: Option<usize>,
+        b: Option<usize>,
+        w: Option<usize>,
     ) -> Self {
         let v = json!({
             "min": min,
