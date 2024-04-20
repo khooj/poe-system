@@ -1,5 +1,10 @@
+use std::num::NonZeroU32;
 use std::str::FromStr;
 use std::time::Duration;
+
+use governor::clock::DefaultClock;
+use governor::state::{InMemoryState, NotKeyed};
+use governor::{Jitter, Quota, RateLimiter};
 
 #[derive(Debug, PartialEq, Default)]
 pub struct Limits {
@@ -34,13 +39,67 @@ impl Limits {
 
 #[derive(Debug, Default)]
 pub struct MultipleLimits {
-    limits: Vec<Limits>,
+    limits: Vec<(Limits, RateLimiter<NotKeyed, InMemoryState, DefaultClock>)>,
 }
 
 impl MultipleLimits {
     pub fn parse_header(limits: &str, sep: &str) -> MultipleLimits {
         let split_limits = limits.split(sep).collect::<Vec<_>>();
-        let limits = split_limits.into_iter().map(Limits::parse_header).collect();
-        MultipleLimits { limits }
+        // todo: vec resize optimization
+        let mut limits = MultipleLimits::default();
+        split_limits
+            .into_iter()
+            .for_each(|lm| limits.add_parse_header(lm));
+        limits
     }
+
+    pub fn add_parse_header(&mut self, limits: &str) {
+        let new_limits = Limits::parse_header(limits);
+        let hit = NonZeroU32::try_from(new_limits.hit_count)
+            .map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
+        let quota = Quota::new(hit, new_limits.watching_time).unwrap();
+
+        let lim = RateLimiter::direct(quota);
+
+        self.limits.push((new_limits, lim));
+    }
+
+    pub async fn adjust_current_states_or_wait_for_penalty(
+        &mut self,
+        states: Vec<Limits>,
+    ) -> Result<(), anyhow::Error> {
+        if states.len() != self.limits.len() {
+            return Err(anyhow::anyhow!(
+                "limits states len does not equal to limits"
+            ));
+        }
+        for (i, lm) in &mut self.limits.iter_mut().enumerate() {
+            let state_limit = states.get(i).unwrap();
+            if lm.0.watching_time != state_limit.watching_time {
+                return Err(anyhow::anyhow!(
+                    "Current limits order does not correspond to initially provided"
+                ));
+            }
+        }
+
+        for (i, lm) in &mut self.limits.iter_mut().enumerate() {
+            let state_limit = states.get(i).unwrap();
+            let _ =
+                lm.1.until_n_ready_with_jitter(
+                    NonZeroU32::new(state_limit.hit_count).unwrap_or(NonZeroU32::new(1).unwrap()),
+                    Jitter::new(state_limit.penalty_time, Duration::from_secs(1)),
+                )
+                .await;
+        }
+
+        Ok(())
+    }
+
+    pub async fn until_ready(&mut self) {
+        for (_, lim) in &mut self.limits {
+            lim.until_ready().await;
+        }
+    }
+
+    pub async fn until_ready_penalty(&mut self) {}
 }

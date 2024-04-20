@@ -1,4 +1,4 @@
-use crate::limits::Limits;
+use crate::limits::{Limits, MultipleLimits};
 use crate::models::{ClientFetchResponse, ClientSearchResponse};
 use crate::query::Builder;
 use governor::{
@@ -9,6 +9,7 @@ use governor::{
 use reqwest::cookie::Jar;
 use reqwest::{Method, Request, RequestBuilder, StatusCode, Url};
 use std::num::NonZeroU32;
+use std::ops::Mul;
 use std::{convert::TryFrom, time::Duration};
 use thiserror::Error;
 use tracing::{debug, error};
@@ -31,8 +32,8 @@ struct Limit(Limits, RateLimiter<NotKeyed, InMemoryState, DefaultClock>);
 
 pub struct Client {
     client: reqwest::Client,
-    search_limiter: Limit,
-    fetch_limiter: Limit,
+    search_limiter: MultipleLimits,
+    fetch_limiter: MultipleLimits,
     league: String,
     failed_check: Option<String>,
 }
@@ -54,28 +55,95 @@ impl Client {
 
         Client {
             client,
-            search_limiter: Limit(
-                Limits::default(),
-                RateLimiter::direct(Quota::per_second(NonZeroU32::new(1).unwrap())),
-            ),
-            fetch_limiter: Limit(
-                Limits::default(),
-                RateLimiter::direct(Quota::per_second(NonZeroU32::new(1).unwrap())),
-            ),
+            search_limiter: MultipleLimits::default(),
+            fetch_limiter: MultipleLimits::default(),
             league: league.to_string(),
             failed_check: None,
         }
     }
 
-    fn reinit_limiter(new_limits: Limits) -> Limit {
-        debug!("encountered new limits: {:?}", new_limits);
-        let hit = NonZeroU32::try_from(new_limits.hit_count)
-            .map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
-        let quota = Quota::new(hit, new_limits.watching_time).unwrap();
+    async fn make_limiter_request<T>(
+        &mut self,
+        limiter: &mut MultipleLimits,
+        req: Request,
+        limit_policy: &str,
+    ) -> Result<T, ClientError>
+    where
+        for<'de> T: serde::Deserialize<'de>,
+    {
+        if self.failed_check.is_some() {
+            return Err(ClientError::FailedCheck(self.failed_check.clone().unwrap()));
+        }
+        limiter.until_ready().await;
 
-        let lim = RateLimiter::direct(quota);
+        let resp = self.client.execute(req).await?;
 
-        Limit(new_limits, lim)
+        if let Some(l) = resp.headers().get("x-rate-limit-policy") {
+            if l != limit_policy {
+                let s = format!("unknown rate limit policy, doing nothing until you check tradeapi: expected {} got {}", limit_policy, l.to_str().unwrap());
+                self.failed_check = Some(s.clone());
+                return Err(ClientError::FailedCheck(s));
+            }
+        }
+
+        let acc_limits = resp
+            .headers()
+            .get("x-rate-limit-account")
+            .unwrap()
+            .to_str()
+            .unwrap();
+        let acc_limiting_state = resp
+            .headers()
+            .get("x-rate-limit-account-state")
+            .unwrap()
+            .to_str()
+            .unwrap();
+
+        let ip_limits = resp
+            .headers()
+            .get("x-rate-limit-ip")
+            .unwrap()
+            .to_str()
+            .unwrap();
+        let ip_limits_state = resp
+            .headers()
+            .get("x-rate-limit-ip-state")
+            .unwrap()
+            .to_str()
+            .unwrap();
+
+        let mut limits = MultipleLimits::parse_header(ip_limits, ",");
+        limits.add_parse_header(acc_limits);
+        let mut current_limits = ip_limits_state
+            .split(',')
+            .map(Limits::parse_header)
+            .collect::<Vec<_>>();
+        current_limits.push(Limits::parse_header(acc_limiting_state));
+        debug!("current limits state: {:?}", current_limits);
+        // todo: need explicit penalty waiting time
+        if let Err(e) = limits
+            .adjust_current_states_or_wait_for_penalty(current_limits)
+            .await
+        {
+            self.failed_check = Some(e.to_string());
+            return Err(ClientError::FailedCheck(e.to_string()));
+        }
+
+        *limiter = limits;
+
+        let st = resp.status();
+        match st {
+            StatusCode::TOO_MANY_REQUESTS => {
+                // should be already handled
+                return Err(ClientError::NextCycle);
+            }
+            x if x.is_success() => {}
+            x => return Err(ClientError::StatusCode(x.as_u16())),
+        };
+
+        let body = resp.json::<T>().await?;
+
+        Ok(body)
     }
 
     pub async fn get_search_id(
@@ -85,7 +153,7 @@ impl Client {
         if self.failed_check.is_some() {
             return Err(ClientError::FailedCheck(self.failed_check.clone().unwrap()));
         }
-        self.search_limiter.1.until_ready().await;
+        self.search_limiter.until_ready().await;
 
         let mut req = self.client.post(format!(
             "https://www.pathofexile.com/api/trade/search/{}",
@@ -97,19 +165,6 @@ impl Client {
 
         let resp = self.client.execute(req).await?;
 
-        let mut limiting = "1:3:60";
-
-        if let Some(l) = resp.headers().get("x-rate-limit-account") {
-            debug!("limits header found");
-            limiting = match l.to_str() {
-                Ok(k) => k,
-                Err(e) => {
-                    error!("tostrerror, luck next time {}", e);
-                    return Err(ClientError::NextCycle);
-                }
-            };
-        }
-
         if let Some(l) = resp.headers().get("x-rate-limit-policy") {
             if l != "trade-search-request-limit" {
                 let s = "unknown rate limit policy, doing nothing until you check tradeapi";
@@ -118,40 +173,55 @@ impl Client {
             }
         }
 
-        let limiting_state = resp
+        let acc_limits = resp
+            .headers()
+            .get("x-rate-limit-account")
+            .unwrap()
+            .to_str()
+            .unwrap();
+        let acc_limiting_state = resp
             .headers()
             .get("x-rate-limit-account-state")
             .unwrap()
             .to_str()
             .unwrap();
 
-        let limits = Limits::parse_header(limiting);
-        let current_limits = Limits::parse_header(limiting_state);
-        let do_reinit_limiter = limits != self.search_limiter.0;
-        if do_reinit_limiter {
-            self.search_limiter = Self::reinit_limiter(limits);
-            let _ = self
-                .search_limiter
-                .1
-                .until_n_ready(
-                    NonZeroU32::new(current_limits.hit_count)
-                        .unwrap_or(NonZeroU32::new(1).unwrap()),
-                )
-                .await;
+        let ip_limits = resp
+            .headers()
+            .get("x-rate-limit-ip")
+            .unwrap()
+            .to_str()
+            .unwrap();
+        let ip_limits_state = resp
+            .headers()
+            .get("x-rate-limit-ip-state")
+            .unwrap()
+            .to_str()
+            .unwrap();
+
+        let mut limits = MultipleLimits::parse_header(ip_limits, ",");
+        limits.add_parse_header(acc_limits);
+        let mut current_limits = ip_limits_state
+            .split(',')
+            .map(Limits::parse_header)
+            .collect::<Vec<_>>();
+        current_limits.push(Limits::parse_header(acc_limiting_state));
+        debug!("current limits state: {:?}", current_limits);
+        // todo: need explicit penalty waiting time
+        if let Err(e) = limits
+            .adjust_current_states_or_wait_for_penalty(current_limits)
+            .await
+        {
+            self.failed_check = Some(e.to_string());
+            return Err(ClientError::FailedCheck(e.to_string()));
         }
 
-        debug!("current limits state: {:?}", current_limits);
+        self.search_limiter = limits;
 
         let st = resp.status();
         match st {
             StatusCode::TOO_MANY_REQUESTS => {
-                let rl = &self.search_limiter.1;
-                let limits = &self.search_limiter.0;
-                rl.until_ready_with_jitter(Jitter::new(
-                    limits.penalty_time,
-                    Duration::from_secs(1),
-                ))
-                .await;
+                // should be already handled
                 return Err(ClientError::NextCycle);
             }
             x if x.is_success() => {}
