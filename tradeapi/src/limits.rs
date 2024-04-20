@@ -31,3 +31,16 @@ impl Limits {
         Limits::new(h, Duration::from_secs(w), Duration::from_secs(p))
     }
 }
+
+#[derive(Debug, Default)]
+pub struct MultipleLimits {
+    limits: Vec<Limits>,
+}
+
+impl MultipleLimits {
+    pub fn parse_header(limits: &str, sep: &str) -> MultipleLimits {
+        let split_limits = limits.split(sep).collect::<Vec<_>>();
+        let limits = split_limits.into_iter().map(Limits::parse_header).collect();
+        MultipleLimits { limits }
+    }
+}

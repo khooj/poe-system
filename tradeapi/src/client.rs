@@ -71,9 +71,7 @@ impl Client {
         debug!("encountered new limits: {:?}", new_limits);
         let hit = NonZeroU32::try_from(new_limits.hit_count)
             .map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
-        let quota = Quota::with_period(new_limits.watching_time)
-            .unwrap()
-            .allow_burst(hit);
+        let quota = Quota::new(hit, new_limits.watching_time).unwrap();
 
         let lim = RateLimiter::direct(quota);
 
@@ -120,21 +118,29 @@ impl Client {
             }
         }
 
-        let limits = Limits::parse_header(limiting);
-        let do_reinit_limiter = limits != self.search_limiter.0;
-        if do_reinit_limiter {
-            self.search_limiter = Self::reinit_limiter(limits);
-        }
-
         let limiting_state = resp
             .headers()
             .get("x-rate-limit-account-state")
-            .map(|e| e.to_str().unwrap_or("1:3:0"))
-            .unwrap_or("1:3:0");
-        debug!(
-            "current limits state: {:?}",
-            Limits::parse_header(limiting_state)
-        );
+            .unwrap()
+            .to_str()
+            .unwrap();
+
+        let limits = Limits::parse_header(limiting);
+        let current_limits = Limits::parse_header(limiting_state);
+        let do_reinit_limiter = limits != self.search_limiter.0;
+        if do_reinit_limiter {
+            self.search_limiter = Self::reinit_limiter(limits);
+            let _ = self
+                .search_limiter
+                .1
+                .until_n_ready(
+                    NonZeroU32::new(current_limits.hit_count)
+                        .unwrap_or(NonZeroU32::new(1).unwrap()),
+                )
+                .await;
+        }
+
+        debug!("current limits state: {:?}", current_limits);
 
         let st = resp.status();
         match st {
@@ -214,21 +220,29 @@ impl Client {
             }
         }
 
-        let limits = Limits::parse_header(limiting);
-        let do_reinit_limiter = limits != self.fetch_limiter.0;
-        if do_reinit_limiter {
-            self.fetch_limiter = Self::reinit_limiter(limits);
-        }
-
         let limiting_state = resp
             .headers()
             .get("x-rate-limit-account-state")
-            .map(|e| e.to_str().unwrap_or("1:4:0"))
-            .unwrap_or("1:4:0");
-        debug!(
-            "current limits state: {:?}",
-            Limits::parse_header(limiting_state)
-        );
+            .unwrap()
+            .to_str()
+            .unwrap();
+
+        let limits = Limits::parse_header(limiting);
+        let current_limits = Limits::parse_header(limiting_state);
+        let do_reinit_limiter = limits != self.fetch_limiter.0;
+        if do_reinit_limiter {
+            self.fetch_limiter = Self::reinit_limiter(limits);
+            let _ = self
+                .fetch_limiter
+                .1
+                .until_n_ready(
+                    NonZeroU32::new(current_limits.hit_count)
+                        .unwrap_or(NonZeroU32::new(1).unwrap()),
+                )
+                .await;
+        }
+
+        debug!("current limits state: {:?}", current_limits);
 
         let st = resp.status();
         match st {
@@ -249,5 +263,17 @@ impl Client {
         let body = resp.json::<ClientFetchResponse>().await?;
 
         Ok(body)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_quota() {
+        let q = Quota::new(NonZeroU32::new(5).unwrap(), Duration::from_secs(1)).unwrap();
+
+        assert_eq!(q.burst_size_replenished_in(), Duration::from_secs(1));
     }
 }
