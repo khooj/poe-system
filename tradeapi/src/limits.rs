@@ -1,12 +1,7 @@
-use governor::{
-    clock::DefaultClock,
-    state::{direct::NotKeyed, InMemoryState},
-    Jitter, Quota, RateLimiter,
-};
 use std::str::FromStr;
 use std::time::Duration;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct Limits {
     pub hit_count: u32,
     pub watching_time: Duration,
@@ -23,7 +18,7 @@ impl Limits {
     }
 
     pub fn parse_header(limit: &str) -> Limits {
-        let lms: Vec<&str> = limit.split(":").collect();
+        let lms: Vec<&str> = limit.split(':').collect();
 
         if lms.len() != 3 {
             return Limits::new(0, Duration::from_secs(0u64), Duration::from_secs(0u64));
@@ -35,9 +30,4 @@ impl Limits {
 
         Limits::new(h, Duration::from_secs(w), Duration::from_secs(p))
     }
-}
-
-struct Limiter {
-    limiter: RateLimiter<NotKeyed, InMemoryState, DefaultClock>,
-    latest_limits: Limits,
 }

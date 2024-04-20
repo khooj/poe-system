@@ -31,8 +31,8 @@ struct Limit(Limits, RateLimiter<NotKeyed, InMemoryState, DefaultClock>);
 
 pub struct Client {
     client: reqwest::Client,
-    search_limiter: Option<Limit>,
-    fetch_limiter: Option<Limit>,
+    search_limiter: Limit,
+    fetch_limiter: Limit,
     league: String,
     failed_check: Option<String>,
 }
@@ -54,25 +54,30 @@ impl Client {
 
         Client {
             client,
-            search_limiter: None,
-            fetch_limiter: None,
+            search_limiter: Limit(
+                Limits::default(),
+                RateLimiter::direct(Quota::per_second(NonZeroU32::new(1).unwrap())),
+            ),
+            fetch_limiter: Limit(
+                Limits::default(),
+                RateLimiter::direct(Quota::per_second(NonZeroU32::new(1).unwrap())),
+            ),
             league: league.to_string(),
             failed_check: None,
         }
     }
 
-    fn reinit_limiter(limiter: &mut Option<Limit>, limits: Limits) {
-        debug!("encountered new limits: {:?}", limits);
-        let hit =
-            NonZeroU32::try_from(limits.hit_count).map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
-        let quota = Quota::with_period(limits.watching_time)
+    fn reinit_limiter(new_limits: Limits) -> Limit {
+        debug!("encountered new limits: {:?}", new_limits);
+        let hit = NonZeroU32::try_from(new_limits.hit_count)
+            .map_or(NonZeroU32::new(1u32).unwrap(), |v| v);
+        let quota = Quota::with_period(new_limits.watching_time)
             .unwrap()
             .allow_burst(hit);
 
         let lim = RateLimiter::direct(quota);
 
-        let l = Limit(limits, lim);
-        *limiter = Some(l);
+        Limit(new_limits, lim)
     }
 
     pub async fn get_search_id(
@@ -82,9 +87,7 @@ impl Client {
         if self.failed_check.is_some() {
             return Err(ClientError::FailedCheck(self.failed_check.clone().unwrap()));
         }
-        if let Some(Limit(_, rl)) = &self.search_limiter {
-            rl.until_ready().await;
-        }
+        self.search_limiter.1.until_ready().await;
 
         let mut req = self.client.post(format!(
             "https://www.pathofexile.com/api/trade/search/{}",
@@ -118,11 +121,9 @@ impl Client {
         }
 
         let limits = Limits::parse_header(limiting);
-        let do_reinit_limiter =
-            self.search_limiter.is_some() && limits != self.search_limiter.as_ref().unwrap().0;
-        let do_reinit_limiter = do_reinit_limiter || self.search_limiter.is_none();
+        let do_reinit_limiter = limits != self.search_limiter.0;
         if do_reinit_limiter {
-            Self::reinit_limiter(&mut self.search_limiter, limits);
+            self.search_limiter = Self::reinit_limiter(limits);
         }
 
         let limiting_state = resp
@@ -138,8 +139,8 @@ impl Client {
         let st = resp.status();
         match st {
             StatusCode::TOO_MANY_REQUESTS => {
-                let rl = &self.search_limiter.as_ref().unwrap().1;
-                let limits = &self.search_limiter.as_ref().unwrap().0;
+                let rl = &self.search_limiter.1;
+                let limits = &self.search_limiter.0;
                 rl.until_ready_with_jitter(Jitter::new(
                     limits.penalty_time,
                     Duration::from_secs(1),
@@ -164,9 +165,7 @@ impl Client {
         if self.failed_check.is_some() {
             return Err(ClientError::FailedCheck(self.failed_check.clone().unwrap()));
         }
-        if let Some(Limit(_, rl)) = &self.fetch_limiter {
-            rl.until_ready().await;
-        }
+        self.fetch_limiter.1.until_ready().await;
 
         if ids.is_empty() {
             return Ok(ClientFetchResponse { result: vec![] });
@@ -216,11 +215,9 @@ impl Client {
         }
 
         let limits = Limits::parse_header(limiting);
-        let do_reinit_limiter =
-            self.fetch_limiter.is_some() && limits != self.fetch_limiter.as_ref().unwrap().0;
-        let do_reinit_limiter = do_reinit_limiter || self.fetch_limiter.is_none();
+        let do_reinit_limiter = limits != self.fetch_limiter.0;
         if do_reinit_limiter {
-            Self::reinit_limiter(&mut self.fetch_limiter, limits);
+            self.fetch_limiter = Self::reinit_limiter(limits);
         }
 
         let limiting_state = resp
@@ -236,8 +233,8 @@ impl Client {
         let st = resp.status();
         match st {
             StatusCode::TOO_MANY_REQUESTS => {
-                let rl = &self.fetch_limiter.as_ref().unwrap().1;
-                let limits = &self.fetch_limiter.as_ref().unwrap().0;
+                let rl = &self.fetch_limiter.1;
+                let limits = &self.fetch_limiter.0;
                 rl.until_ready_with_jitter(Jitter::new(
                     limits.penalty_time,
                     Duration::from_secs(1),
