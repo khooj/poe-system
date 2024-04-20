@@ -100,6 +100,16 @@ impl MultipleLimits {
             lim.until_ready().await;
         }
     }
+}
 
-    pub async fn until_ready_penalty(&mut self) {}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_quota() {
+        let q = Quota::new(NonZeroU32::new(5).unwrap(), Duration::from_secs(1)).unwrap();
+
+        assert_eq!(q.burst_size_replenished_in(), Duration::from_secs(1));
+    }
 }
