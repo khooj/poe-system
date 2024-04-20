@@ -65,13 +65,13 @@ fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     }
 
     let (i, basetype) = preceded(line_ending, base_type)(i)?;
-    return Ok((
+    Ok((
         i,
         ItemValue::BaseType {
             base: basetype.to_string(),
             name: name.to_string(),
         },
-    ));
+    ))
 }
 
 fn base_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(

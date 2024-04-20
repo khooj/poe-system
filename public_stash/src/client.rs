@@ -28,7 +28,7 @@ impl Limits {
 }
 
 fn parse_header(limit: &str) -> Limits {
-    let lms: Vec<&str> = limit.split(":").collect();
+    let lms: Vec<&str> = limit.split(':').collect();
 
     if lms.len() != 3 {
         return Limits::new(0, Duration::from_secs(0u64), Duration::from_secs(0u64));

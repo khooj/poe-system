@@ -47,7 +47,7 @@ lazy_static! {
         let stats_translations_file = include_bytes!("../dist/stat_translations.min.json");
         serde_json::from_slice(stats_translations_file).unwrap()
     };
-    pub static ref STATS_CUTTED: HashMap<String, usize> = {
+    pub(crate) static ref STATS_CUTTED: HashMap<String, usize> = {
         STAT_TRANSLATIONS
             .iter()
             .enumerate()
@@ -63,11 +63,11 @@ lazy_static! {
 }
 
 impl STATS_CUTTED {
-    pub fn get_original_stat(idx: usize) -> String {
+    pub(crate) fn get_original_stat(idx: usize) -> String {
         STAT_TRANSLATIONS[idx].english[0].string.clone()
     }
 
-    pub fn get_stat_id(idx: usize) -> String {
+    pub(crate) fn get_stat_id(idx: usize) -> String {
         STAT_TRANSLATIONS[idx].ids[0].clone()
     }
 }
