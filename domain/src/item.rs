@@ -99,10 +99,7 @@ impl Item {
 }
 
 #[cfg(test)]
-mod test {
-    use super::*;
-    use crate::types::ModType;
-}
+mod test {}
 
 // Rarity: Unique
 // Bones of Ullr

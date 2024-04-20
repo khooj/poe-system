@@ -2,7 +2,7 @@ use crate::parser::{ParsedItem, ItemValue};
 
 use super::parser::parse_pob_item;
 use base64::{decode_config, URL_SAFE};
-use domain::{Item, ModType, Mod};
+use domain::{Item, Mod};
 use flate2::read::ZlibDecoder;
 use nom::error::VerboseError;
 use roxmltree::{Document, Node};
@@ -91,7 +91,7 @@ impl ItemSet {
     }
 
     pub fn get_nth_item(&self, nth: usize) -> Option<&Item> {
-        self.items.iter().nth(nth)
+        self.items.get(nth)
     }
 
     pub fn title(&self) -> &str {
@@ -129,14 +129,14 @@ impl<'a> PobDocument<'a> {
             if item.tag_name().name() == "Item" {
                 let id = item.attribute("id").unwrap();
                 let id = i32::from_str(id).unwrap();
-                let (_, itm) = parse_pob_item::<VerboseError<&str>>(&item.text().unwrap_or(""))
+                let (_, itm) = parse_pob_item::<VerboseError<&str>>(item.text().unwrap_or(""))
                     .expect("can't parse item");
                 items.insert(id, itm);
             }
         }
 
         let mut mods = vec![];
-        for (_, item) in &items {
+        for item in items.values() {
             for i in &item.mods {
                 if let ItemValue::Affix(v ) = i {
                     mods.push(v);
@@ -192,9 +192,9 @@ impl<'a> PobDocument<'a> {
 
 #[cfg(test)]
 mod tests {
-    const TESTPOB: &'static str = include_str!("pob.txt");
-    const TESTPOB2: &'static str = include_str!("pob2.txt");
-    const TESTPOB3: &'static str = include_str!("pob3.txt");
+    const TESTPOB: &str = include_str!("pob.txt");
+    const TESTPOB2: &str = include_str!("pob2.txt");
+    const TESTPOB3: &str = include_str!("pob3.txt");
 
     use super::Pob;
 

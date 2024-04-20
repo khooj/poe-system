@@ -1,7 +1,6 @@
 use lazy_static::lazy_static;
-use macros::static_array_from_file;
 use serde::Deserialize;
-use std::{collections::HashMap, fs::read};
+use std::collections::HashMap;
 
 pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")

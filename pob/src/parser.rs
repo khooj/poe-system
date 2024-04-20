@@ -1,4 +1,4 @@
-use domain::{Item, Mod, ModType, BASE_TYPES};
+use domain::{Item, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -31,7 +31,7 @@ pub(crate) enum ItemValue<'a> {
     Implicits(Vec<ItemValue<'a>>),
     Quality(i32),
     Sockets(String),
-    Influence(String),
+    // Influence(String),
     SkipLine,
 }
 
