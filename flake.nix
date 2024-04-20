@@ -10,7 +10,7 @@
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     let
       myapp = "poe-system";
-      rust-version = "1.70.0";
+      rust-version = "1.77.2";
     in
     flake-utils.lib.eachDefaultSystem (system:
       let

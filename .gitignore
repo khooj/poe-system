@@ -8,3 +8,4 @@ poe.sql.xz
 slice1.tar
 app/node_modules
 app/.svelte-kit
+slices.ndjson.xz
