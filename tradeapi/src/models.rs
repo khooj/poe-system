@@ -204,7 +204,7 @@ where
     D: Deserializer<'de>,
 {
     let r: Option<String> = Option::deserialize(deserializer)?;
-    Ok(r.unwrap_or(String::new()))
+    Ok(r.unwrap_or_default())
 }
 
 #[derive(Deserialize)]
