@@ -19,6 +19,7 @@ struct Ultimatum {
     sacrifice: String,
     reward: String,
     div: bool,
+    count: String,
 }
 
 #[derive(serde::Deserialize)]
@@ -29,18 +30,36 @@ struct Property {
 
 fn map_ultimatum(item: ClientFetchItem) -> Option<Ultimatum> {
     let vv: Vec<Property> = serde_json::from_value(item.rest["properties"].clone()).unwrap();
-    let v: Vec<String> = vv.into_iter().map(|e| (e.name, e.values)).filter(|e| e.0.contains("Requires Sacrifice") || e.0.contains("Reward")).map(|e| e.1[0][0].as_str().unwrap().to_string()).collect();
+    let v: Vec<String> = vv.into_iter().map(|e| (e.name, e.values)).filter(|e| e.0.contains("Requires Sacrifice") || e.0.contains("Reward")).flat_map(|e| {
+        if e.1.len() == 2 {
+            vec![
+                e.1[0][0].as_str().unwrap().to_string(),
+                e.1[1][0].as_str().unwrap().to_string(),
+            ]
+        } else {
+            vec![e.1[0][0].as_str().unwrap().to_string()]
+        }
+    }).collect();
 
-    if v[1].contains("Currency") {
+    if v[1].contains("Currency") || v.get(2).unwrap_or(&String::new()).contains("Currency") {
         return None;
     }
 
-    let div = v[1].contains("Divination");
+    let div = v[1].contains("Divination") || v.get(2).unwrap_or(&String::new()).contains("Divination");
+    let (sacrifice, reward, count) = if div {
+        let v0 = v[0].clone();
+        let v1 = v[1].clone();
+        let v2 = v[2].clone();
+        (v0, v2, v1)
+    } else {
+        (v[0].clone(), v[1].clone(), String::new())
+    };
 
     Some(Ultimatum {
-        sacrifice: v[0].to_string(),
-        reward: v[1].to_string(),
+        sacrifice,
+        reward,
         div,
+        count,
     })
 }
 
@@ -138,7 +157,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for ulti in ultimatums {
         if ulti.div {
             let div = &divcards[&ulti.sacrifice];
-            println!("(Div): {}: cost {} chaos or {} div", ulti.sacrifice, div.chaos_price, div.div_price);
+            println!("(Div): {} {}: cost for one card is {} chaos or {} div", ulti.sacrifice, ulti.count, div.chaos_price, div.div_price);
         } else {
             if !uniques.contains_key(&ulti.sacrifice) || !uniques.contains_key(&ulti.reward) {
                 eprintln!("Sacrifice or reward data unknown for {} -> {}", ulti.sacrifice, ulti.reward);
