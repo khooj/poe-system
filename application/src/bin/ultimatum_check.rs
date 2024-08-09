@@ -74,13 +74,13 @@ impl PartialOrd for Price {
     fn partial_cmp(&self, other: &Price) -> Option<Ordering> {
         Some(match self {
             Price::Range { max, .. } => match other {
-                Price::Range { max: max2, .. } if max2 > max => Ordering::Greater,
-                Price::Static(val) if val > max => Ordering::Greater,
+                Price::Range { max: max2, .. } if max > max2 => Ordering::Greater,
+                Price::Static(val) if max > val => Ordering::Greater,
                 _ => Ordering::Less,
             },
             Price::Static(val) => match other {
-                Price::Range { max, .. } if max > val => Ordering::Greater,
-                Price::Static(val2) if val2 > val => Ordering::Greater,
+                Price::Range { max, .. } if val > max => Ordering::Greater,
+                Price::Static(val2) if val > val2 => Ordering::Greater,
                 _ => Ordering::Less,
             },
         })
@@ -174,13 +174,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("fetching ultimatums from trade search");
     let search_res = trade_client.get_search_id(&builder).await?;
-    let it = EveryNElements { n: 5, iter: search_res.result.iter() };
+    let it = EveryNElements { n: 10, iter: search_res.result.iter() };
     let mut ultimatums = Vec::with_capacity(200);
     for els in it {
         println!("fetching next elements from trade");
-        let fetch_res = trade_client.fetch_results(els.into_iter().cloned().collect(), &search_res.id).await?;
-        let m = fetch_res.result.into_iter().filter_map(|e| map_ultimatum(e.item));
-        ultimatums.extend(m);
+        loop {
+            let fetch_res = trade_client.fetch_results(els.iter().map(|e| (*e).clone()).collect(), &search_res.id).await;
+            if matches!(fetch_res, Err(TradeClientError::NextCycle)) {
+                println!("cycle");
+                continue;
+            }
+            let fetch_res = fetch_res?;
+            let m = fetch_res.result.into_iter().filter_map(|e| map_ultimatum(e.item));
+            ultimatums.extend(m);
+            break;
+        }
         println!("ultimatums: {}", ultimatums.len());
     }
 
@@ -231,8 +239,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn color_conrol() {
         println!("\x1b[31mTest\x1b[0m");
+    }
+
+    #[test]
+    fn price_partial_ord() {
+        let price1 = Price::Range { min: 0.10, max: 10.5 };
+        let price2 = Price::Range { min: 0.01, max: 8.5 };
+        let price3 = Price::Static(9.5);
+        assert!(price1 > price2);
+        assert!(price3 > price2);
+        assert!(price1 > price3);
     }
 }

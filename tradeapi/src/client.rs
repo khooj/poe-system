@@ -166,7 +166,7 @@ impl Client {
         if ids.is_empty() {
             return Ok(ClientFetchResponse { result: vec![] });
         }
-        if ids.len() > 5 {
+        if ids.len() > 10 {
             return Err(ClientError::IncorrectArgs);
         }
 
