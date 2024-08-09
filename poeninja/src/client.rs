@@ -41,7 +41,7 @@ impl Client {
             .build()
             .expect("can't build http client");
 
-        let limiter = MultipleLimits::parse_header("0:4:60", ",");
+        let limiter = MultipleLimits::parse_header("0:1:60", ",");
 
         Client {
             client,
