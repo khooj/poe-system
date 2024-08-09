@@ -2,6 +2,7 @@ use clap::Parser;
 use std::io::prelude::*;
 use std::env;
 use std::collections::HashMap;
+use std::cmp::{PartialOrd, Ordering};
 use poeninja::{Client, ClientError, models::{Response, Object}};
 use tradeapi::{Client as TradeClient, ClientError as TradeClientError, 
     models::{ClientFetchItem, ClientFetchListing},
@@ -63,9 +64,27 @@ fn map_ultimatum(item: ClientFetchItem) -> Option<Ultimatum> {
     })
 }
 
+#[derive(PartialEq)]
 enum Price {
     Range { min: f32, max: f32 },
     Static(f32),
+}
+
+impl PartialOrd for Price {
+    fn partial_cmp(&self, other: &Price) -> Option<Ordering> {
+        Some(match self {
+            Price::Range { max, .. } => match other {
+                Price::Range { max: max2, .. } if max2 > max => Ordering::Greater,
+                Price::Static(val) if val > max => Ordering::Greater,
+                _ => Ordering::Less,
+            },
+            Price::Static(val) => match other {
+                Price::Range { max, .. } if max > val => Ordering::Greater,
+                Price::Static(val2) if val2 > val => Ordering::Greater,
+                _ => Ordering::Less,
+            },
+        })
+    }
 }
 
 impl std::fmt::Display for Price {
@@ -159,7 +178,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut ultimatums = Vec::with_capacity(200);
     for els in it {
         println!("fetching next elements from trade");
-        //println!("debug: els: {:?}", els);
         let fetch_res = trade_client.fetch_results(els.into_iter().cloned().collect(), &search_res.id).await?;
         let m = fetch_res.result.into_iter().filter_map(|e| map_ultimatum(e.item));
         ultimatums.extend(m);
@@ -195,13 +213,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("(Div): {} {}: cost for one card is {} chaos or {} div", ulti.sacrifice, ulti.count, div.chaos_price, div.div_price);
         } else {
             if !uniques.contains_key(&ulti.sacrifice) || !uniques.contains_key(&ulti.reward) {
-                eprintln!("Sacrifice or reward data unknown for {} -> {}", ulti.sacrifice, ulti.reward);
+                eprintln!("\x1b[31mSacrifice or reward data unknown for {} -> {}\x1b[0m", ulti.sacrifice, ulti.reward);
                 continue;
             }
             let sacr = &uniques[&ulti.sacrifice];
             let rew = &uniques[&ulti.reward];
-            println!("(Item): {} ({} chaos or {} div) into {} ({} chaos or {} div)", ulti.sacrifice, sacr.chaos_price, sacr.div_price, ulti.reward, rew.chaos_price, rew.div_price);
+            let color = if rew.chaos_price > sacr.chaos_price {
+                "\x1b[32m"
+            } else {
+                "\x1b[31m"
+            };
+            println!("{}(Item): {} ({} chaos or {} div) into {} ({} chaos or {} div)\x1b[0m", color, ulti.sacrifice, sacr.chaos_price, sacr.div_price, ulti.reward, rew.chaos_price, rew.div_price);
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn color_conrol() {
+        println!("\x1b[31mTest\x1b[0m");
+    }
 }
