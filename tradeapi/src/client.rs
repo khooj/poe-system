@@ -29,7 +29,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(user_agent: String, poesessid: &str, league: &str) -> Client {
+    pub fn new(user_agent: &str, poesessid: &str, league: &str) -> Client {
         let jar = Jar::default();
         jar.add_cookie_str(
             &format!("POESESSID={}", poesessid),

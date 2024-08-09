@@ -6,6 +6,7 @@ members = [
 	"pob",
 	"tradeapi",
 	"domain",
-	"application"
+	"application",
+	"poeninja"
 ]
 resolver = "2"

@@ -383,14 +383,15 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.57"
+version = "1.0.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08f9b8508dccb7687a1d6c4ce66b2b0ecef467c94667de27d8d7fe1f8d2a9cdc"
+checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
 
 [[package]]
 name = "application"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap",
  "clipboard",
  "crossterm",
@@ -398,6 +399,7 @@ dependencies = [
  "futures",
  "itertools 0.12.0",
  "pob",
+ "poeninja",
  "public_stash",
  "serde",
  "serde_json",
@@ -2732,6 +2734,21 @@ dependencies = [
  "uuid 0.8.2",
  "validator",
  "zstd 0.13.0",
+]
+
+[[package]]
+name = "poeninja"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "governor",
+ "lazy_static",
+ "macros",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]

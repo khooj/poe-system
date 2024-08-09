@@ -37,7 +37,7 @@ pub struct ClientFetchListing {
     pub whisper: String,
     pub whisper_token: String,
     pub account: AccountInfo,
-    pub price: PriceInfo,
+    pub price: Option<PriceInfo>,
     #[serde(flatten)]
     pub rest: HashMap<String, Value>,
 }
@@ -110,8 +110,8 @@ pub struct FetchItemMods {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct FetchItemMod {
-    pub level: i32,
-    pub magnitudes: Vec<FetchItemModInfo>,
+    pub level: Option<i32>,
+    pub magnitudes: Option<Vec<FetchItemModInfo>>,
     pub name: String,
     pub tier: String,
 }
@@ -238,9 +238,11 @@ mod tests {
     }
 
     static TESTCASE1: &str = include_str!("testcase1.json");
+    static TESTCASE2: &str = include_str!("testcase2.json");
 
     #[test]
     fn testcase1() {
         let _: ClientFetchResponse = serde_json::from_str(TESTCASE1).unwrap();
+        let _: ClientFetchResponse = serde_json::from_str(TESTCASE2).unwrap();
     }
 }

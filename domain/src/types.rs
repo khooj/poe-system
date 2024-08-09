@@ -458,7 +458,7 @@ impl Mod {
         num.parse().ok()
     }
 
-    pub fn many_by_stat_or_invalid(values: &[&(&str, ModType)]) -> Vec<Self> {
+    pub fn many_by_stat_or_invalid(values: &[(&str, ModType)]) -> Vec<Self> {
         let values2 = values
             .iter()
             .enumerate()
@@ -485,6 +485,32 @@ impl Mod {
             }
         }
         result
+    }
+
+    pub fn many_by_stat(values: &[(&str, ModType)]) -> Vec<Self> {
+        let values2 = values
+            .iter()
+            .enumerate()
+            .map(|e| (e.0, crate::cut_numbers(e.1 .0), e.1 .1))
+            .collect::<Vec<(usize, String, ModType)>>();
+
+        values2
+            .into_iter()
+            .filter_map(|(idx, s, t)| STATS_CUTTED.get(&s).map(|stat_idx| (idx, stat_idx, t)))
+            .map(|(idx, stat_idx, t)| {
+                let text = values[idx].0.to_string();
+                let stat_translation = STATS_CUTTED::get_original_stat(*stat_idx);
+                let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
+                Mod {
+                    stat_translation,
+                    type_: t,
+                    text,
+                    stat_id: STATS_CUTTED::get_stat_id(*stat_idx),
+                    numeric_value,
+                    ..Default::default()
+                }
+            })
+            .collect()
     }
 }
 
@@ -531,7 +557,7 @@ mod tests {
 
     #[test]
     fn mod_parse() {
-        let mods1 = vec![&("75% increased Spell Damage", ModType::Explicit)];
+        let mods1 = vec![("75% increased Spell Damage", ModType::Explicit)];
         let mods2 = Mod::many_by_stat_or_invalid(&mods1);
         assert_eq!(mods2.len(), 1);
         assert_eq!(
@@ -545,5 +571,14 @@ mod tests {
                 ..Default::default()
             }
         )
+    }
+
+    #[test]
+    fn mod_parse_cluster() -> Result<(), anyhow::Error> {
+        let _ = Mod::by_stat(
+            "Added Small Passive skills grant: 1% chance to Dodge Attack Hits",
+            ModType::Implicit,
+        )?;
+        Ok(())
     }
 }

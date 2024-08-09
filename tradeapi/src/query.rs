@@ -103,6 +103,8 @@ struct Filters {
     armour_filters: Option<ArmourFilters>,
     #[serde(skip_serializing_if = "Option::is_none")]
     req_filters: Option<ReqFilters>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    trade_filters: Option<TradeFilters>,
 }
 
 #[derive(Serialize, Default)]
@@ -270,6 +272,31 @@ impl ReqFilters {
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
+pub struct TradeFilters {
+    disabled: bool,
+    filters: HashMap<String, Value>,
+}
+
+impl TradeFilters {
+    pub fn set_account(mut self, acc: &str) -> Self {
+        let v = json!({
+            "input": acc,
+        });
+        self.filters.insert("account".to_string(), v);
+        self
+    }
+
+    pub fn set_sale_type(mut self, opt: &str) -> Self {
+        let v = json!({
+            "option": opt,
+        });
+        self.filters.insert("sale_type".to_string(), v);
+        self
+    }
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "lowercase")]
 struct Query {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     stats: Vec<StatQuery>,
@@ -288,10 +315,11 @@ struct Status {
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]
-enum StatusOption {
+pub enum StatusOption {
     #[default]
     Online,
     Offline,
+    Any,
 }
 
 #[derive(Serialize, Default)]
@@ -358,6 +386,14 @@ impl Builder {
 
     pub fn set_type(&mut self, s: &str) {
         self.query.typ = Some(s.to_string());
+    }
+
+    pub fn set_status(&mut self, status: StatusOption) {
+        self.query.status.option = status;
+    }
+
+    pub fn set_trade_filters(&mut self, filters: TradeFilters) {
+        self.query.filters.trade_filters = Some(filters);
     }
 }
 

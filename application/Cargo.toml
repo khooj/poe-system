@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 domain = { path = "../domain" }
+poeninja = { path = "../poeninja" }
 tradeapi = { path = "../tradeapi" }
 public_stash = { path = "../public_stash" }
 pob = { path = "../pob" }
@@ -22,3 +23,4 @@ clap = { version = "4.4.10", features = ["derive"] }
 timely = "0.12.0"
 futures = "0.3.29"
 itertools = "0.12.0"
+anyhow = "1.0.86"

@@ -1,4 +1,4 @@
-use domain::{Item, ModType, BASE_TYPES};
+use domain::{Item, Mod, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -15,9 +15,8 @@ use nom::{
 use std::num::ParseIntError;
 use std::str::FromStr;
 
-pub(crate) struct ParsedItem<'a> {
+pub(crate) struct ParsedItem {
     pub item: Item,
-    pub mods: Vec<ItemValue<'a>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -196,20 +195,6 @@ fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
             )),
         ),
     )(i)
-    // let (i, (crafted, value)) =
-    //     context("affix", pair(opt(tag("{crafted}")), cut(not_line_ending)))(i)?;
-
-    // Ok((
-    //     i,
-    //     ItemValue::Affix {
-    //         type_: if crafted.is_some() {
-    //             ModType::Crafted
-    //         } else {
-    //             default
-    //         },
-    //         value: value.to_string(),
-    //     },
-    // ))
 }
 
 fn item_value_header<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -256,7 +241,7 @@ fn root<
     Ok((i, header_vals))
 }
 
-pub(crate) fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, ParsedItem<'a>, E>
+pub(crate) fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, ParsedItem, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
@@ -288,11 +273,25 @@ where
         };
     }
 
-    Ok((i, ParsedItem { item, mods }))
+    let mods = mods
+        .into_iter()
+        .map(|m| match m {
+            ItemValue::Affix((s, t)) => (s, t),
+            _ => unreachable!(),
+        })
+        .collect::<Vec<_>>();
+
+    let mods = Mod::many_by_stat(&mods);
+
+    item.mods = mods;
+
+    Ok((i, ParsedItem { item }))
 }
 
 #[cfg(test)]
 mod test {
+    use domain::Mod;
+
     use super::*;
 
     #[test]
@@ -331,70 +330,66 @@ mod test {
         Ok(())
     }
 
-    //     #[test]
-    //     fn simple_pob_item() -> Result<(), anyhow::Error> {
-    //         use nom::error::VerboseError;
-    //         dotenv::dotenv().ok();
-    //         let item = r#"
-    //             Rarity: RARE
-    // Loath Cut
-    // Small Cluster Jewel
-    // Unique ID: c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb
-    // Item Level: 84
-    // LevelReq: 54
-    // Implicits: 2
-    // {crafted}Adds 2 Passive Skills
-    // {crafted}Added Small Passive Skills grant: 1% chance to Dodge Attack Hits
-    // Added Small Passive Skills also grant: +3% to Chaos Resistance
-    // Added Small Passive Skills also grant: +5 to Maximum Energy Shield
-    // Added Small Passive Skills also grant: +5 to Strength
-    // 1 Added Passive Skill is Elegant Form"#;
+    #[test]
+    fn simple_pob_item() -> Result<(), anyhow::Error> {
+        use nom::error::VerboseError;
+        dotenv::dotenv().ok();
+        let item = r#"Rarity: RARE
+Loath Cut
+Small Cluster Jewel
+Unique ID: c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb
+Item Level: 84
+LevelReq: 54
+Implicits: 2
+{crafted}Adds 2 Passive Skills
+{crafted}Added Small Passive Skills grant: 1% chance to Dodge Attack Hits
+Added Small Passive Skills also grant: +3% to Chaos Resistance
+Added Small Passive Skills also grant: +5 to Maximum Energy Shield
+Added Small Passive Skills also grant: +5 to Strength
+1 Added Passive Skill is Elegant Form"#;
 
-    //         let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
-    //         assert_eq!(item.rarity, "RARE");
-    //         assert_eq!(item.name, "Loath Cut");
-    //         assert_eq!(item.base_type, "Small Cluster Jewel");
-    //         assert_eq!(
-    //             item.id,
-    //             "c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb"
-    //         );
-    //         assert_eq!(item.item_lvl, domain::ItemLvl::Yes(84));
-    //         assert_eq!(item.lvl_req, 54);
-    //         assert_eq!(
-    //             item.mods,
-    //             Mod::many_by_stat_or_invalid(&LinkedList::from_iter(
-    //                 [
-    //                     ("Adds 2 Passive Skills", ModType::Implicit),
-    //                     (
-    //                         "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits",
-    //                         ModType::Implicit
-    //                     ),
-    //                     (
-    //                         "Added Small Passive Skills also grant: +3% to Chaos Resistance",
-    //                         ModType::Explicit
-    //                     ),
-    //                     (
-    //                         "Added Small Passive Skills also grant: +5 to Maximum Energy Shield",
-    //                         ModType::Explicit
-    //                     ),
-    //                     (
-    //                         "Added Small Passive Skills also grant: +5 to Strength",
-    //                         ModType::Explicit
-    //                     ),
-    //                     ("1 Added Passive Skill is Elegant Form", ModType::Explicit),
-    //                 ]
-    //                 .into_iter()
-    //             ))
-    //         );
-    //         Ok(())
-    //     }
+        let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
+        assert_eq!(item.item.rarity, "RARE");
+        assert_eq!(item.item.name, "Loath Cut");
+        assert_eq!(item.item.base_type, "Small Cluster Jewel");
+        assert_eq!(
+            item.item.id,
+            "c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb"
+        );
+        assert_eq!(item.item.item_lvl, domain::ItemLvl::Yes(84));
+        assert_eq!(item.item.lvl_req, 54);
+        assert_eq!(
+            item.item.mods,
+            Mod::many_by_stat_or_invalid(&[
+                ("Adds 2 Passive Skills", ModType::Implicit),
+                (
+                    "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits",
+                    ModType::Implicit
+                ),
+                (
+                    "Added Small Passive Skills also grant: +3% to Chaos Resistance",
+                    ModType::Explicit
+                ),
+                (
+                    "Added Small Passive Skills also grant: +5 to Maximum Energy Shield",
+                    ModType::Explicit
+                ),
+                (
+                    "Added Small Passive Skills also grant: +5 to Strength",
+                    ModType::Explicit
+                ),
+                ("1 Added Passive Skill is Elegant Form", ModType::Explicit),
+            ])
+        );
+        Ok(())
+    }
 
-    //     #[test]
-    //     fn pob_item1() -> Result<(), anyhow::Error> {
-    //         use nom::error::VerboseError;
-    //         dotenv::dotenv().ok();
+    // #[test]
+    // fn pob_item1() -> Result<(), anyhow::Error> {
+    //     use nom::error::VerboseError;
+    //     dotenv::dotenv().ok();
 
-    //         let item = r#"
+    //     let item = r#"
     //         			Rarity: MAGIC
     // Experimenter's Silver Flask of Adrenaline
     // Unique ID: c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4
@@ -405,30 +400,30 @@ mod test {
     // 21% increased Movement Speed during Flask effect
     // 38% increased Duration"#;
 
-    //         let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
-    //         assert_eq!(item.rarity, "MAGIC");
-    //         assert_eq!(item.name, "Experimenter's Silver Flask of Adrenaline");
-    //         assert_eq!(item.base_type, "Silver Flask");
-    //         assert_eq!(
-    //             item.id,
-    //             "c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4"
-    //         );
-    //         assert_eq!(item.item_lvl, domain::ItemLvl::Yes(53));
-    //         assert_eq!(item.lvl_req, 22);
-    //         assert_eq!(
-    //             item.mods,
-    //             Mod::many_by_stat_or_invalid(&LinkedList::from_iter(
-    //                 [
-    //                     (
-    //                         "21% increased Movement Speed during Flask effect",
-    //                         ModType::Explicit
-    //                     ),
-    //                     ("38% increased Duration", ModType::Explicit),
-    //                 ]
-    //                 .into_iter()
-    //             )),
-    //         );
+    //     let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
+    //     assert_eq!(item.rarity, "MAGIC");
+    //     assert_eq!(item.name, "Experimenter's Silver Flask of Adrenaline");
+    //     assert_eq!(item.base_type, "Silver Flask");
+    //     assert_eq!(
+    //         item.id,
+    //         "c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4"
+    //     );
+    //     assert_eq!(item.item_lvl, domain::ItemLvl::Yes(53));
+    //     assert_eq!(item.lvl_req, 22);
+    //     assert_eq!(
+    //         item.mods,
+    //         Mod::many_by_stat_or_invalid(&LinkedList::from_iter(
+    //             [
+    //                 (
+    //                     "21% increased Movement Speed during Flask effect",
+    //                     ModType::Explicit
+    //                 ),
+    //                 ("38% increased Duration", ModType::Explicit),
+    //             ]
+    //             .into_iter()
+    //         )),
+    //     );
 
-    //         Ok(())
-    //     }
+    //     Ok(())
+    // }
 }

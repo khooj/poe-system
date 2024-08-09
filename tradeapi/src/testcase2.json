@@ -1,0 +1,2000 @@
+{
+	"result": [
+		{
+			"id": "3385474bfe452f6addc00eaf92aa2e4e658c32fd6d983e5393e073a9cc0f8bbd",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 6,
+					"y": 0
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 7, top 1)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiMzM4NTQ3NGJmZTQ1MmY2YWRkYzAwZWFmOTJhYTJlNGU2NThjMzJmZDZkOTgzZTUzOTNlMDczYTljYzBmOGJiZCIsImRhdCI6ImFiNGFhMGFlMTU1Y2M0N2M1YTU3ODIxOWVlNmNjZmU4IiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.B72-2ka-tAgtgYikLb9a7JgCjR0OKsE0KeeKg8A4Gp4",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "3385474bfe452f6addc00eaf92aa2e4e658c32fd6d983e5393e073a9cc0f8bbd",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Defeat waves of enemies",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0}",
+						"values": [
+							[
+								"Romira's Banquet",
+								10
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"The Putrid Cloister",
+								10
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "ChokingMiasma",
+						"tier": 3
+					},
+					{
+						"type": "Sawblade",
+						"tier": 2
+					},
+					{
+						"type": "ReducedRecovery",
+						"tier": 1
+					},
+					{
+						"type": "UnstoppableMonsters",
+						"tier": 1
+					},
+					{
+						"type": "LethalRareMonsters",
+						"tier": 1
+					},
+					{
+						"type": "ResistantMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Choking Miasma III",
+					"Razor Dance II",
+					"Reduced Recovery",
+					"Unstoppable Monsters",
+					"Lethal Rare Monsters",
+					"Resistant Monsters",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_12812",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_45148",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_5772",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_11559",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_47347",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_25457",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IERlZmVhdCB3YXZlcyBvZiBlbmVtaWVzDQpBcmVhIExldmVsOiA4Mw0KUmVxdWlyZXMgU2FjcmlmaWNlOiBSb21pcmEncyBCYW5xdWV0DQpSZXdhcmQ6IFRoZSBQdXRyaWQgQ2xvaXN0ZXINCi0tLS0tLS0tDQpDaG9raW5nIE1pYXNtYSBJSUkNClJhem9yIERhbmNlIElJDQpSZWR1Y2VkIFJlY292ZXJ5DQpVbnN0b3BwYWJsZSBNb25zdGVycw0KTGV0aGFsIFJhcmUgTW9uc3RlcnMNClJlc2lzdGFudCBNb25zdGVycw0KMTAlIGluY3JlYXNlZCBNb25zdGVyIERhbWFnZQ0KMzAlIG1vcmUgTW9uc3RlciBMaWZlDQotLS0tLS0tLQ0KQ2FuIGJlIHVzZWQgaW4gYSBwZXJzb25hbCBtYXAgZGV2aWNlIHRvIG9wZW4gcG9ydGFscyB0byB0aGUgVHJpYWxtYXN0ZXIncyBEb21haW4gYW5kIGF0dGVtcHQgaGlzIGNoYWxsZW5nZS4gUG9ydGFscyB3aWxsIGNsb3NlIG9uY2UgdGhlIGNoYWxsZW5nZSBiZWdpbnMuDQo="
+				}
+			}
+		},
+		{
+			"id": "da810be6fce297cbb39a2bf971f78618c1400f7a27c1143937334fb75ba4dbe5",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 10,
+					"y": 17
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 11, top 18)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiZGE4MTBiZTZmY2UyOTdjYmIzOWEyYmY5NzFmNzg2MThjMTQwMGY3YTI3YzExNDM5MzczMzRmYjc1YmE0ZGJlNSIsImRhdCI6IjAyODQzYTVlOWZiM2E0N2YzMTI2NzFhZWQwMWQ2MDQyIiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.iR-njXTlqbh9m4dL0w26s-vEi93JjHI_39YGSuuuSdI",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "da810be6fce297cbb39a2bf971f78618c1400f7a27c1143937334fb75ba4dbe5",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Survive",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0}",
+						"values": [
+							[
+								"The Writhing Jar",
+								10
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"The Ivory Tower",
+								10
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "Flamethrower",
+						"tier": 1
+					},
+					{
+						"type": "FrostInfection",
+						"tier": 1
+					},
+					{
+						"type": "Revenant",
+						"tier": 1
+					},
+					{
+						"type": "Sawblade",
+						"tier": 3
+					},
+					{
+						"type": "ElementalTotem",
+						"tier": 1
+					},
+					{
+						"type": "HinderingFlasks",
+						"tier": 1
+					},
+					{
+						"type": "SiphonedCharges",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Raging Dead",
+					"Blistering Cold",
+					"Stalking Ruin",
+					"Razor Dance III",
+					"Totem of Costly Potency",
+					"Hindering Flasks",
+					"Siphoned Charges",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_28673",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_13648",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_7958",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_22941",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_58910",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_27491",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_21966",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN1cnZpdmUNCkFyZWEgTGV2ZWw6IDgzDQpSZXF1aXJlcyBTYWNyaWZpY2U6IFRoZSBXcml0aGluZyBKYXINClJld2FyZDogVGhlIEl2b3J5IFRvd2VyDQotLS0tLS0tLQ0KUmFnaW5nIERlYWQNCkJsaXN0ZXJpbmcgQ29sZA0KU3RhbGtpbmcgUnVpbg0KUmF6b3IgRGFuY2UgSUlJDQpUb3RlbSBvZiBDb3N0bHkgUG90ZW5jeQ0KSGluZGVyaW5nIEZsYXNrcw0KU2lwaG9uZWQgQ2hhcmdlcw0KMTAlIGluY3JlYXNlZCBNb25zdGVyIERhbWFnZQ0KMzAlIG1vcmUgTW9uc3RlciBMaWZlDQotLS0tLS0tLQ0KQ2FuIGJlIHVzZWQgaW4gYSBwZXJzb25hbCBtYXAgZGV2aWNlIHRvIG9wZW4gcG9ydGFscyB0byB0aGUgVHJpYWxtYXN0ZXIncyBEb21haW4gYW5kIGF0dGVtcHQgaGlzIGNoYWxsZW5nZS4gUG9ydGFscyB3aWxsIGNsb3NlIG9uY2UgdGhlIGNoYWxsZW5nZSBiZWdpbnMuDQo="
+				}
+			}
+		},
+		{
+			"id": "0a8f671e3217adc613d6568894c2927e765d59ff7fdc67915250d5765e6761a4",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 4,
+					"y": 10
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 5, top 11)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiMGE4ZjY3MWUzMjE3YWRjNjEzZDY1Njg4OTRjMjkyN2U3NjVkNTlmZjdmZGM2NzkxNTI1MGQ1NzY1ZTY3NjFhNCIsImRhdCI6IjQ3MzNlZWExYjZlYmNlNjY4NzljMGM4YWJlNjI5NTRlIiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.ae5aEA0MOnFSc4oZXSvT-1gly2pnZPeSKzV7coxJXM0",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "0a8f671e3217adc613d6568894c2927e765d59ff7fdc67915250d5765e6761a4",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Survive",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"The Journey",
+								20
+							],
+							[
+								"x2",
+								19
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Divination Cards",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "ChokingMiasma",
+						"tier": 2
+					},
+					{
+						"type": "Flamethrower",
+						"tier": 3
+					},
+					{
+						"type": "FrostInfection",
+						"tier": 1
+					},
+					{
+						"type": "ReducedRecovery",
+						"tier": 1
+					},
+					{
+						"type": "UnstoppableMonsters",
+						"tier": 1
+					},
+					{
+						"type": "OverwhelmingMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Choking Miasma II",
+					"Raging Dead III",
+					"Blistering Cold",
+					"Reduced Recovery",
+					"Unstoppable Monsters",
+					"Overwhelming Monsters",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_54213",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_49977",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_13648",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_5772",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_11559",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_59748",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN1cnZpdmUNCkFyZWEgTGV2ZWw6IDgzDQpSZXF1aXJlcyBTYWNyaWZpY2U6IFRoZSBKb3VybmV5IHgyDQpSZXdhcmQ6IERvdWJsZXMgc2FjcmlmaWNlZCBEaXZpbmF0aW9uIENhcmRzDQotLS0tLS0tLQ0KQ2hva2luZyBNaWFzbWEgSUkNClJhZ2luZyBEZWFkIElJSQ0KQmxpc3RlcmluZyBDb2xkDQpSZWR1Y2VkIFJlY292ZXJ5DQpVbnN0b3BwYWJsZSBNb25zdGVycw0KT3ZlcndoZWxtaW5nIE1vbnN0ZXJzDQoxMCUgaW5jcmVhc2VkIE1vbnN0ZXIgRGFtYWdlDQozMCUgbW9yZSBNb25zdGVyIExpZmUNCi0tLS0tLS0tDQpDYW4gYmUgdXNlZCBpbiBhIHBlcnNvbmFsIG1hcCBkZXZpY2UgdG8gb3BlbiBwb3J0YWxzIHRvIHRoZSBUcmlhbG1hc3RlcidzIERvbWFpbiBhbmQgYXR0ZW1wdCBoaXMgY2hhbGxlbmdlLiBQb3J0YWxzIHdpbGwgY2xvc2Ugb25jZSB0aGUgY2hhbGxlbmdlIGJlZ2lucy4NCg=="
+				}
+			}
+		},
+		{
+			"id": "3c33bf1cb3980fef07e03f610bf114cbb2afc9d0305e7dafc020bb1b29b98408",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 6,
+					"y": 3
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 7, top 4)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiM2MzM2JmMWNiMzk4MGZlZjA3ZTAzZjYxMGJmMTE0Y2JiMmFmYzlkMDMwNWU3ZGFmYzAyMGJiMWIyOWI5ODQwOCIsImRhdCI6IjZlOGVjZGJiZDE0NWU4MjM0OWQ4NjQyNTA5ZGFkMzNmIiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.pbbBm-zYaYJkRFow9rXFQvtlnLOVOMGfEO0CYKRcORI",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "3c33bf1cb3980fef07e03f610bf114cbb2afc9d0305e7dafc020bb1b29b98408",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Survive",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"Vanity",
+								20
+							],
+							[
+								"x5",
+								19
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Divination Cards",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "ChokingMiasma",
+						"tier": 3
+					},
+					{
+						"type": "Flamethrower",
+						"tier": 1
+					},
+					{
+						"type": "CurseAilmentReflection",
+						"tier": 1
+					},
+					{
+						"type": "SharedAuras",
+						"tier": 1
+					},
+					{
+						"type": "PrismaticMonsters",
+						"tier": 1
+					},
+					{
+						"type": "ResistantMonsters",
+						"tier": 1
+					},
+					{
+						"type": "DexterousMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Choking Miasma III",
+					"Raging Dead",
+					"Ailment and Curse Reflection",
+					"Treacherous Auras",
+					"Prismatic Monsters",
+					"Resistant Monsters",
+					"Dexterous Monsters",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_12812",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_28673",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_11872",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_12730",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_39785",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_25457",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_10506",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN1cnZpdmUNCkFyZWEgTGV2ZWw6IDgzDQpSZXF1aXJlcyBTYWNyaWZpY2U6IFZhbml0eSB4NQ0KUmV3YXJkOiBEb3VibGVzIHNhY3JpZmljZWQgRGl2aW5hdGlvbiBDYXJkcw0KLS0tLS0tLS0NCkNob2tpbmcgTWlhc21hIElJSQ0KUmFnaW5nIERlYWQNCkFpbG1lbnQgYW5kIEN1cnNlIFJlZmxlY3Rpb24NClRyZWFjaGVyb3VzIEF1cmFzDQpQcmlzbWF0aWMgTW9uc3RlcnMNClJlc2lzdGFudCBNb25zdGVycw0KRGV4dGVyb3VzIE1vbnN0ZXJzDQoxMCUgaW5jcmVhc2VkIE1vbnN0ZXIgRGFtYWdlDQozMCUgbW9yZSBNb25zdGVyIExpZmUNCi0tLS0tLS0tDQpDYW4gYmUgdXNlZCBpbiBhIHBlcnNvbmFsIG1hcCBkZXZpY2UgdG8gb3BlbiBwb3J0YWxzIHRvIHRoZSBUcmlhbG1hc3RlcidzIERvbWFpbiBhbmQgYXR0ZW1wdCBoaXMgY2hhbGxlbmdlLiBQb3J0YWxzIHdpbGwgY2xvc2Ugb25jZSB0aGUgY2hhbGxlbmdlIGJlZ2lucy4NCg=="
+				}
+			}
+		},
+		{
+			"id": "8c30ccbb5276519f3c17b5097d4819d1d1f7fe17a3450b7e543b0e776f9de068",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 6,
+					"y": 9
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 7, top 10)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiOGMzMGNjYmI1Mjc2NTE5ZjNjMTdiNTA5N2Q0ODE5ZDFkMWY3ZmUxN2EzNDUwYjdlNTQzYjBlNzc2ZjlkZTA2OCIsImRhdCI6IjBmYWFiMDBkYjQ2ZjM0ZGM3ZWQzYzA5OWI0MjFlMzI2IiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.pfpeB7nN45zd4UlfBeL6rAOlTpiHCF2bLBKDhcLebtc",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "8c30ccbb5276519f3c17b5097d4819d1d1f7fe17a3450b7e543b0e776f9de068",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Protect the Altar",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"Orb of Annulment",
+								18
+							],
+							[
+								"x4",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Currency",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "ChokingMiasma",
+						"tier": 3
+					},
+					{
+						"type": "FrostInfection",
+						"tier": 3
+					},
+					{
+						"type": "LimitedFlasks",
+						"tier": 1
+					},
+					{
+						"type": "LightningDamageFromMana",
+						"tier": 1
+					},
+					{
+						"type": "PrismaticMonsters",
+						"tier": 1
+					},
+					{
+						"type": "DexterousMonsters",
+						"tier": 1
+					},
+					{
+						"type": "SiphoningMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Choking Miasma III",
+					"Blistering Cold III",
+					"Drought",
+					"Lightning Damage from Mana Costs",
+					"Prismatic Monsters",
+					"Dexterous Monsters",
+					"Siphoning Monsters",
+					"20% increased Monster Damage",
+					"70% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R3",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R3",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_12812",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_28497",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_15668",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_58901",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_39785",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_10506",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_45921",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFByb3RlY3QgdGhlIEFsdGFyDQpBcmVhIExldmVsOiA4Mw0KUmVxdWlyZXMgU2FjcmlmaWNlOiBPcmIgb2YgQW5udWxtZW50IHg0DQpSZXdhcmQ6IERvdWJsZXMgc2FjcmlmaWNlZCBDdXJyZW5jeQ0KLS0tLS0tLS0NCkNob2tpbmcgTWlhc21hIElJSQ0KQmxpc3RlcmluZyBDb2xkIElJSQ0KRHJvdWdodA0KTGlnaHRuaW5nIERhbWFnZSBmcm9tIE1hbmEgQ29zdHMNClByaXNtYXRpYyBNb25zdGVycw0KRGV4dGVyb3VzIE1vbnN0ZXJzDQpTaXBob25pbmcgTW9uc3RlcnMNCjIwJSBpbmNyZWFzZWQgTW9uc3RlciBEYW1hZ2UNCjcwJSBtb3JlIE1vbnN0ZXIgTGlmZQ0KLS0tLS0tLS0NCkNhbiBiZSB1c2VkIGluIGEgcGVyc29uYWwgbWFwIGRldmljZSB0byBvcGVuIHBvcnRhbHMgdG8gdGhlIFRyaWFsbWFzdGVyJ3MgRG9tYWluIGFuZCBhdHRlbXB0IGhpcyBjaGFsbGVuZ2UuIFBvcnRhbHMgd2lsbCBjbG9zZSBvbmNlIHRoZSBjaGFsbGVuZ2UgYmVnaW5zLg0K"
+				}
+			}
+		},
+		{
+			"id": "04352952a1bb27e5edebb8e7732e9ca24e148c3254ec5c20b3a76910fd8e926d",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 3,
+					"y": 15
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 4, top 16)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiMDQzNTI5NTJhMWJiMjdlNWVkZWJiOGU3NzMyZTljYTI0ZTE0OGMzMjU0ZWM1YzIwYjNhNzY5MTBmZDhlOTI2ZCIsImRhdCI6IjU1Y2FiOTY2OGVmNDcyZTE1MzgxNjhhM2Q5Zjg3NzkwIiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.DJIaKf0kr3ZxK3WDt-TaGjGzhG2tAZx7op7an7qpLCw",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "04352952a1bb27e5edebb8e7732e9ca24e148c3254ec5c20b3a76910fd8e926d",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Stand in the Stone Circles",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"Blessed Orb",
+								18
+							],
+							[
+								"x20",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Currency",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "FrostInfection",
+						"tier": 1
+					},
+					{
+						"type": "ElementalTotem",
+						"tier": 1
+					},
+					{
+						"type": "EscalatingDamageTaken",
+						"tier": 1
+					},
+					{
+						"type": "EscalatingMonsterSpeed",
+						"tier": 1
+					},
+					{
+						"type": "SharedAuras",
+						"tier": 1
+					},
+					{
+						"type": "ShieldingMonsters",
+						"tier": 1
+					},
+					{
+						"type": "DeadlyMonsters",
+						"tier": 1
+					},
+					{
+						"type": "PrismaticMonsters",
+						"tier": 1
+					},
+					{
+						"type": "SiphoningMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Blistering Cold",
+					"Totem of Costly Potency",
+					"Escalating Damage Taken",
+					"Escalating Monster Speed",
+					"Treacherous Auras",
+					"Shielding Monsters",
+					"Deadly Monsters",
+					"Prismatic Monsters",
+					"Siphoning Monsters",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_13648",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_58910",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_57621",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_7961",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_12730",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_36548",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_38838",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_39785",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_45921",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN0YW5kIGluIHRoZSBTdG9uZSBDaXJjbGVzDQpBcmVhIExldmVsOiA4Mw0KUmVxdWlyZXMgU2FjcmlmaWNlOiBCbGVzc2VkIE9yYiB4MjANClJld2FyZDogRG91YmxlcyBzYWNyaWZpY2VkIEN1cnJlbmN5DQotLS0tLS0tLQ0KQmxpc3RlcmluZyBDb2xkDQpUb3RlbSBvZiBDb3N0bHkgUG90ZW5jeQ0KRXNjYWxhdGluZyBEYW1hZ2UgVGFrZW4NCkVzY2FsYXRpbmcgTW9uc3RlciBTcGVlZA0KVHJlYWNoZXJvdXMgQXVyYXMNClNoaWVsZGluZyBNb25zdGVycw0KRGVhZGx5IE1vbnN0ZXJzDQpQcmlzbWF0aWMgTW9uc3RlcnMNClNpcGhvbmluZyBNb25zdGVycw0KMTAlIGluY3JlYXNlZCBNb25zdGVyIERhbWFnZQ0KMzAlIG1vcmUgTW9uc3RlciBMaWZlDQotLS0tLS0tLQ0KQ2FuIGJlIHVzZWQgaW4gYSBwZXJzb25hbCBtYXAgZGV2aWNlIHRvIG9wZW4gcG9ydGFscyB0byB0aGUgVHJpYWxtYXN0ZXIncyBEb21haW4gYW5kIGF0dGVtcHQgaGlzIGNoYWxsZW5nZS4gUG9ydGFscyB3aWxsIGNsb3NlIG9uY2UgdGhlIGNoYWxsZW5nZSBiZWdpbnMuDQo="
+				}
+			}
+		},
+		{
+			"id": "fc8cfbae941216e5daeb245eb81886f9b528498b144f0b73c60f37f412b2cf9a",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 3,
+					"y": 0
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 4, top 1)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiZmM4Y2ZiYWU5NDEyMTZlNWRhZWIyNDVlYjgxODg2ZjliNTI4NDk4YjE0NGYwYjczYzYwZjM3ZjQxMmIyY2Y5YSIsImRhdCI6ImY1NTA3NmQ2NTM4ZDg5ZWUxYWUyOTNjYzNkZWNiNmU1IiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.2xLlKEJ10u7wfWVDZMhL8cpQa1kKbXWfV7v0koINtJA",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "fc8cfbae941216e5daeb245eb81886f9b528498b144f0b73c60f37f412b2cf9a",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Stand in the Stone Circles",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"Orb of Scouring",
+								18
+							],
+							[
+								"x15",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Currency",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "FrostInfection",
+						"tier": 2
+					},
+					{
+						"type": "LessenedReach",
+						"tier": 1
+					},
+					{
+						"type": "BuffsExpireFaster",
+						"tier": 1
+					},
+					{
+						"type": "EscalatingDamageTaken",
+						"tier": 1
+					},
+					{
+						"type": "LightningDamageFromMana",
+						"tier": 1
+					},
+					{
+						"type": "ResistantMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Blistering Cold II",
+					"Lessened Reach",
+					"Buffs Expire Faster",
+					"Escalating Damage Taken",
+					"Lightning Damage from Mana Costs",
+					"Resistant Monsters"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R1",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R1",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_62444",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_50320",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_29421",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_57621",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_58901",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_25457",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN0YW5kIGluIHRoZSBTdG9uZSBDaXJjbGVzDQpBcmVhIExldmVsOiA4Mw0KUmVxdWlyZXMgU2FjcmlmaWNlOiBPcmIgb2YgU2NvdXJpbmcgeDE1DQpSZXdhcmQ6IERvdWJsZXMgc2FjcmlmaWNlZCBDdXJyZW5jeQ0KLS0tLS0tLS0NCkJsaXN0ZXJpbmcgQ29sZCBJSQ0KTGVzc2VuZWQgUmVhY2gNCkJ1ZmZzIEV4cGlyZSBGYXN0ZXINCkVzY2FsYXRpbmcgRGFtYWdlIFRha2VuDQpMaWdodG5pbmcgRGFtYWdlIGZyb20gTWFuYSBDb3N0cw0KUmVzaXN0YW50IE1vbnN0ZXJzDQotLS0tLS0tLQ0KQ2FuIGJlIHVzZWQgaW4gYSBwZXJzb25hbCBtYXAgZGV2aWNlIHRvIG9wZW4gcG9ydGFscyB0byB0aGUgVHJpYWxtYXN0ZXIncyBEb21haW4gYW5kIGF0dGVtcHQgaGlzIGNoYWxsZW5nZS4gUG9ydGFscyB3aWxsIGNsb3NlIG9uY2UgdGhlIGNoYWxsZW5nZSBiZWdpbnMuDQo="
+				}
+			}
+		},
+		{
+			"id": "c510ce076b934a34ed82c60c9468023d2792e3cf0065b514b7b4ed7828a204eb",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 0,
+					"y": 12
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 1, top 13)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiYzUxMGNlMDc2YjkzNGEzNGVkODJjNjBjOTQ2ODAyM2QyNzkyZTNjZjAwNjViNTE0YjdiNGVkNzgyOGEyMDRlYiIsImRhdCI6IjAzNDBlZTQzODRkZDVkNGZhMDRmY2FkNDA1ODU2NTVhIiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.c7Oe7uPXjH658eCljRkflSQl3evkf3F0D3iyHs6AWNk",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "c510ce076b934a34ed82c60c9468023d2792e3cf0065b514b7b4ed7828a204eb",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Survive",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"Chaos Orb",
+								18
+							],
+							[
+								"x20",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Currency",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "StormcallerRunes",
+						"tier": 2
+					},
+					{
+						"type": "FrostInfection",
+						"tier": 2
+					},
+					{
+						"type": "ReducedRecovery",
+						"tier": 1
+					},
+					{
+						"type": "LessCooldownRecovery",
+						"tier": 1
+					},
+					{
+						"type": "SiphonedCharges",
+						"tier": 1
+					},
+					{
+						"type": "PreciseMonsters",
+						"tier": 1
+					},
+					{
+						"type": "DeadlyMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Stormcaller Runes II",
+					"Blistering Cold II",
+					"Reduced Recovery",
+					"Less Cooldown Recovery",
+					"Siphoned Charges",
+					"Precise Monsters",
+					"Deadly Monsters",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_13955",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_62444",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_5772",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_39295",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_21966",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_33891",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_38838",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN1cnZpdmUNCkFyZWEgTGV2ZWw6IDgzDQpSZXF1aXJlcyBTYWNyaWZpY2U6IENoYW9zIE9yYiB4MjANClJld2FyZDogRG91YmxlcyBzYWNyaWZpY2VkIEN1cnJlbmN5DQotLS0tLS0tLQ0KU3Rvcm1jYWxsZXIgUnVuZXMgSUkNCkJsaXN0ZXJpbmcgQ29sZCBJSQ0KUmVkdWNlZCBSZWNvdmVyeQ0KTGVzcyBDb29sZG93biBSZWNvdmVyeQ0KU2lwaG9uZWQgQ2hhcmdlcw0KUHJlY2lzZSBNb25zdGVycw0KRGVhZGx5IE1vbnN0ZXJzDQoxMCUgaW5jcmVhc2VkIE1vbnN0ZXIgRGFtYWdlDQozMCUgbW9yZSBNb25zdGVyIExpZmUNCi0tLS0tLS0tDQpDYW4gYmUgdXNlZCBpbiBhIHBlcnNvbmFsIG1hcCBkZXZpY2UgdG8gb3BlbiBwb3J0YWxzIHRvIHRoZSBUcmlhbG1hc3RlcidzIERvbWFpbiBhbmQgYXR0ZW1wdCBoaXMgY2hhbGxlbmdlLiBQb3J0YWxzIHdpbGwgY2xvc2Ugb25jZSB0aGUgY2hhbGxlbmdlIGJlZ2lucy4NCg=="
+				}
+			}
+		},
+		{
+			"id": "268269244ad0d250862663bd513eabb69511c567afc71773ea862282ea8fea14",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 7,
+					"y": 22
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 8, top 23)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiMjY4MjY5MjQ0YWQwZDI1MDg2MjY2M2JkNTEzZWFiYjY5NTExYzU2N2FmYzcxNzczZWE4NjIyODJlYThmZWExNCIsImRhdCI6Ijk3MjY2ZGJhZjBiNDczZjNlZGIyOGI1ZTk1ZDhmYzU4IiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.Avk09cZxF2alRqPWTMj8MqLe2TsNiBaVJnTuFSR5Mh8",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "268269244ad0d250862663bd513eabb69511c567afc71773ea862282ea8fea14",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Stand in the Stone Circles",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"The Spoiled Prince",
+								20
+							],
+							[
+								"x2",
+								19
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Divination Cards",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "ChokingMiasma",
+						"tier": 1
+					},
+					{
+						"type": "Flamethrower",
+						"tier": 4
+					},
+					{
+						"type": "BuffsExpireFaster",
+						"tier": 1
+					},
+					{
+						"type": "SharedAuras",
+						"tier": 1
+					},
+					{
+						"type": "OccasionalImpotence",
+						"tier": 1
+					},
+					{
+						"type": "OverwhelmingMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Choking Miasma",
+					"Raging Dead IV",
+					"Buffs Expire Faster",
+					"Treacherous Auras",
+					"Occasional Impotence",
+					"Overwhelming Monsters",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_40225",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_24954",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_29421",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_12730",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_65051",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_59748",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN0YW5kIGluIHRoZSBTdG9uZSBDaXJjbGVzDQpBcmVhIExldmVsOiA4Mw0KUmVxdWlyZXMgU2FjcmlmaWNlOiBUaGUgU3BvaWxlZCBQcmluY2UgeDINClJld2FyZDogRG91YmxlcyBzYWNyaWZpY2VkIERpdmluYXRpb24gQ2FyZHMNCi0tLS0tLS0tDQpDaG9raW5nIE1pYXNtYQ0KUmFnaW5nIERlYWQgSVYNCkJ1ZmZzIEV4cGlyZSBGYXN0ZXINClRyZWFjaGVyb3VzIEF1cmFzDQpPY2Nhc2lvbmFsIEltcG90ZW5jZQ0KT3ZlcndoZWxtaW5nIE1vbnN0ZXJzDQoxMCUgaW5jcmVhc2VkIE1vbnN0ZXIgRGFtYWdlDQozMCUgbW9yZSBNb25zdGVyIExpZmUNCi0tLS0tLS0tDQpDYW4gYmUgdXNlZCBpbiBhIHBlcnNvbmFsIG1hcCBkZXZpY2UgdG8gb3BlbiBwb3J0YWxzIHRvIHRoZSBUcmlhbG1hc3RlcidzIERvbWFpbiBhbmQgYXR0ZW1wdCBoaXMgY2hhbGxlbmdlLiBQb3J0YWxzIHdpbGwgY2xvc2Ugb25jZSB0aGUgY2hhbGxlbmdlIGJlZ2lucy4NCg=="
+				}
+			}
+		},
+		{
+			"id": "2282a2d33ce62efcf3a2c204239e35673dc1b8059965dd4dc6e49dcc1c461542",
+			"listing": {
+				"method": "psapi",
+				"indexed": "2024-08-09T09:24:13Z",
+				"stash": {
+					"name": "pub",
+					"x": 10,
+					"y": 13
+				},
+				"whisper": "@khooj_not_hehe Hi, I would like to buy your Inscribed Ultimatum in Settlers (stash tab \"pub\"; position: left 11, top 14)",
+				"whisper_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZWZmNDFmZmEwM2M0NWQxNGJlOGVjNTRlM2I0NmUwMyIsImlzcyI6Im5RbVdKWjJJMCIsImF1ZCI6Ijc0NDY4Y2M0LTJlMjEtNGRjNS1iY2E1LTRmNjFlZGY1MzZhYSIsImRzdCI6Imtob29qX25vdF9oZWhlIiwibG9jIjoiZW5fVVMiLCJ0b2siOiJpdGVtIiwic3ViIjoiMjI4MmEyZDMzY2U2MmVmY2YzYTJjMjA0MjM5ZTM1NjczZGMxYjgwNTk5NjVkZDRkYzZlNDlkY2MxYzQ2MTU0MiIsImRhdCI6ImNiOTY1NzEyYTZjMjVjNjE5ZTZlZjJhNDRmMjNlNWY2IiwiaWF0IjoxNzIzMTk1NTYwLCJleHAiOjE3MjMxOTU4NjB9.kndZEN2i6ByuS5vfvNOmEdZIkd6WBUUTg6YRSmJojbw",
+				"account": {
+					"name": "Khooj",
+					"online": {
+						"league": "Settlers"
+					},
+					"lastCharacterName": "khooj_not_hehe",
+					"language": "en_US",
+					"realm": "pc",
+					"current": true
+				},
+				"price": null
+			},
+			"item": {
+				"verified": true,
+				"w": 1,
+				"h": 1,
+				"icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9VbHRpbWF0dW1UcmlhbEJhc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b65f1edffb/UltimatumTrialBase.png",
+				"league": "Settlers",
+				"id": "2282a2d33ce62efcf3a2c204239e35673dc1b8059965dd4dc6e49dcc1c461542",
+				"name": "",
+				"typeLine": "Inscribed Ultimatum",
+				"baseType": "Inscribed Ultimatum",
+				"ilvl": 0,
+				"identified": true,
+				"properties": [
+					{
+						"name": "Challenge",
+						"values": [
+							[
+								"Survive",
+								0
+							]
+						],
+						"displayMode": 0
+					},
+					{
+						"name": "Area Level",
+						"values": [
+							[
+								"83",
+								0
+							]
+						],
+						"displayMode": 0,
+						"type": 34
+					},
+					{
+						"name": "Requires Sacrifice: {0} {1}",
+						"values": [
+							[
+								"Vaal Orb",
+								18
+							],
+							[
+								"x20",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 51
+					},
+					{
+						"name": "Reward: {0}",
+						"values": [
+							[
+								"Doubles sacrificed Currency",
+								0
+							]
+						],
+						"displayMode": 3,
+						"type": 52
+					}
+				],
+				"ultimatumMods": [
+					{
+						"type": "ChokingMiasma",
+						"tier": 3
+					},
+					{
+						"type": "Revenant",
+						"tier": 3
+					},
+					{
+						"type": "ElementalTotem",
+						"tier": 1
+					},
+					{
+						"type": "OverwhelmingMonsters",
+						"tier": 1
+					},
+					{
+						"type": "DeadlyMonsters",
+						"tier": 1
+					}
+				],
+				"explicitMods": [
+					"Choking Miasma III",
+					"Stalking Ruin III",
+					"Totem of Costly Potency",
+					"Overwhelming Monsters",
+					"Deadly Monsters",
+					"10% increased Monster Damage",
+					"30% more Monster Life"
+				],
+				"descrText": "Can be used in a personal map device to open portals to the Trialmaster's Domain and attempt his challenge. Portals will close once the challenge begins.",
+				"frameType": 5,
+				"extended": {
+					"mods": {
+						"explicit": [
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							},
+							{
+								"name": "",
+								"tier": "R2",
+								"magnitudes": null
+							}
+						]
+					},
+					"hashes": {
+						"explicit": [
+							[
+								"ultimatum.umod_12812",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_47172",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_58910",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_59748",
+								[
+									null
+								]
+							],
+							[
+								"ultimatum.umod_38838",
+								[
+									null
+								]
+							],
+							[
+								"explicit.stat_1890519597",
+								[
+									0
+								]
+							],
+							[
+								"explicit.stat_95249895",
+								[
+									1
+								]
+							]
+						]
+					},
+					"text": "SXRlbSBDbGFzczogTWlzYyBNYXAgSXRlbXMNClJhcml0eTogQ3VycmVuY3kNCkluc2NyaWJlZCBVbHRpbWF0dW0NCi0tLS0tLS0tDQpDaGFsbGVuZ2U6IFN1cnZpdmUNCkFyZWEgTGV2ZWw6IDgzDQpSZXF1aXJlcyBTYWNyaWZpY2U6IFZhYWwgT3JiIHgyMA0KUmV3YXJkOiBEb3VibGVzIHNhY3JpZmljZWQgQ3VycmVuY3kNCi0tLS0tLS0tDQpDaG9raW5nIE1pYXNtYSBJSUkNClN0YWxraW5nIFJ1aW4gSUlJDQpUb3RlbSBvZiBDb3N0bHkgUG90ZW5jeQ0KT3ZlcndoZWxtaW5nIE1vbnN0ZXJzDQpEZWFkbHkgTW9uc3RlcnMNCjEwJSBpbmNyZWFzZWQgTW9uc3RlciBEYW1hZ2UNCjMwJSBtb3JlIE1vbnN0ZXIgTGlmZQ0KLS0tLS0tLS0NCkNhbiBiZSB1c2VkIGluIGEgcGVyc29uYWwgbWFwIGRldmljZSB0byBvcGVuIHBvcnRhbHMgdG8gdGhlIFRyaWFsbWFzdGVyJ3MgRG9tYWluIGFuZCBhdHRlbXB0IGhpcyBjaGFsbGVuZ2UuIFBvcnRhbHMgd2lsbCBjbG9zZSBvbmNlIHRoZSBjaGFsbGVuZ2UgYmVnaW5zLg0K"
+				}
+			}
+		}
+	]
+}

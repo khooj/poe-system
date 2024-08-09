@@ -135,24 +135,21 @@ impl<'a> PobDocument<'a> {
             }
         }
 
-        let mut mods = vec![];
-        for item in items.values() {
-            for i in &item.mods {
-                if let ItemValue::Affix(v ) = i {
-                    mods.push(v);
-                }
-            }
-        }
+        // let mut mods = vec![];
+        // for item in items.values() {
+        //     for i in &item.mods {
+        //         if let ItemValue::Affix(v ) = i {
+        //             mods.push(v);
+        //         }
+        //     }
+        // }
 
-        let mods_processed = Mod::many_by_stat_or_invalid(&mods);
+        // let mods_processed = Mod::many_by_stat_or_invalid(&mods);
         let mut items_processed = HashMap::with_capacity(items.len());
-        let mut mods_processed_iter = mods_processed.into_iter();
+        // let mut mods_processed_iter = mods_processed.into_iter();
 
         for (ii, parsed_item) in items {
-            let mut item = parsed_item.item;
-            for _ in parsed_item.mods {
-                item.mods.push(mods_processed_iter.next().unwrap());
-            }
+            let item = parsed_item.item;
             items_processed.entry(ii).or_insert(item);
         }
 

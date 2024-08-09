@@ -92,11 +92,11 @@ pub enum ItemCost {
 }
 
 fn parse_price(listing: ClientFetchListing) -> ItemCost {
-    let price = listing.price.amount;
-    match listing.price.currency.as_str() {
+    let price = listing.price.as_ref().unwrap().amount;
+    match listing.price.as_ref().unwrap().currency.as_str() {
         "divine" => ItemCost::Divine(price),
         "chaos" => ItemCost::Chaos(price),
-        _ => ItemCost::Another(listing.price.currency, price),
+        _ => ItemCost::Another(listing.price.as_ref().unwrap().currency.clone(), price),
     }
 }
 
@@ -118,7 +118,7 @@ impl CalculatingState {
         let pob = Pob::from_pastebin_data(data)?;
         let poesessid = env::var("POESESSID").unwrap();
         let client = Client::new(
-            "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0".to_string(),
+            "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0",
             &poesessid,
             "Standard",
         );
