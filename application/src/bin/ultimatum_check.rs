@@ -109,6 +109,34 @@ fn process_poeninja_resp(items: Vec<Object>) -> HashMap<String, Data> {
     res
 }
 
+struct EveryNElements<T> {
+    n: usize,
+    iter: T,
+}
+
+impl<T, K> Iterator for EveryNElements<T>
+where T: Iterator<Item = K> 
+{
+    type Item = Vec<K>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut v = Vec::with_capacity(self.n);
+        for _ in 0..self.n {
+            let i = self.iter.next();
+            if i.is_some() {
+                v.push(i.unwrap());
+            } else {
+                break;
+            }
+        }
+        if v.is_empty() {
+            None
+        } else {
+            Some(v)
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Args::parse();
@@ -127,10 +155,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("fetching ultimatums from trade search");
     let search_res = trade_client.get_search_id(&builder).await?;
-    let fetch_res = trade_client.fetch_results(search_res.result.iter().take(5).cloned().collect(), &search_res.id).await?;
-    let ultimatums: Vec<_> = fetch_res.result.into_iter().filter_map(|e| map_ultimatum(e.item)).collect();
-
-    println!("ultimatums: {}", ultimatums.len());
+    let it = EveryNElements { n: 5, iter: search_res.result.iter() };
+    let mut ultimatums = Vec::with_capacity(200);
+    for els in it {
+        println!("fetching next elements from trade");
+        //println!("debug: els: {:?}", els);
+        let fetch_res = trade_client.fetch_results(els.into_iter().cloned().collect(), &search_res.id).await?;
+        let m = fetch_res.result.into_iter().filter_map(|e| map_ultimatum(e.item));
+        ultimatums.extend(m);
+        println!("ultimatums: {}", ultimatums.len());
+    }
 
     let mut client = Client::new("Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0", &poesessid, "Settlers");
     let divcards = client.get_items("DivinationCard").await.unwrap().lines;
@@ -138,14 +172,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let uniques = [
         "UniqueWeapon",
         "UniqueArmour",
-        //"UniqueAccessory",
-        //"UniqueFlask",
-        //"UniqueJewel",
+        "UniqueAccessory",
+        "UniqueFlask",
+        "UniqueJewel",
     ];
 
     println!("fetching data from poe.ninja");
     let mut uniques_res = vec![];
     for i in uniques {
+        println!("fetching {}", i);
         let resp = client.get_items(i).await.unwrap();
         uniques_res.extend(resp.lines);
     }
