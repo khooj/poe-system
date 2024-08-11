@@ -34,8 +34,8 @@ pub struct ClientFetchListing {
     pub method: String,
     pub indexed: String,
     pub stash: Option<StashInfo>,
-    pub whisper: String,
-    pub whisper_token: String,
+    pub whisper: Option<String>,
+    pub whisper_token: Option<String>,
     pub account: AccountInfo,
     pub price: Option<PriceInfo>,
     #[serde(flatten)]
@@ -55,7 +55,7 @@ pub struct StashInfo {
 pub struct AccountInfo {
     pub name: String,
     #[serde(rename = "lastCharacterName")]
-    pub last_character_name: String,
+    pub last_character_name: Option<String>,
     pub realm: String,
 }
 

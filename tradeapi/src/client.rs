@@ -1,3 +1,5 @@
+use std::time::{Duration, SystemTime};
+
 use crate::limits::{Limits, MultipleLimits};
 use crate::models::{ClientFetchResponse, ClientSearchResponse};
 use crate::query::Builder;
@@ -8,8 +10,8 @@ use tracing::{debug, error};
 
 #[derive(Error, Debug)]
 pub enum ClientError {
-    #[error("try on next cycle")]
-    NextCycle,
+    #[error("too many requests from endpoint")]
+    TooManyRequestsOrSimilar,
     #[error("reqwest error: {0}")]
     ReqwestError(#[from] reqwest::Error),
     #[error("failed check: {0}")]
@@ -26,6 +28,8 @@ pub struct Client {
     fetch_limiter: MultipleLimits,
     league: String,
     failed_check: Option<String>,
+    wait_time_on_error: Duration,
+    last_wait: SystemTime,
 }
 
 impl Client {
@@ -49,7 +53,13 @@ impl Client {
             fetch_limiter: MultipleLimits::default(),
             league: league.to_string(),
             failed_check: None,
+            wait_time_on_error: Duration::from_secs(5),
+            last_wait: SystemTime::now(),
         }
+    }
+
+    pub fn set_wait_time(&mut self, d: Duration) {
+        self.wait_time_on_error = d;
     }
 
     async fn make_limiter_request<T>(
@@ -58,6 +68,8 @@ impl Client {
         limiter: &mut MultipleLimits,
         req: Request,
         limit_policy: &str,
+        last_wait: &mut SystemTime,
+        wait_time_on_error: &Duration,
     ) -> Result<T, ClientError>
     where
         for<'de> T: serde::Deserialize<'de>,
@@ -65,6 +77,11 @@ impl Client {
         if failed_check.is_some() {
             return Err(ClientError::FailedCheck(failed_check.clone().unwrap()));
         }
+
+        if last_wait.elapsed().is_err() {
+            return Err(ClientError::TooManyRequestsOrSimilar);
+        }
+
         limiter.until_ready().await;
 
         let resp = client.execute(req).await?;
@@ -125,8 +142,10 @@ impl Client {
         let st = resp.status();
         match st {
             StatusCode::TOO_MANY_REQUESTS => {
-                // should be already handled
-                return Err(ClientError::NextCycle);
+                *last_wait = SystemTime::now()
+                    .checked_add(wait_time_on_error.clone())
+                    .expect("cannot set timeout for next call");
+                return Err(ClientError::TooManyRequestsOrSimilar);
             }
             x if x.is_success() => {}
             x => return Err(ClientError::StatusCode(x.as_u16())),
@@ -154,6 +173,8 @@ impl Client {
             &mut self.search_limiter,
             req,
             "trade-search-request-limit",
+            &mut self.last_wait,
+            &self.wait_time_on_error,
         )
         .await
     }
@@ -192,6 +213,8 @@ impl Client {
             &mut self.fetch_limiter,
             req,
             "trade-fetch-request-limit",
+            &mut self.last_wait,
+            &self.wait_time_on_error,
         )
         .await
     }
