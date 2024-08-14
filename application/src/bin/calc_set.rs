@@ -1,4 +1,4 @@
-use application::{CalculateBuildError, CalculatingState, CompareOption};
+use application::calc_set_shared::{CalculateBuildError, CalculatingState, CompareOption};
 use clap::Parser;
 use std::io::prelude::*;
 

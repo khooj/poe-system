@@ -45,7 +45,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         search_res.result.len(),
         search_res.total
     );
-    return Ok(());
     let it = EveryNElements::new(10, search_res.result.iter());
     let mut ultimatums = Vec::with_capacity(200);
     for els in it {
