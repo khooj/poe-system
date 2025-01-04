@@ -6,12 +6,20 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      rust-overlay,
+      flake-utils,
+      ...
+    }:
     let
       myapp = "poe-system";
       rust-version = "1.77.2";
     in
-    flake-utils.lib.eachDefaultSystem (system:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         overlays = [ rust-overlay.overlays.default ];
         pkgs = import nixpkgs { inherit system overlays; };
@@ -19,9 +27,12 @@
 
         buildInputs = with pkgs; [
           (rust-bin.stable.${rust-version}.default.override {
-              extensions =
-                [ "rust-src" "llvm-tools-preview" "rust-analysis" ];
-              targets = [ "wasm32-unknown-unknown" ];
+            extensions = [
+              "rust-src"
+              "llvm-tools-preview"
+              "rust-analysis"
+            ];
+            targets = [ "wasm32-unknown-unknown" ];
           })
           trunk
 
@@ -50,8 +61,12 @@
           webkitgtk
           librsvg
           hashrat
+          libarchive
         ];
-        nativeBuildInputs = with pkgs; [ pkg-config nixpkgs-fmt ];
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+          nixpkgs-fmt
+        ];
         libs = with pkgs; [
           webkitgtk
           gtk3
@@ -67,7 +82,8 @@
 
       in
       rec {
-        devShell = with pkgs;
+        devShell =
+          with pkgs;
           mkShell {
             name = "rust";
             buildInputs = [ ] ++ buildInputs;
@@ -77,5 +93,6 @@
               export PATH=$PATH:$HOME/.cargo/bin:$PWD/app/node_modules/.bin
             '';
           };
-      });
+      }
+    );
 }

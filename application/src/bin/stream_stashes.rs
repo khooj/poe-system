@@ -2,7 +2,7 @@ use compress_tools::{list_archive_files, uncompress_archive_file};
 use futures::future::ok;
 use std::env::args;
 use std::fs::File;
-use std::io::{BufWriter, Read, Seek, Write};
+use std::io::{BufReader, BufWriter, Cursor, Read, Seek, Write};
 
 const NEXT_CHANGE_LINE: &str = "\"next_change_id\"";
 
@@ -14,15 +14,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let mut src = File::open(&args[1])?;
-    let files = list_archive_files(&src)?;
+    let mut archive = Vec::with_capacity(src.metadata().unwrap().len() as usize);
+    src.read_to_end(&mut archive)?;
+    let mut arc_buf = Cursor::new(&archive);
+    let files = list_archive_files(&mut arc_buf)?;
     //println!("{:?}", files);
     let mut buf = vec![];
 
     let mut q = Some("index.json".to_string());
     while let Some(f) = q.take() {
         buf.clear();
-        src.seek(std::io::SeekFrom::Start(0))?;
-        uncompress_archive_file(&mut src, &mut buf, &f)?;
+        arc_buf.seek(std::io::SeekFrom::Start(0))?;
+        uncompress_archive_file(&mut arc_buf, &mut buf, &f)?;
         let s = String::from_utf8(buf.clone())?;
         if let Some(mut idx) = s.find(NEXT_CHANGE_LINE) {
             idx += NEXT_CHANGE_LINE.len();

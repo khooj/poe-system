@@ -394,6 +394,7 @@ dependencies = [
  "anyhow",
  "clap",
  "clipboard",
+ "compress-tools",
  "crossterm",
  "domain",
  "futures",
@@ -872,6 +873,18 @@ name = "colorchoice"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
+
+[[package]]
+name = "compress-tools"
+version = "0.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecbcea9a172acabd98f272919faf0b1830a2ccec90d518d67c5eb13742e769a7"
+dependencies = [
+ "derive_more",
+ "libc",
+ "pkg-config",
+ "vcpkg",
+]
 
 [[package]]
 name = "concurrent-queue"
