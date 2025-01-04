@@ -1,4 +1,5 @@
 use compress_tools::{list_archive_files, uncompress_archive_file};
+use core::str;
 use futures::future::ok;
 use std::env::args;
 use std::fs::File;
@@ -19,14 +20,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut arc_buf = Cursor::new(&archive);
     let files = list_archive_files(&mut arc_buf)?;
     //println!("{:?}", files);
-    let mut buf = vec![];
-
+    let mut buf = Vec::with_capacity(10 * 1024 * 1024);
     let mut q = Some("index.json".to_string());
+    let mut stdout = std::io::stdout();
     while let Some(f) = q.take() {
         buf.clear();
         arc_buf.seek(std::io::SeekFrom::Start(0))?;
-        uncompress_archive_file(&mut arc_buf, &mut buf, &f)?;
-        let s = String::from_utf8(buf.clone())?;
+        let bytes = uncompress_archive_file(&mut arc_buf, &mut buf, &f)?;
+        let s = unsafe { str::from_utf8_unchecked(&buf[..bytes]) };
         if let Some(mut idx) = s.find(NEXT_CHANGE_LINE) {
             idx += NEXT_CHANGE_LINE.len();
             let first_semi = s[idx..].find("\"").unwrap() + idx;
@@ -37,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 q = Some(filename);
             }
         }
-        println!("{}", s);
+        stdout.write_all(s.as_bytes())?;
     }
 
     Ok(())
