@@ -25,3 +25,7 @@ futures = "0.3.29"
 itertools = "0.12.0"
 anyhow = "1.0.86"
 compress-tools = { version = "0.15.1", features = ["async_support", "tokio", "tokio_support"] }
+cassandra-cpp = "3.0.2"
+uuid = { version = "1.11.0", features = ["v4"] }
+async-channel = "2.3.1"
+tokio-task-pool = "0.1.5"

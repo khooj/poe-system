@@ -21,7 +21,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         io::stdout()
             .write_all(content.as_bytes())
             .expect("cannot write to stdout");
+        io::stdout()
+            .write_all(b"\n")
+            .expect("cannot write newline to stdout");
     }
+    io::stdout().flush()?;
     eprintln!("processed: {}", count);
 
     Ok(())

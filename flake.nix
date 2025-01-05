@@ -2,97 +2,98 @@
   description = "rust workspace";
 
   inputs = {
-    flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
+    process-compose.url = "github:Platonic-Systems/process-compose-flake";
+    services-flake.url = "github:juspay/services-flake";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      rust-overlay,
-      flake-utils,
-      ...
-    }:
-    let
-      myapp = "poe-system";
-      rust-version = "1.77.2";
-    in
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        overlays = [ rust-overlay.overlays.default ];
-        pkgs = import nixpkgs { inherit system overlays; };
-        lib = pkgs.lib;
-
-        buildInputs = with pkgs; [
-          (rust-bin.stable.${rust-version}.default.override {
-            extensions = [
-              "rust-src"
-              "llvm-tools-preview"
-              "rust-analysis"
-            ];
-            targets = [ "wasm32-unknown-unknown" ];
-          })
-          trunk
-
-          sqlite
-          postgresql
-          mysql
-          openssl
-          cmake
-          zlib
-          gnumake
-          python3
-          jq
-          nixos-shell
-          git
-          crate2nix
-          vscodium
-          nodejs
-          curl
-
-          wget
-          dbus
-          openssl_3
-          glib
-          gtk3
-          libsoup
-          webkitgtk
-          librsvg
-          hashrat
-          libarchive
-          lz4
-        ];
-        nativeBuildInputs = with pkgs; [
-          pkg-config
-          nixpkgs-fmt
-        ];
-        libs = with pkgs; [
-          webkitgtk
-          gtk3
-          cairo
-          gdk-pixbuf
-          glib
-          dbus
-          openssl_3
-          librsvg
-          vulkan-loader
-          llvmPackages_15.llvm
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } (
+      { self, ... }:
+      {
+        imports = [
+          inputs.process-compose.flakeModule
         ];
 
-      in
-      rec {
-        devShell =
-          with pkgs;
-          mkShell {
-            name = "rust";
-            buildInputs = [ ] ++ buildInputs;
-            inherit nativeBuildInputs;
+        systems = [ "x86_64-linux" ];
 
-            shellHook = ''
-              export PATH=$PATH:$HOME/.cargo/bin:$PWD/app/node_modules/.bin
-            '';
+        perSystem =
+          {
+            pkgs,
+            config,
+            system,
+            ...
+          }:
+          {
+            _module.args.pkgs = import self.inputs.nixpkgs {
+              inherit system;
+              config.allowUnfree = true;
+              overlays = [ self.inputs.rust-overlay.overlays.default ];
+            };
+
+            process-compose."services" = {
+              imports = [
+                inputs.services-flake.processComposeModules.default
+              ];
+
+              services = {
+                cassandra."cass1".enable = true;
+              };
+
+              settings = {
+                log_location = "services-log.log";
+              };
+            };
+
+            devShells.default = pkgs.mkShell {
+              inputsFrom = [
+                config.process-compose."services".services.outputs.devShell
+              ];
+
+              buildInputs = with pkgs; [
+                (rust-bin.stable."1.77.2".default.override {
+                  extensions = [
+                    "rust-src"
+                    "llvm-tools-preview"
+                    "rust-analysis"
+                  ];
+                  targets = [ "wasm32-unknown-unknown" ];
+                })
+                trunk
+
+                sqlite
+                openssl
+                cmake
+                zlib
+                gnumake
+                python3
+                nixos-shell
+                crate2nix
+                nodejs
+
+                wget
+                dbus
+                openssl_3
+                glib
+                gtk3
+                libsoup_2_4
+                webkitgtk_6_0
+                librsvg
+                hashrat
+                libarchive
+                lz4
+                cassandra-cpp-driver
+                libuv
+              ];
+              nativeBuildInputs = with pkgs; [
+                pkg-config
+                nixpkgs-fmt
+              ];
+
+            };
           };
       }
     );

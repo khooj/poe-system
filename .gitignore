@@ -5,7 +5,10 @@ test.json
 **/dist
 poe.sql.xz
 .direnv
-slice1.tar
+slices.tar
 app/node_modules
 app/.svelte-kit
 slices.ndjson.xz
+data
+services-log.log
+unpack
