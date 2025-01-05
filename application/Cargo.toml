@@ -24,4 +24,4 @@ timely = "0.12.0"
 futures = "0.3.29"
 itertools = "0.12.0"
 anyhow = "1.0.86"
-compress-tools = "0.15.1"
+compress-tools = { version = "0.15.1", features = ["async_support", "tokio", "tokio_support"] }
