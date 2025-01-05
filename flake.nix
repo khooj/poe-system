@@ -62,6 +62,7 @@
           librsvg
           hashrat
           libarchive
+          lz4
         ];
         nativeBuildInputs = with pkgs; [
           pkg-config
