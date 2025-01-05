@@ -1,11 +1,12 @@
 use application::{ArchiveStashes, DirStashes};
 use std::env::args;
 use std::io::{self, Write};
+use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = args().into_iter().collect::<Vec<String>>();
-    if args.len() < 2 {
-        eprintln!("Usage: {} <archive or dir>", args[0]);
+    if args.len() < 4 {
+        eprintln!("Usage: {} <archive or dir> <extract_dir> <count>", args[0]);
         return Ok(());
     }
 
@@ -15,12 +16,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ArchiveStashes::new(&args[1]).into_iter()
     };
 
+    let dir = PathBuf::from(&args[2]);
+    if !dir.exists() {
+        std::fs::create_dir_all(&dir)?;
+    }
+
+    let max_count = (&args[3]).parse().expect("cannot parse count");
     let mut count = 0;
-    for (_, content) in stashes {
+    for (filename, content) in stashes {
         count += 1;
-        io::stdout()
-            .write_all(content.as_bytes())
-            .expect("cannot write to stdout");
+        std::fs::write(dir.join(filename), content)?;
+        if count >= max_count {
+            break;
+        }
     }
     eprintln!("processed: {}", count);
 

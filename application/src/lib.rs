@@ -25,7 +25,7 @@ fn extract_next_change_id(s: &str) -> Option<&str> {
 }
 
 trait StashesSource {
-    fn next(&mut self) -> Option<String>;
+    fn next(&mut self) -> Option<(String, String)>;
 }
 
 pub struct StashesIterator {
@@ -33,7 +33,7 @@ pub struct StashesIterator {
 }
 
 impl Iterator for StashesIterator {
-    type Item = String;
+    type Item = (String, String);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.src.next()
@@ -64,10 +64,10 @@ impl DirStashes {
 }
 
 impl StashesSource for DirStashes {
-    fn next(&mut self) -> Option<String> {
+    fn next(&mut self) -> Option<(String, String)> {
         if let Some(id) = self.next_change_id.take() {
             let filename = format!("{}.json", id);
-            let mut f = match File::open(self.path.join(filename)) {
+            let mut f = match File::open(self.path.join(filename.clone())) {
                 Ok(f) => f,
                 Err(_) => return None,
             };
@@ -79,7 +79,7 @@ impl StashesSource for DirStashes {
             f.read_to_string(&mut s).expect("cannot read to string");
             let change_id = extract_next_change_id(&s).map(|s| s.to_string());
             self.next_change_id = change_id;
-            Some(s)
+            Some((filename, s))
         } else {
             None
         }
@@ -116,7 +116,7 @@ impl ArchiveStashes {
 }
 
 impl StashesSource for ArchiveStashes {
-    fn next(&mut self) -> Option<String> {
+    fn next(&mut self) -> Option<(String, String)> {
         if let Some(id) = self.next_change_id.take() {
             let filename = format!("{}.json", id);
             self.buf.clear();
@@ -126,7 +126,7 @@ impl StashesSource for ArchiveStashes {
             let s = unsafe { String::from_utf8_unchecked((&self.buf[..bytes]).to_vec()) };
             let change_id = extract_next_change_id(&s).map(|s| s.to_string());
             self.next_change_id = change_id;
-            Some(s)
+            Some((filename, s))
         } else {
             None
         }
