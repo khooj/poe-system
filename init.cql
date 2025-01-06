@@ -6,5 +6,12 @@ CREATE TABLE IF NOT EXISTS poesystem.items(
   affixes map<text, text>
 );
 
-CREATE INDEX IF NOT EXISTS affixes_idx ON poesystem.items( KEYS(affixes) );
+CREATE TABLE IF NOT EXISTS poesystem.affixes(
+  affix text,
+  value text,
+  item_id text,
+  PRIMARY KEY((affix), item_id)
+);
+
+//CREATE INDEX IF NOT EXISTS affixes_idx ON poesystem.items( KEYS(affixes) );
 //WITH OPTIONS = { 'case_sensitive': false, 'normalize': true, 'ascii': true };

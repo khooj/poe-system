@@ -1,57 +1,9 @@
 use std::{env::args, time::Duration};
 
-use cassandra_cpp::{CassCollection, Cluster, Map, Statement};
-use domain::{Mod, ModType};
-use public_stash::models::{Item, PublicStashData};
+use application::pipe_stashes::{insert_mods, parse_mods};
+use cassandra_cpp::Cluster;
+use public_stash::models::PublicStashData;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
-use uuid::Uuid;
-
-fn parse_mods(item: &Item) -> Map {
-    let mut affixes = Map::new();
-    let mods = [
-        &item.utility_mods,
-        &item.enchant_mods,
-        &item.scourge_mods,
-        &item.implicit_mods,
-        &item.explicit_mods,
-        &item.crafted_mods,
-        &item.fractured_mods,
-        &item.veiled_mods,
-    ];
-
-    let mods: Vec<String> = mods
-        .into_iter()
-        .filter_map(|s| s.clone())
-        .flatten()
-        .collect::<Vec<_>>();
-
-    let mods = mods
-        .iter()
-        .map(|m| (m.as_str(), ModType::Explicit))
-        .collect::<Vec<_>>();
-    let mods = Mod::many_by_stat(&mods);
-
-    for m in mods {
-        affixes.append_string(&m.stat_id).unwrap();
-        affixes
-            .append_string(
-                &m.numeric_value
-                    .map(|n| n.to_string())
-                    .unwrap_or("-1".to_string()),
-            )
-            .unwrap();
-    }
-    affixes
-}
-
-fn insert_mods(mut stmt: Statement, item: &Item) -> Statement {
-    stmt.bind_string(0, item.id.as_ref().unwrap_or(&Uuid::new_v4().to_string()))
-        .unwrap();
-    stmt.bind_string(1, &item.base_type).unwrap();
-    let affixes = parse_mods(&item);
-    stmt.bind_map(2, affixes).unwrap();
-    stmt
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -80,6 +32,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .prepare("INSERT INTO poesystem.items(id, basetype, affixes) VALUES (?, ?, ?);")
         .await
         .expect("cannot prepare query");
+    let affix_stmt = session
+        .prepare("INSERT INTO poesystem.affixes(affix, value, item_id) VALUES (?, ?, ?);")
+        .await
+        .expect("cannot prepare affix query");
     while let Ok(Some(line)) = lines.next_line().await {
         processed += 1;
         if (processed + 1) % 20 == 0 {
@@ -93,6 +49,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let stmt = insert_mods(insert_stmt.bind(), &item);
                 let handle = pool.spawn(async move { stmt.execute().await }).await?;
                 handles.push(handle);
+                let mods = parse_mods(&item);
+                for m in mods {
+                    let mut stmt = affix_stmt.bind();
+                    stmt.bind_string(0, &m.stat_id)?;
+                    stmt.bind_string(
+                        1,
+                        &m.numeric_value.map_or("-1".to_string(), |n| n.to_string()),
+                    )?;
+                    stmt.bind_string(2, &item.id.as_ref().expect("item does not have id"))?;
+                    let handle = pool.spawn(async move { stmt.execute().await }).await?;
+                    handles.push(handle);
+                }
             }
         }
     }

@@ -404,6 +404,7 @@ dependencies = [
  "pob",
  "poeninja",
  "public_stash",
+ "rand",
  "serde",
  "serde_json",
  "thiserror",
