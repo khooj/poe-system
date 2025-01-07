@@ -40,7 +40,12 @@
               ];
 
               services = {
-                cassandra."cass1".enable = true;
+                cassandra."cass1".enable = false;
+                redis."r1" = {
+                  enable = true;
+                  port = 0;
+                  unixSocket = "./redis.sock";
+                };
               };
 
               settings = {
