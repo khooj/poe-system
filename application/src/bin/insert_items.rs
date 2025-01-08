@@ -1,11 +1,10 @@
-use std::{collections::HashMap, num::NonZeroUsize, time::Duration};
+use std::{collections::HashMap, time::Duration};
 
 use application::pipe_stashes::{insert_mods, parse_mods};
 use async_channel::bounded;
 use cassandra_cpp::Cluster;
 use clap::{Parser, Subcommand};
-use domain::Mod;
-use public_stash::models::{Item, PublicStashData};
+use public_stash::models::PublicStashData;
 use redis::AsyncCommands;
 use tokio::io::{self, AsyncBufReadExt, BufReader, Lines, Stdin};
 
@@ -128,11 +127,9 @@ async fn insert_into_redis(
             }
             std::mem::drop(iter);
 
-            for item in to_remove {
-                let l = conn.llen(&item).await.unwrap();
-                let _: Vec<String> = conn.lpop(&item, NonZeroUsize::new(l)).await.unwrap();
+            if !to_remove.is_empty() {
+                let _: usize = conn.del(&to_remove).await.unwrap();
             }
-
             tx.send(conn).await.unwrap();
         })
         .await?;
@@ -158,7 +155,7 @@ async fn insert_into_redis(
                     }
                 }
                 for (k, lst) in affixes {
-                    let _: usize = conn.lpush(k, lst).await.unwrap();
+                    let _: usize = conn.sadd(k, lst).await.unwrap();
                 }
                 tx.send(conn).await.unwrap();
             })

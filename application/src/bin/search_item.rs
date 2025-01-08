@@ -6,7 +6,6 @@ use public_stash::models::PublicStashData;
 use redis::AsyncCommands;
 use std::{
     collections::{HashMap, HashSet},
-    num::NonZeroUsize,
     path::PathBuf,
 };
 use tokio::time::Instant;
@@ -103,8 +102,7 @@ async fn search_in_redis(mods: &Vec<Mod>) -> SearchResult {
     let mut first_loaded = false;
     for m in mods {
         let k = format!("affix:{}", m.stat_id);
-        let len: usize = conn.llen(&k).await?;
-        let new_ids: HashSet<String> = conn.lpop(&k, NonZeroUsize::new(len)).await?;
+        let new_ids: HashSet<String> = conn.smembers(&k).await?;
 
         if !first_loaded {
             first_loaded = true;
@@ -112,8 +110,6 @@ async fn search_in_redis(mods: &Vec<Mod>) -> SearchResult {
         } else {
             ids = ids.intersection(&new_ids).cloned().collect();
         }
-
-        conn.lpush(&k, new_ids).await?;
 
         if ids.len() < 10 {
             break;
