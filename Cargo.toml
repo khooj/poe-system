@@ -8,5 +8,5 @@ members = [
 	"domain",
 	"application",
 	"poeninja"
-]
+, "utils"]
 resolver = "2"

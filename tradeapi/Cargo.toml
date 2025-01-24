@@ -9,15 +9,13 @@ edition = "2021"
 doctest = false
 
 [dependencies]
-governor = "0.3.2"
 serde = { version = "1", features = ["derive"] }
-thiserror = "1.0.24"
+thiserror = "2.0.11"
 tracing = { version = "0.1" }
-reqwest = { version = "0.11", features = ["json", "cookies"] }
 serde_json = "1"
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 macros = { path = "../macros" }
-anyhow = "1"
+utils = { path = "../utils" }
 
 [dev-dependencies]
 anyhow = "1"

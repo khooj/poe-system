@@ -1,19 +1,22 @@
 use std::time::{Duration, SystemTime};
 
-use crate::limits::{Limits, MultipleLimits};
 use crate::models::{ClientFetchResponse, ClientSearchResponse};
 use crate::query::Builder;
-use reqwest::cookie::Jar;
-use reqwest::{Method, Request, StatusCode, Url};
 use thiserror::Error;
-use tracing::{debug, error};
+use tracing::error;
+use utils::{
+    reqwest::{cookie::Jar, Method, Request, StatusCode, Url},
+    ClientBuilder, ClientWithMiddleware, LimitMiddleware,
+};
 
 #[derive(Error, Debug)]
 pub enum ClientError {
     #[error("too many requests from endpoint")]
     TooManyRequestsOrSimilar,
     #[error("reqwest error: {0}")]
-    ReqwestError(#[from] reqwest::Error),
+    ReqwestError(#[from] utils::reqwest::Error),
+    #[error("reqwest_middleware error: {0}")]
+    ReqwestMiddleware(#[from] utils::ReqwestMiddlewareError),
     #[error("failed check: {0}")]
     FailedCheck(String),
     #[error("status code: {0}")]
@@ -23,9 +26,8 @@ pub enum ClientError {
 }
 
 pub struct Client {
-    client: reqwest::Client,
-    search_limiter: MultipleLimits,
-    fetch_limiter: MultipleLimits,
+    search_client: ClientWithMiddleware,
+    fetch_client: ClientWithMiddleware,
     league: String,
     failed_check: Option<String>,
     wait_time_on_error: Duration,
@@ -34,28 +36,39 @@ pub struct Client {
 
 impl Client {
     pub fn new(user_agent: &str, poesessid: &str, league: &str) -> Client {
+        let client = Client::new_client(user_agent, poesessid);
+        let search_client = ClientBuilder::new(client)
+            .with(LimitMiddleware::default())
+            .build();
+
+        let client = Client::new_client(user_agent, poesessid);
+        let fetch_client = ClientBuilder::new(client)
+            .with(LimitMiddleware::default())
+            .build();
+
+        Client {
+            search_client,
+            fetch_client,
+            league: league.to_string(),
+            failed_check: None,
+            wait_time_on_error: Duration::from_secs(5),
+            last_wait: SystemTime::now(),
+        }
+    }
+
+    fn new_client(user_agent: &str, poesessid: &str) -> utils::reqwest::Client {
         let jar = Jar::default();
         jar.add_cookie_str(
             &format!("POESESSID={}", poesessid),
             &"https://www.pathofexile.com".parse::<Url>().unwrap(),
         );
 
-        let client = reqwest::ClientBuilder::new()
+        utils::reqwest::ClientBuilder::new()
             .user_agent(user_agent)
             .cookie_store(true)
             .cookie_provider(jar.into())
             .build()
-            .expect("can't build http client");
-
-        Client {
-            client,
-            search_limiter: MultipleLimits::default(),
-            fetch_limiter: MultipleLimits::default(),
-            league: league.to_string(),
-            failed_check: None,
-            wait_time_on_error: Duration::from_secs(5),
-            last_wait: SystemTime::now(),
-        }
+            .expect("can't build http client")
     }
 
     pub fn set_wait_time(&mut self, d: Duration) {
@@ -64,8 +77,7 @@ impl Client {
 
     async fn make_limiter_request<T>(
         failed_check: &mut Option<String>,
-        client: &mut reqwest::Client,
-        limiter: &mut MultipleLimits,
+        client: &mut ClientWithMiddleware,
         req: Request,
         limit_policy: &str,
         last_wait: &mut SystemTime,
@@ -82,8 +94,6 @@ impl Client {
             return Err(ClientError::TooManyRequestsOrSimilar);
         }
 
-        limiter.until_ready().await;
-
         let resp = client.execute(req).await?;
 
         if let Some(l) = resp.headers().get("x-rate-limit-policy") {
@@ -94,56 +104,11 @@ impl Client {
             }
         }
 
-        let acc_limits = resp
-            .headers()
-            .get("x-rate-limit-account")
-            .unwrap()
-            .to_str()
-            .unwrap();
-        let acc_limiting_state = resp
-            .headers()
-            .get("x-rate-limit-account-state")
-            .unwrap()
-            .to_str()
-            .unwrap();
-
-        let ip_limits = resp
-            .headers()
-            .get("x-rate-limit-ip")
-            .unwrap()
-            .to_str()
-            .unwrap();
-        let ip_limits_state = resp
-            .headers()
-            .get("x-rate-limit-ip-state")
-            .unwrap()
-            .to_str()
-            .unwrap();
-
-        let mut limits = MultipleLimits::parse_header(ip_limits, ",");
-        limits.add_parse_header(acc_limits);
-        let mut current_limits = ip_limits_state
-            .split(',')
-            .map(Limits::parse_header)
-            .collect::<Vec<_>>();
-        current_limits.push(Limits::parse_header(acc_limiting_state));
-        debug!("current limits state: {:?}", current_limits);
-        // todo: need to explicitly wait for penalty time
-        if let Err(e) = limits
-            .adjust_current_states_or_wait_for_penalty(current_limits)
-            .await
-        {
-            *failed_check = Some(e.to_string());
-            return Err(ClientError::FailedCheck(e.to_string()));
-        }
-
-        *limiter = limits;
-
         let st = resp.status();
         match st {
             StatusCode::TOO_MANY_REQUESTS => {
                 *last_wait = SystemTime::now()
-                    .checked_add(wait_time_on_error.clone())
+                    .checked_add(*wait_time_on_error)
                     .expect("cannot set timeout for next call");
                 return Err(ClientError::TooManyRequestsOrSimilar);
             }
@@ -160,7 +125,7 @@ impl Client {
         &mut self,
         query: &Builder,
     ) -> Result<ClientSearchResponse, ClientError> {
-        let mut req = self.client.post(format!(
+        let mut req = self.search_client.post(format!(
             "https://www.pathofexile.com/api/trade/search/{}",
             self.league
         ));
@@ -169,8 +134,7 @@ impl Client {
         let req = req.build()?;
         Self::make_limiter_request(
             &mut self.failed_check,
-            &mut self.client,
-            &mut self.search_limiter,
+            &mut self.search_client,
             req,
             "trade-search-request-limit",
             &mut self.last_wait,
@@ -198,7 +162,7 @@ impl Client {
             .unwrap()
             .to_string();
         let req = self
-            .client
+            .fetch_client
             .request(
                 Method::GET,
                 format!("https://www.pathofexile.com/api/trade/fetch/{}", v),
@@ -209,8 +173,7 @@ impl Client {
 
         Self::make_limiter_request(
             &mut self.failed_check,
-            &mut self.client,
-            &mut self.fetch_limiter,
+            &mut self.fetch_client,
             req,
             "trade-fetch-request-limit",
             &mut self.last_wait,
