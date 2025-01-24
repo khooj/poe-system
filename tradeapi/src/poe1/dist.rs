@@ -33,7 +33,7 @@ struct InnerOption {
 
 lazy_static! {
     static ref STATS: StatsImpl = {
-        let f = include_bytes!("../dist/stats.min.json");
+        let f = include_bytes!("../../dist/stats.min.json");
         serde_json::from_slice(f).unwrap()
     };
     pub static ref STAT_TO_ID: HashMap<&'static str, &'static str> = {
@@ -44,7 +44,7 @@ lazy_static! {
             .map(|el| (el.text.as_str(), el.id.as_str()))
             .collect()
     };
-    pub static ref STATS_IDS: Vec<&'static str> = { STAT_TO_ID.iter().map(|(_, v)| *v).collect() };
+    pub static ref STATS_IDS: Vec<&'static str> = STAT_TO_ID.iter().map(|(_, v)| *v).collect();
 }
 
 #[cfg(test)]

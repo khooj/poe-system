@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use thiserror::Error;
 
-use crate::dist::{STATS_IDS, STAT_TO_ID};
+use crate::poe1::dist::{STATS_IDS, STAT_TO_ID};
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "lowercase")]

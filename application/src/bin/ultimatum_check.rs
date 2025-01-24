@@ -2,7 +2,7 @@ use application::ultimatum::*;
 use clap::Parser;
 use poeninja::Client;
 use std::env;
-use tradeapi::{
+use tradeapi::poe1::{
     query::{Builder, StatusOption, TradeFilters},
     Client as TradeClient, ClientError as TradeClientError,
 };

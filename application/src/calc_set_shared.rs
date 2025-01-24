@@ -9,7 +9,7 @@ use pob::{Pob, PobError};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::Mutex;
-use tradeapi::{
+use tradeapi::poe1::{
     models::{ClientFetchItem, ClientFetchListing},
     query::{Builder, BuilderError, SocketFilters, StatQuery, StatQueryType, TypeFilters},
     Client, ClientError,

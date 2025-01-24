@@ -1,7 +1,7 @@
 use core::cmp::Ordering;
 use poeninja::models::Object;
 use std::collections::HashMap;
-use tradeapi::models::ClientFetchItem;
+use tradeapi::poe1::models::ClientFetchItem;
 
 pub struct Ultimatum {
     pub sacrifice: String,

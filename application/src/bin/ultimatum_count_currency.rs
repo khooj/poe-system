@@ -2,7 +2,7 @@ use application::ultimatum::*;
 use clap::Parser;
 use std::env;
 use std::{collections::HashMap, time::Duration};
-use tradeapi::{
+use tradeapi::poe1::{
     query::{Builder, StatusOption, TradeFilters},
     Client as TradeClient, ClientError as TradeClientError,
 };

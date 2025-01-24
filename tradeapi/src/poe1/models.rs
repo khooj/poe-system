@@ -226,9 +226,9 @@ pub struct StaticItem {
 #[cfg(test)]
 mod tests {
     use super::{ClientFetchResponse, ItemsData, StaticData, StatsData};
-    static DATA: &str = include_str!("../dist/items.json");
-    static STATS_DATA: &str = include_str!("../dist/stats.json");
-    static STATIC_DATA: &str = include_str!("../dist/static.json");
+    static DATA: &str = include_str!("../../dist/items.json");
+    static STATS_DATA: &str = include_str!("../../dist/stats.json");
+    static STATIC_DATA: &str = include_str!("../../dist/static.json");
 
     #[test]
     fn check_data() {

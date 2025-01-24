@@ -1,7 +1,7 @@
 use std::time::{Duration, SystemTime};
 
-use crate::models::{ClientFetchResponse, ClientSearchResponse};
-use crate::query::Builder;
+use crate::poe1::models::{ClientFetchResponse, ClientSearchResponse};
+use crate::poe1::query::Builder;
 use thiserror::Error;
 use tracing::error;
 use utils::{
