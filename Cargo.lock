@@ -3343,12 +3343,15 @@ name = "public_stash"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "domain",
  "governor 0.8.0",
  "serde",
  "serde_json",
+ "storage",
  "thiserror 2.0.11",
  "tracing",
  "utils",
+ "uuid 1.12.1",
 ]
 
 [[package]]
@@ -4425,6 +4428,14 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
+name = "storage"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "thiserror 2.0.11",
+]
 
 [[package]]
 name = "stringprep"
