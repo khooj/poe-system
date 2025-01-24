@@ -1,6 +1,5 @@
-use application::{ArchiveStashes, DirStashes};
+use application::open_stashes;
 use std::env::args;
-use std::io::{self, Write};
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,11 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let stashes = if std::fs::metadata(&args[1]).unwrap().is_dir() {
-        DirStashes::new(&args[1]).into_iter()
-    } else {
-        ArchiveStashes::new(&args[1]).into_iter()
-    };
+    let stashes = open_stashes(&args[1]);
 
     let dir = PathBuf::from(&args[2]);
     if !dir.exists() {

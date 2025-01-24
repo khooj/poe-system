@@ -3,4 +3,4 @@ pub mod pipe_stashes;
 mod stream;
 pub mod ultimatum;
 
-pub use stream::{ArchiveStashes, DirStashes, StashesIterator};
+pub use stream::{open_stashes, ArchiveStashes, DirStashes, StashesIterator};

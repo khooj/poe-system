@@ -129,3 +129,15 @@ impl StashesSource for ArchiveStashes {
         }
     }
 }
+
+pub fn open_stashes<P>(path: P) -> StashesIterator
+where
+    P: AsRef<Path>,
+{
+    let p = path.as_ref();
+    if std::fs::metadata(p).unwrap().is_dir() {
+        DirStashes::new(p).into_iter()
+    } else {
+        ArchiveStashes::new(p).into_iter()
+    }
+}
