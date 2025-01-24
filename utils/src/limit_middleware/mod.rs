@@ -18,6 +18,7 @@ pub enum LimitHeadersError {
 pub enum LimitHeaders {
     Ip,
     Account,
+    Client,
 }
 
 impl TryFrom<&str> for LimitHeaders {
@@ -27,6 +28,7 @@ impl TryFrom<&str> for LimitHeaders {
         Ok(match value {
             "x-rate-limit-account-state" => LimitHeaders::Account,
             "x-rate-limit-ip-state" => LimitHeaders::Ip,
+            "x-rate-limit-client-state" => LimitHeaders::Client,
             _ => return Err(LimitHeadersError::Variant),
         })
     }

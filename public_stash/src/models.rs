@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -264,18 +263,6 @@ pub struct PublicStashData {
     pub stashes: Vec<PublicStashChange>,
 }
 
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("client error {0}")]
-    ClientError(#[from] reqwest::Error),
-    #[error("io error {0}")]
-    IoError(#[from] std::io::Error),
-    #[error("next cycle")]
-    NextCycle,
-    #[error("status code")]
-    StatusCode(u16),
-}
-
 #[cfg(test)]
 mod test {
     use super::PublicStashChange;
@@ -283,7 +270,7 @@ mod test {
     const EXAMPLE_STASH_CHANGE: &str = include_str!("example-stash-influences.json");
     #[test]
     fn deserializing_public_stash_change() -> Result<(), anyhow::Error> {
-        let _: PublicStashChange = serde_json::from_str(&EXAMPLE_STASH_CHANGE)?;
+        let _: PublicStashChange = serde_json::from_str(EXAMPLE_STASH_CHANGE)?;
         Ok(())
     }
 }
