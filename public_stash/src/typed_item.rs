@@ -79,7 +79,7 @@ impl TryFrom<Item> for TypedItem {
                 .collect::<Vec<_>>()
                 .as_slice(),
         );
-        let props = value.properties.as_ref().unwrap();
+        let props = value.properties.unwrap_or_default();
         let quality = props
             .iter()
             .find(|p| p.name == "Quality")
@@ -123,10 +123,7 @@ impl TryFrom<Item> for TypedItem {
                 })
             }
             "gems" => {
-                let level = value
-                    .requirements
-                    .as_ref()
-                    .unwrap()
+                let level = props
                     .iter()
                     .find(|p| p.name == "Level")
                     .map(|q| q.values[0][0].value())

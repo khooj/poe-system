@@ -45,19 +45,14 @@ impl ItemRepositoryTrait for ItemRepository {
     ) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         let mut copyin = tx
-            .copy_in_raw(r#"COPY items FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'\'')"#)
+            .copy_in_raw(r#"COPY items FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'@')"#)
             .await?;
         let mut ids = Vec::with_capacity(items.len());
-        let items_len =items.len();
+        let items_len = items.len();
         for item in items {
-            let line = format!("{};'{}'\n", item.id, serde_json::to_string(&item.info).unwrap());
-            println!("line: {}", line);
+            let json = serde_json::to_string(&item.info).unwrap();
+            let line = format!("{};@{}@\n", item.id, json);
             copyin.send(line.as_bytes()).await?;
-            // if ret.is_err() {
-            //     copyin.abort("error sending").await?;
-            //     ret?;
-            //     unreachable!()
-            // }
             ids.push(item.id);
         }
 
@@ -66,13 +61,15 @@ impl ItemRepositoryTrait for ItemRepository {
             eprintln!("inserted less items: {}", len);
         }
 
-        for id in ids  {
+        for id in ids {
             sqlx::query("insert into stashes(id, item_id) values($1, $2)")
                 .bind(&id)
                 .bind(stash_id)
                 .execute(&mut *tx)
                 .await?;
         }
+
+        tx.commit().await?;
 
         Ok(())
     }

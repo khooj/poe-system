@@ -16,6 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut size = 0usize;
     let mut stashes_in_file = 0usize;
     let mut zero_stashes = 0usize;
+    let mut items_count = 0usize;
     let max = stashes
         .filter_map(|s| serde_json::from_str::<PublicStashData>(&s.1).ok())
         .map(|s| s.stashes)
@@ -29,6 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .map(|s| {
             count += s.items.len();
+            items_count += s.items.len();
             size += s
                 .items
                 .iter()
@@ -41,5 +43,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("avg deserialized item size is: {} bytes", size / count);
     println!("max stashes in one file: {}", stashes_in_file);
     println!("maximum empty stashes found: {}", zero_stashes);
+    println!("items sum (without deletion): {}", items_count);
     Ok(())
 }
