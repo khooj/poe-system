@@ -1,4 +1,4 @@
-use application::{pipe_stashes::parse_mods, ArchiveStashes, DirStashes};
+use application::{pipe_stashes::parse_mods};
 use cassandra_cpp::{AsRustType, Cluster, LendingIterator, MapIterator};
 use clap::{Parser, Subcommand};
 use domain::Mod;
@@ -9,6 +9,7 @@ use std::{
     path::PathBuf,
 };
 use tokio::time::Instant;
+use utils::stream_stashes::open_stashes;
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -132,11 +133,7 @@ async fn search_in_redis(mods: &Vec<Mod>) -> SearchResult {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    let stashes = if std::fs::metadata(&cli.src).unwrap().is_dir() {
-        DirStashes::new(&cli.src).into_iter()
-    } else {
-        ArchiveStashes::new(&cli.src).into_iter()
-    };
+    let stashes = open_stashes(&cli.src);
     let mut max_item = None;
     let mut max_mods = vec![];
     for (_, data) in stashes {

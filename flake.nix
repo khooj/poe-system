@@ -46,6 +46,9 @@
                   port = 0;
                   unixSocket = "./redis.sock";
                 };
+                postgres."pg1" = {
+                  enable = true;
+                };
               };
 
               settings = {
@@ -59,7 +62,7 @@
               ];
 
               buildInputs = with pkgs; [
-                (rust-bin.stable."1.77.2".default.override {
+                (rust-bin.stable."1.84.0".default.override {
                   extensions = [
                     "rust-src"
                     "llvm-tools-preview"
@@ -78,6 +81,7 @@
                 nixos-shell
                 crate2nix
                 nodejs
+                sqlx-cli
 
                 wget
                 dbus

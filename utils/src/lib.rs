@@ -4,3 +4,4 @@ pub use reqwest;
 pub use reqwest_middleware::{
     ClientBuilder, ClientWithMiddleware, Error as ReqwestMiddlewareError, Middleware,
 };
+pub mod stream_stashes;

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.85"
+compress-tools = { version = "0.15.1", features = ["async_support", "tokio", "tokio_support"] }
 dashmap = "6.1.0"
 governor = "0.8.0"
 http = "1.2.0"

@@ -1,4 +1,4 @@
-use application::open_stashes;
+use utils::stream_stashes::open_stashes;
 use std::env::args;
 use std::path::PathBuf;
 

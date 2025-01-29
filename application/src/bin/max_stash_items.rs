@@ -1,6 +1,6 @@
 use std::env::args;
 
-use application::open_stashes;
+use utils::stream_stashes::open_stashes;
 use public_stash::models::PublicStashData;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

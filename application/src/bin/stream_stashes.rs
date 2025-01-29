@@ -1,4 +1,4 @@
-use application::{ArchiveStashes, DirStashes};
+use utils::stream_stashes::open_stashes;
 use std::env::args;
 use std::io::{self, Write};
 
@@ -9,12 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let stashes = if std::fs::metadata(&args[1]).unwrap().is_dir() {
-        DirStashes::new(&args[1]).into_iter()
-    } else {
-        ArchiveStashes::new(&args[1]).into_iter()
-    };
-
+    let stashes = open_stashes(&args[1]);
     let mut count = 0;
     for (_, content) in stashes {
         count += 1;

@@ -1,5 +1,7 @@
-use public_stash::client::{Client, Error as StashError};
-use storage::{DynItemRepository, LatestStashId};
+use clap::{Parser, Subcommand};
+use public_stash::{
+    client::{Client, Error as StashError}, models::{PublicStashChange, PublicStashData}, storage::{DynItemRepository, LatestStashId}, typed_item::TypedItem
+};
 use thiserror::Error;
 use tracing::{error, info, instrument, trace};
 
@@ -13,31 +15,25 @@ pub enum StashReceiverError {
 
 pub struct StashReceiver {
     repository: DynItemRepository,
-    client: Client,
     only_leagues: Vec<String>,
 }
 
 impl StashReceiver {
-    pub fn new(
-        repository: DynItemRepository,
-        client: Client,
-        only_leagues: Vec<String>,
-    ) -> StashReceiver {
+    pub fn new(repository: DynItemRepository, only_leagues: Vec<String>) -> StashReceiver {
         StashReceiver {
             repository,
-            client,
             only_leagues,
         }
     }
 }
 
 impl StashReceiver {
+    pub async fn get_latest_stash(&mut self) -> Result<LatestStashId, anyhow::Error> {
+        Ok(self.repository.get_stash_id().await?)
+    }
+
     #[instrument(err, skip(self))]
-    pub async fn receive(&mut self) -> Result<(), anyhow::Error> {
-        let res = self.repository.get_stash_id().await?;
-        trace!("latest stash id from repo: {}", res.id);
-        let mut k = self.client.get_latest_stash(Some(&res.id)).await?;
-        trace!("received stash with next id: {}", k.next_change_id);
+    pub async fn receive(&mut self, mut k: PublicStashData) -> Result<(), anyhow::Error> {
         if k.stashes.is_empty() {
             return Ok(());
         }
@@ -54,22 +50,19 @@ impl StashReceiver {
                 trace!("skipping stash because of empty account name or stash");
                 continue;
             }
-            let acc = d.account_name.as_ref().unwrap();
             let stash = d.stash.as_ref().unwrap();
 
             if d.items.is_empty() {
-                self.repository.delete_item(acc, stash).await?;
+                self.repository.clear_stash(stash).await?;
                 continue;
             }
 
-            // doesnt work
-            // let items = d
-            //     .items
-            //     .into_iter()
-            //     .filter_map(|m| Item::try_from(m).ok())
-            //     .collect();
-            // TODO: logic for filtering items
-            self.repository.insert_items(vec![]).await?;
+            let items = d
+                .items
+                .into_iter()
+                .filter_map(|i| TypedItem::try_from(i).ok())
+                .collect();
+            self.repository.insert_items(items, stash).await?;
             // for item in d.items {
             //     // we cant be sure that every item have unique id
             //     // so we generate it themselves
@@ -81,7 +74,7 @@ impl StashReceiver {
         }
         self.repository
             .set_stash_id(LatestStashId {
-                id: k.next_change_id.clone(),
+                id: Some(k.next_change_id.clone()),
             })
             .await?;
         info!(id = %k.next_change_id, "successfully received and inserted");
@@ -89,4 +82,42 @@ impl StashReceiver {
     }
 }
 
-fn main() {}
+#[derive(Parser)]
+#[command()]
+struct Args {
+    dsn: String,
+
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    Stash,
+    Directory { dir: String },
+}
+
+async fn launch_with_dir(mut receiver: StashReceiver, dir: &str) -> anyhow::Result<()> {
+    let stashes = utils::stream_stashes::open_stashes(dir);
+
+    for (_, content) in stashes {
+        let data: PublicStashData = serde_json::from_str(&content)?;
+        receiver.receive(data).await?;
+    }
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+    let receiver = StashReceiver::new(
+        public_stash::storage::postgresql::ItemRepository::new(&args.dsn).await?,
+        vec![],
+    );
+    match args.command {
+        Command::Stash => {}
+        Command::Directory { dir } => launch_with_dir(receiver, dir.as_ref()).await?,
+    };
+    Ok(())
+}

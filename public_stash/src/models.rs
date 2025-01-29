@@ -15,6 +15,15 @@ pub enum PropertyValueType {
     Type(i32),
 }
 
+impl PropertyValueType  {
+    pub fn value(&self) -> String {
+        match self {
+            PropertyValueType::Value(ref s) => s.clone(),
+            PropertyValueType::Type(ref t) => t.to_string(),
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemProperty {

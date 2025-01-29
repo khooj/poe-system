@@ -11,24 +11,25 @@ poeninja = { path = "../poeninja" }
 tradeapi = { path = "../tradeapi" }
 public_stash = { path = "../public_stash" }
 pob = { path = "../pob" }
-thiserror = "1.0.40"
-tokio = { version = "1.28.1", features = ["full"] }
-serde_json = "1.0.96"
-serde = { version = "1.0.163", features = ["derive"] }
+utils = { path = "../utils" }
+thiserror = "2.0.11"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0.138"
+serde = { version = "1.0.217", features = ["derive"] }
 tui = "0.19.0"
-crossterm = "0.25"
-tui-textarea = { version = "0.2.0", features = ["crossterm"] }
+crossterm = "0.28"
+tui-textarea = { version = "0.7.0", features = ["crossterm"] }
 clipboard = "0.5.0"
-clap = { version = "4.4.10", features = ["derive"] }
-timely = "0.12.0"
+clap = { version = "4.5", features = ["derive"] }
+timely = "0.17.1"
 futures = "0.3.29"
-itertools = "0.12.0"
-anyhow = "1.0.86"
+itertools = "0.14.0"
+anyhow = "1.0.95"
 compress-tools = { version = "0.15.1", features = ["async_support", "tokio", "tokio_support"] }
 cassandra-cpp = "3.0.2"
-uuid = { version = "1.11.0", features = ["v4"] }
+uuid = { version = "1.12.0", features = ["v4"] }
 async-channel = "2.3.1"
 tokio-task-pool = "0.1.5"
-rand = "0.8.5"
-redis = { version = "0.27.6", features = ["aio", "tokio-comp", "tcp_nodelay"] }
+rand = "0.9.0"
+redis = { version = "0.28.2", features = ["aio", "tokio-comp", "tcp_nodelay"] }
 async-trait = "0.1.85"
