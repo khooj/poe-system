@@ -1,9 +1,21 @@
+use std::time::Duration;
+
+use application::{
+    storage::{
+        postgresql::ItemRepository,
+        redis::{RedisIndexOptions, RedisIndexRepository},
+        DynItemRepository, LatestStashId,
+    },
+    typed_item::TypedItem,
+};
 use clap::{Parser, Subcommand};
 use public_stash::{
-    client::{Client, Error as StashError}, models::{PublicStashChange, PublicStashData}, storage::{redis::{RedisIndexOptions, RedisIndexRepository}, DynItemRepository, LatestStashId}, typed_item::TypedItem
+    client::{Client, Error as StashError},
+    models::PublicStashData,
 };
 use thiserror::Error;
 use tracing::{error, info, instrument, trace};
+use utils::DEFAULT_USER_AGENT;
 
 #[derive(Error, Debug)]
 pub enum StashReceiverError {
@@ -20,7 +32,11 @@ pub struct StashReceiver {
 }
 
 impl StashReceiver {
-    pub fn new(repository: DynItemRepository, redis_index: RedisIndexRepository, only_leagues: Vec<String>) -> StashReceiver {
+    pub fn new(
+        repository: DynItemRepository,
+        redis_index: RedisIndexRepository,
+        only_leagues: Vec<String>,
+    ) -> StashReceiver {
         StashReceiver {
             repository,
             redis_index,
@@ -35,9 +51,12 @@ impl StashReceiver {
     }
 
     #[instrument(err, skip(self))]
-    pub async fn receive(&mut self, mut k: PublicStashData) -> Result<(), anyhow::Error> {
+    pub async fn receive(
+        &mut self,
+        mut k: PublicStashData,
+    ) -> Result<Option<String>, anyhow::Error> {
         if k.stashes.is_empty() {
-            return Ok(());
+            return Ok(self.repository.get_stash_id().await.map(|ls| ls.id)?);
         }
 
         if !self.only_leagues.is_empty() {
@@ -75,7 +94,11 @@ impl StashReceiver {
             })
             .await?;
         info!(id = %k.next_change_id, "successfully received and inserted");
-        Ok(())
+        Ok(if k.next_change_id.is_empty() {
+            None
+        } else {
+            Some(k.next_change_id)
+        })
     }
 }
 
@@ -106,16 +129,38 @@ async fn launch_with_dir(mut receiver: StashReceiver, dir: &str) -> anyhow::Resu
     Ok(())
 }
 
+async fn launch_with_api(mut receiver: StashReceiver) -> anyhow::Result<()> {
+    let mut client = Client::new(DEFAULT_USER_AGENT);
+
+    let latest_stash = receiver.get_latest_stash().await?;
+    let mut latest_stash = latest_stash.id;
+
+    loop {
+        match client
+            .get_latest_stash(latest_stash.clone())
+            .await
+        {
+            Ok(stash) => {
+                latest_stash = receiver.receive(stash).await?;
+            }
+            Err(StashError::TooManyRequests) | Err(StashError::NextCycle) => {
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+            e => e.map(|_| ())?,
+        };
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let receiver = StashReceiver::new(
-        public_stash::storage::postgresql::ItemRepository::new(&args.dsn).await?,
+        ItemRepository::new(&args.dsn).await?,
         RedisIndexOptions::default().set_uri(&args.redis).build()?,
         vec![],
     );
     match args.command {
-        Command::Stash => {}
+        Command::Stash => launch_with_api(receiver).await?,
         Command::Directory { dir } => launch_with_dir(receiver, dir.as_ref()).await?,
     };
     Ok(())

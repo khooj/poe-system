@@ -24,7 +24,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(user_agent: String) -> Client {
+    pub fn new(user_agent: &str) -> Client {
         let client = utils::reqwest::ClientBuilder::new()
             .user_agent(user_agent)
             .build()
@@ -37,13 +37,13 @@ impl Client {
         Client { client }
     }
 
-    pub async fn get_latest_stash(&mut self, id: Option<&str>) -> Result<PublicStashData, Error> {
+    pub async fn get_latest_stash<T: AsRef<str>>(&mut self, id: Option<T>) -> Result<PublicStashData, Error> {
         let mut req = self
             .client
             .get("https://api.pathofexile.com/public-stash-tabs");
 
         if let Some(id) = id {
-            req = req.query(&[("id", id)]);
+            req = req.query(&[("id", id.as_ref())]);
         }
 
         let req = req.build()?;

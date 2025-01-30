@@ -1,4 +1,4 @@
-use crate::models::Item;
+use public_stash::models::Item;
 use core::convert::TryFrom;
 use domain::{Mod, ModType};
 use serde::Serialize;
