@@ -1,7 +1,7 @@
 use public_stash::models::Item;
 use core::convert::TryFrom;
 use domain::{Mod, ModType};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -11,14 +11,15 @@ pub struct Stash {
     pub account: String,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Property {
     pub augmented: bool,
     pub name: String,
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "type")]
 pub enum ItemInfo {
     Gem {
         basetype: String,
@@ -48,7 +49,7 @@ pub enum ItemInfo {
     },
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TypedItem {
     pub id: String,
     pub info: ItemInfo,

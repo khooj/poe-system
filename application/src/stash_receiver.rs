@@ -1,5 +1,5 @@
 use crate::{
-    storage::{redis::RedisIndexRepository, DynItemRepository, LatestStashId},
+    storage::{DynItemRepository, LatestStashId},
     typed_item::TypedItem,
 };
 use public_stash::{client::Error as StashError, models::PublicStashData};
@@ -15,19 +15,13 @@ pub enum StashReceiverError {
 
 pub struct StashReceiver {
     repository: DynItemRepository,
-    redis_index: RedisIndexRepository,
     only_leagues: Vec<String>,
 }
 
 impl StashReceiver {
-    pub fn new(
-        repository: DynItemRepository,
-        redis_index: RedisIndexRepository,
-        only_leagues: Vec<String>,
-    ) -> StashReceiver {
+    pub fn new(repository: DynItemRepository, only_leagues: Vec<String>) -> StashReceiver {
         StashReceiver {
             repository,
-            redis_index,
             only_leagues,
         }
     }
@@ -62,8 +56,7 @@ impl StashReceiver {
             let stash = d.stash.as_ref().unwrap();
 
             if d.items.is_empty() {
-                let ids = self.repository.clear_stash(stash).await?;
-                self.redis_index.delete_items(ids).await?;
+                self.repository.clear_stash(stash).await?;
                 continue;
             }
 
@@ -73,8 +66,6 @@ impl StashReceiver {
                 .filter_map(|i| TypedItem::try_from(i).ok())
                 .collect::<Vec<_>>();
             self.repository.insert_items(items.clone(), stash).await?;
-
-            self.redis_index.insert_items(items).await?;
         }
         self.repository
             .set_stash_id(LatestStashId {

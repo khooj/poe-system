@@ -1,17 +1,14 @@
-use std::time::Duration;
-use application::{
-    stash_receiver::StashReceiver,
-    storage::{postgresql::ItemRepository, redis::RedisIndexOptions},
-};
+use application::{stash_receiver::StashReceiver, storage::postgresql::ItemRepository};
 use clap::{Parser, Subcommand};
+use metrics::histogram;
 use public_stash::{
     client::{Client, Error as StashError},
     models::PublicStashData,
 };
 use serde::Deserialize;
-use utils::DEFAULT_USER_AGENT;
-use metrics::{histogram, counter};
+use std::time::Duration;
 use tokio::time::Instant;
+use utils::DEFAULT_USER_AGENT;
 
 #[derive(Parser)]
 #[command()]
@@ -69,22 +66,21 @@ async fn launch_with_api(mut receiver: StashReceiver) -> anyhow::Result<()> {
 struct Settings {
     mode: Command,
     pg: String,
-    redis: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let settings: Settings = config::Config::builder()
-        .add_source(config::File::with_name("config").format(config::FileFormat::Toml).required(false))
+        .add_source(
+            config::File::with_name("config")
+                .format(config::FileFormat::Toml)
+                .required(false),
+        )
         .add_source(config::Environment::with_prefix("APP"))
         .build()?
         .try_deserialize()?;
 
-    let receiver = StashReceiver::new(
-        ItemRepository::new(&settings.pg).await?,
-        RedisIndexOptions::default().set_uri(&settings.redis).build()?,
-        vec![],
-    );
+    let receiver = StashReceiver::new(ItemRepository::new(&settings.pg).await?, vec![]);
     match settings.mode {
         Command::Stash => {} //launch_with_api(receiver).await?,
         Command::Directory { dir } => launch_with_dir(receiver, dir.as_ref()).await?,

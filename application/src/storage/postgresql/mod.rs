@@ -1,7 +1,9 @@
-use std::io::{BufWriter, Write};
+use crate::typed_item::TypedItem;
 
 use super::{DynItemRepository, ItemRepositoryError, ItemRepositoryTrait, LatestStashId};
-use sqlx::{migrate::Migrator, postgres::PgPoolOptions};
+use domain::Mod;
+use serde::Serialize;
+use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Row};
 use thiserror::Error;
 
 pub static MIGRATOR: Migrator = sqlx::migrate!();
@@ -10,6 +12,8 @@ pub static MIGRATOR: Migrator = sqlx::migrate!();
 pub enum PostgresRepositoryError {
     #[error("connect error")]
     Connect(#[from] sqlx::Error),
+    #[error("serde json error")]
+    Serde(#[from] serde_json::Error),
 }
 
 pub struct ItemRepository {
@@ -20,6 +24,39 @@ impl ItemRepository {
     pub async fn new(dsn: &str) -> Result<DynItemRepository, PostgresRepositoryError> {
         let pool = PgPoolOptions::new().max_connections(5).connect(dsn).await?;
         Ok(Box::new(ItemRepository { pool }))
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct SearchMods {
+    mods: Vec<ModObj>,
+}
+
+#[derive(Debug, Serialize)]
+struct ModObj {
+    stat_id: String,
+}
+
+impl From<Vec<Mod>> for SearchMods {
+    fn from(value: Vec<Mod>) -> Self {
+        let mods = value
+            .into_iter()
+            .map(|m| ModObj { stat_id: m.stat_id })
+            .collect();
+        SearchMods { mods }
+    }
+}
+
+struct WrapperTypedItem(TypedItem);
+
+impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperTypedItem {
+    fn from_row(row: &'_ sqlx::postgres::PgRow) -> Result<Self, sqlx::Error> {
+        Ok(Self(TypedItem {
+            id: row.try_get("id")?,
+            info: row
+                .try_get::<'_, sqlx::types::Json<_>, &str>("data")
+                .map(|x| x.0)?,
+        }))
     }
 }
 
@@ -103,5 +140,22 @@ impl ItemRepositoryTrait for ItemRepository {
             .await?;
         tx.commit().await?;
         Ok(())
+    }
+
+    async fn search_items_by_mods(
+        &mut self,
+        mods: Vec<Mod>,
+    ) -> Result<Vec<TypedItem>, ItemRepositoryError> {
+        let mut tx = self.pool.begin().await?;
+        let search_mods: SearchMods = mods.into();
+        let search_mods = serde_json::to_string(&search_mods)?;
+
+        let result: Vec<WrapperTypedItem> =
+            sqlx::query_as("select id, data from items where data @> $1")
+                .bind(&search_mods)
+                .fetch_all(&mut *tx)
+                .await?;
+        tx.commit().await?;
+        Ok(result.into_iter().map(|s| s.0).collect())
     }
 }
