@@ -6,4 +6,4 @@ pub use reqwest_middleware::{
 };
 pub mod stream_stashes;
 
-pub static DEFAULT_USER_AGENT: &'static str = "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0";
+pub static DEFAULT_USER_AGENT: &'static str = "OAuth costmybuild/0.1.0 (contant: bladoff@gmail.com)";

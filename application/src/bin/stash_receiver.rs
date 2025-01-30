@@ -1,106 +1,17 @@
 use std::time::Duration;
-
 use application::{
-    storage::{
-        postgresql::ItemRepository,
-        redis::{RedisIndexOptions, RedisIndexRepository},
-        DynItemRepository, LatestStashId,
-    },
-    typed_item::TypedItem,
+    stash_receiver::StashReceiver,
+    storage::{postgresql::ItemRepository, redis::RedisIndexOptions},
 };
 use clap::{Parser, Subcommand};
 use public_stash::{
     client::{Client, Error as StashError},
     models::PublicStashData,
 };
-use thiserror::Error;
-use tracing::{error, info, instrument, trace};
+use serde::Deserialize;
 use utils::DEFAULT_USER_AGENT;
-
-#[derive(Error, Debug)]
-pub enum StashReceiverError {
-    #[error("client error")]
-    ClientError(#[from] StashError),
-    #[error("skipping this iteration")]
-    Skip,
-}
-
-pub struct StashReceiver {
-    repository: DynItemRepository,
-    redis_index: RedisIndexRepository,
-    only_leagues: Vec<String>,
-}
-
-impl StashReceiver {
-    pub fn new(
-        repository: DynItemRepository,
-        redis_index: RedisIndexRepository,
-        only_leagues: Vec<String>,
-    ) -> StashReceiver {
-        StashReceiver {
-            repository,
-            redis_index,
-            only_leagues,
-        }
-    }
-}
-
-impl StashReceiver {
-    pub async fn get_latest_stash(&mut self) -> Result<LatestStashId, anyhow::Error> {
-        Ok(self.repository.get_stash_id().await?)
-    }
-
-    #[instrument(err, skip(self))]
-    pub async fn receive(
-        &mut self,
-        mut k: PublicStashData,
-    ) -> Result<Option<String>, anyhow::Error> {
-        if k.stashes.is_empty() {
-            return Ok(self.repository.get_stash_id().await.map(|ls| ls.id)?);
-        }
-
-        if !self.only_leagues.is_empty() {
-            k.stashes.retain(|el| {
-                self.only_leagues
-                    .contains(el.league.as_ref().unwrap_or(&String::new()))
-            });
-        }
-
-        for d in k.stashes {
-            if d.account_name.is_none() || d.stash.is_none() {
-                trace!("skipping stash because of empty account name or stash");
-                continue;
-            }
-            let stash = d.stash.as_ref().unwrap();
-
-            if d.items.is_empty() {
-                let ids = self.repository.clear_stash(stash).await?;
-                self.redis_index.delete_items(ids).await?;
-                continue;
-            }
-
-            let items = d
-                .items
-                .into_iter()
-                .filter_map(|i| TypedItem::try_from(i).ok())
-                .collect::<Vec<_>>();
-            self.repository.insert_items(items.clone(), stash).await?;
-
-            self.redis_index.insert_items(items).await?;
-        }
-        self.repository
-            .set_stash_id(LatestStashId {
-                id: Some(k.next_change_id.clone()),
-            })
-            .await?;
-        info!(id = %k.next_change_id, "successfully received and inserted");
-        Ok(if k.next_change_id.is_empty() {
-            None
-        } else {
-            Some(k.next_change_id)
-        })
-    }
-}
+use metrics::{histogram, counter};
+use tokio::time::Instant;
 
 #[derive(Parser)]
 #[command()]
@@ -112,7 +23,7 @@ struct Args {
     command: Command,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug, Deserialize)]
 enum Command {
     Stash,
     Directory { dir: String },
@@ -122,8 +33,11 @@ async fn launch_with_dir(mut receiver: StashReceiver, dir: &str) -> anyhow::Resu
     let stashes = utils::stream_stashes::open_stashes(dir);
 
     for (_, content) in stashes {
+        let start = Instant::now();
         let data: PublicStashData = serde_json::from_str(&content)?;
         receiver.receive(data).await?;
+        let delta = start.elapsed();
+        histogram!("stash_receiver.dir.time").record(delta);
     }
 
     Ok(())
@@ -136,10 +50,8 @@ async fn launch_with_api(mut receiver: StashReceiver) -> anyhow::Result<()> {
     let mut latest_stash = latest_stash.id;
 
     loop {
-        match client
-            .get_latest_stash(latest_stash.clone())
-            .await
-        {
+        let start = Instant::now();
+        match client.get_latest_stash(latest_stash.clone()).await {
             Ok(stash) => {
                 latest_stash = receiver.receive(stash).await?;
             }
@@ -148,19 +60,33 @@ async fn launch_with_api(mut receiver: StashReceiver) -> anyhow::Result<()> {
             }
             e => e.map(|_| ())?,
         };
+        let delta = start.elapsed();
+        histogram!("stash_receiver.stash_api.time").record(delta);
     }
+}
+
+#[derive(Deserialize, Debug)]
+struct Settings {
+    mode: Command,
+    pg: String,
+    redis: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
+    let settings: Settings = config::Config::builder()
+        .add_source(config::File::with_name("config").format(config::FileFormat::Toml).required(false))
+        .add_source(config::Environment::with_prefix("APP"))
+        .build()?
+        .try_deserialize()?;
+
     let receiver = StashReceiver::new(
-        ItemRepository::new(&args.dsn).await?,
-        RedisIndexOptions::default().set_uri(&args.redis).build()?,
+        ItemRepository::new(&settings.pg).await?,
+        RedisIndexOptions::default().set_uri(&settings.redis).build()?,
         vec![],
     );
-    match args.command {
-        Command::Stash => launch_with_api(receiver).await?,
+    match settings.mode {
+        Command::Stash => {} //launch_with_api(receiver).await?,
         Command::Directory { dir } => launch_with_dir(receiver, dir.as_ref()).await?,
     };
     Ok(())
