@@ -1,4 +1,5 @@
 pub mod postgresql;
+pub mod redis;
 
 use crate::typed_item::TypedItem;
 use thiserror::Error;
@@ -18,7 +19,7 @@ pub struct LatestStashId {
 pub trait ItemRepositoryTrait {
     async fn get_stash_id(&mut self) -> Result<LatestStashId, ItemRepositoryError>;
     async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError>;
-    async fn clear_stash(&mut self, stash_id: &str) -> Result<(), ItemRepositoryError>;
+    async fn clear_stash(&mut self, stash_id: &str) -> Result<Vec<String>, ItemRepositoryError>;
     async fn insert_items(&mut self, items: Vec<TypedItem>, stash_id: &str) -> Result<(), ItemRepositoryError>;
 }
 

@@ -74,8 +74,12 @@ impl ItemRepositoryTrait for ItemRepository {
         Ok(())
     }
 
-    async fn clear_stash(&mut self, stash_id: &str) -> Result<(), ItemRepositoryError> {
+    async fn clear_stash(&mut self, stash_id: &str) -> Result<Vec<String>, ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
+        let ids: Vec<(String,)> = sqlx::query_as("select item_id from stashes where id = $1")
+            .bind(stash_id)
+            .fetch_all(&mut *tx)
+            .await?;
         sqlx::query("delete from items where id in (select item_id from stashes where id = $1)")
             .bind(stash_id)
             .execute(&mut *tx)
@@ -85,7 +89,7 @@ impl ItemRepositoryTrait for ItemRepository {
             .execute(&mut *tx)
             .await?;
         tx.commit().await?;
-        Ok(())
+        Ok(ids.into_iter().map(|s| s.0).collect())
     }
 
     async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError> {

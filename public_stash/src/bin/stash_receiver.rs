@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use public_stash::{
-    client::{Client, Error as StashError}, models::{PublicStashChange, PublicStashData}, storage::{DynItemRepository, LatestStashId}, typed_item::TypedItem
+    client::{Client, Error as StashError}, models::{PublicStashChange, PublicStashData}, storage::{redis::{RedisIndexOptions, RedisIndexRepository}, DynItemRepository, LatestStashId}, typed_item::TypedItem
 };
 use thiserror::Error;
 use tracing::{error, info, instrument, trace};
@@ -15,13 +15,15 @@ pub enum StashReceiverError {
 
 pub struct StashReceiver {
     repository: DynItemRepository,
+    redis_index: RedisIndexRepository,
     only_leagues: Vec<String>,
 }
 
 impl StashReceiver {
-    pub fn new(repository: DynItemRepository, only_leagues: Vec<String>) -> StashReceiver {
+    pub fn new(repository: DynItemRepository, redis_index: RedisIndexRepository, only_leagues: Vec<String>) -> StashReceiver {
         StashReceiver {
             repository,
+            redis_index,
             only_leagues,
         }
     }
@@ -53,7 +55,8 @@ impl StashReceiver {
             let stash = d.stash.as_ref().unwrap();
 
             if d.items.is_empty() {
-                self.repository.clear_stash(stash).await?;
+                let ids = self.repository.clear_stash(stash).await?;
+                self.redis_index.delete_items(ids).await?;
                 continue;
             }
 
@@ -61,16 +64,10 @@ impl StashReceiver {
                 .items
                 .into_iter()
                 .filter_map(|i| TypedItem::try_from(i).ok())
-                .collect();
-            self.repository.insert_items(items, stash).await?;
-            // for item in d.items {
-            //     // we cant be sure that every item have unique id
-            //     // so we generate it themselves
-            //     let id = Uuid::new_v4().to_string();
-            //     self.repository
-            //         .insert_item(&mut t, RawItem::new(&id, acc, stash, item))
-            //         .await?;
-            // }
+                .collect::<Vec<_>>();
+            self.repository.insert_items(items.clone(), stash).await?;
+
+            self.redis_index.insert_items(items).await?;
         }
         self.repository
             .set_stash_id(LatestStashId {
@@ -86,6 +83,7 @@ impl StashReceiver {
 #[command()]
 struct Args {
     dsn: String,
+    redis: String,
 
     #[command(subcommand)]
     command: Command,
@@ -113,6 +111,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let receiver = StashReceiver::new(
         public_stash::storage::postgresql::ItemRepository::new(&args.dsn).await?,
+        RedisIndexOptions::default().set_uri(&args.redis).build()?,
         vec![],
     );
     match args.command {

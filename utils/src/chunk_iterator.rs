@@ -1,0 +1,2 @@
+pub trait ChunkableIterator: Iterator {
+}

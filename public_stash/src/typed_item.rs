@@ -11,14 +11,14 @@ pub struct Stash {
     pub account: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Property {
     pub augmented: bool,
     pub name: String,
     pub value: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub enum ItemInfo {
     Gem {
         basetype: String,
@@ -48,10 +48,22 @@ pub enum ItemInfo {
     },
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct TypedItem {
     pub id: String,
     pub info: ItemInfo,
+}
+
+impl TypedItem {
+    pub fn mods(&self) -> Vec<Mod> {
+        match &self.info {
+            ItemInfo::Weapon { mods, .. } => mods.clone(),
+            ItemInfo::Armor { mods, .. } => mods.clone(),
+            ItemInfo::Gem { .. } => vec![],
+            ItemInfo::Flask { mods, .. } => mods.clone(),
+            ItemInfo::Jewel { mods, .. } => mods.clone(),
+        }
+    }
 }
 
 #[derive(Error, Debug)]

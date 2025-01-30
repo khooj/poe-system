@@ -5,3 +5,4 @@ pub use reqwest_middleware::{
     ClientBuilder, ClientWithMiddleware, Error as ReqwestMiddlewareError, Middleware,
 };
 pub mod stream_stashes;
+pub mod chunk_iterator;
