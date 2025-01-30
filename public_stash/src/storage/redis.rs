@@ -68,34 +68,29 @@ impl RedisIndexRepository {
             .get_multiplexed_async_connection()
             .await
             .unwrap();
-        let h = self
-            .pool
-            .spawn(async move {
-                let mut iter: redis::AsyncIter<String> = conn.scan().await.unwrap();
-                let mut to_check = vec![];
-                while let Some(item) = iter.next_item().await {
-                    if item.contains("affix") {
-                        to_check.push(item);
-                    }
-                }
-                std::mem::drop(iter);
+        let mut iter: redis::AsyncIter<String> = conn.scan().await.unwrap();
+        let mut to_check = vec![];
+        while let Some(item) = iter.next_item().await {
+            if item.contains("affix") {
+                to_check.push(item);
+            }
+        }
+        std::mem::drop(iter);
 
-                for chk in to_check {
-                    for chunk in items.chunks(10) {
-                        let _: usize = conn.srem(&chk, chunk).await.unwrap();
-                    }
-                }
-            })
-            .await?;
-        h.await??;
+        for chk in to_check {
+            for chunk in items.chunks(10) {
+                let _: usize = conn.srem(&chk, chunk).await.unwrap();
+            }
+        }
         Ok(())
     }
 
     pub async fn insert_items(&mut self, items: Vec<TypedItem>) -> Result<(), RedisIndexError> {
         let mut handles = vec![];
+        let conn = self.client.get_multiplexed_async_connection().await?;
 
         for item in items {
-            let mut conn = self.client.get_multiplexed_async_connection().await?;
+            let mut conn = conn.clone();
             let h = self
                 .pool
                 .spawn(async move {
