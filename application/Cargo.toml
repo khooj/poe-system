@@ -32,7 +32,8 @@ tokio-task-pool = "0.1.5"
 rand = "0.9.0"
 redis = { version = "0.28.2", features = ["aio", "tokio-comp", "tcp_nodelay"] }
 async-trait = "0.1.85"
-sqlx = { version = "0.8.3", features = ["runtime-tokio", "postgres"] }
+sqlx = { version = "0.8.3", features = ["runtime-tokio", "postgres", "uuid", "chrono"] }
 tracing = { version = "0.1" }
 metrics = "0.24.1"
 config = { version = "0.15.6", default-features = false, features = ["toml"] }
+tokio-util = "0.7.13"

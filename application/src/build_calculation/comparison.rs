@@ -7,10 +7,10 @@ use super::mod_config::ModConfig;
 pub struct Comparator {}
 
 impl Comparator {
-    pub fn extract_mods_for_search(mods_conf: Vec<ModConfig>, item: TypedItem) -> Vec<Mod> {
+    pub fn extract_mods_for_search(mods_conf: &[ModConfig], item: &TypedItem) -> Vec<Mod> {
         let mods = item.mods();
         mods_conf
-            .into_iter()
+            .iter()
             .filter_map(|mc| mods.iter().find(|m| mc.stat_id == m.stat_id).cloned())
             .collect()
     }

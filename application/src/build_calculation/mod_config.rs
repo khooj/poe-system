@@ -1,6 +1,8 @@
 use std::{cmp::Ordering, ops::RangeInclusive};
 use domain::Mod;
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Config {
     Exact(i32),
     Range(RangeInclusive<i32>),
@@ -9,9 +11,10 @@ pub enum Config {
     Exist,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ModConfig {
-    pub(crate) stat_id: String,
-    configuration: Config,
+    pub stat_id: String,
+    pub configuration: Config,
 }
 
 impl ModConfig {}

@@ -1,4 +1,7 @@
-use application::{stash_receiver::StashReceiver, storage::postgresql::ItemRepository};
+use application::{
+    stash_receiver::{PgStashReceiver, StashReceiver},
+    storage::postgresql::items::ItemRepository,
+};
 use clap::{Parser, Subcommand};
 use metrics::histogram;
 use public_stash::{
@@ -6,6 +9,7 @@ use public_stash::{
     models::PublicStashData,
 };
 use serde::Deserialize;
+use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 use tokio::time::Instant;
 use utils::DEFAULT_USER_AGENT;
@@ -26,7 +30,7 @@ enum Command {
     Directory { dir: String },
 }
 
-async fn launch_with_dir(mut receiver: StashReceiver, dir: &str) -> anyhow::Result<()> {
+async fn launch_with_dir(mut receiver: PgStashReceiver, dir: &str) -> anyhow::Result<()> {
     let stashes = utils::stream_stashes::open_stashes(dir);
 
     for (_, content) in stashes {
@@ -40,7 +44,8 @@ async fn launch_with_dir(mut receiver: StashReceiver, dir: &str) -> anyhow::Resu
     Ok(())
 }
 
-async fn launch_with_api(mut receiver: StashReceiver) -> anyhow::Result<()> {
+#[allow(unused)]
+async fn launch_with_api(mut receiver: PgStashReceiver) -> anyhow::Result<()> {
     let mut client = Client::new(DEFAULT_USER_AGENT);
 
     let latest_stash = receiver.get_latest_stash().await?;
@@ -80,7 +85,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?
         .try_deserialize()?;
 
-    let receiver = StashReceiver::new(ItemRepository::new(&settings.pg).await?, vec![]);
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&settings.pg)
+        .await?;
+    let receiver = StashReceiver::new(ItemRepository::new(pool).await?, vec![]);
     match settings.mode {
         Command::Stash => {} //launch_with_api(receiver).await?,
         Command::Directory { dir } => launch_with_dir(receiver, dir.as_ref()).await?,
