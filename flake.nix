@@ -42,7 +42,7 @@
               services = {
                 cassandra."cass1".enable = false;
                 redis."r1" = {
-                  enable = true;
+                  enable = false;
                   port = 0;
                   unixSocket = "./redis.sock";
                 };
