@@ -24,7 +24,7 @@ pub enum __category_tmp {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq)]
 #[strum(ascii_case_insensitive)]
 pub enum Category {
     Flasks,
@@ -369,10 +369,12 @@ pub enum Influence {
     Crusader,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq)]
+#[strum(ascii_case_insensitive)]
 pub enum Subcategory {
     #[default]
     Empty,
+    Helmets,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq)]
@@ -549,6 +551,13 @@ impl TryFrom<String> for Rarity {
             _ => Err(TypeError::RarityParse(v)),
         }
     }
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+pub struct Property {
+    pub name: String,
+    pub value: Option<String>,
+    pub augmented: bool,
 }
 
 #[cfg(test)]

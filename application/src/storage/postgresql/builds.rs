@@ -42,6 +42,7 @@ impl BuildData {
     }
 }
 
+#[derive(Clone)]
 pub struct BuildRepository {
     pool: sqlx::Pool<sqlx::Postgres>,
 }

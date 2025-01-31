@@ -40,8 +40,8 @@ pub struct Pob {
 }
 
 impl<'a> Pob {
-    pub fn new(data: String) -> Pob {
-        Pob { original: data }
+    pub fn new<T: AsRef<str>>(data: T) -> Pob {
+        Pob { original: data.as_ref().to_string() }
     }
 
     pub fn from_pastebin_data(data: String) -> Result<Pob, PobError> {

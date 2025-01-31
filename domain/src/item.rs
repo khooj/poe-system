@@ -1,4 +1,4 @@
-use super::types::{Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory};
+use super::types::{Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory, Property};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp::Eq;
@@ -30,6 +30,7 @@ pub struct Item {
     pub lvl_req: i32,
     pub sockets: String,
     pub quality: i32,
+    pub properties: Vec<Property>,
 }
 
 #[derive(Default, PartialEq, PartialOrd, Debug)]

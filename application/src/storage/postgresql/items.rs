@@ -13,6 +13,7 @@ pub enum PostgresRepositoryError {
     Serde(#[from] serde_json::Error),
 }
 
+#[derive(Clone)]
 pub struct ItemRepository {
     pool: sqlx::Pool<sqlx::Postgres>,
 }

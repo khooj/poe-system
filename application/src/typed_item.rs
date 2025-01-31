@@ -1,7 +1,7 @@
-use public_stash::models::Item;
 use core::convert::TryFrom;
-use domain::{Mod, ModType};
-use serde::{Serialize, Deserialize};
+use domain::{Category, Item as DomainItem, Mod, ModType};
+use public_stash::models::Item;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -11,7 +11,7 @@ pub struct Stash {
     pub account: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Property {
     pub augmented: bool,
     pub name: String,
@@ -49,7 +49,17 @@ pub enum ItemInfo {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+impl Default for ItemInfo {
+    fn default() -> Self {
+        ItemInfo::Gem {
+            basetype: String::new(),
+            level: 0,
+            quality: 0,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TypedItem {
     pub id: String,
     pub info: ItemInfo,
@@ -161,6 +171,83 @@ impl TryFrom<Item> for TypedItem {
         Ok(TypedItem {
             info: info.ok_or(TypedItemError::Unknown)?,
             id: value.id.unwrap_or(Uuid::new_v4().to_string()),
+        })
+    }
+}
+
+// TODO: somehow unify item struct
+impl TryFrom<DomainItem> for TypedItem {
+    type Error = TypedItemError;
+    fn try_from(value: DomainItem) -> core::result::Result<Self, Self::Error> {
+
+        let cat = value.category;
+        if ![Category::Weapons, Category::Armour, Category::Gems, Category::Flasks, Category::Jewels].contains(&cat) {
+            return Err(TypedItemError::Unknown);
+        }
+
+        let basetype = value.base_type;
+        let mods = value.mods;
+        let props = value.properties;
+        let quality = value.quality as u8;
+        let info = match cat {
+            t @ (Category::Weapons | Category::Armour) => {
+                let properties = props
+                    .iter()
+                    .filter_map(|p| {
+                        if p.value.is_none() {
+                            None
+                        } else {
+                            Some(Property {
+                                augmented: p.augmented,
+                                name: p.name.clone(),
+                                value: p.value.clone().unwrap(),
+                            })
+                        }
+                    })
+                    .collect();
+
+                Some(if t == Category::Weapons {
+                    ItemInfo::Weapon {
+                        basetype,
+                        quality,
+                        mods,
+                        properties,
+                    }
+                } else {
+                    ItemInfo::Armor {
+                        basetype,
+                        quality,
+                        mods,
+                        properties,
+                    }
+                })
+            }
+            Category::Gems => {
+                let level = props
+                    .iter()
+                    .find(|p| p.name == "Level")
+                    .map(|q| q.value.clone().unwrap())
+                    .unwrap_or("0".to_string())
+                    .parse::<u8>()
+                    .unwrap_or(0);
+
+                Some(ItemInfo::Gem {
+                    basetype,
+                    level,
+                    quality,
+                })
+            }
+            Category::Flasks => Some(ItemInfo::Flask {
+                basetype,
+                quality,
+                mods,
+            }),
+            Category::Jewels => Some(ItemInfo::Jewel { basetype, mods }),
+            _ => None,
+        };
+        Ok(TypedItem {
+            info: info.ok_or(TypedItemError::Unknown)?,
+            id: value.id,
         })
     }
 }
