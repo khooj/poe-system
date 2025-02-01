@@ -66,10 +66,19 @@ impl BuildRepository {
         Ok(data)
     }
 
+    pub async fn get_builds(&mut self) -> Result<Vec<BuildData>, PostgresRepositoryError> {
+        let data: Vec<BuildData> =
+            sqlx::query_as("select id, data, processed, created_at, updated_at from builds")
+                .fetch_all(&self.pool)
+                .await?;
+
+        Ok(data)
+    }
+
     pub async fn upsert_build(&mut self, data: BuildData) -> Result<(), PostgresRepositoryError> {
         sqlx::query(
             r#"insert into builds(id, data, created_at, updated_at, processed) 
-                values ($1, $2, $3, $4, $5) 
+                values ($1, $2::jsonb, $3, $4, $5) 
                 on conflict (id) do update 
                 set data = EXCLUDED.data, updated_at = now(), processed = EXCLUDED.processed"#,
         )

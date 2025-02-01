@@ -6,16 +6,20 @@ use tokio_util::sync::CancellationToken;
 
 mod common;
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn check_process_build() -> anyhow::Result<()> {
-    let ctx = common::setup_db().await?;
+    let mut ctx = common::setup_db().await?;
 
     let token = CancellationToken::new();
     let handle = spawn_process_builds(token.clone(), ctx.item_repo.clone(), ctx.build_repo.clone()).await;
-
     tokio::time::sleep(Duration::from_secs(5)).await;
     token.cancel();
     handle.await??;
+
+    let builds = ctx.build_repo.get_builds().await?;
+    assert!(!builds.is_empty());
+    println!("build: {:?}", builds[0]);
+
     Ok(())
 }
 
