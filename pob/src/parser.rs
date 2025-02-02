@@ -1,4 +1,4 @@
-use domain::{Item, Mod, ModType, BASE_TYPES};
+use domain::{Category, Item, Mod, ModType, BASE_TYPES};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -8,7 +8,7 @@ use nom::{
     combinator::{cut, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
     multi::{length_count, many0, many_m_n},
-    sequence::{delimited, preceded},
+    sequence::{delimited, preceded, tuple},
     IResult,
 };
 
@@ -21,17 +21,16 @@ pub(crate) struct ParsedItem {
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum ItemValue<'a> {
-    Rarity(String),
+    Rarity(&'a str),
     BaseType { name: String, base: String },
     ItemLevel(i32),
     LevelReq(i32),
-    UniqueId(String),
-    Affix((&'a str, ModType)),
-    Implicits(Vec<ItemValue<'a>>),
+    UniqueId(&'a str),
+    Affix((&'a str, ModType, bool)),
+    Implicits(Vec<(&'a str, bool)>),
     Quality(i32),
     Sockets(String),
     // Influence(String),
-    SkipLine,
 }
 
 fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -134,47 +133,38 @@ where
     )(i)
 }
 
-fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<ItemValue>, E>
+fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<(&'a str, bool)>, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 {
     context(
-        "implicits_count",
+        "implicits",
         length_count(
             map(preceded(tag("Implicits: "), cut(digit1)), |out: &str| {
                 usize::from_str(out).unwrap_or(0usize)
             }),
-            preceded(alt((multispace0, line_ending)), |i| {
-                affix(i, ModType::Implicit)
-            }),
+            map(
+                |i| affix(i, ModType::Implicit),
+                |(t, _, crafted)| (t, crafted),
+            ),
         ),
     )(i)
 }
 
-fn skip_line_with_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn affix_prefixes<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-    t: &'a str,
-) -> IResult<&'a str, ItemValue<'a>, E> {
+) -> IResult<&'a str, bool, E> {
     context(
-        "skip_line_tag",
-        map(preceded(tag(t), cut(not_line_ending)), |_| {
-            ItemValue::SkipLine
-        }),
-    )(i)
-}
-
-fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
-    i: &'a str,
-    default: ModType,
-) -> IResult<&'a str, ItemValue<'a>, E> {
-    context(
-        "affix_internal",
+        "affix_prefixes",
         map(
-            preceded(
-                opt(alt((tag("{crafted}"), tag("{range:1}")))),
-                cut(not_line_ending),
-            ),
-            |e: &str| ItemValue::Affix((e, default)),
+            alt((
+                tag("Prefix: "),
+                tag("Suffix: "),
+                tag("Crafted: "),
+                tag("{crafted}"),
+                tag("{range:1}"),
+            )),
+            |t: &str| ["{crafted}", "Crafted: "].contains(&t),
         ),
     )(i)
 }
@@ -182,27 +172,16 @@ fn affix_internal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
     default: ModType,
-) -> IResult<&'a str, ItemValue, E> {
+) -> IResult<&'a str, (&'a str, ModType, bool), E> {
     context(
         "affix",
-        preceded(
-            multispace0,
-            alt((
-                |i| skip_line_with_tag(i, "Prefix: "),
-                |i| skip_line_with_tag(i, "Suffix: "),
-                |i| skip_line_with_tag(i, "Crafted: "),
-                |i| affix_internal(i, default),
-            )),
+        map(
+            preceded(
+                multispace0,
+                tuple((opt(affix_prefixes), cut(not_line_ending))),
+            ),
+            |(crafted, t)| (t, default, crafted.unwrap_or_default()),
         ),
-    )(i)
-}
-
-fn item_value_header<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
-    i: &'a str,
-) -> IResult<&'a str, ItemValue, E> {
-    context(
-        "item_value_header",
-        alt((map(rarity, |s| ItemValue::Rarity(String::from(s))), name)),
     )(i)
 }
 
@@ -211,17 +190,17 @@ fn item_value<
     E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
 >(
     i: &'a str,
-) -> IResult<&'a str, ItemValue, E> {
+) -> IResult<&'a str, ItemValue<'a>, E> {
     context(
         "item_value",
         alt((
-            map(unique_id, |s| ItemValue::UniqueId(String::from(s))),
+            map(unique_id, ItemValue::UniqueId),
             map(item_lvl, ItemValue::ItemLevel),
             map(level_req, ItemValue::LevelReq),
             map(implicits, ItemValue::Implicits),
             map(quality, ItemValue::Quality),
             map(sockets, |s| ItemValue::Sockets(String::from(s))),
-            |i| affix(i, ModType::Explicit),
+            map(|i| affix(i, ModType::Explicit), ItemValue::Affix),
         )),
     )(i)
 }
@@ -232,13 +211,16 @@ fn root<
 >(
     i: &'a str,
 ) -> IResult<&'a str, Vec<ItemValue>, E> {
-    let (i, mut header_vals) =
-        many_m_n(2, 2, delimited(multispace0, item_value_header, line_ending))(i)?;
+    let (i, rarity) = delimited(multispace0, rarity, line_ending)(i)?;
+    let (i, basetype) = delimited(multispace0, name, line_ending)(i)?;
+    // let (i, mut header_vals) =
+    //     many_m_n(2, 2, delimited(multispace0, item_value_header, line_ending))(i)?;
     let (i, mut vals) = many0(delimited(multispace0, item_value, line_ending))(i)?;
     let (i, end_val) = item_value(i)?;
-    header_vals.append(&mut vals);
-    header_vals.push(end_val);
-    Ok((i, header_vals))
+    let mut values = vec![ItemValue::Rarity(rarity), basetype];
+    values.append(&mut vals);
+    values.push(end_val);
+    Ok((i, values))
 }
 
 pub(crate) fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, ParsedItem, E>
@@ -248,42 +230,33 @@ where
     let (i, items) = root(i)?;
     let mut item = Item::default();
     let mut mods = vec![];
+    let mut category = Category::Maps;
 
     for val in items {
         match val {
-            ItemValue::Rarity(r) => item.rarity = r,
+            ItemValue::Rarity(r) => item.rarity = r.to_string(),
             ItemValue::BaseType { base, name } => {
+                category = Category::parse_from_basetype(base.replace(" ", "")).unwrap_or_default();
                 item.name = name;
                 item.base_type = base;
             }
-            ItemValue::UniqueId(id) => item.id = id,
+            ItemValue::UniqueId(id) => item.id = id.to_string(),
             ItemValue::ItemLevel(il) => item.item_lvl = domain::ItemLvl::Yes(il),
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
             ItemValue::Sockets(s) => item.sockets = s,
             ItemValue::Quality(q) => item.quality = q,
-            ItemValue::Implicits(implicits) => mods.extend(implicits.into_iter().map(|e| {
-                if let ItemValue::Affix(..) = e {
-                    e
-                } else {
-                    unreachable!()
-                }
-            })),
-            e @ ItemValue::Affix(..) => mods.push(e),
+            ItemValue::Implicits(implicits) => {
+                mods.extend(implicits.into_iter().map(|im| (im.0, ModType::Implicit)))
+            }
+            ItemValue::Affix(e) => mods.push((e.0, e.1)),
             _ => {}
         };
     }
 
-    let mods = mods
-        .into_iter()
-        .map(|m| match m {
-            ItemValue::Affix((s, t)) => (s, t),
-            _ => unreachable!(),
-        })
-        .collect::<Vec<_>>();
-
     let mods = Mod::many_by_stat(&mods);
 
     item.mods = mods;
+    item.category = category;
 
     Ok((i, ParsedItem { item }))
 }
@@ -291,37 +264,60 @@ where
 #[cfg(test)]
 mod test {
     use domain::Mod;
+    use nom::error::VerboseError;
 
     use super::*;
 
-    #[test]
-    fn name_check() -> Result<(), anyhow::Error> {
-        dotenv::dotenv().ok();
-        let i = "Loath Cut\nSmall Cluster Jewel";
-        let (_, ret) = name::<()>(i)?;
-        assert_eq!(
-            ret,
-            ItemValue::BaseType {
-                base: "Small Cluster Jewel".to_string(),
-                name: "Loath Cut".to_string()
+    macro_rules! gen_test {
+        ($name:ident, $f:ident, $data:expr, $res:expr) => {
+            #[test]
+            fn $name() -> anyhow::Result<()> {
+                let (_, res) = $f::<()>($data)?;
+                assert_eq!(res, $res);
+                Ok(())
             }
-        );
+        };
+    }
+
+    gen_test!(
+        name_check,
+        name,
+        "Loath Cut\nSmall Cluster Jewel",
+        ItemValue::BaseType {
+            name: "Loath Cut".to_string(),
+            base: "Small Cluster Jewel".to_string()
+        }
+    );
+    gen_test!(quality_check, quality, "Quality: 21", 21);
+    gen_test!(rarity_check, rarity, "Rarity: RARE", "RARE");
+    gen_test!(uniqueid_check, unique_id, "Unique ID: asd", "asd");
+    gen_test!(sockets_check, sockets, "Sockets: asd", "asd");
+    gen_test!(itemlvl_check, item_lvl, "Item Level: 21", 21);
+    gen_test!(levelreq_check, level_req, "LevelReq: 21", 21);
+
+    // TODO: add checks
+    gen_test!(itemvalue_qual_check, item_value, "Quality: 21", ItemValue::Quality(21));
+
+    #[test]
+    fn affix_check() -> anyhow::Result<()> {
+        for data in ["Prefix: asd", "Suffix: asd", "{range:1}asd"] {
+            let (_, affixes) = affix::<()>(data, ModType::Explicit)?;
+            assert_eq!(affixes, ("asd", ModType::Explicit, false));
+        }
+
+        for data in ["Crafted: asd", "{crafted}asd"] {
+            let (_, affixes) = affix::<()>(data, ModType::Explicit)?;
+            assert_eq!(affixes, ("asd", ModType::Explicit, true));
+        }
         Ok(())
     }
 
     #[test]
     fn implicits_check() -> Result<(), anyhow::Error> {
-        use nom::error::VerboseError;
         let i = "Implicits: 1\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
         let (i, ret) = implicits::<VerboseError<&str>>(i)?;
         assert_eq!(i, "\nAdds 3 Passive Skills");
-        assert_eq!(
-            ret,
-            vec![ItemValue::Affix((
-                "Adds 2 Passive Skills",
-                ModType::Implicit
-            ))]
-        );
+        assert_eq!(ret, vec![("Adds 2 Passive Skills", false)]);
 
         let i = "Implicits: 0\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
         let (i, ret) = implicits::<VerboseError<&str>>(i)?;
@@ -332,8 +328,6 @@ mod test {
 
     #[test]
     fn simple_pob_item() -> Result<(), anyhow::Error> {
-        use nom::error::VerboseError;
-        dotenv::dotenv().ok();
         let item = r#"Rarity: RARE
 Loath Cut
 Small Cluster Jewel
@@ -348,7 +342,7 @@ Added Small Passive Skills also grant: +5 to Maximum Energy Shield
 Added Small Passive Skills also grant: +5 to Strength
 1 Added Passive Skill is Elegant Form"#;
 
-        let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
+        let (_, item) = parse_pob_item::<VerboseError<&str>>(item)?;
         assert_eq!(item.item.rarity, "RARE");
         assert_eq!(item.item.name, "Loath Cut");
         assert_eq!(item.item.base_type, "Small Cluster Jewel");
@@ -381,6 +375,32 @@ Added Small Passive Skills also grant: +5 to Strength
                 ("1 Added Passive Skill is Elegant Form", ModType::Explicit),
             ])
         );
+        Ok(())
+    }
+
+    #[test]
+    #[ignore]
+    fn parse_category_by_basetype() -> anyhow::Result<()> {
+        let text = r#"
+			Rarity: RARE
+Behemoth Spark
+Slink Boots
+Unique ID: 2a2a31fe43e29e6ee51bfc386bb5a6ab6bfd083484980247e3d35d5504a965ca
+Hunter Item
+Item Level: 86
+Quality: 0
+Sockets: B-G-R-B
+LevelReq: 69
+Implicits: 0
++58 to Evasion Rating
++59 to maximum Life
++34% to Chaos Resistance
+35% increased Movement Speed
+You have Tailwind if you have dealt a Critical Strike Recently
+{crafted}24% reduced Effect of Chill and Shock on you
+"#;
+        let (_, item) = parse_pob_item::<VerboseError<&str>>(text)?;
+        assert_eq!(item.item.category, Category::Armour);
         Ok(())
     }
 

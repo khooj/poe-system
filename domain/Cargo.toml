@@ -6,14 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-itertools = { version = "0.10.5" }
+itertools = { version = "0.14.0" }
 serde = { version = "1", features = [ "derive" ] }
-strsim = { version = "0.10.0", default-features = false }
-strum = { version = "0.24.1", features = [ "derive" ] }
-thiserror = "1"
+strsim = { version = "0.11", default-features = false }
+strum = { version = "0.26", features = [ "derive" ] }
+thiserror = "2"
 macros = { path = "../macros" }
-lazy_static = "1.4.0"
-serde_json = "1.0.96"
+lazy_static = "1.5.0"
+serde_json = "1.0.138"
+regex = "1.11.1"
+sonic-rs = "0.3.17"
 
 [dev-dependencies]
 anyhow = "1"

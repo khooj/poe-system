@@ -33,8 +33,8 @@ fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
     for it in itemset.items() {
         match it.category {
             Category::Armour => {
-                if contains_subcategory(&it.subcategories, Subcategory::Helmets) {
-                    builditems.helmet = ItemWithConfig {
+                if contains_subcategory(&it.subcategories, Subcategory::Boots) {
+                    builditems.boots = ItemWithConfig {
                         item: TypedItem::try_from(it.clone())?,
                         ..Default::default()
                     };
@@ -52,4 +52,21 @@ fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
 
 fn contains_subcategory(subs: &[Subcategory], subc: Subcategory) -> bool {
     subs.iter().any(|s| *s == subc)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::typed_item::ItemInfo;
+
+    use super::import_build_from_pob_first_itemset;
+
+    const POB: &str = include_str!("pob.xml");
+
+    #[test]
+    fn check_import_items() -> anyhow::Result<()> {
+        let pob = pob::Pob::new(POB);
+        let buildinfo = import_build_from_pob_first_itemset(&pob)?;
+        assert_eq!(buildinfo.provided.boots.item.info, ItemInfo::Armor { basetype: "test".to_string(), quality: 0, mods: vec![], properties: vec![] });
+        Ok(())
+    }
 }

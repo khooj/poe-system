@@ -1,14 +1,16 @@
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
+use std::{convert::TryFrom, str::FromStr};
 use strum::EnumString;
 use thiserror::Error;
 
-use crate::STATS_CUTTED;
+use crate::{MODS, STATS_CUTTED};
 
 #[derive(Error, Debug)]
 pub enum TypeError {
     #[error("can't parse rarity: {0}")]
     RarityParse(String),
+    #[error("unknown category: {0}")]
+    UnknownCategory(String),
 }
 
 #[allow(non_camel_case_types)]
@@ -42,6 +44,16 @@ pub enum Category {
     Monsters,
     Gems,
     Leaguestones,
+}
+
+impl Category {
+    pub fn parse_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Category, TypeError> {
+        let basetype = basetype.as_ref();
+        if let Ok(_) = BootsBase::from_str(basetype) {
+            return Ok(Category::Armour);
+        }
+        Err(TypeError::UnknownCategory(basetype.to_string()))
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default)]
@@ -134,8 +146,9 @@ impl Class {
     }
 }
 
-#[allow(unused)]
-enum BootsBase {
+#[derive(Debug, EnumString, PartialEq)]
+#[strum(ascii_case_insensitive)]
+pub enum BootsBase {
     // str
     IronGreaves,
     SteelGreaves,
@@ -375,9 +388,10 @@ pub enum Subcategory {
     #[default]
     Empty,
     Helmets,
+    Boots,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq, Default)]
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -389,6 +403,7 @@ pub enum ModType {
     Veiled = 7,
     ExplicitHybrid = 8,
     Scourge = 9,
+    #[default]
     Invalid = 100,
 }
 
@@ -398,127 +413,62 @@ pub enum ModError {
     StatError(String),
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
+pub enum ModValue {
+    #[default]
+    Nothing,
+    Exact(i32),
+    MinMax(i32, i32),
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
 pub struct Mod {
     pub text: String,
     pub type_: ModType,
-    pub stat_translation: String,
+    // pub stat_translation: String,
     pub stat_id: String,
-    pub numeric_value: Option<i32>,
+    pub numeric_value: ModValue,
     #[serde(skip_serializing, skip_deserializing)]
     _internal: crate::private::Private,
 }
 
 impl Mod {
     pub fn by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
-        let v = crate::cut_numbers(value);
-        if let Some(idx) = STATS_CUTTED.get(&v) {
-            let text = value.to_string();
-            let stat_translation = STATS_CUTTED::get_original_stat(*idx);
-            let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
-            return Ok(Mod {
-                text,
-                stat_translation,
-                numeric_value,
-                type_: typ,
-                stat_id: STATS_CUTTED::get_stat_id(*idx),
-                ..Default::default()
-            });
+        let ret = Mod::by_stat_or_invalid(value, typ);
+        if ret.type_ == ModType::Invalid {
+            Err(ModError::StatError(value.to_string()))
+        } else {
+            Ok(ret)
         }
-
-        Err(ModError::StatError(value.to_string()))
     }
 
     pub fn by_stat_or_invalid(value: &str, typ: ModType) -> Self {
-        Mod::by_stat(value, typ).unwrap_or_default()
-    }
-
-    pub fn invalid() -> Self {
-        Mod {
-            stat_translation: String::new(),
-            type_: ModType::Invalid,
-            text: String::new(),
-            stat_id: String::new(),
-            numeric_value: None,
-            _internal: crate::private::Private,
+        if let Some(mod_value) = MODS::get_mod_data(value) {
+            return Mod {
+                text: value.to_string(),
+                type_: typ,
+                stat_id: mod_value.id.clone(),
+                numeric_value: match (mod_value.min, mod_value.max) {
+                    (Some(m1), Some(m2)) if m1 == m2 => ModValue::Exact(m1),
+                    (Some(m1), Some(m2)) => ModValue::MinMax(m1, m2),
+                    _ => ModValue::Nothing,
+                },
+                ..Default::default()
+            };
         }
-    }
 
-    fn cut_numeric_values(s: &str, template: &str) -> Option<i32> {
-        let idx = template.find('{')?;
-
-        let mut still_numeric = true;
-        let num = s.chars().skip(idx).fold(String::new(), |mut acc, x| {
-            if x.is_numeric() && still_numeric {
-                acc.push(x);
-            } else {
-                still_numeric = false;
-            }
-            acc
-        });
-
-        num.parse().ok()
+        Mod::default()
     }
 
     pub fn many_by_stat_or_invalid(values: &[(&str, ModType)]) -> Vec<Self> {
-        let values2 = values
-            .iter()
-            .enumerate()
-            .map(|(idx, e)| (idx, crate::cut_numbers(e.0), e.1))
-            .collect::<Vec<(usize, String, ModType)>>();
-
-        let mut result = vec![Mod::invalid(); values.len()];
-        for val in values2 {
-            let stat_idx = if let Some(val) = STATS_CUTTED.get(&val.1) {
-                *val
-            } else {
-                continue;
-            };
-            let stat_translation = STATS_CUTTED::get_original_stat(stat_idx);
-            let text = values[val.0].0.to_string();
-            let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
-            result[val.0] = Mod {
-                stat_translation,
-                type_: val.2,
-                text,
-                stat_id: STATS_CUTTED::get_stat_id(stat_idx),
-                numeric_value,
-                ..Default::default()
-            }
-        }
-        result
+        values
+            .into_iter()
+            .map(|(v, m)| Mod::by_stat_or_invalid(v, *m))
+            .collect()
     }
 
     pub fn many_by_stat(values: &[(&str, ModType)]) -> Vec<Self> {
-        let values2 = values
-            .iter()
-            .enumerate()
-            .map(|e| (e.0, crate::cut_numbers(e.1 .0), e.1 .1))
-            .collect::<Vec<(usize, String, ModType)>>();
-
-        values2
-            .into_iter()
-            .filter_map(|(idx, s, t)| STATS_CUTTED.get(&s).map(|stat_idx| (idx, stat_idx, t)))
-            .map(|(idx, stat_idx, t)| {
-                let text = values[idx].0.to_string();
-                let stat_translation = STATS_CUTTED::get_original_stat(*stat_idx);
-                let numeric_value = Self::cut_numeric_values(&text, &stat_translation);
-                Mod {
-                    stat_translation,
-                    type_: t,
-                    text,
-                    stat_id: STATS_CUTTED::get_stat_id(*stat_idx),
-                    numeric_value,
-                    ..Default::default()
-                }
-            })
-            .collect()
-    }
-}
-
-impl Default for Mod {
-    fn default() -> Self {
-        Mod::invalid()
+        Mod::many_by_stat_or_invalid(values)
     }
 }
 
@@ -562,6 +512,8 @@ pub struct Property {
 
 #[cfg(test)]
 mod tests {
+    use crate::ModValue;
+
     use super::{Mod, ModType};
 
     #[test]
@@ -572,10 +524,9 @@ mod tests {
         assert_eq!(
             mods2[0],
             Mod {
-                stat_translation: "{0}% increased Spell Damage".to_string(),
                 text: "75% increased Spell Damage".to_string(),
                 type_: ModType::Explicit,
-                numeric_value: Some(75),
+                numeric_value: ModValue::Exact(75),
                 stat_id: "spell_damage_+%".to_string(),
                 ..Default::default()
             }

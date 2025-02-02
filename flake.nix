@@ -120,7 +120,7 @@
                 cmake
                 zlib
                 gnumake
-                python3
+                (python3.withPackages(ps: with ps; [ requests ]))
                 nixos-shell
                 crate2nix
                 nodejs
@@ -139,6 +139,7 @@
                 lz4
                 cassandra-cpp-driver
                 libuv
+                cargo-flamegraph
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config
