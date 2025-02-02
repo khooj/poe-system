@@ -462,7 +462,7 @@ impl Mod {
 
     pub fn many_by_stat_or_invalid(values: &[(&str, ModType)]) -> Vec<Self> {
         values
-            .into_iter()
+            .iter()
             .map(|(v, m)| Mod::by_stat_or_invalid(v, *m))
             .collect()
     }
@@ -526,7 +526,7 @@ mod tests {
             Mod {
                 text: "75% increased Spell Damage".to_string(),
                 type_: ModType::Explicit,
-                numeric_value: ModValue::Exact(75),
+                numeric_value: ModValue::MinMax(60, 80),
                 stat_id: "spell_damage_+%".to_string(),
                 ..Default::default()
             }
@@ -536,7 +536,7 @@ mod tests {
     #[test]
     fn mod_parse_cluster() -> Result<(), anyhow::Error> {
         let _ = Mod::by_stat(
-            "Added Small Passive skills grant: 1% chance to Dodge Attack Hits",
+            "Added Small Passive Skills also grant: 3% increased Projectile Speed",
             ModType::Implicit,
         )?;
         Ok(())

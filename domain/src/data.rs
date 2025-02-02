@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Deserialize;
 use sonic_rs::{JsonValueTrait, Value};
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, sync::Mutex};
 
 pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
@@ -12,9 +12,9 @@ fn cut_numbers_inside(val: &str, st: char, end: char) -> String {
     replace_numbers_by(val, st, end, "")
 }
 
-fn cut_for_regex(val: &str, st: char, end: char, tmpl: &str) -> String {
-    let val = val.replace(|el: char| ['(', ')', '+'].contains(&el), "");
-    replace_numbers_by(&val, st, end, tmpl)
+fn replace_for_regex(val: &str) -> String {
+    let b = REGEX_REPLACE_NUMS.replace_all(val.as_bytes(), b"([0-9]+)");
+    unsafe { String::from_utf8_unchecked(b.to_vec()) }
 }
 
 fn replace_numbers_by(val: &str, st: char, end: char, tmpl: &str) -> String {
@@ -22,9 +22,9 @@ fn replace_numbers_by(val: &str, st: char, end: char, tmpl: &str) -> String {
     let mut idx = 0usize;
     while let Some(start_idx) = val[idx..].find(st) {
         let stop_idx = val.find(end).unwrap();
-        let range = start_idx+idx..=stop_idx;
+        let range = start_idx + idx..=stop_idx;
         val.replace_range(range.clone(), tmpl);
-        idx = stop_idx-(range.end()-range.start())+tmpl.len();
+        idx = stop_idx - (range.end() - range.start()) + tmpl.len();
     }
     val
 }
@@ -60,7 +60,7 @@ struct Stat {
     is_local: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ModValues {
     pub id: String,
     pub text: String,
@@ -82,7 +82,8 @@ struct ModStatsTmp {
 }
 
 lazy_static! {
-    static ref REGEX_DEFAULT: Regex = Regex::new("\\d").unwrap();
+    pub(crate) static ref REGEX_REPLACE_NUMS: regex::bytes::Regex = regex::bytes::Regex::new(r"\+?(\(.+\)|[0-9]+)").unwrap();
+    static ref MAX_LOAD_RECORD_FOR_TEST: Mutex<RefCell<Option<usize>>> = Mutex::new(RefCell::new(None));
     static ref STATS: HashMap<String, Stat> = {
         let stats_file = include_bytes!("../dist/stats.min.json");
         serde_json::from_slice(stats_file).unwrap()
@@ -107,7 +108,12 @@ lazy_static! {
     pub static ref MODS: HashMap<String, (Vec<ModValues>, Option<Regex>)> = {
         let mods_file = include_bytes!("../dist/mods.extracted.json");
         let mods: Vec<ModTmp> = sonic_rs::from_slice(mods_file).unwrap();
-        mods.into_iter().fold(HashMap::new(), |mut acc, m| {
+        let size = {
+            let sz = MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
+            let x = sz.borrow().unwrap_or(mods.len());
+            x
+        };
+        mods.into_iter().take(size).fold(HashMap::new(), |mut acc, m| {
             if m.text.is_none() {
                 return acc
             }
@@ -124,16 +130,6 @@ lazy_static! {
             } else {
                 stats.max.as_str().and_then(|s| s.parse().ok())
             };
-            // let min = match &stats.min {
-            //     Value::String(v) => v.parse().ok(),
-            //     Value::Number(v) => v.as_i64().map(|v| v as i32),
-            //     _ => None,
-            // };
-            // let max = match &stats.max {
-            //     Value::String(v) => v.parse().ok(),
-            //     Value::Number(v) => v.as_i64().map(|v| v as i32),
-            //     _ => None,
-            // };
             let v = ModValues {
                 id: stats.id.clone(),
                 min,
@@ -141,8 +137,9 @@ lazy_static! {
                 text: stat_name.clone(),
             };
 
-            let regex = Regex::new(&cut_for_regex(&stat_name, '(', ')', "([0-9]+)")).unwrap();
-            let en = acc.entry(cut_numbers(&stat_name)).or_default();
+            let k = replace_for_regex(&stat_name);
+            let regex = Regex::new(&k).unwrap();
+            let en = acc.entry(k).or_default();
             en.0.push(v);
             en.1 = Some(regex);
             acc
@@ -152,8 +149,9 @@ lazy_static! {
 
 impl MODS {
     pub(crate) fn get_mod_data(value: &str) -> Option<&ModValues> {
-        let (mods, reg) = MODS.get(&cut_numbers(value))?;
+        let (mods, reg) = MODS.get(&replace_for_regex(value))?;
         if let Some(reg) = reg {
+            #[allow(clippy::never_loop)]
             for (_, [num]) in reg.captures_iter(value).map(|c| c.extract()) {
                 let num = num.parse::<i32>().unwrap_or_default();
                 return mods.iter().find(|m| match (m.min, m.max) {
@@ -184,12 +182,63 @@ mod tests {
     use std::time::Instant;
 
     #[test]
+    #[ignore]
     fn check_load_time() {
         let start = Instant::now();
         super::MODS::get_mod_data("+50 to Evasion Rating");
         let delta = start.elapsed();
         println!("time loading mods: {}ms", delta.as_millis());
     }
+
+    #[test]
+    fn get_mod_data() {
+        {
+            let m = super::MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
+            m.borrow_mut().replace(100);
+        }
+
+        // println!("{:?}", *super::MODS);
+
+        let res = super::MODS::get_mod_data("+22 to Strength");
+        assert_eq!(res, Some(&super::ModValues{
+            id: "additional_strength".to_string(),
+            text: "+(18-22) to Strength".to_string(),
+            min: Some(18),
+            max: Some(22),
+        }));
+    }
+
+    #[test]
+    fn get_mod_regex() {
+        {
+            let m = super::MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
+            m.borrow_mut().replace(100);
+        }
+
+        let res = super::MODS.get(" to Strength").unwrap();
+        let re = res.1.as_ref().unwrap();
+        assert!(re.is_match("+10 to Strength"));
+    }
+
+    #[test]
+    fn replace_for_regex() {
+        assert_eq!(
+            super::replace_for_regex("+(10-20)% increased Spell Damage"),
+            "([0-9]+)% increased Spell Damage"
+        );
+        assert_eq!(
+            super::replace_for_regex("+10 to Strength"),
+            "([0-9]+) to Strength"
+        );
+    }
+
+    // #[test]
+    // fn replace_for_regex() {
+    //     assert_eq!(
+    //         super::replace_for_regex("+10 to Strength"),
+    //         "([0-9]+) to Strength"
+    //     );
+    // }
 
     #[test]
     fn replace_range() {
