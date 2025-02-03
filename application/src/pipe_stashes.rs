@@ -1,4 +1,3 @@
-use cassandra_cpp::{CassCollection, Map, Statement};
 use domain::{Mod, ModType};
 use public_stash::models::Item;
 use uuid::Uuid;
@@ -28,24 +27,4 @@ pub fn parse_mods(item: &Item) -> Vec<Mod> {
     let mods = Mod::many_by_stat(&mods);
 
     mods
-}
-
-pub fn insert_mods(mut stmt: Statement, item: &Item) -> Statement {
-    stmt.bind_string(0, item.id.as_ref().unwrap_or(&Uuid::new_v4().to_string()))
-        .unwrap();
-    stmt.bind_string(1, &item.base_type).unwrap();
-    let mods = parse_mods(&item);
-    let mut affixes = Map::new();
-    for m in mods {
-        affixes.append_string(&m.stat_id).unwrap();
-        affixes
-            .append_string(
-                &m.numeric_value
-                    .map(|n| n.to_string())
-                    .unwrap_or("-1".to_string()),
-            )
-            .unwrap();
-    }
-    stmt.bind_map(2, affixes).unwrap();
-    stmt
 }

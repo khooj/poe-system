@@ -1,7 +1,6 @@
 [workspace]
 members = [ 
 	"macros",
-	"server", 
 	"public_stash",
 	"pob",
 	"tradeapi",

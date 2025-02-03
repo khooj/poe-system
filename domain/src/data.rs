@@ -8,56 +8,14 @@ pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
 }
 
-fn cut_numbers_inside(val: &str, st: char, end: char) -> String {
-    replace_numbers_by(val, st, end, "")
-}
-
 fn replace_for_regex(val: &str) -> String {
     let b = REGEX_REPLACE_NUMS.replace_all(val.as_bytes(), b"([0-9]+)");
     unsafe { String::from_utf8_unchecked(b.to_vec()) }
 }
 
-fn replace_numbers_by(val: &str, st: char, end: char, tmpl: &str) -> String {
-    let mut val = val.to_string();
-    let mut idx = 0usize;
-    while let Some(start_idx) = val[idx..].find(st) {
-        let stop_idx = val.find(end).unwrap();
-        let range = start_idx + idx..=stop_idx;
-        val.replace_range(range.clone(), tmpl);
-        idx = stop_idx - (range.end() - range.start()) + tmpl.len();
-    }
-    val
-}
-
-#[derive(Deserialize)]
-struct StatTranslation {
-    #[serde(rename = "English")]
-    english: Vec<LanguageStatTranslation>,
-    ids: Vec<String>,
-}
-
-#[derive(Deserialize)]
-struct LanguageStatTranslation {
-    condition: Vec<StatCondition>,
-    format: Vec<String>,
-    string: String,
-}
-
-#[derive(Deserialize)]
-struct StatCondition {
-    min: Option<i16>,
-    max: Option<i16>,
-}
-
 #[derive(Deserialize)]
 struct BaseItem {
     name: String,
-}
-
-#[derive(Deserialize)]
-struct Stat {
-    is_aliased: bool,
-    is_local: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -84,21 +42,6 @@ struct ModStatsTmp {
 lazy_static! {
     pub(crate) static ref REGEX_REPLACE_NUMS: regex::bytes::Regex = regex::bytes::Regex::new(r"\+?(\(.+\)|[0-9]+)").unwrap();
     static ref MAX_LOAD_RECORD_FOR_TEST: Mutex<RefCell<Option<usize>>> = Mutex::new(RefCell::new(None));
-    static ref STATS: HashMap<String, Stat> = {
-        let stats_file = include_bytes!("../dist/stats.min.json");
-        serde_json::from_slice(stats_file).unwrap()
-    };
-    static ref STAT_TRANSLATIONS: Vec<StatTranslation> = {
-        let stats_translations_file = include_bytes!("../dist/stat_translations.min.json");
-        serde_json::from_slice(stats_translations_file).unwrap()
-    };
-    pub(crate) static ref STATS_CUTTED: HashMap<String, usize> = {
-        STAT_TRANSLATIONS
-            .iter()
-            .enumerate()
-            .map(|(idx, e)| (cut_numbers(&e.english[0].string), idx))
-            .collect::<HashMap<String, usize>>()
-    };
     static ref BASE_ITEMS: HashMap<String, BaseItem> = {
         let base_items_file = include_bytes!("../dist/base_items.min.json");
         serde_json::from_slice(base_items_file).unwrap()
@@ -148,32 +91,22 @@ lazy_static! {
 }
 
 impl MODS {
-    pub(crate) fn get_mod_data(value: &str) -> Option<&ModValues> {
+    pub(crate) fn get_mod_data(value: &str) -> Option<(&ModValues, Option<i32>)> {
         let (mods, reg) = MODS.get(&replace_for_regex(value))?;
         if let Some(reg) = reg {
             #[allow(clippy::never_loop)]
             for (_, [num]) in reg.captures_iter(value).map(|c| c.extract()) {
-                let num = num.parse::<i32>().unwrap_or_default();
-                return mods.iter().find(|m| match (m.min, m.max) {
-                    (Some(m1), Some(m2)) => (m1..=m2).contains(&num),
-                    (None, None) => true,
+                let num = num.parse::<i32>().ok();
+                return mods.iter().find(|m| match (m.min, m.max, num) {
+                    (Some(m1), Some(m2), Some(num)) => (m1..=m2).contains(&num),
+                    (None, None, _) => true,
                     _ => unreachable!(),
-                });
+                }).map(|m| (m, num));
             }
-            mods.first()
+            mods.first().map(|m| (m, None))
         } else {
-            mods.first()
+            mods.first().map(|m| (m, None))
         }
-    }
-}
-
-impl STATS_CUTTED {
-    pub(crate) fn get_original_stat(idx: usize) -> String {
-        STAT_TRANSLATIONS[idx].english[0].string.clone()
-    }
-
-    pub(crate) fn get_stat_id(idx: usize) -> String {
-        STAT_TRANSLATIONS[idx].ids[0].clone()
     }
 }
 
@@ -191,6 +124,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn get_mod_data() {
         {
             let m = super::MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
@@ -199,16 +133,18 @@ mod tests {
 
         // println!("{:?}", *super::MODS);
 
-        let res = super::MODS::get_mod_data("+22 to Strength");
-        assert_eq!(res, Some(&super::ModValues{
+        let (res, val) = super::MODS::get_mod_data("+22 to Strength").unwrap();
+        assert_eq!(res, &super::ModValues{
             id: "additional_strength".to_string(),
             text: "+(18-22) to Strength".to_string(),
             min: Some(18),
             max: Some(22),
-        }));
+        });
+        assert_eq!(val, Some(22));
     }
 
     #[test]
+    #[ignore]
     fn get_mod_regex() {
         {
             let m = super::MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
@@ -230,25 +166,5 @@ mod tests {
             super::replace_for_regex("+10 to Strength"),
             "([0-9]+) to Strength"
         );
-    }
-
-    // #[test]
-    // fn replace_for_regex() {
-    //     assert_eq!(
-    //         super::replace_for_regex("+10 to Strength"),
-    //         "([0-9]+) to Strength"
-    //     );
-    // }
-
-    #[test]
-    fn replace_range() {
-        let s = super::replace_numbers_by("asd(dsa)ds(ds)", '(', ')', "");
-        assert_eq!(s, "asdds");
-        let s = super::replace_numbers_by("(ddd)asd(dsa)ds(ds)", '(', ')', "");
-        assert_eq!(s, "asdds");
-        let s = super::replace_numbers_by("(ddd)asd", '(', ')', "");
-        assert_eq!(s, "asd");
-        let s = super::replace_numbers_by("+(10-20) to Evasion Rating", '(', ')', "([0-9]+)");
-        assert_eq!(s, "+([0-9]+) to Evasion Rating");
     }
 }

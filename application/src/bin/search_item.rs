@@ -1,5 +1,4 @@
-use application::{pipe_stashes::parse_mods};
-use cassandra_cpp::{AsRustType, Cluster, LendingIterator, MapIterator};
+use application::pipe_stashes::parse_mods;
 use clap::{Parser, Subcommand};
 use domain::Mod;
 use public_stash::models::PublicStashData;
@@ -21,7 +20,6 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    Cassandra,
     Redis,
 }
 
@@ -32,61 +30,6 @@ struct FoundItem {
 }
 
 type SearchResult = Result<Vec<FoundItem>, Box<dyn std::error::Error>>;
-
-async fn search_in_cassandra(mods: &Vec<Mod>) -> SearchResult {
-    let mut cluster = Cluster::default();
-    cluster.set_contact_points("127.0.0.1")?;
-    cluster.set_load_balance_round_robin();
-    let session = cluster.connect().await?;
-    let mut ids: HashSet<String> = HashSet::new();
-    let mut first_loaded = false;
-    for m in mods {
-        let mut stmt = session.statement("SELECT item_id FROM poesystem.affixes WHERE affix = ?;");
-        stmt.bind_string(0, &m.stat_id)?;
-        let result = stmt.execute().await?;
-        let mut iter = result.iter();
-        let mut new_ids = HashSet::new();
-        while let Some(row) = iter.next() {
-            let id = row.get_by_name("item_id")?;
-            new_ids.insert(id);
-        }
-
-        if !first_loaded {
-            first_loaded = true;
-            ids = new_ids;
-        } else {
-            ids = new_ids.intersection(&ids).cloned().collect();
-        }
-
-        if ids.len() < 10 {
-            break;
-        }
-    }
-
-    let mut stmt =
-        session.statement("SELECT id, basetype, affixes FROM poesystem.items WHERE id = ?;");
-    stmt.bind_string(0, &ids.iter().nth(0).expect("item not found"))?;
-    let result = stmt.execute().await?;
-    println!("found items");
-    let mut iter = result.iter();
-    let mut results = vec![];
-    while let Some(row) = iter.next() {
-        let id: String = row.get_by_name("id")?;
-        let basetype: String = row.get_by_name("basetype")?;
-        let mut affixes: MapIterator = row.get_by_name("affixes")?;
-        let mut aff = HashMap::new();
-        while let Some((k, v)) = affixes.next() {
-            aff.insert(k.to_string(), v.to_string()).unwrap();
-        }
-        results.push(FoundItem {
-            id,
-            basetype,
-            affixes: aff,
-        })
-    }
-
-    Ok(results)
-}
 
 async fn search_in_redis(mods: &Vec<Mod>) -> SearchResult {
     let cwd = std::env::current_dir()?;
@@ -148,12 +91,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-
-    //let (_, data) = &stashes.nth(0).unwrap();
-    //let idx = rand::thread_rng().sample(Uniform::new(0usize, stash_info.stashes.len()));
-    //let stash = &stash_info.stashes[idx];
-    //
-    //let idx = rand::thread_rng().sample(Uniform::new(0usize, stash.items.len()));
     let item = max_item.unwrap();
     println!(
         "trying to find similar item to {1} {0}",
@@ -163,7 +100,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let start = Instant::now();
     let result = match cli.command {
-        Command::Cassandra => search_in_cassandra(&mods).await?,
         Command::Redis => search_in_redis(&mods).await?,
     };
     let end = Instant::now();

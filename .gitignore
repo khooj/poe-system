@@ -11,4 +11,7 @@ app/.svelte-kit
 slices.ndjson.xz
 data
 services-log.log
-unpack
+unpack1
+slice*
+config.toml
+

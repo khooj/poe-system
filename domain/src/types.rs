@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, str::FromStr};
+use std::{cmp::Ordering, convert::TryFrom, ops::RangeInclusive, str::FromStr};
 use strum::EnumString;
 use thiserror::Error;
 
-use crate::{MODS, STATS_CUTTED};
+use crate::MODS;
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -418,7 +418,42 @@ pub enum ModValue {
     #[default]
     Nothing,
     Exact(i32),
-    MinMax(i32, i32),
+    // MinMax(RangeInclusive<i32>),
+}
+
+impl PartialEq<i32> for ModValue {
+    fn eq(&self, other: &i32) -> bool {
+        match self {
+            ModValue::Nothing => false,
+            ModValue::Exact(v) => v.eq(other),
+            // ModValue::MinMax(range) => range.contains(other),
+        }
+    }
+}
+
+impl PartialEq<RangeInclusive<i32>> for ModValue {
+    fn eq(&self, other: &RangeInclusive<i32>) -> bool {
+        match self {
+            ModValue::Nothing => false,
+            ModValue::Exact(m) => other.contains(m),
+            // ModValue::MinMax(range) => range.eq(other),
+        }
+    }
+}
+
+impl PartialOrd<RangeInclusive<i32>> for ModValue {
+    fn partial_cmp(&self, other: &RangeInclusive<i32>) -> Option<std::cmp::Ordering> {
+        match self {
+            ModValue::Nothing => None,
+            ModValue::Exact(m) => if m < other.start() {
+                Some(Ordering::Less)
+            } else if m > other.end() {
+                Some(Ordering::Greater)
+            } else {
+                Some(Ordering::Equal)
+            },
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
@@ -443,16 +478,12 @@ impl Mod {
     }
 
     pub fn by_stat_or_invalid(value: &str, typ: ModType) -> Self {
-        if let Some(mod_value) = MODS::get_mod_data(value) {
+        if let Some((mod_value, num)) = MODS::get_mod_data(value) {
             return Mod {
                 text: value.to_string(),
                 type_: typ,
                 stat_id: mod_value.id.clone(),
-                numeric_value: match (mod_value.min, mod_value.max) {
-                    (Some(m1), Some(m2)) if m1 == m2 => ModValue::Exact(m1),
-                    (Some(m1), Some(m2)) => ModValue::MinMax(m1, m2),
-                    _ => ModValue::Nothing,
-                },
+                numeric_value: num.map_or(ModValue::Nothing, ModValue::Exact),
                 ..Default::default()
             };
         }
@@ -526,7 +557,7 @@ mod tests {
             Mod {
                 text: "75% increased Spell Damage".to_string(),
                 type_: ModType::Explicit,
-                numeric_value: ModValue::MinMax(60, 80),
+                numeric_value: ModValue::Exact(75),
                 stat_id: "spell_damage_+%".to_string(),
                 ..Default::default()
             }
