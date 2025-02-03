@@ -418,6 +418,10 @@ pub enum ModValue {
     #[default]
     Nothing,
     Exact(i32),
+    DoubleExact {
+        from: i32,
+        to: i32,
+    }
     // MinMax(RangeInclusive<i32>),
 }
 
@@ -426,7 +430,7 @@ impl PartialEq<i32> for ModValue {
         match self {
             ModValue::Nothing => false,
             ModValue::Exact(v) => v.eq(other),
-            // ModValue::MinMax(range) => range.contains(other),
+            ModValue::DoubleExact { .. } => false,
         }
     }
 }
@@ -436,7 +440,6 @@ impl PartialEq<RangeInclusive<i32>> for ModValue {
         match self {
             ModValue::Nothing => false,
             ModValue::Exact(m) => other.contains(m),
-            // ModValue::MinMax(range) => range.eq(other),
         }
     }
 }
