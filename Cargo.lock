@@ -648,6 +648,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "clap",
+ "dashmap 6.1.0",
  "itertools",
  "lazy_static",
  "macros",

@@ -1,7 +1,7 @@
+use dashmap::{mapref::one::Ref, DashMap};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{
-    de::{Deserializer, Visitor},
     Deserialize,
 };
 use sonic_rs::{JsonValueTrait, Value};
@@ -87,27 +87,26 @@ lazy_static! {
     };
     pub static ref BASE_TYPES: Vec<&'static str> =
         BASE_ITEMS.iter().map(|(_, v)| v.name.as_str()).collect();
-    pub static ref MODS: HashMap<String, (Vec<ModValues>, Regex)> = {
+    pub static ref MODS: HashMap<String, Vec<ModValues>> = {
         let mods_file = include_bytes!("../dist/mods.data");
         let mods: HashMap<String, Vec<ModValues>> = bincode::deserialize(mods_file).unwrap();
-        let size = {
-            let sz = MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
-            let x = sz.borrow().unwrap_or(mods.len());
-            x
-        };
-        mods.into_iter()
-            .take(size)
-            .map(|(k, v)| {
-                let regex = Regex::new(&k).unwrap();
-                (k, (v, regex))
-            })
-            .collect()
+        mods
     };
+    static ref LAZY_MODS_REGEX: DashMap<String, Regex> = DashMap::new();
+}
+
+impl LAZY_MODS_REGEX {
+    fn get_regex(&self, re: &str) -> Ref<'_, String, Regex> {
+        self.entry(re.to_string()).or_insert(Regex::new(re).unwrap());
+        self.get(re).unwrap()
+    }
 }
 
 impl MODS {
     pub(crate) fn get_mod_data(value: &str) -> Option<(&ModValues, Option<i32>)> {
-        let (mods, reg) = MODS.get(&replace_for_regex(value))?;
+        let k = replace_for_regex(value);
+        let mods = MODS.get(&k)?;
+        let reg = LAZY_MODS_REGEX.get_regex(&k);
         #[allow(clippy::never_loop)]
         for (_, [num]) in reg.captures_iter(value).map(|c| c.extract()) {
             let num = num.parse::<i32>().ok();
@@ -129,7 +128,6 @@ mod tests {
     use std::time::Instant;
 
     #[test]
-    #[ignore]
     fn check_load_time() {
         let start = Instant::now();
         super::MODS::get_mod_data("+50 to Evasion Rating");
@@ -138,7 +136,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn get_mod_data() {
         {
             let m = super::MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
@@ -158,19 +155,6 @@ mod tests {
             }
         );
         assert_eq!(val, Some(22));
-    }
-
-    #[test]
-    #[ignore]
-    fn get_mod_regex() {
-        {
-            let m = super::MAX_LOAD_RECORD_FOR_TEST.lock().unwrap();
-            m.borrow_mut().replace(100);
-        }
-
-        let res = super::MODS.get(" to Strength").unwrap();
-        let re = &res.1;
-        assert!(re.is_match("+10 to Strength"));
     }
 
     #[test]
