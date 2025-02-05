@@ -3,7 +3,7 @@ use std::{convert::TryFrom, ops::RangeInclusive, str::FromStr};
 use strum::EnumString;
 use thiserror::Error;
 
-use crate::data::MODS;
+use crate::data::{MODS, ModValue as DataModValue};
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -417,28 +417,10 @@ pub enum ModError {
 pub enum ModValue {
     #[default]
     Nothing,
-    Exact(i32),
+    Exact(DataModValue),
     DoubleExact {
-        from: i32,
-        to: i32,
-    }, // MinMax(RangeInclusive<i32>),
-}
-
-impl PartialEq<i32> for ModValue {
-    fn eq(&self, other: &i32) -> bool {
-        match self {
-            ModValue::Nothing | ModValue::DoubleExact { .. } => false,
-            ModValue::Exact(v) => v.eq(other),
-        }
-    }
-}
-
-impl PartialEq<RangeInclusive<i32>> for ModValue {
-    fn eq(&self, other: &RangeInclusive<i32>) -> bool {
-        match self {
-            ModValue::Nothing | ModValue::DoubleExact { .. } => false,
-            ModValue::Exact(m) => other.contains(m),
-        }
+        from: DataModValue,
+        to: DataModValue,
     }
 }
 
@@ -548,7 +530,7 @@ mod tests {
             Mod {
                 text: "75% increased Spell Damage".to_string(),
                 type_: ModType::Explicit,
-                numeric_value: ModValue::Exact(75),
+                numeric_value: ModValue::Exact(crate::data::ModValue::Int(75)),
                 stat_id: "spell_damage_+%".to_string(),
                 ..Default::default()
             }
