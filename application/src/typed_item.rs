@@ -1,5 +1,5 @@
 use core::convert::TryFrom;
-use domain::{Category, Item as DomainItem, Mod, ModType};
+use domain::{item::Item as DomainItem, types::{Mod, ModType, Category}};
 use public_stash::models::Item;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

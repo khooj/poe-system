@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use domain::Mod;
+use domain::types::Mod;
 use redis::AsyncCommands;
 use thiserror::Error;
 

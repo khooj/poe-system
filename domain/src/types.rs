@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{cmp::Ordering, convert::TryFrom, ops::RangeInclusive, str::FromStr};
+use std::{convert::TryFrom, ops::RangeInclusive, str::FromStr};
 use strum::EnumString;
 use thiserror::Error;
 
-use crate::MODS;
+use crate::data::MODS;
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -421,16 +421,14 @@ pub enum ModValue {
     DoubleExact {
         from: i32,
         to: i32,
-    }
-    // MinMax(RangeInclusive<i32>),
+    }, // MinMax(RangeInclusive<i32>),
 }
 
 impl PartialEq<i32> for ModValue {
     fn eq(&self, other: &i32) -> bool {
         match self {
-            ModValue::Nothing => false,
+            ModValue::Nothing | ModValue::DoubleExact { .. } => false,
             ModValue::Exact(v) => v.eq(other),
-            ModValue::DoubleExact { .. } => false,
         }
     }
 }
@@ -438,23 +436,8 @@ impl PartialEq<i32> for ModValue {
 impl PartialEq<RangeInclusive<i32>> for ModValue {
     fn eq(&self, other: &RangeInclusive<i32>) -> bool {
         match self {
-            ModValue::Nothing => false,
+            ModValue::Nothing | ModValue::DoubleExact { .. } => false,
             ModValue::Exact(m) => other.contains(m),
-        }
-    }
-}
-
-impl PartialOrd<RangeInclusive<i32>> for ModValue {
-    fn partial_cmp(&self, other: &RangeInclusive<i32>) -> Option<std::cmp::Ordering> {
-        match self {
-            ModValue::Nothing => None,
-            ModValue::Exact(m) => if m < other.start() {
-                Some(Ordering::Less)
-            } else if m > other.end() {
-                Some(Ordering::Greater)
-            } else {
-                Some(Ordering::Equal)
-            },
         }
     }
 }
@@ -481,12 +464,19 @@ impl Mod {
     }
 
     pub fn by_stat_or_invalid(value: &str, typ: ModType) -> Self {
-        if let Some((mod_value, num)) = MODS::get_mod_data(value) {
+        if let Some((mod_value, num, num2)) = MODS::get_mod_data(value) {
             return Mod {
                 text: value.to_string(),
                 type_: typ,
-                stat_id: mod_value.id.clone(),
-                numeric_value: num.map_or(ModValue::Nothing, ModValue::Exact),
+                stat_id: mod_value.get_id(),
+                numeric_value: match (num, num2) {
+                    (Some(num), Some(num2)) => ModValue::DoubleExact {
+                        from: num,
+                        to: num2,
+                    },
+                    (Some(num), None) => ModValue::Exact(num),
+                    _ => ModValue::Nothing,
+                },
                 ..Default::default()
             };
         }
@@ -546,9 +536,7 @@ pub struct Property {
 
 #[cfg(test)]
 mod tests {
-    use crate::ModValue;
-
-    use super::{Mod, ModType};
+    use super::{Mod, ModType, ModValue};
 
     #[test]
     fn mod_parse() {

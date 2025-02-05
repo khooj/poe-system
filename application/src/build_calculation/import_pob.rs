@@ -3,7 +3,7 @@ use pob::{ItemSet, Pob};
 use crate::typed_item::{TypedItem, TypedItemError};
 
 use super::{BuildInfo, BuildItemsWithConfig, ItemWithConfig};
-use domain::{Category, Subcategory};
+use domain::types::{Category, Subcategory};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImportPobError {

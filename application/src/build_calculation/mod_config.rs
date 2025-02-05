@@ -1,4 +1,4 @@
-use domain::{Mod, ModValue};
+use domain::types::{Mod, ModValue};
 use serde::{Deserialize, Serialize};
 use std::ops::RangeInclusive;
 

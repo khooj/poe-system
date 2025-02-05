@@ -9,14 +9,26 @@ pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
 }
 
-fn replace_for_regex(val: &str) -> String {
+fn replace_for_regex(val: &str) -> (String, usize) {
     lazy_static! {
         static ref REGEX_REPLACE_NUMS: regex::bytes::Regex =
-            regex::bytes::Regex::new(r"\+?(\(.+\)|[0-9]+)").unwrap();
+            regex::bytes::Regex::new(r"\+?(\([0-9-]+\))").unwrap();
     }
 
-    let b = REGEX_REPLACE_NUMS.replace_all(val.as_bytes(), b"([0-9]+)");
-    unsafe { String::from_utf8_unchecked(b.to_vec()) }
+    let mut count = 0;
+    let mut res = val.as_bytes().to_owned();
+
+    while REGEX_REPLACE_NUMS.is_match(&res) {
+        let c = REGEX_REPLACE_NUMS.replace(&res, b"([0-9]+)");
+        res = c.to_vec();
+        count += 1;
+    }
+
+    let mut s = unsafe { String::from_utf8_unchecked(res.to_vec()) };
+    if count == 0 {
+        s = s.replace("+", "\\+");
+    }
+    (s, count)
 }
 
 #[derive(Deserialize)]
@@ -31,11 +43,7 @@ pub enum ModValue {
         from: RangeInclusive<i32>,
         to: RangeInclusive<i32>,
     },
-    Exact(i32),
-    DoubleExact {
-        from: i32,
-        to: i32,
-    },
+    Static,
 }
 
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -45,13 +53,15 @@ pub struct ModInfo {
     pub value: ModValue,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 struct ModTmp {
     text: Option<String>,
+    domain: String,
     stats: Vec<ModStatsTmp>,
+    groups: Vec<String>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Clone)]
 struct ModStatsTmp {
     id: String,
     min: Value,
@@ -66,7 +76,38 @@ fn extract_minmax(val: &Value) -> Option<i32> {
     }
 }
 
-type SerializedModData = HashMap<String, Vec<ModInfo>>;
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize, PartialEq)]
+pub enum ModType {
+    #[default]
+    Unknown,
+    Tiers(Vec<ModInfo>),
+    Static(ModInfo),
+}
+
+impl ModType {
+    pub fn get_id(&self) -> String {
+        match self {
+            ModType::Unknown => unreachable!(),
+            ModType::Static(mi) => mi.id.clone(),
+            ModType::Tiers(mis) => mis.first().map(|mi| mi.id.clone()).unwrap(),
+        }
+    }
+}
+
+type SerializedModData = HashMap<String, ModType>;
+const WHITELIST_DOMAINS: &[&str] = &[
+    "abyss_jewel",
+    "affliction_jewel",
+    "crafted",
+    "flask",
+    "item",
+    "unveiled",
+];
+
+const DOUBLE_MOD: &[&str] = &[
+    "Immunity to Ignite during Effect",
+    "Removes Burning on Use",
+];
 
 pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
     let mods: HashMap<String, ModTmp> = serde_json::from_slice(mods_file).unwrap();
@@ -75,85 +116,106 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
             return acc;
         }
 
+        if !WHITELIST_DOMAINS.contains(&m.domain.as_str()) {
+            return acc;
+        }
+
         let mut mods = vec![];
-        let stat_names: Vec<_> = m.text.as_ref().unwrap().split("\\n").collect();
-        let stats = m.stats;
-        if stat_names.len() == stats.len() {
-            if stat_names.len() == 1 {
-                let stat = stats.first().unwrap();
-                let stat_name = stat_names.first().unwrap();
+        let stat_names: Vec<_> = m.text.as_ref().unwrap().split("\n").collect();
+        let mut stats = m.stats.clone().into_iter();
+        // used for mods with 2 stat_names and single size stats vec (equals stats)
+        let mut prev_stat_count1 = None;
+        // for mods with 2 stat_names and one stat for both
+        let mut advanced_once = false;
+        let mut prev_stat_count0 = None;
+        for stat_name in stat_names {
+            let (key, capture_groups_count) = replace_for_regex(stat_name);
+            // println!("key: {}, count: {}", key, capture_groups_count);
+            if capture_groups_count == 0 {
+                let id = if DOUBLE_MOD.contains(&stat_name) && !advanced_once {
+                    prev_stat_count0 = stats.next();
+                    advanced_once = true;
+                    prev_stat_count0.as_ref().map(|v| v.id.clone()).unwrap_or_default()
+                } else {
+                    prev_stat_count0.as_ref().map(|v| v.id.clone()).unwrap_or_default()
+                };
+                mods.push((
+                    key,
+                    ModType::Static(ModInfo {
+                        id,
+                        text: stat_name.to_string(),
+                        value: ModValue::Static,
+                    }),
+                ));
+                continue;
+            }
+
+            if capture_groups_count == 1 {
+                let stat = stats.next().or(prev_stat_count1).unwrap_or_else(|| {
+                    panic!(
+                        "unexpected mod in group: {:?} = {:?} (it len: {}, current stat: {})",
+                        m.text,
+                        m.stats,
+                        stats.len(),
+                        stat_name,
+                    )
+                });
                 let min = extract_minmax(&stat.min);
                 let max = extract_minmax(&stat.max);
                 mods.push((
-                    stat_name.clone(),
-                    ModInfo {
+                    key,
+                    ModType::Tiers(vec![ModInfo {
                         id: stat.id.clone(),
                         text: stat_name.to_string(),
                         value: match (min, max) {
-                            (Some(m1), Some(m2)) if m1 == m2 => ModValue::Exact(m1),
                             (Some(m1), Some(m2)) => ModValue::MinMax(m1..=m2),
                             _ => panic!("unknown case"),
                         },
-                    },
+                    }]),
                 ));
-            } else if stat_names.len() == 2 {
-                // double mod
-                for (stat_name, stat) in stat_names.into_iter().zip(stats.into_iter()) {
-                    let min = extract_minmax(&stat.min);
-                    let max = extract_minmax(&stat.max);
-                    mods.push((
-                        stat_name.clone(),
-                        ModInfo {
-                            id: stat.id.clone(),
-                            text: stat_name.to_string(),
-                            value: match (min, max) {
-                                (Some(m1), Some(m2)) if m1 == m2 => ModValue::Exact(m1),
-                                (Some(m1), Some(m2)) => ModValue::MinMax(m1..=m2),
-                                _ => panic!("unknown case"),
-                            },
-                        },
-                    ));
-                }
-            }
-        } else {
-            // e.g. Adds 1 to 2 physical damage or Adds (2-3) to (3-4) damage
-            let stat_name = stat_names.first().unwrap();
-            let minmax: Vec<_> = stats
-                .iter()
-                .map(|s| (extract_minmax(&s.min), extract_minmax(&s.max)))
-                .collect();
-            if minmax.len() != 2 {
-                eprintln!("unknown mod");
-            } else {
-                let id = format!("{};{}", stats[0].id, stats[1].id);
-                let modvalue = match minmax[..] {
-                    [(Some(f1), Some(f2)), (Some(t1), Some(t2))] if f1 == f2 && t1 == t2 => {
-                        ModValue::DoubleExact { from: f1, to: t1 }
-                    }
-                    [(Some(f1), Some(f2)), (Some(t1), Some(t2))] if f2 > f1 && t2 > t1 => {
-                        ModValue::DoubleMinMax {
-                            from: f1..=f2,
-                            to: t1..=t2,
-                        }
-                    }
-                    _ => unreachable!(),
-                };
+                prev_stat_count1 = Some(stat);
+            } else if capture_groups_count == 2 {
+                let stat = stats.next().unwrap();
+                let min1 = extract_minmax(&stat.min);
+                let max1 = extract_minmax(&stat.max);
+                let stat = stats.next().unwrap();
+                let min2 = extract_minmax(&stat.min);
+                let max2 = extract_minmax(&stat.max);
                 mods.push((
-                    stat_name.clone(),
-                    ModInfo {
-                        id,
+                    key,
+                    ModType::Tiers(vec![ModInfo {
+                        id: stat.id.clone(),
                         text: stat_name.to_string(),
-                        value: modvalue,
-                    },
+                        value: match (min1, max1, min2, max2) {
+                            (Some(min1), Some(max1), Some(min2), Some(max2)) => {
+                                ModValue::DoubleMinMax {
+                                    from: min1..=max1,
+                                    to: min2..=max2,
+                                }
+                            }
+                            _ => panic!("unknown case"),
+                        },
+                    }]),
                 ));
+            } else {
+                panic!("unknown mod: {} = {:?}", stat_name, m.stats);
             }
         }
 
-        for (stat_name, modinfo) in mods {
-            let k = replace_for_regex(&stat_name);
-            let _regex = Regex::new(&k).unwrap();
-            let en = acc.entry(k).or_default();
-            en.push(modinfo);
+        for (key, modinfo) in mods {
+            let _regex = Regex::new(&key).unwrap();
+            let en = acc.entry(key).or_default();
+            match modinfo {
+                mt @ ModType::Static(_) => *en = mt,
+                ModType::Tiers(mut v) => {
+                    if let ModType::Tiers(v2) = en {
+                        v2.append(&mut v);
+                    } else {
+                        *en = ModType::Tiers(v);
+                    }
+                }
+                ModType::Unknown => continue,
+            };
         }
 
         acc
@@ -171,8 +233,7 @@ lazy_static! {
         BASE_ITEMS.iter().map(|(_, v)| v.name.as_str()).collect();
     pub static ref MODS: SerializedModData = {
         let mods_file = include_bytes!("../dist/mods.data");
-        let mods = bincode::deserialize(mods_file).unwrap();
-        mods
+        bincode::deserialize(mods_file).unwrap()
     };
     static ref LAZY_MODS_REGEX: DashMap<String, Regex> = DashMap::new();
 }
@@ -185,31 +246,56 @@ impl LAZY_MODS_REGEX {
     }
 }
 
+enum MatchVariant<'a> {
+    String(&'a str),
+    Number(i32),
+}
+
+impl<'a> From<&'a str> for MatchVariant<'a> {
+    fn from(value: &'a str) -> Self {
+        match value.parse().ok() {
+            Some(v) => MatchVariant::Number(v),
+            None => MatchVariant::String(value),
+        }
+    }
+}
+
+impl<'a> MatchVariant<'a> {
+    fn as_number(&self) -> Option<i32> {
+        match self {
+            MatchVariant::Number(s) => Some(*s),
+            _ => None,
+        }
+    }
+}
+
+// hashed key => enum {
+//  Tiers(Vec<Info>),
+//  Static(Info),
+// }
+// by capture groups count (stat => capture_group)
+// 0 capture groups => static
+// > 0 = tiers
+//
+
 impl MODS {
-    pub(crate) fn get_mod_data(value: &str) -> Option<(&ModInfo, Option<i32>)> {
-        let k = replace_for_regex(value);
+    pub(crate) fn get_mod_data(value: &str) -> Option<(&ModType, Option<i32>, Option<i32>)> {
+        let (k, _) = replace_for_regex(value);
         let mods = MODS.get(&k)?;
         let reg = LAZY_MODS_REGEX.get_regex(&k);
-        #[allow(clippy::never_loop)]
-        for (num, num2) in reg.captures_iter(value).map(|c| (c.get(0), c.get(1))) {
-            let num = num.map(|v| v.as_str().parse::<i32>().unwrap());
-            let num2 = num2.map(|v| v.as_str().parse::<i32>().unwrap());
-            return mods
-                .iter()
-                .find(|m| match (&m.value, num, num2) {
-                    (ModValue::MinMax(range), Some(num), None) => range.contains(&num),
-                    (ModValue::Exact(m), Some(num), None) => *m == num,
-                    (ModValue::DoubleExact { from, to }, Some(num), Some(num2)) => {
-                        *from == num && *to == num2
-                    }
-                    (ModValue::DoubleMinMax { from, to }, Some(num), Some(num2)) => {
-                        from.contains(&num) && to.contains(&num2)
-                    }
-                    (_, _, _) => panic!("unknown mod"),
-                })
-                .map(|m| (m, num));
+        match mods {
+            ModType::Unknown => None,
+            m @ ModType::Static(_) => Some((m, None, None)),
+            m @ ModType::Tiers(_) => {
+                if let Some((num, num2)) = reg.captures(value).map(|c| (c.get(0), c.get(1))) {
+                    let num = num.and_then(|v| v.as_str().parse().ok());
+                    let num2 = num2.and_then(|v| v.as_str().parse().ok());
+                    Some((m, num, num2))
+                } else {
+                    None
+                }
+            }
         }
-        mods.first().map(|m| (m, None))
     }
 }
 
@@ -236,27 +322,36 @@ mod tests {
 
         // println!("{:?}", *super::MODS);
 
-        let (res, val) = super::MODS::get_mod_data("+22 to Strength").unwrap();
+        let (res, val1, val2) = super::MODS::get_mod_data("+22 to Strength").unwrap();
         assert_eq!(
             res,
-            &super::ModInfo {
+            &super::ModType::Static(super::ModInfo {
                 id: "additional_strength".to_string(),
-                text: "+(18-22) to Strength".to_string(),
-                value: ModValue::MinMax(18..=22),
-            }
+                text: "+22 to Strength".to_string(),
+                value: ModValue::Static,
+            })
         );
-        assert_eq!(val, Some(22));
+        assert_eq!(val1, Some(22));
+        assert_eq!(val2, None);
     }
 
     #[test]
     fn replace_for_regex() {
         assert_eq!(
             super::replace_for_regex("+(10-20)% increased Spell Damage"),
-            "([0-9]+)% increased Spell Damage"
+            ("([0-9]+)% increased Spell Damage".to_string(), 1),
         );
         assert_eq!(
             super::replace_for_regex("+10 to Strength"),
-            "([0-9]+) to Strength"
+            ("\\+10 to Strength".to_string(), 0)
+        );
+        assert_eq!(
+            super::replace_for_regex("Adds 2 Passive Skills"),
+            ("Adds 2 Passive Skills".to_string(), 0)
+        );
+        assert_eq!(
+            super::replace_for_regex("+2 to Level of Socketed Support Gems"),
+            ("\\+2 to Level of Socketed Support Gems".to_string(), 0)
         );
     }
 }

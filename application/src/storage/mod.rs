@@ -2,7 +2,7 @@ pub mod postgresql;
 pub mod redis;
 
 use crate::typed_item::TypedItem;
-use domain::Mod;
+use domain::types::Mod;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

@@ -4,7 +4,7 @@ use std::{
 };
 
 use clap::Parser;
-use domain::prepare_data;
+use domain::data::prepare_data;
 
 #[derive(Parser)]
 struct Cli {

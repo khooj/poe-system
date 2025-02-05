@@ -1,6 +1,5 @@
-use domain::{Mod, ModType};
+use domain::types::{Mod, ModType};
 use public_stash::models::Item;
-use uuid::Uuid;
 
 pub fn parse_mods(item: &Item) -> Vec<Mod> {
     let mods = [

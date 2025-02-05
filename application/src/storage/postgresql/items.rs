@@ -1,6 +1,6 @@
 use crate::storage::{ItemRepositoryError, ItemRepositoryTrait, LatestStashId};
 use crate::typed_item::TypedItem;
-use domain::Mod;
+use domain::types::Mod;
 use serde::Serialize;
 use sqlx::Row;
 use thiserror::Error;

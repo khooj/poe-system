@@ -1,4 +1,4 @@
-use domain::Mod;
+use domain::types::Mod;
 
 use crate::typed_item::TypedItem;
 

@@ -1,4 +1,8 @@
-use domain::{Category, Item, Mod, ModType, BASE_TYPES};
+use domain::{
+    data::BASE_TYPES,
+    item::Item,
+    types::{Category, Mod, ModType},
+};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -7,7 +11,7 @@ use nom::{
     },
     combinator::{cut, map, map_res, opt},
     error::{context, ContextError, FromExternalError, ParseError},
-    multi::{length_count, many0, many_m_n},
+    multi::{length_count, many0},
     sequence::{delimited, preceded, tuple},
     IResult,
 };
@@ -241,7 +245,7 @@ where
                 item.base_type = base;
             }
             ItemValue::UniqueId(id) => item.id = id.to_string(),
-            ItemValue::ItemLevel(il) => item.item_lvl = domain::ItemLvl::Yes(il),
+            ItemValue::ItemLevel(il) => item.item_lvl = domain::types::ItemLvl::Yes(il),
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
             ItemValue::Sockets(s) => item.sockets = s,
             ItemValue::Quality(q) => item.quality = q,
@@ -263,7 +267,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use domain::Mod;
+    use domain::types::Mod;
     use nom::error::VerboseError;
 
     use super::*;
@@ -295,8 +299,13 @@ mod test {
     gen_test!(itemlvl_check, item_lvl, "Item Level: 21", 21);
     gen_test!(levelreq_check, level_req, "LevelReq: 21", 21);
 
-    // TODO: add checks
-    gen_test!(itemvalue_qual_check, item_value, "Quality: 21", ItemValue::Quality(21));
+    // TODO: add checks  for itemvalue
+    gen_test!(
+        itemvalue_qual_check,
+        item_value,
+        "Quality: 21",
+        ItemValue::Quality(21)
+    );
 
     #[test]
     fn affix_check() -> anyhow::Result<()> {
@@ -350,7 +359,7 @@ Added Small Passive Skills also grant: +5 to Strength
             item.item.id,
             "c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb"
         );
-        assert_eq!(item.item.item_lvl, domain::ItemLvl::Yes(84));
+        assert_eq!(item.item.item_lvl, domain::types::ItemLvl::Yes(84));
         assert_eq!(item.item.lvl_req, 54);
         assert_eq!(
             item.item.mods,
