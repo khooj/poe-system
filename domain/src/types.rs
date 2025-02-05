@@ -1,9 +1,10 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, ops::RangeInclusive, str::FromStr};
+use std::{collections::HashMap, convert::TryFrom, ops::{Deref, RangeInclusive}, str::FromStr};
 use strum::EnumString;
 use thiserror::Error;
 
-use crate::data::{MODS, ModValue as DataModValue};
+use crate::data::{ModValue as DataModValue, BASE_ITEMS, MODS};
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -46,13 +47,43 @@ pub enum Category {
     Leaguestones,
 }
 
+lazy_static::lazy_static! {
+    static ref CATEGORY_MAPPING: HashMap<String, Category> = {
+        let mut hm = HashMap::new();
+        hm.insert("weapon".into(), Category::Weapons);
+        hm.insert("armour".into(), Category::Armour);
+        hm.insert("jewel".into(), Category::Jewels);
+        hm.insert("abyss_jewel".into(), Category::Jewels);
+        hm.insert("quiver".into(), Category::Weapons);
+        hm.insert("ring".into(), Category::Accessories);
+        hm.insert("amulet".into(), Category::Accessories);
+        hm.insert("flask".into(), Category::Flasks);
+        hm.insert("belt".into(), Category::Accessories);
+        hm.insert("gem".into(), Category::Gems);
+        hm
+    };
+}
+
 impl Category {
     pub fn parse_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Category, TypeError> {
-        let basetype = basetype.as_ref();
-        if let Ok(_) = BootsBase::from_str(basetype) {
+        let basetype = basetype.as_ref().replace(" ", "");
+        if BootsBase::from_str(&basetype).is_ok() {
             return Ok(Category::Armour);
         }
+        if Jewels::from_str(&basetype).is_ok() {
+            return Ok(Category::Jewels);
+        }
         Err(TypeError::UnknownCategory(basetype.to_string()))
+    }
+
+    pub fn get_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Category, TypeError> {
+        let baseinfo = BASE_ITEMS.get(basetype.as_ref()).ok_or(TypeError::UnknownCategory(basetype.as_ref().to_string()))?;
+        for (k, v) in CATEGORY_MAPPING.deref().iter() {
+            if baseinfo.tags.contains(k) {
+                return Ok(v.clone());
+            }
+        }
+        Err(TypeError::UnknownCategory(basetype.as_ref().to_string()))
     }
 }
 
@@ -144,6 +175,22 @@ impl Class {
         s.retain(|c| !c.is_whitespace());
         Ok(Class::from_str(&s)?)
     }
+}
+
+#[derive(Debug, EnumString, PartialEq)]
+#[strum(ascii_case_insensitive)]
+pub enum Jewels {
+    SmallClusterJewel,
+    MediumClusterJewel,
+    LargeClusterJewel,
+    ViridianJewel,
+}
+
+#[derive(Debug, EnumString, PartialEq)]
+#[strum(ascii_case_insensitive)]
+pub enum Weapons {
+    OrnateQuiver,
+    DeathBow,
 }
 
 #[derive(Debug, EnumString, PartialEq)]
@@ -421,7 +468,7 @@ pub enum ModValue {
     DoubleExact {
         from: DataModValue,
         to: DataModValue,
-    }
+    },
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]

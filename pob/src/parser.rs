@@ -1,11 +1,11 @@
 use domain::{
-    data::BASE_TYPES,
+    data::BASE_ITEMS,
     item::Item,
     types::{Category, Mod, ModType},
 };
 use nom::{
     branch::alt,
-    bytes::complete::tag,
+    bytes::complete::{tag, take_till},
     character::complete::{
         alpha1, alphanumeric1, digit1, line_ending, multispace0, not_line_ending,
     },
@@ -16,8 +16,18 @@ use nom::{
     IResult,
 };
 
-use std::num::ParseIntError;
+use std::{num::ParseIntError, str::ParseBoolError};
 use std::str::FromStr;
+
+#[derive(thiserror::Error, Debug)]
+pub enum PobParseError {
+    #[error("parse int: {0}")]
+    ParseInt(#[from] ParseIntError),
+    #[error("unknown category: {0}")]
+    UnknownCategory(String),
+    #[error("unknown category type: {0}")]
+    CategoryType(#[from] domain::types::TypeError),
+}
 
 pub(crate) struct ParsedItem {
     pub item: Item,
@@ -26,7 +36,7 @@ pub(crate) struct ParsedItem {
 #[derive(Debug, PartialEq)]
 pub(crate) enum ItemValue<'a> {
     Rarity(&'a str),
-    BaseType { name: String, base: String },
+    BaseType { name: &'a str, base: &'a str },
     ItemLevel(i32),
     LevelReq(i32),
     UniqueId(&'a str),
@@ -45,35 +55,29 @@ fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, ItemValue, E> {
+) -> IResult<&'a str, ItemValue, E>
+where
+    E: ParseError<&'a str> + ContextError<&'a str> + FromExternalError<&'a str, PobParseError>,
+{
     let (i, name) = context("name", cut(not_line_ending))(i)?;
 
-    for itemclass in BASE_TYPES.iter() {
-        // TODO: fix?
-        if itemclass.is_empty() {
-            continue;
-        }
-
-        if name.contains(itemclass) {
-            // its not a name, its a basetype
-            return Ok((
-                i,
-                ItemValue::BaseType {
-                    base: itemclass.to_string(),
-                    name: name.to_string(),
-                },
-            ));
-        }
+    if BASE_ITEMS.contains_key(name) {
+        Ok((i, ItemValue::BaseType { name, base: name }))
+    } else {
+        let prs = map_res(preceded(multispace0, cut(not_line_ending)), |basetype| {
+            BASE_ITEMS
+                .get(basetype)
+                .ok_or(PobParseError::UnknownCategory(format!(
+                    "{} - {}",
+                    name, basetype
+                )))?;
+            Ok(ItemValue::BaseType {
+                name,
+                base: basetype,
+            })
+        });
+        context("basetype", prs)(i)
     }
-
-    let (i, basetype) = preceded(line_ending, base_type)(i)?;
-    Ok((
-        i,
-        ItemValue::BaseType {
-            base: basetype.to_string(),
-            name: name.to_string(),
-        },
-    ))
 }
 
 fn base_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -99,47 +103,47 @@ fn sockets<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn quality<
     'a,
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 >(
     i: &'a str,
 ) -> IResult<&'a str, i32, E> {
     context(
         "quality",
         map_res(preceded(tag("Quality: "), cut(digit1)), |out: &str| {
-            i32::from_str(out)
+            Ok(i32::from_str(out)?)
         }),
     )(i)
 }
 
 fn item_lvl<
     'a,
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 >(
     i: &'a str,
 ) -> IResult<&'a str, i32, E> {
     context(
         "item_lvl",
         map_res(preceded(tag("Item Level: "), cut(digit1)), |out: &str| {
-            i32::from_str(out)
+            Ok(i32::from_str(out)?)
         }),
     )(i)
 }
 
 fn level_req<'a, E>(i: &'a str) -> IResult<&'a str, i32, E>
 where
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 {
     context(
         "level_req",
         map_res(preceded(tag("LevelReq: "), cut(digit1)), |out: &str| {
-            i32::from_str(out)
+            Ok(i32::from_str(out)?)
         }),
     )(i)
 }
 
 fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<(&'a str, bool)>, E>
 where
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 {
     context(
         "implicits",
@@ -191,7 +195,7 @@ fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn item_value<
     'a,
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 >(
     i: &'a str,
 ) -> IResult<&'a str, ItemValue<'a>, E> {
@@ -211,7 +215,7 @@ fn item_value<
 
 fn root<
     'a,
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 >(
     i: &'a str,
 ) -> IResult<&'a str, Vec<ItemValue>, E> {
@@ -229,20 +233,19 @@ fn root<
 
 pub(crate) fn parse_pob_item<'a, E>(i: &'a str) -> IResult<&'a str, ParsedItem, E>
 where
-    E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + ContextError<&'a str>,
+    E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 {
     let (i, items) = root(i)?;
     let mut item = Item::default();
     let mut mods = vec![];
-    let mut category = Category::Maps;
 
     for val in items {
         match val {
             ItemValue::Rarity(r) => item.rarity = r.to_string(),
             ItemValue::BaseType { base, name } => {
-                category = Category::parse_from_basetype(base.replace(" ", "")).unwrap_or_default();
-                item.name = name;
-                item.base_type = base;
+                item.category = Category::get_from_basetype(base).unwrap();
+                item.name = name.to_string();
+                item.base_type = base.to_string();
             }
             ItemValue::UniqueId(id) => item.id = id.to_string(),
             ItemValue::ItemLevel(il) => item.item_lvl = domain::types::ItemLvl::Yes(il),
@@ -260,7 +263,6 @@ where
     let mods = Mod::many_by_stat(&mods);
 
     item.mods = mods;
-    item.category = category;
 
     Ok((i, ParsedItem { item }))
 }
@@ -288,8 +290,17 @@ mod test {
         name,
         "Loath Cut\nSmall Cluster Jewel",
         ItemValue::BaseType {
-            name: "Loath Cut".to_string(),
-            base: "Small Cluster Jewel".to_string()
+            name: "Loath Cut",
+            base: "Small Cluster Jewel",
+        }
+    );
+    gen_test!(
+        name_check2,
+        name,
+        "Behemot Tutu\nSlink Boots",
+        ItemValue::BaseType {
+            name: "Behemot Tutu",
+            base: "Slink Boots",
         }
     );
     gen_test!(quality_check, quality, "Quality: 21", 21);
@@ -388,7 +399,6 @@ Added Small Passive Skills also grant: +5 to Strength
     }
 
     #[test]
-    #[ignore]
     fn parse_category_by_basetype() -> anyhow::Result<()> {
         let text = r#"
 			Rarity: RARE

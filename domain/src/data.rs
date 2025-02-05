@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Deserialize;
 use serde_json::Value;
-use std::{cell::RefCell, collections::HashMap, str::FromStr, sync::Mutex};
+use std::{cell::RefCell, collections::{HashMap, HashSet}, str::FromStr, sync::Mutex};
 
 pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
@@ -25,11 +25,6 @@ fn replace_for_regex(val: &str) -> (String, usize) {
 
     let s = unsafe { String::from_utf8_unchecked(res.to_vec()) };
     (s, count)
-}
-
-#[derive(Deserialize)]
-struct BaseItem {
-    name: String,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -80,22 +75,11 @@ struct ModTmp {
     text: Option<String>,
     domain: String,
     stats: Vec<ModStatsTmp>,
-    groups: Vec<String>,
 }
 
 #[derive(Debug, serde::Deserialize, Clone)]
 struct ModStatsTmp {
     id: String,
-    min: Value,
-    max: Value,
-}
-
-fn extract_minmax(val: &Value) -> Option<i32> {
-    if val.is_number() {
-        val.as_i64().map(|v| v as i32)
-    } else {
-        val.as_str().and_then(|s| s.parse().ok())
-    }
 }
 
 #[derive(
@@ -116,7 +100,23 @@ impl ModType {
     }
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub struct BasetypeInfo {
+    pub properties: BasetypeProperties,
+    pub name: String,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct BasetypeProperties {
+    pub attack_time: Option<i32>,
+    pub critical_strike_chance: Option<i32>,
+    pub range: Option<i32>,
+    // TODO: add damage types
+}
+
 type SerializedModData = HashMap<String, ModType>;
+
 const WHITELIST_DOMAINS: &[&str] = &[
     "abyss_jewel",
     "affliction_jewel",
@@ -257,12 +257,14 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
 lazy_static! {
     static ref MAX_LOAD_RECORD_FOR_TEST: Mutex<RefCell<Option<usize>>> =
         Mutex::new(RefCell::new(None));
-    static ref BASE_ITEMS: HashMap<String, BaseItem> = {
+    pub static ref BASE_ITEMS: HashMap<String, BasetypeInfo> = {
         let base_items_file = include_bytes!("../dist/base_items.min.json");
-        serde_json::from_slice(base_items_file).unwrap()
+        let data: HashMap<String, BasetypeInfo> = serde_json::from_slice(base_items_file).unwrap();
+        data.into_iter().fold(HashMap::new(), |mut acc, info| {
+            acc.entry(info.1.name.clone()).or_insert(info.1);
+            acc
+        })
     };
-    pub static ref BASE_TYPES: Vec<&'static str> =
-        BASE_ITEMS.iter().map(|(_, v)| v.name.as_str()).collect();
     pub static ref MODS: SerializedModData = {
         let mods_file = include_bytes!("../dist/mods.data");
         bincode::deserialize(mods_file).unwrap()
@@ -282,12 +284,12 @@ impl MODS {
     pub(crate) fn get_mod_data(
         value: &str,
     ) -> Option<(&ModType, Option<ModValue>, Option<ModValue>)> {
-        let (k, _) = dbg!(replace_for_regex(value));
+        let (k, _) = replace_for_regex(value);
         let mods = MODS.get(&k)?;
         let reg = LAZY_MODS_REGEX.get_regex(&k);
         match mods {
             m @ ModType::Variants(_) => {
-                if let Some((num, num2)) = dbg!(reg.captures(value).map(|c| (c.get(1), c.get(2)))) {
+                if let Some((num, num2)) = reg.captures(value).map(|c| (c.get(1), c.get(2))) {
                     let num = num.and_then(|v| ModValue::from_str(v.as_str()).ok());
                     let num2 = num2.and_then(|v| ModValue::from_str(v.as_str()).ok());
                     Some((m, num, num2))
