@@ -52,6 +52,10 @@ impl<'a> Pob {
         Ok(Pob { original: s })
     }
 
+    pub fn get_original(&self) -> String {
+        self.original.clone()
+    }
+
     pub fn as_document(&'a self) -> Result<PobDocument<'a>, PobError> {
         let doc = Document::parse(&self.original)?;
         Ok(PobDocument { doc })

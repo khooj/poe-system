@@ -1,5 +1,5 @@
 use domain::{
-    data::BASE_ITEMS,
+    data::{BASE_ITEMS, BASE_TYPES},
     item::Item,
     types::{Category, Mod, ModType},
 };
@@ -7,9 +7,9 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
     character::complete::{
-        alpha1, alphanumeric1, digit1, line_ending, multispace0, not_line_ending,
+        alpha0, alpha1, alphanumeric1, digit1, line_ending, multispace0, not_line_ending, space0,
     },
-    combinator::{cut, map, map_res, opt},
+    combinator::{cut, map, map_res, not, opt},
     error::{context, ContextError, FromExternalError, ParseError},
     multi::{length_count, many0},
     sequence::{delimited, preceded, tuple},
@@ -17,7 +17,7 @@ use nom::{
 };
 
 use std::{num::ParseIntError, str::ParseBoolError};
-use std::str::FromStr;
+use std::{ops::Deref, str::FromStr};
 
 #[derive(thiserror::Error, Debug)]
 pub enum PobParseError {
@@ -53,37 +53,65 @@ fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     context("rarity", preceded(tag("Rarity: "), cut(alpha1)))(i)
 }
 
+fn basetype_map<'a>(name: &'a str, basetype: &'a str) -> Result<ItemValue<'a>, PobParseError> {
+    for b in BASE_TYPES.deref() {
+        if basetype.contains(b) {
+            return Ok(ItemValue::BaseType {
+                name,
+                base: b.as_str(),
+            });
+        }
+    }
+    Err(PobParseError::UnknownCategory(basetype.to_string()))
+}
+
 fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, ItemValue, E>
 where
     E: ParseError<&'a str> + ContextError<&'a str> + FromExternalError<&'a str, PobParseError>,
 {
-    let (i, name) = context("name", cut(not_line_ending))(i)?;
+    context("name", alt((name_normal_rare, name_magic)))(i)
+}
+
+fn name_normal_rare<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, ItemValue, E>
+where
+    E: ParseError<&'a str> + ContextError<&'a str> + FromExternalError<&'a str, PobParseError>,
+{
+    let (i, name) = context("name_normal_rare", cut(not_line_ending))(i)?;
 
     if BASE_ITEMS.contains_key(name) {
         Ok((i, ItemValue::BaseType { name, base: name }))
     } else {
         let prs = map_res(preceded(multispace0, cut(not_line_ending)), |basetype| {
-            BASE_ITEMS
-                .get(basetype)
-                .ok_or(PobParseError::UnknownCategory(format!(
-                    "{} - {}",
-                    name, basetype
-                )))?;
-            Ok(ItemValue::BaseType {
-                name,
-                base: basetype,
-            })
+            basetype_map(name, basetype)
         });
         context("basetype", prs)(i)
     }
 }
 
-fn base_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
-    i: &'a str,
-) -> IResult<&'a str, &'a str, E> {
-    context("base_type", cut(not_line_ending))(i)
+fn name_magic<'a, E>(i: &'a str) -> IResult<&'a str, ItemValue, E>
+where
+    E: ParseError<&'a str> + ContextError<&'a str> + FromExternalError<&'a str, PobParseError>,
+{
+    let (i, name) = context("name_magic", cut(not_line_ending))(i)?;
+
+    for b in BASE_TYPES.deref() {
+        if name.contains(b) {
+            return Ok((
+                i,
+                ItemValue::BaseType {
+                    name,
+                    base: b.as_str(),
+                },
+            ));
+        }
+    }
+    let e = E::from_error_kind(i, nom::error::ErrorKind::AlphaNumeric);
+    let e = E::add_context(i, "name_magic2", e);
+    Err(nom::Err::Error(e))
 }
 
 fn unique_id<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -162,6 +190,7 @@ where
 fn affix_prefixes<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, bool, E> {
+    // TODO: correct mods parsing from items created in pob (not copied)
     context(
         "affix_prefixes",
         map(
@@ -172,7 +201,7 @@ fn affix_prefixes<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
                 tag("{crafted}"),
                 tag("{range:1}"),
             )),
-            |t: &str| ["{crafted}", "Crafted: "].contains(&t),
+            |t: &str| ["{crafted}"].contains(&t),
         ),
     )(i)
 }
@@ -278,7 +307,7 @@ mod test {
         ($name:ident, $f:ident, $data:expr, $res:expr) => {
             #[test]
             fn $name() -> anyhow::Result<()> {
-                let (_, res) = $f::<()>($data)?;
+                let (_, res) = $f::<VerboseError<&str>>($data)?;
                 assert_eq!(res, $res);
                 Ok(())
             }
@@ -301,6 +330,69 @@ mod test {
         ItemValue::BaseType {
             name: "Behemot Tutu",
             base: "Slink Boots",
+        }
+    );
+    gen_test!(
+        name_check3,
+        name,
+        "Divine Life Flask",
+        ItemValue::BaseType {
+            name: "Divine Life Flask",
+            base: "Divine Life Flask",
+        }
+    );
+    gen_test!(
+        name_custom_check,
+        name,
+        "Lategame Boots\nTwo-Toned Boots (Armour/EnergyShield)",
+        ItemValue::BaseType {
+            name: "Lategame Boots",
+            base: "Two-Toned Boots",
+        }
+    );
+    gen_test!(
+        name_normal_rare_custom,
+        name_normal_rare,
+        "Lategame Boots\nTwo-Toned Boots (Armour/EnergyShield)",
+        ItemValue::BaseType {
+            name: "Lategame Boots",
+            base: "Two-Toned Boots",
+        }
+    );
+    gen_test!(
+        name_check_magic,
+        name,
+        "Bubbling Divine Life Flask of Staunching",
+        ItemValue::BaseType {
+            name: "Bubbling Divine Life Flask of Staunching",
+            base: "Divine Life Flask",
+        }
+    );
+    gen_test!(
+        name_magic_check,
+        name_magic,
+        "Bubbling Divine Life Flask of Staunching",
+        ItemValue::BaseType {
+            name: "Bubbling Divine Life Flask of Staunching",
+            base: "Divine Life Flask",
+        }
+    );
+    gen_test!(
+        name_magic_check2,
+        name_magic,
+        "Divine Life Flask of Staunching",
+        ItemValue::BaseType {
+            name: "Divine Life Flask of Staunching",
+            base: "Divine Life Flask",
+        }
+    );
+    gen_test!(
+        name_magic_check3,
+        name_magic,
+        "Bubbling Divine Life Flask",
+        ItemValue::BaseType {
+            name: "Bubbling Divine Life Flask",
+            base: "Divine Life Flask",
         }
     );
     gen_test!(quality_check, quality, "Quality: 21", 21);

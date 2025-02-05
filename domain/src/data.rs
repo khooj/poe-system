@@ -3,7 +3,12 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Deserialize;
 use serde_json::Value;
-use std::{cell::RefCell, collections::{HashMap, HashSet}, str::FromStr, sync::Mutex};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    str::FromStr,
+    sync::Mutex,
+};
 
 pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
@@ -162,7 +167,13 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
         }
 
         let mut mods = vec![];
-        let stat_names: Vec<_> = m.text.as_ref().unwrap().split("\n").map(String::from).collect();
+        let stat_names: Vec<_> = m
+            .text
+            .as_ref()
+            .unwrap()
+            .split("\n")
+            .map(String::from)
+            .collect();
         let stat_names = fix_splitting(stat_names);
         let mut stats = m.stats.clone().into_iter();
         // used for mods with 2 stat_names and single size stats vec (equals stats)
@@ -261,10 +272,14 @@ lazy_static! {
         let base_items_file = include_bytes!("../dist/base_items.min.json");
         let data: HashMap<String, BasetypeInfo> = serde_json::from_slice(base_items_file).unwrap();
         data.into_iter().fold(HashMap::new(), |mut acc, info| {
+            if info.1.name.is_empty() {
+                return acc;
+            }
             acc.entry(info.1.name.clone()).or_insert(info.1);
             acc
         })
     };
+    pub static ref BASE_TYPES: HashSet<String> = BASE_ITEMS.keys().cloned().collect();
     pub static ref MODS: SerializedModData = {
         let mods_file = include_bytes!("../dist/mods.data");
         bincode::deserialize(mods_file).unwrap()
@@ -362,7 +377,10 @@ mod tests {
         );
         assert_eq!(
             super::replace_for_regex("+42% to Fire Resistance\nlong mod"),
-            ("\\+?([0-9\\.]+)% to Fire Resistance\nlong mod".to_string(), 0)
+            (
+                "\\+?([0-9\\.]+)% to Fire Resistance\nlong mod".to_string(),
+                0
+            )
         );
     }
 }
