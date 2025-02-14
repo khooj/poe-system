@@ -5,14 +5,15 @@ use domain::{
 };
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_till},
+    bytes::complete::{is_not, tag, take_till},
     character::complete::{
-        alpha0, alpha1, alphanumeric1, digit1, line_ending, multispace0, not_line_ending, space0,
+        alpha0, alpha1, alphanumeric1, char, digit1, line_ending, multispace0, not_line_ending,
+        space0,
     },
     combinator::{cut, map, map_res, not, opt},
     error::{context, ContextError, FromExternalError, ParseError},
-    multi::{length_count, many0},
-    sequence::{delimited, preceded, tuple},
+    multi::{length_count, many0, many0_count},
+    sequence::{delimited, pair, preceded, tuple},
     IResult,
 };
 
@@ -34,17 +35,24 @@ pub(crate) struct ParsedItem {
 }
 
 #[derive(Debug, PartialEq)]
+pub(crate) enum Affix<'a> {
+    Range { range: &'a str },
+    Crafted,
+    Tags,
+}
+
+#[derive(Debug, PartialEq)]
 pub(crate) enum ItemValue<'a> {
     Rarity(&'a str),
     BaseType { name: &'a str, base: &'a str },
     ItemLevel(i32),
     LevelReq(i32),
     UniqueId(&'a str),
-    Affix((&'a str, ModType, bool)),
-    Implicits(Vec<(&'a str, bool)>),
+    Affix((&'a str, ModType, Vec<Affix<'a>>)),
+    Implicits(Vec<(&'a str, Vec<Affix<'a>>)>),
     Quality(i32),
-    Sockets(String),
-    // Influence(String),
+    Sockets(&'a str),
+    UnknownString(&'a str),
 }
 
 fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -169,7 +177,7 @@ where
     )(i)
 }
 
-fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<(&'a str, bool)>, E>
+fn implicits<'a, E>(i: &'a str) -> IResult<&'a str, Vec<(&'a str, Vec<Affix<'a>>)>, E>
 where
     E: ParseError<&'a str> + FromExternalError<&'a str, PobParseError> + ContextError<&'a str>,
 {
@@ -180,44 +188,68 @@ where
                 usize::from_str(out).unwrap_or(0usize)
             }),
             map(
-                |i| affix(i, ModType::Implicit),
-                |(t, _, crafted)| (t, crafted),
+                pair(multispace0, |i| affix(i, ModType::Implicit)),
+                |(_, (t, _, affixes))| (t, affixes),
             ),
         ),
     )(i)
 }
 
+fn affix_prefixes_skip<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    context(
+        "affix_prefixes_skip",
+        alt((tag("Prefix: "), tag("Suffix: "), tag("Crafted: "))),
+    )(i)
+}
+
+fn affix_range<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, Affix<'a>, E> {
+    context(
+        "affix_range",
+        map(delimited(tag("{range:"), is_not("}"), char('}')), |r| {
+            Affix::Range { range: r }
+        }),
+    )(i)
+}
+
+fn affix_crafted<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, Affix<'a>, E> {
+    context("affix_crafted", map(tag("{crafted}"), |_| Affix::Crafted))(i)
+}
+
+fn affix_tags<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, Affix<'a>, E> {
+    context(
+        "affix_tags",
+        map(delimited(tag("{tags:"), is_not("}"), char('}')), |_| {
+            Affix::Tags
+        }),
+    )(i)
+}
+
 fn affix_prefixes<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, bool, E> {
-    // TODO: correct mods parsing from items created in pob (not copied)
+) -> IResult<&'a str, Vec<Affix<'a>>, E> {
     context(
         "affix_prefixes",
-        map(
-            alt((
-                tag("Prefix: "),
-                tag("Suffix: "),
-                tag("Crafted: "),
-                tag("{crafted}"),
-                tag("{range:1}"),
-            )),
-            |t: &str| ["{crafted}"].contains(&t),
-        ),
+        many0(alt((affix_range, affix_crafted, affix_tags))),
     )(i)
 }
 
 fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
     default: ModType,
-) -> IResult<&'a str, (&'a str, ModType, bool), E> {
+) -> IResult<&'a str, (&'a str, ModType, Vec<Affix<'a>>), E> {
     context(
         "affix",
         map(
-            preceded(
-                multispace0,
-                tuple((opt(affix_prefixes), cut(not_line_ending))),
-            ),
-            |(crafted, t)| (t, default, crafted.unwrap_or_default()),
+            tuple((not(affix_prefixes_skip), affix_prefixes, cut(not_line_ending))),
+            |(_, prefixes, m)| (m, default, prefixes),
         ),
     )(i)
 }
@@ -236,8 +268,9 @@ fn item_value<
             map(level_req, ItemValue::LevelReq),
             map(implicits, ItemValue::Implicits),
             map(quality, ItemValue::Quality),
-            map(sockets, |s| ItemValue::Sockets(String::from(s))),
+            map(sockets, ItemValue::Sockets),
             map(|i| affix(i, ModType::Explicit), ItemValue::Affix),
+            map(not_line_ending, ItemValue::UnknownString),
         )),
     )(i)
 }
@@ -250,8 +283,6 @@ fn root<
 ) -> IResult<&'a str, Vec<ItemValue>, E> {
     let (i, rarity) = delimited(multispace0, rarity, line_ending)(i)?;
     let (i, basetype) = delimited(multispace0, name, line_ending)(i)?;
-    // let (i, mut header_vals) =
-    //     many_m_n(2, 2, delimited(multispace0, item_value_header, line_ending))(i)?;
     let (i, mut vals) = many0(delimited(multispace0, item_value, line_ending))(i)?;
     let (i, end_val) = item_value(i)?;
     let mut values = vec![ItemValue::Rarity(rarity), basetype];
@@ -279,7 +310,7 @@ where
             ItemValue::UniqueId(id) => item.id = id.to_string(),
             ItemValue::ItemLevel(il) => item.item_lvl = domain::types::ItemLvl::Yes(il),
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
-            ItemValue::Sockets(s) => item.sockets = s,
+            ItemValue::Sockets(s) => item.sockets = s.to_string(),
             ItemValue::Quality(q) => item.quality = q,
             ItemValue::Implicits(implicits) => {
                 mods.extend(implicits.into_iter().map(|im| (im.0, ModType::Implicit)))
@@ -412,15 +443,32 @@ mod test {
 
     #[test]
     fn affix_check() -> anyhow::Result<()> {
-        for data in ["Prefix: asd", "Suffix: asd", "{range:1}asd"] {
-            let (_, affixes) = affix::<()>(data, ModType::Explicit)?;
-            assert_eq!(affixes, ("asd", ModType::Explicit, false));
+        for data in ["Prefix: asd", "Suffix: asd", "Crafted: true"] {
+            let ret = affix::<()>(data, ModType::Explicit);
+            assert_eq!(ret, Err(nom::Err::Error(())),);
         }
 
-        for data in ["Crafted: asd", "{crafted}asd"] {
-            let (_, affixes) = affix::<()>(data, ModType::Explicit)?;
-            assert_eq!(affixes, ("asd", ModType::Explicit, true));
-        }
+        let (_, affixes) = affix::<()>("{crafted}asd", ModType::Explicit)?;
+        assert_eq!(affixes, ("asd", ModType::Explicit, vec![Affix::Crafted]));
+
+        let (_, affixes) = affix::<()>("{range:10}asd", ModType::Explicit)?;
+        assert_eq!(
+            affixes,
+            ("asd", ModType::Explicit, vec![Affix::Range { range: "10" }])
+        );
+
+        let (_, affixes) = affix::<()>("{tags:elemental}asd", ModType::Explicit)?;
+        assert_eq!(affixes, ("asd", ModType::Explicit, vec![Affix::Tags]));
+        let (_, affixes) =
+            affix::<()>("{tags:elemental}{range:10}{crafted}asd", ModType::Explicit)?;
+        assert_eq!(
+            affixes,
+            (
+                "asd",
+                ModType::Explicit,
+                vec![Affix::Tags, Affix::Range { range: "10" }, Affix::Crafted]
+            )
+        );
         Ok(())
     }
 
@@ -429,7 +477,7 @@ mod test {
         let i = "Implicits: 1\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
         let (i, ret) = implicits::<VerboseError<&str>>(i)?;
         assert_eq!(i, "\nAdds 3 Passive Skills");
-        assert_eq!(ret, vec![("Adds 2 Passive Skills", false)]);
+        assert_eq!(ret, vec![("Adds 2 Passive Skills", vec![])]);
 
         let i = "Implicits: 0\nAdds 2 Passive Skills\nAdds 3 Passive Skills";
         let (i, ret) = implicits::<VerboseError<&str>>(i)?;

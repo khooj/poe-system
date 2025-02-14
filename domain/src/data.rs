@@ -1,11 +1,12 @@
 use dashmap::{mapref::one::Ref, DashMap};
 use lazy_static::lazy_static;
-use regex::Regex;
+use regex::bytes::{Match, Regex};
 use serde::Deserialize;
 use serde_json::Value;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
+    ops::RangeInclusive,
     str::FromStr,
     sync::Mutex,
 };
@@ -14,14 +15,14 @@ pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
 }
 
-fn replace_for_regex(val: &str) -> (String, usize) {
-    lazy_static! {
-        static ref REGEX_REPLACE_NUMS: regex::bytes::Regex =
-            regex::bytes::Regex::new(r"\+?(\([0-9-\.]+\)|[0-9\.]+)").unwrap();
-        static ref REGEX_CAPTURE_GROUPS: regex::bytes::Regex =
-            regex::bytes::Regex::new(r"(\+?\([0-9-\.]+\))").unwrap();
-    }
+lazy_static! {
+    static ref REGEX_REPLACE_NUMS: regex::bytes::Regex =
+        regex::bytes::Regex::new(r"\+?(\([0-9-\.]+\)|[0-9\.]+)").unwrap();
+    static ref REGEX_CAPTURE_GROUPS: regex::bytes::Regex =
+        regex::bytes::Regex::new(r"(\+?\([0-9-\.]+\))").unwrap();
+}
 
+fn replace_for_regex(val: &str) -> (String, usize) {
     let count = REGEX_CAPTURE_GROUPS
         .captures(val.as_bytes())
         .map(|c| c.len().saturating_sub(1))
@@ -30,6 +31,38 @@ fn replace_for_regex(val: &str) -> (String, usize) {
 
     let s = unsafe { String::from_utf8_unchecked(res.to_vec()) };
     (s, count)
+}
+
+fn extract_single_range(val: &str, mtch: Option<Match<'_>>) -> Option<RangeInclusive<i32>> {
+    let mtch = mtch?;
+    let p = &val[mtch.range()];
+    let vals = p
+        .trim_matches(['(', ')'])
+        .split("-")
+        .map(|p| p.parse().ok())
+        .collect::<Vec<_>>();
+    if vals.len() != 2 {
+        return None;
+    }
+
+    match &vals[..] {
+        [Some(v1), Some(v2)] => Some(*v1..=*v2),
+        _ => None,
+    }
+}
+
+fn get_range_reg(val: &str) -> (Option<RangeInclusive<i32>>, Option<RangeInclusive<i32>>) {
+    dbg!(val);
+    let captures = REGEX_REPLACE_NUMS
+        .captures_iter(val.as_bytes())
+        .map(|c| c.get(1))
+        .collect::<Vec<_>>();
+    dbg!(&captures);
+
+    let range1 = extract_single_range(val, captures.first().and_then(|f| *f));
+    let range2 = extract_single_range(val, captures.get(1).and_then(|f| *f));
+
+    (range1, range2)
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -295,24 +328,62 @@ impl LAZY_MODS_REGEX {
     }
 }
 
-impl MODS {
-    pub(crate) fn get_mod_data(
-        value: &str,
-    ) -> Option<(&ModType, Option<ModValue>, Option<ModValue>)> {
-        let (k, _) = replace_for_regex(value);
-        let mods = MODS.get(&k)?;
-        let reg = LAZY_MODS_REGEX.get_regex(&k);
-        match mods {
-            m @ ModType::Variants(_) => {
-                if let Some((num, num2)) = reg.captures(value).map(|c| (c.get(1), c.get(2))) {
-                    let num = num.and_then(|v| ModValue::from_str(v.as_str()).ok());
-                    let num2 = num2.and_then(|v| ModValue::from_str(v.as_str()).ok());
-                    Some((m, num, num2))
+pub struct ModExtractor<'a> {
+    re: Ref<'a, String, Regex>,
+    m: &'a ModType,
+}
+
+impl<'a> ModExtractor<'a> {
+    pub fn extract_values(&self, value: &str) -> (Option<ModValue>, Option<ModValue>) {
+        match self.m {
+            ModType::Variants(_) => {
+                if let Some((num, num2)) = self
+                    .re
+                    .captures(value.as_bytes())
+                    .map(|c| (c.get(1), c.get(2)))
+                {
+                    let num = num.and_then(|v| {
+                        ModValue::from_str(std::str::from_utf8(v.as_bytes()).unwrap()).ok()
+                    });
+                    let num2 = num2.and_then(|v| {
+                        ModValue::from_str(std::str::from_utf8(v.as_bytes()).unwrap()).ok()
+                    });
+                    (num, num2)
                 } else {
-                    None
+                    (None, None)
                 }
             }
         }
+    }
+
+    pub fn extract_by_range(
+        &self,
+        value: &str,
+        range: f32,
+    ) -> (Option<ModValue>, Option<ModValue>) {
+        let (range1, range2) = get_range_reg(value);
+        let v1 = range1
+            .map(|s| (*s.start(), *s.end()))
+            .map(|(st, en)| st + (((en - st) as f32) * range).trunc() as i32)
+            .map(|val| ModValue::Int(val));
+        let v2 = range2
+            .map(|s| (*s.start(), *s.end()))
+            .map(|(st, en)| st + (((en - st) as f32) * range).trunc() as i32)
+            .map(|val| ModValue::Int(val));
+        (v1, v2)
+    }
+
+    pub fn mod_type(&self) -> &ModType {
+        self.m
+    }
+}
+
+impl MODS {
+    pub(crate) fn get_mod_data(value: &str) -> Option<ModExtractor<'static>> {
+        let (k, _) = replace_for_regex(value);
+        let mods = MODS.get(&k)?;
+        let reg = LAZY_MODS_REGEX.get_regex(&k);
+        Some(ModExtractor { re: reg, m: mods })
     }
 }
 
@@ -332,9 +403,11 @@ mod tests {
 
     #[test]
     fn get_mod_data() {
-        let (res, val1, val2) = MODS::get_mod_data("+22 to Strength").unwrap();
+        let m = "+22 to Strength";
+        let ext = MODS::get_mod_data(m).unwrap();
+        let (val1, val2) = ext.extract_values(m);
         assert_eq!(
-            res,
+            ext.mod_type(),
             &ModType::Variants(hashmap! {
                 Id("additional_strength".to_string()) => ModInfo {
             }})
@@ -345,7 +418,9 @@ mod tests {
 
     #[test]
     fn get_mod_data_float() {
-        let (_, val1, val2) = MODS::get_mod_data("+6.5% chance to Suppress Spell Damage").unwrap();
+        let v = "+6.5% chance to Suppress Spell Damage";
+        let ext = MODS::get_mod_data(v).unwrap();
+        let (val1, val2) = ext.extract_values(v);
         assert_eq!(val1, Some(ModValue::Float(6.5)));
         assert_eq!(val2, None);
     }
@@ -382,5 +457,18 @@ mod tests {
                 0
             )
         );
+    }
+
+    #[test]
+    fn get_range() {
+        assert_eq!(
+            super::get_range_reg("+(10-20)% increased Spell Damage"),
+            (Some(10..=20), None),
+        );
+        assert_eq!(
+            super::get_range_reg("+(10-20)% (30-40) increased Spell Damage"),
+            (Some(10..=20), Some(30..=40)),
+        );
+        assert_eq!(super::get_range_reg("+10 to Strength"), (None, None),);
     }
 }

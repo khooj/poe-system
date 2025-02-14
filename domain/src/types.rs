@@ -1,6 +1,11 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, convert::TryFrom, ops::{Deref, RangeInclusive}, str::FromStr};
+use std::{
+    collections::HashMap,
+    convert::TryFrom,
+    ops::{Deref, RangeInclusive},
+    str::FromStr,
+};
 use strum::EnumString;
 use thiserror::Error;
 
@@ -65,19 +70,10 @@ lazy_static::lazy_static! {
 }
 
 impl Category {
-    pub fn parse_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Category, TypeError> {
-        let basetype = basetype.as_ref().replace(" ", "");
-        if BootsBase::from_str(&basetype).is_ok() {
-            return Ok(Category::Armour);
-        }
-        if Jewels::from_str(&basetype).is_ok() {
-            return Ok(Category::Jewels);
-        }
-        Err(TypeError::UnknownCategory(basetype.to_string()))
-    }
-
     pub fn get_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Category, TypeError> {
-        let baseinfo = BASE_ITEMS.get(basetype.as_ref()).ok_or(TypeError::UnknownCategory(basetype.as_ref().to_string()))?;
+        let baseinfo = BASE_ITEMS
+            .get(basetype.as_ref())
+            .ok_or(TypeError::UnknownCategory(basetype.as_ref().to_string()))?;
         for (k, v) in CATEGORY_MAPPING.deref().iter() {
             if baseinfo.tags.contains(k) {
                 return Ok(v.clone());
@@ -451,7 +447,7 @@ pub enum ModType {
     ExplicitHybrid = 8,
     Scourge = 9,
     #[default]
-    Invalid = 100,
+    Invalid = 99,
 }
 
 #[derive(Error, Debug)]
@@ -483,22 +479,13 @@ pub struct Mod {
 }
 
 impl Mod {
-    pub fn by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
-        let ret = Mod::by_stat_or_invalid(value, typ);
-        if ret.type_ == ModType::Invalid {
-            Err(ModError::StatError(value.to_string()))
-        } else {
-            Ok(ret)
-        }
-    }
-
-    pub fn by_stat_or_invalid(value: &str, typ: ModType) -> Self {
-        if let Some((mod_value, num, num2)) = MODS::get_mod_data(value) {
-            return Mod {
+    pub fn try_by_stat(value: &str, typ: ModType) -> Result<Self, ModError> {
+        if let Some(ext) = MODS::get_mod_data(value) {
+            return Ok(Mod {
                 text: value.to_string(),
                 type_: typ,
-                stat_id: mod_value.get_id(),
-                numeric_value: match (num, num2) {
+                stat_id: ext.mod_type().get_id(),
+                numeric_value: match ext.extract_values(value) {
                     (Some(num), Some(num2)) => ModValue::DoubleExact {
                         from: num,
                         to: num2,
@@ -507,21 +494,29 @@ impl Mod {
                     _ => ModValue::Nothing,
                 },
                 ..Default::default()
-            };
+            });
         }
-
-        Mod::default()
+        Err(ModError::StatError(value.to_string()))
     }
 
-    pub fn many_by_stat_or_invalid(values: &[(&str, ModType)]) -> Vec<Self> {
-        values
-            .iter()
-            .map(|(v, m)| Mod::by_stat_or_invalid(v, *m))
-            .collect()
-    }
-
-    pub fn many_by_stat(values: &[(&str, ModType)]) -> Vec<Self> {
-        Mod::many_by_stat_or_invalid(values)
+    pub fn try_by_range_stat(value: &str, range: f32, typ: ModType) -> Result<Self, ModError> {
+        if let Some(ext) = MODS::get_mod_data(value) {
+            return Ok(Mod {
+                text: value.to_string(),
+                type_: typ,
+                stat_id: ext.mod_type().get_id(),
+                numeric_value: match ext.extract_by_range(value, range) {
+                    (Some(num), Some(num2)) => ModValue::DoubleExact {
+                        from: num,
+                        to: num2,
+                    },
+                    (Some(num), None) => ModValue::Exact(num),
+                    _ => ModValue::Nothing,
+                },
+                ..Default::default()
+            });
+        }
+        Err(ModError::StatError(value.to_string()))
     }
 }
 
@@ -569,11 +564,10 @@ mod tests {
 
     #[test]
     fn mod_parse() {
-        let mods1 = vec![("75% increased Spell Damage", ModType::Explicit)];
-        let mods2 = Mod::many_by_stat_or_invalid(&mods1);
-        assert_eq!(mods2.len(), 1);
+        let mod1 = "75% increased Spell Damage";
+        let mod2 = Mod::try_by_stat(mod1, ModType::Explicit).unwrap();
         assert_eq!(
-            mods2[0],
+            mod2,
             Mod {
                 text: "75% increased Spell Damage".to_string(),
                 type_: ModType::Explicit,
@@ -586,7 +580,7 @@ mod tests {
 
     #[test]
     fn mod_parse_cluster() -> Result<(), anyhow::Error> {
-        let _ = Mod::by_stat(
+        let _ = Mod::try_by_stat(
             "Added Small Passive Skills also grant: 3% increased Projectile Speed",
             ModType::Implicit,
         )?;
