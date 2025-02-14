@@ -77,6 +77,15 @@ pub enum ModValue {
     Float(f32),
 }
 
+impl ModValue {
+    pub fn as_int(&self) -> i32 {
+        match self {
+            ModValue::Int(i) => *i,
+            _ => panic!("modvalue float"),
+        }
+    }
+}
+
 impl From<i32> for ModValue {
     fn from(value: i32) -> Self {
         ModValue::Int(value)

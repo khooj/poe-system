@@ -91,17 +91,14 @@ impl TryFrom<Item> for TypedItem {
             return Err(TypedItemError::Unknown);
         }
         let basetype = value.base_type;
-        let mods = Mod::many_by_stat(
-            value
+        let mods = value
                 .explicit_mods
                 .as_ref()
                 .unwrap_or(&vec![])
                 .as_slice()
                 .iter()
-                .map(|s| (s.as_str(), ModType::Explicit))
-                .collect::<Vec<_>>()
-                .as_slice(),
-        );
+                .filter_map(|s| Mod::try_by_stat(s.as_str(), ModType::Explicit).ok())
+                .collect::<Vec<_>>();
         let props = value.properties.unwrap_or_default();
         let quality = props
             .iter()

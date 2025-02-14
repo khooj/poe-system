@@ -21,9 +21,8 @@ pub fn parse_mods(item: &Item) -> Vec<Mod> {
 
     let mods = mods
         .iter()
-        .map(|m| (m.as_str(), ModType::Explicit))
+        .filter_map(|m| Mod::try_by_stat(m.as_str(), ModType::Explicit).ok())
         .collect::<Vec<_>>();
-    let mods = Mod::many_by_stat(&mods);
 
     mods
 }

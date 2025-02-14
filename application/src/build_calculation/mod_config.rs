@@ -1,4 +1,7 @@
-use domain::types::{Mod, ModValue};
+use domain::{
+    data::ModType,
+    types::{Mod, ModValue},
+};
 use serde::{Deserialize, Serialize};
 use std::ops::RangeInclusive;
 
@@ -34,10 +37,10 @@ impl PartialEq<Mod> for ModConfig {
         }
 
         match (&self.configuration, &other.numeric_value) {
-            (Config::Exact(v), ModValue::Exact(m)) => v.eq(m),
-            (Config::Range(r), ModValue::Exact(m)) => r.contains(m),
-            (Config::Min(m), ModValue::Exact(ref m2)) => m <= m2,
-            (Config::Max(m), ModValue::Exact(ref m2)) => m >= m2,
+            (Config::Exact(v), ModValue::Exact(m)) => v.eq(&m.as_int()),
+            (Config::Range(r), ModValue::Exact(m)) => r.contains(&m.as_int()),
+            (Config::Min(m), ModValue::Exact(ref m2)) => *m <= m2.as_int(),
+            (Config::Max(m), ModValue::Exact(ref m2)) => *m >= m2.as_int(),
             _ => unreachable!(),
         }
     }
