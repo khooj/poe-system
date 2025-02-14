@@ -17,7 +17,10 @@ use nom::{
     IResult,
 };
 
-use std::{num::ParseIntError, str::ParseBoolError};
+use std::{
+    num::{ParseFloatError, ParseIntError},
+    str::ParseBoolError,
+};
 use std::{ops::Deref, str::FromStr};
 
 #[derive(thiserror::Error, Debug)]
@@ -28,6 +31,10 @@ pub enum PobParseError {
     UnknownCategory(String),
     #[error("unknown category type: {0}")]
     CategoryType(#[from] domain::types::TypeError),
+    #[error("it is not a range")]
+    NotRange,
+    #[error("error parsing range: {0}")]
+    RangeParse(#[from] ParseFloatError),
 }
 
 pub(crate) struct ParsedItem {
@@ -39,6 +46,22 @@ pub(crate) enum Affix<'a> {
     Range { range: &'a str },
     Crafted,
     Tags,
+}
+
+impl<'a> Affix<'a> {
+    fn is_range(&self) -> bool {
+        match self {
+            Affix::Range { .. } => true,
+            _ => false,
+        }
+    }
+
+    fn get_range(&self) -> Result<f32, PobParseError> {
+        match self {
+            Affix::Range { range } => Ok(range.parse()?),
+            _ => Err(PobParseError::NotRange),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -62,6 +85,12 @@ fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 fn basetype_map<'a>(name: &'a str, basetype: &'a str) -> Result<ItemValue<'a>, PobParseError> {
+    if BASE_ITEMS.contains_key(basetype) {
+        return Ok(ItemValue::BaseType {
+            name,
+            base: basetype,
+        });
+    }
     for b in BASE_TYPES.deref() {
         if basetype.contains(b) {
             return Ok(ItemValue::BaseType {
@@ -248,7 +277,11 @@ fn affix<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     context(
         "affix",
         map(
-            tuple((not(affix_prefixes_skip), affix_prefixes, cut(not_line_ending))),
+            tuple((
+                not(affix_prefixes_skip),
+                affix_prefixes,
+                cut(not_line_ending),
+            )),
             |(_, prefixes, m)| (m, default, prefixes),
         ),
     )(i)
@@ -303,6 +336,7 @@ where
         match val {
             ItemValue::Rarity(r) => item.rarity = r.to_string(),
             ItemValue::BaseType { base, name } => {
+                println!("{}--{}", base, name);
                 item.category = Category::get_from_basetype(base).unwrap();
                 item.name = name.to_string();
                 item.base_type = base.to_string();
@@ -312,15 +346,29 @@ where
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
             ItemValue::Sockets(s) => item.sockets = s.to_string(),
             ItemValue::Quality(q) => item.quality = q,
-            ItemValue::Implicits(implicits) => {
-                mods.extend(implicits.into_iter().map(|im| (im.0, ModType::Implicit)))
-            }
-            ItemValue::Affix(e) => mods.push((e.0, e.1)),
+            ItemValue::Implicits(implicits) => mods.extend(
+                implicits
+                    .into_iter()
+                    .map(|im| (im.0, im.1, ModType::Implicit)),
+            ),
+            ItemValue::Affix(e) => mods.push((e.0, e.2, e.1)),
             _ => {}
         };
     }
 
-    let mods = Mod::many_by_stat(&mods);
+    let mods = mods
+        .into_iter()
+        .filter_map(|(val, affixes, modtype)| {
+            if let Some(range) = affixes.iter().find(|a| a.is_range()) {
+                let range = range
+                    .get_range()
+                    .expect("tried to parse range on range affix");
+                Mod::try_by_range_stat(val, range, modtype).ok()
+            } else {
+                Mod::try_by_stat(val, modtype).ok()
+            }
+        })
+        .collect();
 
     item.mods = mods;
 
@@ -370,6 +418,15 @@ mod test {
         ItemValue::BaseType {
             name: "Divine Life Flask",
             base: "Divine Life Flask",
+        }
+    );
+    gen_test!(
+        name_check4,
+        name,
+        "Iron Commander\nDeath Bow",
+        ItemValue::BaseType {
+            name: "Iron Commander",
+            base: "Death Bow",
         }
     );
     gen_test!(
@@ -494,9 +551,8 @@ Small Cluster Jewel
 Unique ID: c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb
 Item Level: 84
 LevelReq: 54
-Implicits: 2
+Implicits: 1 
 {crafted}Adds 2 Passive Skills
-{crafted}Added Small Passive Skills grant: 1% chance to Dodge Attack Hits
 Added Small Passive Skills also grant: +3% to Chaos Resistance
 Added Small Passive Skills also grant: +5 to Maximum Energy Shield
 Added Small Passive Skills also grant: +5 to Strength
@@ -514,26 +570,26 @@ Added Small Passive Skills also grant: +5 to Strength
         assert_eq!(item.item.lvl_req, 54);
         assert_eq!(
             item.item.mods,
-            Mod::many_by_stat_or_invalid(&[
-                ("Adds 2 Passive Skills", ModType::Implicit),
-                (
-                    "Added Small Passive Skills grant: 1% chance to Dodge Attack Hits",
-                    ModType::Implicit
-                ),
-                (
+            vec![
+                Mod::try_by_stat("Adds 2 Passive Skills", ModType::Implicit).unwrap(),
+                Mod::try_by_stat(
                     "Added Small Passive Skills also grant: +3% to Chaos Resistance",
                     ModType::Explicit
-                ),
-                (
+                )
+                .unwrap(),
+                Mod::try_by_stat(
                     "Added Small Passive Skills also grant: +5 to Maximum Energy Shield",
                     ModType::Explicit
-                ),
-                (
+                )
+                .unwrap(),
+                Mod::try_by_stat(
                     "Added Small Passive Skills also grant: +5 to Strength",
                     ModType::Explicit
-                ),
-                ("1 Added Passive Skill is Elegant Form", ModType::Explicit),
-            ])
+                )
+                .unwrap(),
+                Mod::try_by_stat("1 Added Passive Skill is Elegant Form", ModType::Explicit)
+                    .unwrap(),
+            ]
         );
         Ok(())
     }
@@ -562,47 +618,4 @@ You have Tailwind if you have dealt a Critical Strike Recently
         assert_eq!(item.item.category, Category::Armour);
         Ok(())
     }
-
-    // #[test]
-    // fn pob_item1() -> Result<(), anyhow::Error> {
-    //     use nom::error::VerboseError;
-    //     dotenv::dotenv().ok();
-
-    //     let item = r#"
-    //         			Rarity: MAGIC
-    // Experimenter's Silver Flask of Adrenaline
-    // Unique ID: c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4
-    // Item Level: 53
-    // Quality: 0
-    // LevelReq: 22
-    // Implicits: 0
-    // 21% increased Movement Speed during Flask effect
-    // 38% increased Duration"#;
-
-    //     let (_, item) = parse_pob_item::<VerboseError<&str>>(&item)?;
-    //     assert_eq!(item.rarity, "MAGIC");
-    //     assert_eq!(item.name, "Experimenter's Silver Flask of Adrenaline");
-    //     assert_eq!(item.base_type, "Silver Flask");
-    //     assert_eq!(
-    //         item.id,
-    //         "c923e98f2fa95e0c18b019f4e203137ea0c17c35e01273c53ccbef8324125ac4"
-    //     );
-    //     assert_eq!(item.item_lvl, domain::ItemLvl::Yes(53));
-    //     assert_eq!(item.lvl_req, 22);
-    //     assert_eq!(
-    //         item.mods,
-    //         Mod::many_by_stat_or_invalid(&LinkedList::from_iter(
-    //             [
-    //                 (
-    //                     "21% increased Movement Speed during Flask effect",
-    //                     ModType::Explicit
-    //                 ),
-    //                 ("38% increased Duration", ModType::Explicit),
-    //             ]
-    //             .into_iter()
-    //         )),
-    //     );
-
-    //     Ok(())
-    // }
 }
