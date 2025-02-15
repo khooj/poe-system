@@ -59,6 +59,18 @@ impl Default for ItemInfo {
     }
 }
 
+impl ItemInfo {
+    pub fn first_mod_id(&self) -> &str {
+        match self {
+            ItemInfo::Armor { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
+            ItemInfo::Weapon { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
+            ItemInfo::Jewel { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
+            ItemInfo::Flask { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
+            ItemInfo::Gem {  .. } => panic!("gems have no mods"),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TypedItem {
     pub id: String,

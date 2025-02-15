@@ -3,6 +3,7 @@ use std::time::Duration;
 use application::{
     build_calculation::{
         import_pob::{import_build_from_pob, import_build_from_pob_first_itemset},
+        mod_config::{Config, ModConfig},
         BuildInfo,
     },
     stash_receiver::StashReceiver,
@@ -45,11 +46,15 @@ pub async fn setup_db() -> anyhow::Result<TestContext> {
     MIGRATOR.run(&pool).await?;
 
     let item_repo = ItemRepository::new(pool.clone()).await?;
-    import_items(item_repo.clone(), "../slice10").await?;
+    import_items(item_repo.clone(), "../slice1").await?;
     let mut build_repo = BuildRepository::new(pool.clone()).await?;
 
     let pob = pob::Pob::new(POB_FILE);
-    let data = import_build_from_pob_first_itemset(&pob)?;
+    let mut data = import_build_from_pob_first_itemset(&pob)?;
+    data.provided.boots.config.extend([ModConfig {
+        stat_id: data.provided.boots.item.info.first_mod_id().to_string(),
+        configuration: Config::Exist,
+    }]);
 
     build_repo
         .upsert_build(BuildData {

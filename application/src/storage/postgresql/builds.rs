@@ -92,7 +92,7 @@ impl BuildRepository {
         let data: Option<BuildData> = sqlx::query_as(
             r#"select id, data, processed, created_at, updated_at from builds
                             where processed = false
-                            group by created_at
+                            group by id, created_at
                             order by created_at asc
                             limit 1"#,
         )

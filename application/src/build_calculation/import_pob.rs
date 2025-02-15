@@ -3,7 +3,7 @@ use pob::{ItemSet, Pob};
 use crate::typed_item::{TypedItem, TypedItemError};
 
 use super::{BuildInfo, BuildItemsWithConfig, ItemWithConfig};
-use domain::types::{Category, Subcategory};
+use domain::{item::Item, types::Subcategory};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImportPobError {
@@ -28,16 +28,20 @@ pub fn import_build_from_pob_first_itemset(pob: &Pob) -> Result<BuildInfo, Impor
     import(itemset)
 }
 
+fn fill(prov_item: &mut ItemWithConfig, it: &Item) -> Result<(), ImportPobError> {
+    *prov_item = ItemWithConfig {
+        item: TypedItem::try_from(it.clone())?,
+        ..Default::default()
+    };
+    Ok(())
+}
+
 fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
     let mut builditems = BuildItemsWithConfig::default();
     for it in itemset.items() {
+        #[allow(clippy::single_match)]
         match it.subcategories {
-            Subcategory::Boots => {
-                builditems.boots = ItemWithConfig {
-                    item: TypedItem::try_from(it.clone())?,
-                    ..Default::default()
-                };
-            }
+            Subcategory::Boots => fill(&mut builditems.boots, it)?,
             _ => {}
         }
     }
@@ -60,10 +64,7 @@ mod tests {
     fn check_import_items() -> anyhow::Result<()> {
         let pob = pob::Pob::new(POB);
         let buildinfo = import_build_from_pob_first_itemset(&pob)?;
-        assert_ne!(
-            buildinfo.provided.boots.item.info,
-            ItemInfo::default(),
-        );
+        assert_ne!(buildinfo.provided.boots.item.info, ItemInfo::default(),);
         Ok(())
     }
 }

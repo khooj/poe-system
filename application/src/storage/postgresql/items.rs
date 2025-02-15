@@ -148,7 +148,7 @@ impl ItemRepositoryTrait for ItemRepository {
         let search_mods = serde_json::to_string(&search_mods)?;
 
         let result: Vec<WrapperTypedItem> =
-            sqlx::query_as("select id, data from items where data @> $1")
+            sqlx::query_as("select id, data from items where data @> $1::jsonb")
                 .bind(&search_mods)
                 .fetch_all(&mut *tx)
                 .await?;
