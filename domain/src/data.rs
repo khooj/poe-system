@@ -52,12 +52,10 @@ fn extract_single_range(val: &str, mtch: Option<Match<'_>>) -> Option<RangeInclu
 }
 
 fn get_range_reg(val: &str) -> (Option<RangeInclusive<i32>>, Option<RangeInclusive<i32>>) {
-    dbg!(val);
     let captures = REGEX_REPLACE_NUMS
         .captures_iter(val.as_bytes())
         .map(|c| c.get(1))
         .collect::<Vec<_>>();
-    dbg!(&captures);
 
     let range1 = extract_single_range(val, captures.first().and_then(|f| *f));
     let range2 = extract_single_range(val, captures.get(1).and_then(|f| *f));
@@ -152,6 +150,7 @@ pub struct BasetypeInfo {
     pub properties: BasetypeProperties,
     pub name: String,
     pub tags: Vec<String>,
+    pub item_class: String,
 }
 
 #[derive(Debug, serde::Deserialize)]

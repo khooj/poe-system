@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     convert::TryFrom,
-    ops::{Deref, RangeInclusive},
+    ops::{Deref, RangeInclusive, Sub},
     str::FromStr,
 };
 use strum::EnumString;
@@ -425,6 +425,46 @@ pub enum Influence {
     Crusader,
 }
 
+lazy_static::lazy_static! {
+    static ref SUBCATEGORY_MAPPING: HashMap<String, Subcategory> = {
+        let mut hm = HashMap::new();
+        hm.insert("Boots".to_string(), Subcategory::Boots);
+        hm.insert("Helmet".to_string(), Subcategory::Helmets);
+        hm.insert("AbyssJewel".to_string(), Subcategory::Jewel);
+        hm.insert("Active Skill Gem".to_string(), Subcategory::Gem);
+        hm.insert("Amulet".to_string(), Subcategory::Amulet);
+        hm.insert("Belt".to_string(), Subcategory::Belt);
+        hm.insert("Body Armour".to_string(), Subcategory::BodyArmour);
+        hm.insert("Bow".to_string(), Subcategory::Weapon);
+        hm.insert("Claw".to_string(), Subcategory::Weapon);
+        hm.insert("Dagger".to_string(), Subcategory::Weapon);
+        hm.insert("FishingRod".to_string(), Subcategory::Weapon);
+        hm.insert("Gloves".to_string(), Subcategory::Gloves);
+        hm.insert("HybridFlask".to_string(), Subcategory::HybridFlask);
+        hm.insert("Jewel".to_string(), Subcategory::Jewel);
+        hm.insert("LifeFlask".to_string(), Subcategory::LifeFlask);
+        hm.insert("ManaFlask".to_string(), Subcategory::ManaFlask);
+        hm.insert("One Hand Axe".to_string(), Subcategory::Weapon);
+        hm.insert("One Hand Mace".to_string(), Subcategory::Weapon);
+        hm.insert("One Hand Sword".to_string(), Subcategory::Weapon);
+        hm.insert("Quiver".to_string(), Subcategory::Quiver);
+        hm.insert("Ring".to_string(), Subcategory::Ring);
+        hm.insert("Rune Dagger".to_string(), Subcategory::Weapon);
+        hm.insert("Sceptre".to_string(), Subcategory::Weapon);
+        hm.insert("Shield".to_string(), Subcategory::Shield);
+        hm.insert("Staff".to_string(), Subcategory::Weapon);
+        hm.insert("Support Skill Gem".to_string(), Subcategory::Gem);
+        hm.insert("Thrusting One Hand Sword".to_string(), Subcategory::Weapon);
+        hm.insert("Two Hand Axe".to_string(), Subcategory::Weapon);
+        hm.insert("Two Hand Mace".to_string(), Subcategory::Weapon);
+        hm.insert("Two Hand Sword".to_string(), Subcategory::Weapon);
+        hm.insert("UtilityFlask".to_string(), Subcategory::UtilityFlask);
+        hm.insert("Wand".to_string(), Subcategory::Weapon);
+        hm.insert("Warstaff".to_string(), Subcategory::Weapon);
+        hm
+    };
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq)]
 #[strum(ascii_case_insensitive)]
 pub enum Subcategory {
@@ -432,6 +472,44 @@ pub enum Subcategory {
     Empty,
     Helmets,
     Boots,
+    Gem,
+    Jewel,
+    Amulet,
+    Belt,
+    BodyArmour,
+    Gloves,
+    Weapon,
+    LifeFlask,
+    ManaFlask,
+    HybridFlask,
+    UtilityFlask,
+    Shield,
+    Quiver,
+    Ring,
+}
+
+#[derive(Error, Debug)]
+pub enum SubcategoryError {
+    #[error("unknown subcategory: {0}")]
+    UnknownSubcategory(String),
+}
+
+impl Subcategory {
+    pub fn get_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Subcategory, SubcategoryError> {
+        let baseinfo =
+            BASE_ITEMS
+                .get(basetype.as_ref())
+                .ok_or(SubcategoryError::UnknownSubcategory(
+                    basetype.as_ref().to_string(),
+                ))?;
+
+        Ok(SUBCATEGORY_MAPPING
+            .get(&baseinfo.item_class)
+            .ok_or(SubcategoryError::UnknownSubcategory(
+                basetype.as_ref().to_string(),
+            ))?
+            .clone())
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq, Default)]

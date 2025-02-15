@@ -32,3 +32,6 @@ tracing = { version = "0.1" }
 metrics = "0.24.1"
 config = { version = "0.15.6", default-features = false, features = ["toml"] }
 tokio-util = "0.7.13"
+
+[features]
+integration_tests = []

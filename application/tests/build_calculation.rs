@@ -6,7 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 mod common;
 
-#[cfg(integration_tests)]
+#[cfg(feature = "integration_tests")]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn check_process_build() -> anyhow::Result<()> {
     let mut ctx = common::setup_db().await?;

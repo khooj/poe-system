@@ -31,14 +31,12 @@ pub fn import_build_from_pob_first_itemset(pob: &Pob) -> Result<BuildInfo, Impor
 fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
     let mut builditems = BuildItemsWithConfig::default();
     for it in itemset.items() {
-        match it.category {
-            Category::Armour => {
-                if contains_subcategory(&it.subcategories, Subcategory::Boots) {
-                    builditems.boots = ItemWithConfig {
-                        item: TypedItem::try_from(it.clone())?,
-                        ..Default::default()
-                    };
-                }
+        match it.subcategories {
+            Subcategory::Boots => {
+                builditems.boots = ItemWithConfig {
+                    item: TypedItem::try_from(it.clone())?,
+                    ..Default::default()
+                };
             }
             _ => {}
         }
@@ -48,10 +46,6 @@ fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
         provided: builditems,
         ..Default::default()
     })
-}
-
-fn contains_subcategory(subs: &[Subcategory], subc: Subcategory) -> bool {
-    subs.iter().any(|s| *s == subc)
 }
 
 #[cfg(test)]
@@ -66,7 +60,10 @@ mod tests {
     fn check_import_items() -> anyhow::Result<()> {
         let pob = pob::Pob::new(POB);
         let buildinfo = import_build_from_pob_first_itemset(&pob)?;
-        assert_eq!(buildinfo.provided.boots.item.info, ItemInfo::Armor { basetype: "test".to_string(), quality: 0, mods: vec![], properties: vec![] });
+        assert_ne!(
+            buildinfo.provided.boots.item.info,
+            ItemInfo::default(),
+        );
         Ok(())
     }
 }

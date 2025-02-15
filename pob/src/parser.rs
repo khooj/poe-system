@@ -1,7 +1,7 @@
 use domain::{
     data::{BASE_ITEMS, BASE_TYPES},
     item::Item,
-    types::{Category, Mod, ModType},
+    types::{Category, Mod, ModType, Subcategory},
 };
 use nom::{
     branch::alt,
@@ -336,8 +336,8 @@ where
         match val {
             ItemValue::Rarity(r) => item.rarity = r.to_string(),
             ItemValue::BaseType { base, name } => {
-                println!("{}--{}", base, name);
                 item.category = Category::get_from_basetype(base).unwrap();
+                item.subcategories = Subcategory::get_from_basetype(base).unwrap();
                 item.name = name.to_string();
                 item.base_type = base.to_string();
             }

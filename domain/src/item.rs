@@ -15,7 +15,7 @@ pub struct Item {
     pub identified: bool,
     pub name: String,
     pub category: Category,
-    pub subcategories: Vec<Subcategory>,
+    pub subcategories: Subcategory,
     pub base_type: String,
     pub type_line: String,
     pub corrupted: bool,
