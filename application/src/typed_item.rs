@@ -1,5 +1,5 @@
 use core::convert::TryFrom;
-use domain::{item::Item as DomainItem, types::{Mod, ModType, Category}};
+use domain::{item::Item as DomainItem, types::{Category, Mod, ModType, Subcategory, SubcategoryError, TypeError}};
 use public_stash::models::Item;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -22,28 +22,23 @@ pub struct Property {
 #[serde(tag = "type")]
 pub enum ItemInfo {
     Gem {
-        basetype: String,
         level: u8,
         quality: u8,
     },
     Armor {
-        basetype: String,
         quality: u8,
         mods: Vec<Mod>,
         properties: Vec<Property>,
     },
     Weapon {
-        basetype: String,
         quality: u8,
         mods: Vec<Mod>,
         properties: Vec<Property>,
     },
     Jewel {
-        basetype: String,
         mods: Vec<Mod>,
     },
     Flask {
-        basetype: String,
         quality: u8,
         mods: Vec<Mod>,
     },
@@ -52,7 +47,6 @@ pub enum ItemInfo {
 impl Default for ItemInfo {
     fn default() -> Self {
         ItemInfo::Gem {
-            basetype: String::new(),
             level: 0,
             quality: 0,
         }
@@ -74,6 +68,9 @@ impl ItemInfo {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TypedItem {
     pub id: String,
+    pub basetype: String,
+    pub category: Category,
+    pub subcategory: Subcategory,
     pub info: ItemInfo,
 }
 
@@ -93,6 +90,10 @@ impl TypedItem {
 pub enum TypedItemError {
     #[error("unknown item")]
     Unknown,
+    #[error("unknown category: {0}")]
+    UnknownCategory(#[from] TypeError),
+    #[error("unknown subcategory: {0}")]
+    UnknownSubcategory(#[from] SubcategoryError),
 }
 
 impl TryFrom<Item> for TypedItem {
@@ -103,6 +104,8 @@ impl TryFrom<Item> for TypedItem {
             return Err(TypedItemError::Unknown);
         }
         let basetype = value.base_type;
+        let category = Category::get_from_basetype(&basetype)?;
+        let subcategory = Subcategory::get_from_basetype(&basetype)?;
         let mods = value
                 .explicit_mods
                 .as_ref()
@@ -140,14 +143,12 @@ impl TryFrom<Item> for TypedItem {
 
                 Some(if t == "weapons" {
                     ItemInfo::Weapon {
-                        basetype,
                         quality,
                         mods,
                         properties,
                     }
                 } else {
                     ItemInfo::Armor {
-                        basetype,
                         quality,
                         mods,
                         properties,
@@ -164,22 +165,23 @@ impl TryFrom<Item> for TypedItem {
                     .unwrap_or(0);
 
                 Some(ItemInfo::Gem {
-                    basetype,
                     level,
                     quality,
                 })
             }
             "flasks" => Some(ItemInfo::Flask {
-                basetype,
                 quality,
                 mods,
             }),
-            "jewels" => Some(ItemInfo::Jewel { basetype, mods }),
+            "jewels" => Some(ItemInfo::Jewel { mods }),
             _ => None,
         };
         Ok(TypedItem {
             info: info.ok_or(TypedItemError::Unknown)?,
             id: value.id.unwrap_or(Uuid::new_v4().to_string()),
+            basetype,
+            category,
+            subcategory,
         })
     }
 }
@@ -195,6 +197,8 @@ impl TryFrom<DomainItem> for TypedItem {
         }
 
         let basetype = value.base_type;
+        let category = Category::get_from_basetype(&basetype)?;
+        let subcategory = Subcategory::get_from_basetype(&basetype)?;
         let mods = value.mods;
         let props = value.properties;
         let quality = value.quality as u8;
@@ -217,14 +221,12 @@ impl TryFrom<DomainItem> for TypedItem {
 
                 Some(if t == Category::Weapons {
                     ItemInfo::Weapon {
-                        basetype,
                         quality,
                         mods,
                         properties,
                     }
                 } else {
                     ItemInfo::Armor {
-                        basetype,
                         quality,
                         mods,
                         properties,
@@ -241,22 +243,23 @@ impl TryFrom<DomainItem> for TypedItem {
                     .unwrap_or(0);
 
                 Some(ItemInfo::Gem {
-                    basetype,
                     level,
                     quality,
                 })
             }
             Category::Flasks => Some(ItemInfo::Flask {
-                basetype,
                 quality,
                 mods,
             }),
-            Category::Jewels => Some(ItemInfo::Jewel { basetype, mods }),
+            Category::Jewels => Some(ItemInfo::Jewel { mods }),
             _ => None,
         };
         Ok(TypedItem {
             info: info.ok_or(TypedItemError::Unknown)?,
             id: value.id,
+            basetype,
+            category,
+            subcategory,
         })
     }
 }

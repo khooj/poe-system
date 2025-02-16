@@ -110,6 +110,13 @@ async fn find_similar(
     item: &ItemWithConfig,
 ) -> anyhow::Result<Option<TypedItem>> {
     let mods_for_search = Comparator::extract_mods_for_search(&item.config, &item.item);
-    let found_items = items_repo.search_items_by_mods(mods_for_search).await?;
+    let found_items = items_repo
+        .search_items_by_attrs(
+            None,
+            Some(item.item.category.clone()),
+            Some(item.item.subcategory.clone()),
+            Some(mods_for_search),
+        )
+        .await?;
     Ok(found_items.first().cloned())
 }

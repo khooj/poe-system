@@ -5,7 +5,7 @@ use crate::{
 use public_stash::{client::Error as StashError, models::PublicStashData};
 use tracing::{info, instrument, trace};
 
-pub type PgStashReceiver = StashReceiver<ItemRepository>;
+pub type PgStashReceiver = StashReceiver;
 
 #[derive(thiserror::Error, Debug)]
 pub enum StashReceiverError {
@@ -15,13 +15,13 @@ pub enum StashReceiverError {
     Skip,
 }
 
-pub struct StashReceiver<T> {
-    repository: T,
+pub struct StashReceiver {
+    repository: ItemRepository,
     only_leagues: Vec<String>,
 }
 
-impl<T> StashReceiver<T> {
-    pub fn new(repository: T, only_leagues: Vec<String>) -> StashReceiver<T> {
+impl StashReceiver {
+    pub fn new(repository: ItemRepository, only_leagues: Vec<String>) -> StashReceiver {
         StashReceiver {
             repository,
             only_leagues,
@@ -29,10 +29,7 @@ impl<T> StashReceiver<T> {
     }
 }
 
-impl<T> StashReceiver<T>
-where
-    T: ItemRepositoryTrait,
-{
+impl StashReceiver {
     pub async fn get_latest_stash(&mut self) -> Result<LatestStashId, anyhow::Error> {
         Ok(self.repository.get_stash_id().await?)
     }

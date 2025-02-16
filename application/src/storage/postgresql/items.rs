@@ -1,6 +1,6 @@
-use crate::storage::{ItemRepositoryError, ItemRepositoryTrait, LatestStashId};
+use crate::storage::{ItemRepositoryError, LatestStashId};
 use crate::typed_item::TypedItem;
-use domain::types::Mod;
+use domain::types::{Category, Mod, Subcategory};
 use serde::Serialize;
 use sqlx::Row;
 use thiserror::Error;
@@ -50,6 +50,21 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperTypedItem {
     fn from_row(row: &'_ sqlx::postgres::PgRow) -> Result<Self, sqlx::Error> {
         Ok(Self(TypedItem {
             id: row.try_get("id")?,
+            basetype: row.try_get("basetype")?,
+            category: row
+                .try_get::<'_, &str, &str>("category")?
+                .parse()
+                .map_err(|e| sqlx::Error::ColumnDecode {
+                    index: "category".to_string(),
+                    source: Box::new(e),
+                })?,
+            subcategory: row
+                .try_get::<'_, &str, &str>("subcategory")?
+                .parse()
+                .map_err(|e| sqlx::Error::ColumnDecode {
+                    index: "subcategory".to_string(),
+                    source: Box::new(e),
+                })?,
             info: row
                 .try_get::<'_, sqlx::types::Json<_>, &str>("data")
                 .map(|x| x.0)?,
@@ -57,9 +72,8 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperTypedItem {
     }
 }
 
-#[async_trait::async_trait]
-impl ItemRepositoryTrait for ItemRepository {
-    async fn get_stash_id(&mut self) -> Result<LatestStashId, ItemRepositoryError> {
+impl ItemRepository {
+    pub async fn get_stash_id(&mut self) -> Result<LatestStashId, ItemRepositoryError> {
         let id: Option<(String,)> = sqlx::query_as("select id from latest_stash")
             .fetch_optional(&self.pool)
             .await?;
@@ -72,20 +86,27 @@ impl ItemRepositoryTrait for ItemRepository {
         }
     }
 
-    async fn insert_items(
+    pub async fn insert_items(
         &mut self,
         items: Vec<crate::typed_item::TypedItem>,
         stash_id: &str,
     ) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         let mut copyin = tx
-            .copy_in_raw(r#"COPY items FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'@')"#)
+            .copy_in_raw(r#"COPY items(id, data, basetype, category, subcategory) FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'@')"#)
             .await?;
         let mut ids = Vec::with_capacity(items.len());
         let items_len = items.len();
         for item in items {
             let json = serde_json::to_string(&item.info).unwrap();
-            let line = format!("{};@{}@\n", item.id, json);
+            let line = format!(
+                "{};@{}@;{};{};{}\n",
+                item.id,
+                json,
+                item.basetype,
+                item.category.as_ref(),
+                item.subcategory.as_ref()
+            );
             copyin.send(line.as_bytes()).await?;
             ids.push(item.id);
         }
@@ -108,7 +129,10 @@ impl ItemRepositoryTrait for ItemRepository {
         Ok(())
     }
 
-    async fn clear_stash(&mut self, stash_id: &str) -> Result<Vec<String>, ItemRepositoryError> {
+    pub async fn clear_stash(
+        &mut self,
+        stash_id: &str,
+    ) -> Result<Vec<String>, ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         let ids: Vec<(String,)> = sqlx::query_as("select item_id from stashes where id = $1")
             .bind(stash_id)
@@ -126,7 +150,7 @@ impl ItemRepositoryTrait for ItemRepository {
         Ok(ids.into_iter().map(|s| s.0).collect())
     }
 
-    async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError> {
+    pub async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         sqlx::query("truncate table latest_stash")
             .execute(&mut *tx)
@@ -139,19 +163,59 @@ impl ItemRepositoryTrait for ItemRepository {
         Ok(())
     }
 
-    async fn search_items_by_mods(
+    pub async fn search_items_by_attrs(
         &mut self,
-        mods: Vec<Mod>,
+        basetype: Option<&str>,
+        category: Option<Category>,
+        subcategory: Option<Subcategory>,
+        mods: Option<Vec<Mod>>,
     ) -> Result<Vec<TypedItem>, ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
-        let search_mods: SearchMods = mods.into();
-        let search_mods = serde_json::to_string(&search_mods)?;
 
-        let result: Vec<WrapperTypedItem> =
-            sqlx::query_as("select id, data from items where data @> $1::jsonb")
-                .bind(&search_mods)
-                .fetch_all(&mut *tx)
-                .await?;
+        let query = "select id, data, basetype, category, subcategory from items";
+        let mut filters = vec![];
+        let mut count = 0;
+        if basetype.is_some() {
+            count += 1;
+            filters.push(format!("basetype = ${}", count));
+        }
+        if category.is_some() {
+            count += 1;
+            filters.push(format!("category = ${}", count));
+        }
+        if subcategory.is_some() {
+            count += 1;
+            filters.push(format!("subcategory = ${}", count));
+        }
+        if mods.is_some() {
+            count += 1;
+            filters.push(format!("data @> ${}::jsonb", count));
+        }
+
+        let query = if filters.is_empty() {
+            query.to_string()
+        } else {
+            query.to_string() + " where " + &filters.join(" and ")
+        };
+
+        let mut sqx_query = sqlx::query_as(&query);
+
+        if let Some(b) = basetype {
+            sqx_query = sqx_query.bind(b);
+        }
+        if let Some(b) = category {
+            sqx_query = sqx_query.bind(b.as_ref().to_string());
+        }
+        if let Some(b) = subcategory {
+            sqx_query = sqx_query.bind(b.as_ref().to_string());
+        }
+        if let Some(b) = mods {
+            let search_mods: SearchMods = b.into();
+            let search_mods = serde_json::to_string(&search_mods)?;
+            sqx_query = sqx_query.bind(search_mods);
+        }
+
+        let result: Vec<WrapperTypedItem> = sqx_query.fetch_all(&mut *tx).await?;
         tx.commit().await?;
         Ok(result.into_iter().map(|s| s.0).collect())
     }

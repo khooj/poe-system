@@ -6,7 +6,7 @@ use std::{
     ops::{Deref, RangeInclusive, Sub},
     str::FromStr,
 };
-use strum::EnumString;
+use strum::{AsRefStr, EnumString};
 use thiserror::Error;
 
 use crate::data::{ModValue as DataModValue, BASE_ITEMS, MODS};
@@ -32,7 +32,7 @@ pub enum __category_tmp {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq, AsRefStr)]
 #[strum(ascii_case_insensitive)]
 pub enum Category {
     Flasks,
@@ -465,7 +465,7 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq, AsRefStr)]
 #[strum(ascii_case_insensitive)]
 pub enum Subcategory {
     #[default]
