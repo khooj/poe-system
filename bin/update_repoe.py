@@ -4,10 +4,10 @@ import requests
 import os
 
 DATA = {
-    "domain/dist/base_items.min.json",
-    "domain/dist/stat_translations.min.json",
-    "domain/dist/stats.min.json",
-    "domain/dist/mods.min.json",
+    "rust/domain/dist/base_items.min.json",
+    "rust/domain/dist/stat_translations.min.json",
+    "rust/domain/dist/stats.min.json",
+    "rust/domain/dist/mods.min.json",
 }
 
 BASE_URL = "https://repoe-fork.github.io/"
