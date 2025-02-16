@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 #[derive(Deserialize, Debug)]
 struct Settings {
     pg: String,
-    timeout: Duration,
+    timeout_ms: u64,
 }
 
 #[tokio::main]
@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             tokio::time::sleep(Duration::from_millis(100)).await;
 
-            if let Err(e) = build_repo.unlock_failed_builds(settings.timeout).await {
+            if let Err(e) = build_repo.unlock_failed_builds(Duration::from_millis(settings.timeout_ms)).await {
                 eprintln!("{}", e);
             }
         }

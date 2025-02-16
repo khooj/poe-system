@@ -1,5 +1,5 @@
 {
-  description = "rust workspace";
+  description = "poe-system workspace";
 
   inputs = {
     rust-overlay.url = "github:oxalica/rust-overlay";
@@ -40,12 +40,6 @@
               ];
 
               services = {
-                cassandra."cass1".enable = false;
-                redis."r1" = {
-                  enable = false;
-                  port = 0;
-                  unixSocket = "./redis.sock";
-                };
                 postgres."pg1" = {
                   enable = true;
                 };
@@ -54,48 +48,69 @@
               settings = {
                 log_location = "services-log.log";
 
-                processes."val1" =
-                  let
-                    unixSocket = "./valkey.sock";
-                    dataDir = "./data/val1";
-                    valkeyConfig = pkgs.writeText "valkey.conf" ''
-                      unixsocket ${unixSocket}
-                      unixsocketperm 0600
-                    '';
-
-                    startScript = pkgs.writeShellApplication {
-                      name = "start-vakley";
-                      runtimeInputs = [
-                        pkgs.coreutils
-                        pkgs.valkey
-                      ];
-                      text = ''
-                        set -euo pipefail
-                        export VALKEYDATA=${dataDir}
-                        if [[ ! -d "$VALKEYDATA" ]]; then
-                          mkdir -p "$VALKEYDATA"
-                        fi
-
-                        exec valkey-server ${valkeyConfig} --dir "$VALKEYDATA"
+                processes = {
+                  "val1" =
+                    let
+                      unixSocket = "./valkey.sock";
+                      dataDir = "./data/val1";
+                      valkeyConfig = pkgs.writeText "valkey.conf" ''
+                        unixsocket ${unixSocket}
+                        unixsocketperm 0600
                       '';
+
+                      startScript = pkgs.writeShellApplication {
+                        name = "start-vakley";
+                        runtimeInputs = [
+                          pkgs.coreutils
+                          pkgs.valkey
+                        ];
+                        text = ''
+                          set -euo pipefail
+                          export VALKEYDATA=${dataDir}
+                          if [[ ! -d "$VALKEYDATA" ]]; then
+                            mkdir -p "$VALKEYDATA"
+                          fi
+
+                          exec valkey-server ${valkeyConfig} --dir "$VALKEYDATA"
+                        '';
+                      };
+                      transformedSocketPath = "${dataDir}/${unixSocket}";
+                    in
+                    {
+                      disabled = true;
+                      command = startScript;
+                      readiness_probe = {
+                        exec.command = "${pkgs.valkey}/bin/valkey-cli -s ${transformedSocketPath} 0 ping";
+                        initial_delay_seconds = 2;
+                        period_seconds = 10;
+                        timeout_seconds = 4;
+                        success_threshold = 1;
+                        failure_threshold = 5;
+                      };
+                      availability = {
+                        restart = "on_failure";
+                        max_restarts = 5;
+                      };
                     };
-                    transformedSocketPath = "${dataDir}/${unixSocket}";
-                  in
-                  {
-                    command = startScript;
-                    readiness_probe = {
-                      exec.command = "${pkgs.valkey}/bin/valkey-cli -s ${transformedSocketPath} 0 ping";
-                      initial_delay_seconds = 2;
-                      period_seconds = 10;
-                      timeout_seconds = 4;
-                      success_threshold = 1;
-                      failure_threshold = 5;
-                    };
-                    availability = {
-                      restart = "on_failure";
-                      max_restarts = 5;
-                    };
+
+                  "build_calculation" = {
+                    disabled = true;
+                    command = "cargo run --release --bin build_calculator";
+                    working_dir = "./rust";
                   };
+
+                  "build_unlocker" = {
+                    disabled = true;
+                    command = "cargo run --release --bin build_unlocker";
+                    working_dir = "./rust";
+                  };
+
+                  "stash_receiver" = {
+                    disabled = true;
+                    command = "cargo run --release --bin stash_receiver";
+                    working_dir = "./rust";
+                  };
+                };
               };
             };
 
@@ -113,18 +128,17 @@
                   ];
                   targets = [ "wasm32-unknown-unknown" ];
                 })
-                trunk
-
                 sqlite
                 openssl
                 cmake
                 zlib
                 gnumake
-                (python3.withPackages(ps: with ps; [ requests ]))
+                (python3.withPackages (ps: with ps; [ requests ]))
                 nixos-shell
                 crate2nix
                 nodejs
                 sqlx-cli
+                elixir_1_18
 
                 wget
                 dbus
@@ -137,9 +151,9 @@
                 hashrat
                 libarchive
                 lz4
-                cassandra-cpp-driver
                 libuv
                 cargo-flamegraph
+                inotify-tools
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config
