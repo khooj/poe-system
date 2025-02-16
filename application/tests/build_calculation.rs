@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use application::{build_calculation::process_builds, storage::postgresql::{builds::BuildRepository, items::ItemRepository}};
+use application::{
+    build_calculation::process_builds,
+    storage::postgresql::{builds::BuildRepository, items::ItemRepository},
+};
 use tokio::{spawn, task::JoinHandle};
 use tokio_util::sync::CancellationToken;
 
@@ -29,8 +32,3 @@ async fn check_process_build() -> anyhow::Result<()> {
 
     Ok(())
 }
-
-async fn spawn_process_builds(token: CancellationToken, item: ItemRepository, build: BuildRepository) -> JoinHandle<anyhow::Result<()>> {
-    tokio::spawn(async move { process_builds(token, item, build).await })
-}
-

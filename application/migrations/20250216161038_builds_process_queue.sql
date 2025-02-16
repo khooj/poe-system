@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS new_builds(
+  id SERIAL PRIMARY KEY,
+  build_id UUID NOT NULL REFERENCES builds(id),
+  processing BOOLEAN NOT NULL DEFAULT FALSE,
+  started_at TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION new_build_added() RETURNS TRIGGER AS $$
+  BEGIN
+    INSERT INTO new_builds(build_id) VALUES (NEW.id);
+    RETURN NULL;
+  END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER new_builds AFTER INSERT ON builds
+FOR EACH ROW EXECUTE FUNCTION new_build_added();

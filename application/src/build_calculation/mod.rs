@@ -77,18 +77,24 @@ pub async fn process_builds(
             else => {}
         };
 
-        tokio::time::sleep(Duration::from_millis(500)).await;
-
         let mut build = match build_repo.get_build_for_processing().await? {
             Some(b) => b,
-            None => continue,
+            None => {
+                tokio::time::sleep(Duration::from_millis(500)).await;
+                continue;
+            }
         };
 
         let start = Instant::now();
 
         process_single_build(&mut items_repo, &mut build).await?;
 
-        build_repo.upsert_build(build).await?;
+        // TODO: probably better to do this 2 operations in single transaction
+        // because of possible race condition
+        // (upsert build -> unlock failed build -> getting build for calculation -> unlock build)
+        // i think the worst thing that can happen is "blink" items on client side
+        build_repo.upsert_build(&build).await?;
+        build_repo.unlock_build(&build.id).await?;
 
         let delta = start.elapsed();
         histogram!("build_calculator.process_build.time").record(delta);

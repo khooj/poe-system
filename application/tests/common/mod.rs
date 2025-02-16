@@ -57,7 +57,7 @@ pub async fn setup_db() -> anyhow::Result<TestContext> {
     }]);
 
     build_repo
-        .upsert_build(BuildData {
+        .upsert_build(&BuildData {
             id: Uuid::new_v4(),
             processed: false,
             created_at: Utc::now(),
