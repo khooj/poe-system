@@ -101,6 +101,45 @@ pub async fn process_single_build(
     build: &mut BuildData,
 ) -> anyhow::Result<()> {
     build.data.found.boots = find_similar(items_repo, &build.data.provided.boots).await?;
+    build.data.found.helmet = find_similar(items_repo, &build.data.provided.helmet).await?;
+    build.data.found.body = find_similar(items_repo, &build.data.provided.body).await?;
+    build.data.found.gloves = find_similar(items_repo, &build.data.provided.gloves).await?;
+    build.data.found.weapon1 = find_similar(items_repo, &build.data.provided.weapon1).await?;
+    build.data.found.weapon2 = find_similar(items_repo, &build.data.provided.weapon2).await?;
+    build.data.found.ring1 = find_similar(items_repo, &build.data.provided.ring1).await?;
+    build.data.found.ring2 = find_similar(items_repo, &build.data.provided.ring2).await?;
+    build.data.found.belt = find_similar(items_repo, &build.data.provided.belt).await?;
+
+    let mut flasks = vec![];
+    for it in &build.data.provided.flasks {
+        if let Some(found) = find_similar(items_repo, it).await? {
+            flasks.push(found);
+        }
+    }
+    if !flasks.is_empty() {
+        build.data.found.flasks = Some(flasks);
+    }
+
+    let mut gems = vec![];
+    for it in &build.data.provided.gems {
+        if let Some(found) = find_similar(items_repo, it).await? {
+            gems.push(found);
+        }
+    }
+    if !gems.is_empty() {
+        build.data.found.gems = Some(gems);
+    }
+
+    let mut jewels = vec![];
+    for it in &build.data.provided.jewels {
+        if let Some(found) = find_similar(items_repo, it).await? {
+            jewels.push(found);
+        }
+    }
+    if !jewels.is_empty() {
+        build.data.found.jewels = Some(jewels);
+    }
+
     build.processed = true;
     Ok(())
 }
