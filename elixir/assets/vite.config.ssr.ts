@@ -3,17 +3,19 @@ import react from '@vitejs/plugin-react-swc'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
+  process.stdin.on("close", () => {
+    process.exit(0);
+  })
+
+  process.stdin.resume();
   return {
     publicDir: "public",
     plugins: [react()],
     build: {
       outDir: "../priv/static/assets/ssr",
-      emptyOutDir: true,
+      emptyOutDir: false,
       sourcemap: true,
       manifest: false,
-      commonjsOptions: {
-        include: [/pages/, /node_modules/],
-      },
       rollupOptions: {
         input: {
           main: "src/ssr.tsx",

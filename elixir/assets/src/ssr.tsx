@@ -12,3 +12,4 @@ export function render(page) {
     setup: ({ App, props }) => <App {...props} />,
   });
 }
+

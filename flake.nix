@@ -114,7 +114,15 @@
               };
             };
 
-            devShells.default = pkgs.mkShell {
+            devShells.default = let
+              bunNode = pkgs.writeShellApplication {
+                name = "node";
+                runtimeInputs = [ pkgs.bun ];
+                text = ''
+                  bun "$@"
+                '';
+              };
+            in pkgs.mkShell {
               inputsFrom = [
                 config.process-compose."services".services.outputs.devShell
               ];
@@ -136,7 +144,6 @@
                 (python3.withPackages (ps: with ps; [ requests ]))
                 nixos-shell
                 crate2nix
-                nodejs
                 sqlx-cli
                 elixir_1_18
 
@@ -154,6 +161,9 @@
                 libuv
                 cargo-flamegraph
                 inotify-tools
+                bun
+                # bunNode
+                nodejs
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config

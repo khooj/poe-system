@@ -20,6 +20,11 @@ if System.get_env("PHX_SERVER") do
   config :poe_system, PoeSystemWeb.Endpoint, server: true
 end
 
+# env variable for inertia ssr (for underlying nodejs supervisor)
+# without it in generated ssr.js on page reload after first request
+# exception occurs "useContext is undefined" (maybe its overwriting itself somehow or does not init properly)
+System.put_env("NODE_ENV", System.get_env("NODE_ENV") || "production")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
@@ -27,6 +32,7 @@ if config_env() == :prod do
       environment variable DATABASE_URL is missing.
       For example: ecto://USER:PASS@HOST/DATABASE
       """
+
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
