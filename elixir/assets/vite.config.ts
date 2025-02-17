@@ -14,7 +14,7 @@ export default defineConfig(({ command }) => {
   }
 
   return {
-    publicDir: "static",
+    publicDir: "public",
     plugins: [react()],
     build: {
       outDir: "../priv/static",

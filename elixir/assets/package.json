@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vite_watch": "vite build -w",
+    "tsc_watch": "tsc -b -w"
   },
   "dependencies": {
     "@inertiajs/react": "^2.0.3",

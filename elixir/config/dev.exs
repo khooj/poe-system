@@ -24,7 +24,14 @@ config :poe_system, PoeSystemWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "vMKHgGP1w1R9KH19Kr9ybO7jixqFcTLFXRoj+z1P/WsrqGseIs6ilLLvR+/uO9bL",
-  watchers: []
+  watchers: [
+    npm: ~w(run vite_watch) ++ [
+      cd: Path.expand("../assets", __DIR__)
+    ],
+    npm: ~w(run tsc_watch) ++  [
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ]
 
 # ## SSL Support
 #
