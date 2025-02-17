@@ -28,9 +28,12 @@ config :poe_system, PoeSystemWeb.Endpoint,
     npm: ~w(run vite_watch) ++ [
       cd: Path.expand("../assets", __DIR__)
     ],
-    npm: ~w(run tsc_watch) ++  [
+    npm: ~w(run vite_ssr_watch) ++ [
       cd: Path.expand("../assets", __DIR__)
-    ]
+    ],
+    # npm: ~w(run tsc_watch) ++  [
+    #   cd: Path.expand("../assets", __DIR__)
+    # ]
   ]
 
 # ## SSL Support

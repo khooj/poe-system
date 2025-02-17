@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "vite_watch": "vite build -w",
-    "tsc_watch": "tsc -b -w"
+    "tsc_watch": "tsc -b -w --noEmit",
+    "vite_ssr_watch": "vite build -w --ssr src/ssr.tsx -c vite.config.ssr.ts",
+    "vite_ssr_build": "vite build --ssr src/ssr.tsx -c vite.config.ssr.ts"
   },
   "dependencies": {
     "@inertiajs/react": "^2.0.3",

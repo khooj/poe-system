@@ -14,6 +14,7 @@ defmodule PoeSystem.Application do
       {Phoenix.PubSub, name: PoeSystem.PubSub},
       # Start a worker by calling: PoeSystem.Worker.start_link(arg)
       # {PoeSystem.Worker, arg},
+      {Inertia.SSR, path: Path.join([Application.app_dir(:poe_system), "priv/static/assets/ssr"])},
       # Start to serve requests, typically the last entry
       PoeSystemWeb.Endpoint
     ]

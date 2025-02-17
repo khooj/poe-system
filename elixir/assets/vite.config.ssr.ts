@@ -3,40 +3,32 @@ import react from '@vitejs/plugin-react-swc'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
-  const isDev = command !== "build";
-
-  if (isDev) {
-    process.stdin.on("close", () => {
-      process.exit(0);
-    })
-
-    process.stdin.resume();
-  }
-
   return {
     publicDir: "public",
     plugins: [react()],
     build: {
-      outDir: "../priv/static/assets",
+      outDir: "../priv/static/assets/ssr",
       emptyOutDir: true,
-      sourcemap: isDev,
+      sourcemap: true,
       manifest: false,
       commonjsOptions: {
         include: [/pages/, /node_modules/],
       },
       rollupOptions: {
-        external: [
-          "/vite.svg"
-        ],
         input: {
-          main: "src/main.tsx",
+          main: "src/ssr.tsx",
         },
         output: {
           entryFileNames: "[name].js",
           chunkFileNames: "[name].js",
-          assetFileNames: "[name][extname]"
+          assetFileNames: "[name][extname]",
+          format: "cjs",
         }
       }
+    },
+    ssr: {
+      noExternal: true,
+      target: "node",
     },
   }
 })

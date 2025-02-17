@@ -30,7 +30,9 @@ config :logger, :console,
 config :inertia,
   endpoint: PoeSystemWeb.Endpoint,
   static_paths: ["/assets/main.js"],
-  camelize_props: true
+  camelize_props: true,
+  ssr: true,
+  raise_on_ssr_failure: config_env() != :prod
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
