@@ -19,6 +19,7 @@ defmodule PoeSystemWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    post "/new", PageController, :new
   end
 
   # Other scopes may use custom stacks.

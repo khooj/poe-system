@@ -32,5 +32,10 @@ export default defineConfig(({ command }) => {
       noExternal: true,
       target: "node",
     },
+    resolve: {
+      alias: [
+        { find: /@\/(.*)$/, replacement: './src/$1.tsx'}
+      ],
+    },
   }
 })

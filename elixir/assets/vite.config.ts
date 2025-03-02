@@ -29,7 +29,12 @@ export default defineConfig(({ command }) => {
           chunkFileNames: "[name].js",
           assetFileNames: "[name][extname]"
         }
-      }
+      },
+    },
+    resolve: {
+      alias: [
+        { find: /@\/(.*)$/, replacement: './src/$1.tsx'}
+      ],
     },
   }
 })

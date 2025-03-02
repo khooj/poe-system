@@ -6,4 +6,10 @@ defmodule PoeSystemWeb.PageController do
       |> assign_prop(:text, "Hello world from phoenix")
       |> render_inertia("Index")
   end
+
+  def new(conn, params) do
+    IO.inspect(params)
+    conn
+      |> redirect(to: ~p"/")
+  end
 end
