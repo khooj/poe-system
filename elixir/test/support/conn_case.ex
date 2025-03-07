@@ -28,6 +28,7 @@ defmodule PoeSystemWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import PoeSystemWeb.ConnCase
+      import Inertia.Testing
     end
   end
 

@@ -114,63 +114,65 @@
               };
             };
 
-            devShells.default = let
-              bunNode = pkgs.writeShellApplication {
-                name = "node";
-                runtimeInputs = [ pkgs.bun ];
-                text = ''
-                  bun "$@"
-                '';
+            devShells.default =
+              let
+                bunNode = pkgs.writeShellApplication {
+                  name = "node";
+                  runtimeInputs = [ pkgs.bun ];
+                  text = ''
+                    bun "$@"
+                  '';
+                };
+              in
+              pkgs.mkShell {
+                inputsFrom = [
+                  config.process-compose."services".services.outputs.devShell
+                ];
+
+                buildInputs = with pkgs; [
+                  (rust-bin.stable."1.84.0".default.override {
+                    extensions = [
+                      "rust-src"
+                      "llvm-tools-preview"
+                      "rust-analysis"
+                    ];
+                    targets = [ "wasm32-unknown-unknown" ];
+                  })
+                  sqlite
+                  openssl
+                  cmake
+                  zlib
+                  gnumake
+                  (python3.withPackages (ps: with ps; [ requests ]))
+                  nixos-shell
+                  crate2nix
+                  sqlx-cli
+                  elixir_1_18
+
+                  wget
+                  dbus
+                  openssl_3
+                  glib
+                  gtk3
+                  libsoup_2_4
+                  webkitgtk_6_0
+                  librsvg
+                  hashrat
+                  libarchive
+                  lz4
+                  libuv
+                  cargo-flamegraph
+                  inotify-tools
+                  bun
+                  # bunNode
+                  nodejs
+                ];
+                nativeBuildInputs = with pkgs; [
+                  pkg-config
+                  nixpkgs-fmt
+                ];
+
               };
-            in pkgs.mkShell {
-              inputsFrom = [
-                config.process-compose."services".services.outputs.devShell
-              ];
-
-              buildInputs = with pkgs; [
-                (rust-bin.stable."1.84.0".default.override {
-                  extensions = [
-                    "rust-src"
-                    "llvm-tools-preview"
-                    "rust-analysis"
-                  ];
-                  targets = [ "wasm32-unknown-unknown" ];
-                })
-                sqlite
-                openssl
-                cmake
-                zlib
-                gnumake
-                (python3.withPackages (ps: with ps; [ requests ]))
-                nixos-shell
-                crate2nix
-                sqlx-cli
-                elixir_1_18
-
-                wget
-                dbus
-                openssl_3
-                glib
-                gtk3
-                libsoup_2_4
-                webkitgtk_6_0
-                librsvg
-                hashrat
-                libarchive
-                lz4
-                libuv
-                cargo-flamegraph
-                inotify-tools
-                bun
-                # bunNode
-                nodejs
-              ];
-              nativeBuildInputs = with pkgs; [
-                pkg-config
-                nixpkgs-fmt
-              ];
-
-            };
           };
       }
     );
