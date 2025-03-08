@@ -1,11 +1,14 @@
 [workspace]
-members = [ 
-	"macros",
-	"public_stash",
-	"pob",
-	"tradeapi",
-	"domain",
-	"application",
-	"poeninja"
-, "utils", "storage"]
+members = [
+    "application", 
+    "domain",
+    "macros",
+    "pob",
+    "poeninja",
+    "public_stash",
+    "storage",
+    "tradeapi",
+    "utils",
+    "wasm",
+]
 resolver = "2"

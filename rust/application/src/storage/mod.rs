@@ -1,8 +1,7 @@
 pub mod postgresql;
 pub mod redis;
 
-use crate::typed_item::TypedItem;
-use domain::types::Mod;
+use domain::{build_calculation::typed_item::TypedItem, types::Mod};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -23,8 +22,15 @@ pub trait ItemRepositoryTrait {
     async fn get_stash_id(&mut self) -> Result<LatestStashId, ItemRepositoryError>;
     async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError>;
     async fn clear_stash(&mut self, stash_id: &str) -> Result<Vec<String>, ItemRepositoryError>;
-    async fn insert_items(&mut self, items: Vec<TypedItem>, stash_id: &str) -> Result<(), ItemRepositoryError>;
-    async fn search_items_by_mods(&mut self, mods: Vec<Mod>) -> Result<Vec<TypedItem>, ItemRepositoryError>;
+    async fn insert_items(
+        &mut self,
+        items: Vec<TypedItem>,
+        stash_id: &str,
+    ) -> Result<(), ItemRepositoryError>;
+    async fn search_items_by_mods(
+        &mut self,
+        mods: Vec<Mod>,
+    ) -> Result<Vec<TypedItem>, ItemRepositoryError>;
 }
 
 pub type DynItemRepository = Box<dyn ItemRepositoryTrait>;

@@ -166,6 +166,8 @@
                   bun
                   # bunNode
                   nodejs
+                  cargo-generate
+                  wasm-pack
                 ];
                 nativeBuildInputs = with pkgs; [
                   pkg-config

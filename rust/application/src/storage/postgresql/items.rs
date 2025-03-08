@@ -1,6 +1,8 @@
 use crate::storage::{ItemRepositoryError, LatestStashId};
-use crate::typed_item::TypedItem;
-use domain::types::{Category, Mod, Subcategory};
+use domain::{
+    build_calculation::typed_item::TypedItem,
+    types::{Category, Mod, Subcategory},
+};
 use serde::Serialize;
 use sqlx::Row;
 use thiserror::Error;
@@ -88,7 +90,7 @@ impl ItemRepository {
 
     pub async fn insert_items(
         &mut self,
-        items: Vec<crate::typed_item::TypedItem>,
+        items: Vec<TypedItem>,
         stash_id: &str,
     ) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;

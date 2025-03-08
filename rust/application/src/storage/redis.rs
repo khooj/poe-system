@@ -3,11 +3,9 @@ use std::{
     time::Duration,
 };
 
-use domain::types::Mod;
+use domain::{build_calculation::typed_item::TypedItem, types::Mod};
 use redis::AsyncCommands;
 use thiserror::Error;
-
-use crate::typed_item::TypedItem;
 
 #[derive(Error, Debug)]
 pub enum RedisIndexError {

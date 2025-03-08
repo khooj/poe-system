@@ -1,14 +1,18 @@
-use pob::{ItemSet, Pob};
+use crate::{ItemSet, Pob};
 
-use crate::typed_item::{TypedItem, TypedItemError};
-
-use super::{BuildInfo, BuildItemsWithConfig, ItemWithConfig};
-use domain::{item::Item, types::Subcategory};
+use domain::{
+    build_calculation::{
+        typed_item::{TypedItem, TypedItemError},
+        BuildInfo, BuildItemsWithConfig, ItemWithConfig,
+    },
+    item::Item,
+    types::Subcategory,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImportPobError {
     #[error("pob error")]
-    Pob(#[from] pob::PobError),
+    Pob(#[from] crate::PobError),
     #[error("domain item convert to typed error")]
     Convert(#[from] TypedItemError),
 }
@@ -54,15 +58,15 @@ fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::typed_item::ItemInfo;
-
     use super::import_build_from_pob_first_itemset;
+    use crate::Pob;
+    use domain::build_calculation::typed_item::ItemInfo;
 
     const POB: &str = include_str!("pob.xml");
 
     #[test]
     fn check_import_items() -> anyhow::Result<()> {
-        let pob = pob::Pob::new(POB);
+        let pob = Pob::new(POB);
         let buildinfo = import_build_from_pob_first_itemset(&pob)?;
         assert_ne!(buildinfo.provided.boots.item.info, ItemInfo::default(),);
         Ok(())

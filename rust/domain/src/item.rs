@@ -1,4 +1,10 @@
-use super::types::{Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Subcategory, Property};
+use crate::build_calculation::typed_item::{
+    ItemInfo, Property as TypedProperty, TypedItem, TypedItemError,
+};
+
+use super::types::{
+    Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Property, Subcategory,
+};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp::Eq;
@@ -31,6 +37,85 @@ pub struct Item {
     pub sockets: String,
     pub quality: i32,
     pub properties: Vec<Property>,
+}
+
+// TODO: somehow unify item struct
+impl TryFrom<Item> for TypedItem {
+    type Error = TypedItemError;
+    fn try_from(value: Item) -> core::result::Result<Self, Self::Error> {
+        let cat = value.category;
+        if ![
+            Category::Weapons,
+            Category::Armour,
+            Category::Gems,
+            Category::Flasks,
+            Category::Jewels,
+        ]
+        .contains(&cat)
+        {
+            return Err(TypedItemError::Unknown);
+        }
+
+        let basetype = value.base_type;
+        let category = Category::get_from_basetype(&basetype)?;
+        let subcategory = Subcategory::get_from_basetype(&basetype)?;
+        let mods = value.mods;
+        let props = value.properties;
+        let quality = value.quality as u8;
+        let info = match cat {
+            t @ (Category::Weapons | Category::Armour) => {
+                let properties = props
+                    .iter()
+                    .filter_map(|p| {
+                        if p.value.is_none() {
+                            None
+                        } else {
+                            Some(TypedProperty {
+                                augmented: p.augmented,
+                                name: p.name.clone(),
+                                value: p.value.clone().unwrap(),
+                            })
+                        }
+                    })
+                    .collect();
+
+                Some(if t == Category::Weapons {
+                    ItemInfo::Weapon {
+                        quality,
+                        mods,
+                        properties,
+                    }
+                } else {
+                    ItemInfo::Armor {
+                        quality,
+                        mods,
+                        properties,
+                    }
+                })
+            }
+            Category::Gems => {
+                let level = props
+                    .iter()
+                    .find(|p| p.name == "Level")
+                    .map(|q| q.value.clone().unwrap())
+                    .unwrap_or("0".to_string())
+                    .parse::<u8>()
+                    .unwrap_or(0);
+
+                Some(ItemInfo::Gem { level, quality })
+            }
+            Category::Flasks => Some(ItemInfo::Flask { quality, mods }),
+            Category::Jewels => Some(ItemInfo::Jewel { mods }),
+            _ => None,
+        };
+        Ok(TypedItem {
+            info: info.ok_or(TypedItemError::Unknown)?,
+            id: value.id,
+            basetype,
+            category,
+            subcategory,
+        })
+    }
 }
 
 #[derive(Default, PartialEq, PartialOrd, Debug)]

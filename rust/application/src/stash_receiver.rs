@@ -1,7 +1,5 @@
-use crate::{
-    storage::{postgresql::items::ItemRepository, ItemRepositoryTrait, LatestStashId},
-    typed_item::TypedItem,
-};
+use crate::storage::{postgresql::items::ItemRepository, LatestStashId};
+use domain::build_calculation::typed_item::TypedItem;
 use public_stash::{client::Error as StashError, models::PublicStashData};
 use tracing::{info, instrument, trace};
 

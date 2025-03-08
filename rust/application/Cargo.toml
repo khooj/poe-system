@@ -20,14 +20,23 @@ clap = { version = "4.5", features = ["derive"] }
 futures = "0.3.29"
 itertools = "0.14.0"
 anyhow = "1.0.95"
-compress-tools = { version = "0.15.1", features = ["async_support", "tokio", "tokio_support"] }
+compress-tools = { version = "0.15.1", features = [
+  "async_support",
+  "tokio",
+  "tokio_support",
+] }
 uuid = { version = "1.12.0", features = ["v4"] }
 async-channel = "2.3.1"
-tokio-task-pool = "0.1.5"
-rand = "0.9.0"
+tokio-task-pool = { version = "0.1.5" }
+rand = { version = "0.9.0" }
 redis = { version = "0.28.2", features = ["aio", "tokio-comp", "tcp_nodelay"] }
 async-trait = "0.1.85"
-sqlx = { version = "0.8.3", features = ["runtime-tokio", "postgres", "uuid", "chrono"] }
+sqlx = { version = "0.8.3", features = [
+  "runtime-tokio",
+  "postgres",
+  "uuid",
+  "chrono",
+] }
 tracing = { version = "0.1" }
 metrics = "0.24.1"
 config = { version = "0.15.6", default-features = false, features = ["toml"] }

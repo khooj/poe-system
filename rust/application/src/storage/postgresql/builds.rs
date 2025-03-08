@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::build_calculation::BuildInfo;
+use domain::build_calculation::BuildInfo;
 use sqlx::prelude::FromRow;
 use sqlx::types::{
     chrono::{DateTime, Utc},

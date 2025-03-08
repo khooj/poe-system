@@ -1,4 +1,9 @@
+use domain::{
+    build_calculation::typed_item::{ItemInfo, Property, TypedItem, TypedItemError},
+    types::{Category, Mod, ModType, Subcategory},
+};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +20,7 @@ pub enum PropertyValueType {
     Type(i32),
 }
 
-impl PropertyValueType  {
+impl PropertyValueType {
     pub fn value(&self) -> String {
         match self {
             PropertyValueType::Value(ref s) => s.clone(),
@@ -214,6 +219,90 @@ pub struct Item {
     pub socket: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub colour: Option<String>,
+}
+
+impl TryFrom<Item> for TypedItem {
+    type Error = TypedItemError;
+    fn try_from(value: Item) -> core::result::Result<Self, Self::Error> {
+        let ext = value.extended.ok_or(TypedItemError::Unknown)?;
+        if !["weapons", "armour", "gems", "flasks", "jewels"].contains(&ext.category.as_str()) {
+            return Err(TypedItemError::Unknown);
+        }
+        let basetype = value.base_type;
+        let category = Category::get_from_basetype(&basetype)?;
+        let subcategory = Subcategory::get_from_basetype(&basetype)?;
+        let mods = value
+            .explicit_mods
+            .as_ref()
+            .unwrap_or(&vec![])
+            .as_slice()
+            .iter()
+            .filter_map(|s| Mod::try_by_stat(s.as_str(), ModType::Explicit).ok())
+            .collect::<Vec<_>>();
+        let props = value.properties.unwrap_or_default();
+        let quality = props
+            .iter()
+            .find(|p| p.name == "Quality")
+            .map(|q| q.values[0][0].value())
+            .unwrap_or("+0%".to_string())[1..]
+            .strip_suffix("%")
+            .unwrap()
+            .parse::<u8>()
+            .unwrap_or(0);
+        let info = match ext.category.as_str() {
+            t @ ("weapons" | "armour") => {
+                let properties = props
+                    .iter()
+                    .filter_map(|p| {
+                        if p.values.is_empty() {
+                            None
+                        } else {
+                            Some(Property {
+                                augmented: p.values[0][1].value() == "1",
+                                name: p.name.clone(),
+                                value: p.values[0][0].value(),
+                            })
+                        }
+                    })
+                    .collect();
+
+                Some(if t == "weapons" {
+                    ItemInfo::Weapon {
+                        quality,
+                        mods,
+                        properties,
+                    }
+                } else {
+                    ItemInfo::Armor {
+                        quality,
+                        mods,
+                        properties,
+                    }
+                })
+            }
+            "gems" => {
+                let level = props
+                    .iter()
+                    .find(|p| p.name == "Level")
+                    .map(|q| q.values[0][0].value())
+                    .unwrap_or("0".to_string())
+                    .parse::<u8>()
+                    .unwrap_or(0);
+
+                Some(ItemInfo::Gem { level, quality })
+            }
+            "flasks" => Some(ItemInfo::Flask { quality, mods }),
+            "jewels" => Some(ItemInfo::Jewel { mods }),
+            _ => None,
+        };
+        Ok(TypedItem {
+            info: info.ok_or(TypedItemError::Unknown)?,
+            id: value.id.unwrap_or(Uuid::new_v4().to_string()),
+            basetype,
+            category,
+            subcategory,
+        })
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
