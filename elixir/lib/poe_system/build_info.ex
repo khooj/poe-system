@@ -1,7 +1,9 @@
 defmodule PoeSystem.BuildInfo do
   use Ecto.Schema
+  import Ecto.Query
   import Ecto.Changeset
 
+  alias PoeSystem.Repo
   alias PoeSystem.BuildInfo.BuildData
 
   @primary_key false
@@ -20,5 +22,14 @@ defmodule PoeSystem.BuildInfo do
     |> cast(attrs, [:id, :processed])
     |> cast_embed(:data, required: true)
     |> validate_required([:id, :data, :processed])
+  end
+
+  def add_build(attrs) do
+    changeset(%__MODULE__{}, attrs)
+    |> Repo.insert()
+  end
+
+  def get_build(id) do
+    Repo.get!(__MODULE__, id)
   end
 end

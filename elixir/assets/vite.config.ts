@@ -33,7 +33,8 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       alias: [
-        { find: /@\/(.*)$/, replacement: './src/$1.tsx'}
+        { find: /@\/(.*)$/, replacement: './src/$1.tsx' },
+        { find: /@bindings\/(.*)$/, replacement: '../../rust/$1.ts' }
       ],
     },
   }

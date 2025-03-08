@@ -20,6 +20,7 @@ defmodule PoeSystemWeb.Router do
 
     get "/", PageController, :index
     post "/new", PageController, :new
+    get "/build/:id", PageController, :get_build
   end
 
   # Other scopes may use custom stacks.

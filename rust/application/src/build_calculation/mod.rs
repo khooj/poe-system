@@ -10,25 +10,25 @@ use mod_config::ModConfig;
 use serde::{Deserialize, Serialize};
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
+use ts_rs::TS;
 
 use crate::{
-    storage::{
-        postgresql::{
-            builds::{BuildData, BuildRepository},
-            items::ItemRepository,
-        },
-        ItemRepositoryTrait,
+    storage::postgresql::{
+        builds::{BuildData, BuildRepository},
+        items::ItemRepository,
     },
     typed_item::TypedItem,
 };
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, TS)]
+#[ts(export)]
 pub struct BuildInfo {
     pub provided: BuildItemsWithConfig,
     pub found: FoundBuildItems,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, TS)]
+#[ts(export)]
 pub struct BuildItemsWithConfig {
     pub helmet: ItemWithConfig,
     pub body: ItemWithConfig,
@@ -44,13 +44,15 @@ pub struct BuildItemsWithConfig {
     pub jewels: Vec<ItemWithConfig>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, TS)]
+#[ts(export)]
 pub struct ItemWithConfig {
     pub config: Vec<ModConfig>,
     pub item: TypedItem,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, TS)]
+#[ts(export)]
 pub struct FoundBuildItems {
     pub helmet: Option<TypedItem>,
     pub body: Option<TypedItem>,

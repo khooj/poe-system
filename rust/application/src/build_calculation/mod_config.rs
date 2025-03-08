@@ -4,8 +4,10 @@ use domain::{
 };
 use serde::{Deserialize, Serialize};
 use std::ops::RangeInclusive;
+use ts_rs::TS;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum Config {
     Exact(i32),
     Range(RangeInclusive<i32>),
@@ -14,7 +16,8 @@ pub enum Config {
     Exist,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct ModConfig {
     pub stat_id: String,
     pub configuration: Config,

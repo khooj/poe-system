@@ -8,6 +8,7 @@ use std::{
 };
 use strum::{AsRefStr, EnumString};
 use thiserror::Error;
+use ts_rs::TS;
 
 use crate::data::{ModValue as DataModValue, BASE_ITEMS, MODS};
 
@@ -32,8 +33,9 @@ pub enum __category_tmp {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq, AsRefStr)]
+#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq, AsRefStr, TS)]
 #[strum(ascii_case_insensitive)]
+#[ts(export)]
 pub enum Category {
     Flasks,
     #[default]
@@ -465,8 +467,9 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq, AsRefStr)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq, AsRefStr, TS)]
 #[strum(ascii_case_insensitive)]
+#[ts(export)]
 pub enum Subcategory {
     #[default]
     Empty,
@@ -512,7 +515,8 @@ impl Subcategory {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, Copy, PartialEq, Default, TS)]
+#[ts(export)]
 pub enum ModType {
     Utility = 0,
     Implicit = 1,
@@ -534,7 +538,8 @@ pub enum ModError {
     StatError(String),
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default, TS)]
+#[ts(export)]
 pub enum ModValue {
     #[default]
     Nothing,
@@ -545,7 +550,8 @@ pub enum ModValue {
     },
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default, TS)]
+#[ts(export)]
 pub struct Mod {
     pub text: String,
     pub type_: ModType,
@@ -553,6 +559,7 @@ pub struct Mod {
     pub stat_id: String,
     pub numeric_value: ModValue,
     #[serde(skip_serializing, skip_deserializing)]
+    #[ts(skip)]
     _internal: crate::private::Private,
 }
 
@@ -629,7 +636,8 @@ impl TryFrom<String> for Rarity {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, TS)]
+#[ts(export)]
 pub struct Property {
     pub name: String,
     pub value: Option<String>,

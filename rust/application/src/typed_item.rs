@@ -1,8 +1,12 @@
 use core::convert::TryFrom;
-use domain::{item::Item as DomainItem, types::{Category, Mod, ModType, Subcategory, SubcategoryError, TypeError}};
+use domain::{
+    item::Item as DomainItem,
+    types::{Category, Mod, ModType, Subcategory, SubcategoryError, TypeError},
+};
 use public_stash::models::Item;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use ts_rs::TS;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -11,15 +15,17 @@ pub struct Stash {
     pub account: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, TS)]
+#[ts(export)]
 pub struct Property {
     pub augmented: bool,
     pub name: String,
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
 #[serde(tag = "type")]
+#[ts(export)]
 pub enum ItemInfo {
     Gem {
         level: u8,
@@ -60,12 +66,13 @@ impl ItemInfo {
             ItemInfo::Weapon { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
             ItemInfo::Jewel { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
             ItemInfo::Flask { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
-            ItemInfo::Gem {  .. } => panic!("gems have no mods"),
+            ItemInfo::Gem { .. } => panic!("gems have no mods"),
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, TS)]
+#[ts(export)]
 pub struct TypedItem {
     pub id: String,
     pub basetype: String,
@@ -107,13 +114,13 @@ impl TryFrom<Item> for TypedItem {
         let category = Category::get_from_basetype(&basetype)?;
         let subcategory = Subcategory::get_from_basetype(&basetype)?;
         let mods = value
-                .explicit_mods
-                .as_ref()
-                .unwrap_or(&vec![])
-                .as_slice()
-                .iter()
-                .filter_map(|s| Mod::try_by_stat(s.as_str(), ModType::Explicit).ok())
-                .collect::<Vec<_>>();
+            .explicit_mods
+            .as_ref()
+            .unwrap_or(&vec![])
+            .as_slice()
+            .iter()
+            .filter_map(|s| Mod::try_by_stat(s.as_str(), ModType::Explicit).ok())
+            .collect::<Vec<_>>();
         let props = value.properties.unwrap_or_default();
         let quality = props
             .iter()
@@ -164,15 +171,9 @@ impl TryFrom<Item> for TypedItem {
                     .parse::<u8>()
                     .unwrap_or(0);
 
-                Some(ItemInfo::Gem {
-                    level,
-                    quality,
-                })
+                Some(ItemInfo::Gem { level, quality })
             }
-            "flasks" => Some(ItemInfo::Flask {
-                quality,
-                mods,
-            }),
+            "flasks" => Some(ItemInfo::Flask { quality, mods }),
             "jewels" => Some(ItemInfo::Jewel { mods }),
             _ => None,
         };
@@ -190,9 +191,16 @@ impl TryFrom<Item> for TypedItem {
 impl TryFrom<DomainItem> for TypedItem {
     type Error = TypedItemError;
     fn try_from(value: DomainItem) -> core::result::Result<Self, Self::Error> {
-
         let cat = value.category;
-        if ![Category::Weapons, Category::Armour, Category::Gems, Category::Flasks, Category::Jewels].contains(&cat) {
+        if ![
+            Category::Weapons,
+            Category::Armour,
+            Category::Gems,
+            Category::Flasks,
+            Category::Jewels,
+        ]
+        .contains(&cat)
+        {
             return Err(TypedItemError::Unknown);
         }
 
@@ -242,15 +250,9 @@ impl TryFrom<DomainItem> for TypedItem {
                     .parse::<u8>()
                     .unwrap_or(0);
 
-                Some(ItemInfo::Gem {
-                    level,
-                    quality,
-                })
+                Some(ItemInfo::Gem { level, quality })
             }
-            Category::Flasks => Some(ItemInfo::Flask {
-                quality,
-                mods,
-            }),
+            Category::Flasks => Some(ItemInfo::Flask { quality, mods }),
             Category::Jewels => Some(ItemInfo::Jewel { mods }),
             _ => None,
         };

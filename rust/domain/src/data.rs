@@ -10,6 +10,7 @@ use std::{
     str::FromStr,
     sync::Mutex,
 };
+use ts_rs::TS;
 
 pub fn cut_numbers(val: &str) -> String {
     val.replace(|el: char| el == '{' || el == '}' || el.is_numeric(), "")
@@ -69,7 +70,8 @@ pub enum ModValueError {
     Parse(String),
 }
 
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone, TS)]
+#[ts(export)]
 pub enum ModValue {
     Int(i32),
     Float(f32),

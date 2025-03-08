@@ -33,6 +33,7 @@ metrics = "0.24.1"
 config = { version = "0.15.6", default-features = false, features = ["toml"] }
 tokio-util = "0.7.13"
 dashmap = "6.1.0"
+ts-rs = "10.1.0"
 
 [features]
 integration_tests = []
