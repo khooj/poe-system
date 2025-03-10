@@ -14,7 +14,7 @@
     "vite_ssr_build": "vite build --ssr src/ssr.tsx -c vite.config.ssr.ts"
   },
   "dependencies": {
-    "@inertiajs/react": "^2.0.3",
+    "@inertiajs/react": "^2.0.5",
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.3",
     "bootstrap-reboot": "^4.5.6",

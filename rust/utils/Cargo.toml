@@ -7,12 +7,21 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.85"
-compress-tools = { version = "0.15.1", features = ["async_support", "tokio", "tokio_support"] }
+compress-tools = { version = "0.15.1", features = [
+  "async_support",
+  "tokio",
+  "tokio_support",
+] }
 dashmap = "6.1.0"
 governor = "0.8.0"
 http = "1.2.0"
 reqwest = { version = "0.12.12", features = ["json", "cookies"] }
-reqwest-middleware = { version = "0.4.0", features = ["http2", "json", "multipart", "rustls-tls"] }
+reqwest-middleware = { version = "0.4.0", features = [
+  "http2",
+  "json",
+  "multipart",
+  "rustls-tls",
+] }
 serde = { version = "1.0.217", features = ["derive"] }
 thiserror = "2.0.11"
 tracing = "0.1.41"

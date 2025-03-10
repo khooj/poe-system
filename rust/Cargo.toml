@@ -1,14 +1,14 @@
 [workspace]
 members = [
-    "application", 
-    "domain",
-    "macros",
-    "pob",
-    "poeninja",
-    "public_stash",
-    "storage",
-    "tradeapi",
-    "utils",
-    "wasm",
+  "application",
+  "domain",
+  "macros",
+  "pob",
+  "poeninja",
+  "public_stash",
+  "storage",
+  "tradeapi",
+  "utils",
+  "wasm",
 ]
 resolver = "2"
