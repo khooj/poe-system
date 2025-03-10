@@ -43,5 +43,12 @@ export default defineConfig(({ command }) => {
         { find: /@bindings\/(.*)$/, replacement: '../../rust/$1.ts' }
       ],
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: ['color-functions', 'global-builtin', 'import', 'mixed-decls']
+        }
+      },
+    },
   }
 })

@@ -39,5 +39,12 @@ export default defineConfig(({ command }) => {
         { find: /@\/(.*)$/, replacement: './src/$1.tsx' }
       ],
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: ['color-functions', 'global-builtin', 'import', 'mixed-decls']
+        }
+      },
+    },
   }
 })
