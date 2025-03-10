@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
@@ -10,10 +12,10 @@ export default defineConfig(({ command }) => {
   process.stdin.resume();
   return {
     publicDir: "public",
-    plugins: [react()],
+    plugins: [react(), wasm(), topLevelAwait()],
     build: {
       outDir: "../priv/static/assets/ssr",
-      emptyOutDir: false,
+      emptyOutDir: true,
       sourcemap: true,
       manifest: false,
       rollupOptions: {
@@ -21,10 +23,10 @@ export default defineConfig(({ command }) => {
           main: "src/ssr.tsx",
         },
         output: {
-          entryFileNames: "[name].js",
-          chunkFileNames: "[name].js",
+          entryFileNames: "[name].mjs",
+          chunkFileNames: "[name].mjs",
           assetFileNames: "[name][extname]",
-          format: "cjs",
+          format: 'es',
         }
       }
     },
@@ -34,7 +36,7 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       alias: [
-        { find: /@\/(.*)$/, replacement: './src/$1.tsx'}
+        { find: /@\/(.*)$/, replacement: './src/$1.tsx' }
       ],
     },
   }

@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
@@ -11,10 +13,11 @@ export default defineConfig(({ command }) => {
 
   return {
     publicDir: "public",
-    plugins: [react()],
+    plugins: [react(), wasm(), topLevelAwait()],
+    base: "/assets/",
     build: {
       outDir: "../priv/static/assets",
-      emptyOutDir: false,
+      emptyOutDir: true,
       sourcemap: true,
       manifest: false,
       rollupOptions: {
@@ -27,7 +30,10 @@ export default defineConfig(({ command }) => {
         output: {
           entryFileNames: "[name].js",
           chunkFileNames: "[name].js",
-          assetFileNames: "[name][extname]"
+          assetFileNames: "[name][extname]",
+          manualChunks: {
+            wasm: ['wasm']
+          }
         }
       },
     },

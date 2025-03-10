@@ -1,5 +1,5 @@
 import { Container } from 'react-bootstrap'
-import { type BuildInfo } from '@bindings/application/bindings/BuildInfo';
+import { type BuildInfo } from '@bindings/domain/bindings/BuildInfo';
 
 type Props = {
   data: BuildInfo,

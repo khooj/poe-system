@@ -68,7 +68,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
 config :poe_system, PoeSystemWeb.Endpoint,
   live_reload: [
     patterns: [
-      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg|wasm)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/poe_system_web/(controllers|live|components)/.*(ex|heex)$"
     ]

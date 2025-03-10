@@ -5,6 +5,7 @@ use pob::{
     Pob,
 };
 use wasm_bindgen::prelude::*;
+use web_sys::console;
 
 #[wasm_bindgen]
 extern "C" {
@@ -13,13 +14,13 @@ extern "C" {
 
 #[derive(Debug, thiserror::Error)]
 pub enum WasmError {
-    #[error("pob error")]
+    #[error("pob error: {0}")]
     Pob(#[from] pob::PobError),
-    #[error("import pob error")]
+    #[error("import pob error: {0}")]
     ImportPob(#[from] ImportPobError),
     #[error("stub")]
     Stub,
-    #[error("serde-wasm-bindgen error")]
+    #[error("serde-wasm-bindgen error: {0}")]
     SerdeWasmBindgen(#[from] serde_wasm_bindgen::Error),
 }
 
@@ -31,6 +32,7 @@ impl From<WasmError> for JsValue {
 
 #[wasm_bindgen]
 pub fn get_pob_itemsets(s: &str) -> Result<Vec<String>, WasmError> {
+    console::log_1(&s.into());
     let pob = Pob::new(s);
     let doc = pob.as_document()?;
     Ok(doc
