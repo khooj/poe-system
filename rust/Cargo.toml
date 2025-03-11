@@ -1,7 +1,7 @@
 [workspace]
 members = [
   "application",
-  "domain",
+  "domain", "elixir",
   "macros",
   "pob",
   "poeninja",
