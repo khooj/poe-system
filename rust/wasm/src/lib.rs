@@ -1,9 +1,6 @@
 mod utils;
 
-use pob::{
-    build_import_pob::{import_build_from_pob, ImportPobError},
-    Pob,
-};
+use pob::Pob;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 
@@ -16,8 +13,6 @@ extern "C" {
 pub enum WasmError {
     #[error("pob error: {0}")]
     Pob(#[from] pob::PobError),
-    #[error("import pob error: {0}")]
-    ImportPob(#[from] ImportPobError),
     #[error("stub")]
     Stub,
     #[error("serde-wasm-bindgen error: {0}")]
@@ -35,16 +30,5 @@ pub fn get_pob_itemsets(s: &str) -> Result<Vec<String>, WasmError> {
     console::log_1(&s.into());
     let pob = Pob::new(s);
     let doc = pob.as_document()?;
-    Ok(doc
-        .get_item_sets()
-        .iter()
-        .map(|is| is.title().to_string())
-        .collect())
-}
-
-#[wasm_bindgen(unchecked_return_type = "BuildInfo")]
-pub fn extract_build_config(pobtext: &str, itemset: &str) -> Result<JsValue, WasmError> {
-    let pob = Pob::new(pobtext);
-    let build_info = import_build_from_pob(&pob, itemset)?;
-    Ok(serde_wasm_bindgen::to_value(&build_info)?)
+    Ok(doc.get_itemsets_list()?)
 }

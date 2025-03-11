@@ -1,8 +1,8 @@
-use crate::parser::{ParsedItem, ItemValue};
+#[cfg(feature = "parsing")]
+use crate::parser::{parse_pob_item, ParsedItem};
 
-use super::parser::parse_pob_item;
 use base64::{decode_config, URL_SAFE};
-use domain::{item::Item, types::Mod};
+use domain::item::Item;
 use flate2::read::ZlibDecoder;
 use nom::error::VerboseError;
 use roxmltree::{Document, Node};
@@ -41,7 +41,9 @@ pub struct Pob {
 
 impl<'a> Pob {
     pub fn new<T: AsRef<str>>(data: T) -> Pob {
-        Pob { original: data.as_ref().to_string() }
+        Pob {
+            original: data.as_ref().to_string(),
+        }
     }
 
     pub fn from_pastebin_data(data: String) -> Result<Pob, PobError> {
@@ -116,6 +118,7 @@ pub struct PobDocument<'a> {
     doc: Document<'a>,
 }
 
+#[cfg(feature = "parsing")]
 impl<'a> PobDocument<'a> {
     pub fn get_item_sets(&self) -> Vec<ItemSet> {
         let mut itemsets = vec![];
@@ -139,18 +142,7 @@ impl<'a> PobDocument<'a> {
             }
         }
 
-        // let mut mods = vec![];
-        // for item in items.values() {
-        //     for i in &item.mods {
-        //         if let ItemValue::Affix(v ) = i {
-        //             mods.push(v);
-        //         }
-        //     }
-        // }
-
-        // let mods_processed = Mod::many_by_stat_or_invalid(&mods);
         let mut items_processed = HashMap::with_capacity(items.len());
-        // let mut mods_processed_iter = mods_processed.into_iter();
 
         for (ii, parsed_item) in items {
             let item = parsed_item.item;
@@ -188,6 +180,29 @@ impl<'a> PobDocument<'a> {
             .into_iter()
             .find(|e| e.title == title)
             .ok_or(PobError::ItemsetNameNotFound(title.into()))
+    }
+}
+
+impl<'a> PobDocument<'a> {
+    pub fn get_itemsets_list(&self) -> Result<Vec<String>, PobError> {
+        let mut itemsets = vec![];
+        let mut nodes = self.doc.descendants();
+        let items_node = match nodes.find(|&x| x.tag_name().name() == "Items") {
+            Some(k) => k,
+            None => {
+                info!("pob does not have any items");
+                return Ok(vec![]);
+            }
+        };
+
+        for set in items_node.descendants() {
+            if set.tag_name().name() == "ItemSet" {
+                let title = set.attribute("title").map_or("default", |v| v);
+                itemsets.push(title.to_string());
+            }
+        }
+
+        Ok(itemsets)
     }
 }
 

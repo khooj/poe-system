@@ -22,13 +22,22 @@ const Index = ({ text }: Props) => {
     e.preventDefault();
     const reader = new FileReader();
     reader.onload = e => {
-      const itemsets = wasm.get_pob_itemsets(e.target?.result);
-      setItemsets(itemsets);
-      setData('itemset', itemsets[0]);
-      setParsing(false);
+      try {
+        const itemsets = wasm.get_pob_itemsets(e.target?.result);
+        setItemsets(itemsets);
+        setData('itemset', itemsets[0]);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setParsing(false);
+      }
     };
     setParsing(true);
-    reader.readAsText(data.pobFile);
+    try {
+      reader.readAsText(data.pobFile);
+    } finally {
+      setParsing(false);
+    }
   };
 
   const itemsetSubmit = (e) => {
