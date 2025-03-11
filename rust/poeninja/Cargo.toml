@@ -9,11 +9,11 @@ edition = "2021"
 doctest = false
 
 [dependencies]
-governor = "0.3.2"
+governor = "0.8"
 serde = { version = "1", features = ["derive"] }
 thiserror = "1.0.24"
 tracing = { version = "0.1" }
-reqwest = { version = "0.11", features = ["json", "cookies"] }
+reqwest = { version = "0.12", features = ["json", "cookies"] }
 serde_json = "1"
 lazy_static = "1.4.0"
 macros = { path = "../macros" }
