@@ -1,6 +1,5 @@
 defmodule PoeSystem.BuildInfo do
   use Ecto.Schema
-  import Ecto.Query
   import Ecto.Changeset
 
   alias Ecto.UUID

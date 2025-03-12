@@ -20,14 +20,24 @@ defmodule PoeSystemWeb.PageControllerTest do
         "pobData" => pobdata_file()
       })
 
-    assert String.contains?(redirected_to(conn), "/build")
+    assert redirected_to(conn) =~ "/build"
   end
 
   test "GET /build", %{conn: conn} do
-    id = Repo.one!(BuildInfo)
-    conn = get(conn, ~p"/build/#{id}")
+    conn =
+      post(conn, ~p"/new", %{
+        "itemset" => "Level 13 example",
+        "pobData" => pobdata_file()
+      })
+
+    assert response(conn, 302)
+
+    data = Repo.one!(BuildInfo)
+    conn = get(conn, ~p"/build/#{data.id}")
 
     assert response(conn, 200)
     assert inertia_component(conn)
+    assert %{data: respData} = inertia_props(conn)
+    assert data.data == respData
   end
 end
