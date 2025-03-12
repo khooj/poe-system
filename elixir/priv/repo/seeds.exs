@@ -1,1 +1,1 @@
-PoeSystem.add_build(%{id: Ecto.UUID.bingenerate(), data: %{helmet: "test"}})
+# PoeSystem.add_build(%{helmet: "test"})

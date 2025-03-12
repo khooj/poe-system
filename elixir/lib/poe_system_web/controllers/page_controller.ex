@@ -8,13 +8,12 @@ defmodule PoeSystemWeb.PageController do
     |> render_inertia("Index")
   end
 
-  def new(conn, %{"itemset" => itemset, "pobFile" => pob_file}) do
-    data = File.read!(pob_file.path)
-    res = RustPoe.Native.extract_build_config(data, itemset)
-    IO.inspect(res)
+  def new(conn, %{"itemset" => itemset, "pobData" => pobData}) do
+    {:ok, data} = RustPoe.Native.extract_build_config(pobData, itemset)
+    {:ok, data} = BuildInfo.add_build(data)
 
     conn
-    |> redirect(to: ~p"/")
+    |> redirect(to: ~p"/build/#{data.id}")
   end
 
   def get_build(conn, %{"id" => id}) do

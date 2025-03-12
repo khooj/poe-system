@@ -652,6 +652,7 @@ dependencies = [
 name = "elixir"
 version = "0.1.0"
 dependencies = [
+ "domain",
  "pob",
  "rustler",
  "serde_json",
@@ -2234,6 +2235,7 @@ dependencies = [
  "libloading",
  "regex-lite",
  "rustler_codegen",
+ "serde",
 ]
 
 [[package]]

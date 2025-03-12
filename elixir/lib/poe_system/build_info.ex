@@ -3,6 +3,7 @@ defmodule PoeSystem.BuildInfo do
   import Ecto.Query
   import Ecto.Changeset
 
+  alias Ecto.UUID
   alias PoeSystem.Repo
   alias PoeSystem.BuildInfo.BuildData
 
@@ -24,8 +25,11 @@ defmodule PoeSystem.BuildInfo do
     |> validate_required([:id, :data, :processed])
   end
 
-  def add_build(attrs) do
-    changeset(%__MODULE__{}, attrs)
+  def add_build(data) do
+    changeset(%__MODULE__{}, %{
+      id: UUID.bingenerate(),
+      data: data
+    })
     |> Repo.insert()
   end
 

@@ -1,40 +1,26 @@
-import { Head, useForm } from '@inertiajs/react'
-import { useRef, useState } from 'react';
+import { useForm } from '@inertiajs/react'
+import { useState } from 'react';
 import { Container, Form, Spinner } from 'react-bootstrap'
 import * as wasm from 'wasm';
 
-type Props = {
-  text: string,
-}
-
-const Index = ({ text }: Props) => {
+const Index = () => {
   const { data, setData, post, processing, errors } = useForm({
-    pobFile: null,
+    pobData: null,
     itemset: null,
   });
 
-  const [pob, setPob] = useState(null);
   const [itemsets, setItemsets] = useState([]);
-  const fileRef = useRef(null);
   const [parsing, setParsing] = useState(false);
 
   const submit = (e) => {
     e.preventDefault();
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const itemsets = wasm.get_pob_itemsets(e.target?.result);
-        setItemsets(itemsets);
-        setData('itemset', itemsets[0]);
-      } catch (e) {
-        console.log(e);
-      } finally {
-        setParsing(false);
-      }
-    };
-    setParsing(true);
     try {
-      reader.readAsText(data.pobFile);
+      setParsing(true);
+      const itemsets = wasm.get_pob_itemsets(data.pobData);
+      setItemsets(itemsets);
+      setData('itemset', itemsets[0]);
+    } catch (e) {
+      console.log(e);
     } finally {
       setParsing(false);
     }
@@ -49,8 +35,8 @@ const Index = ({ text }: Props) => {
     <Container className="d-flex flex-column align-items-center justify-content-center">
       <Form onSubmit={submit}>
         <Form.Group className="mb-3" controlId="formBuildFile">
-          <Form.Label>Path of Building file</Form.Label>
-          <Form.Control ref={fileRef} type="file" onChange={e => setData('pobFile', e.target.files[0])} />
+          <Form.Label>Path of Building data</Form.Label>
+          <Form.Control type="text" onChange={e => setData('pobData', e.target.value)} />
           <Form.Control type="submit" value="Proceed" />
         </Form.Group>
       </Form>
