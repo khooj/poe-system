@@ -6,6 +6,7 @@ use serde_json::Value;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
+    hash::Hash,
     ops::RangeInclusive,
     str::FromStr,
     sync::Mutex,
@@ -147,7 +148,7 @@ impl ModType {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Clone)]
 pub struct BasetypeInfo {
     pub properties: BasetypeProperties,
     pub name: String,
@@ -155,7 +156,7 @@ pub struct BasetypeInfo {
     pub item_class: String,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Clone)]
 pub struct BasetypeProperties {
     pub attack_time: Option<i32>,
     pub critical_strike_chance: Option<i32>,
@@ -311,7 +312,7 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
 lazy_static! {
     static ref MAX_LOAD_RECORD_FOR_TEST: Mutex<RefCell<Option<usize>>> =
         Mutex::new(RefCell::new(None));
-    pub static ref BASE_ITEMS: HashMap<String, BasetypeInfo> = {
+    static ref BASE_ITEMS_BY_NAME: HashMap<String, BasetypeInfo> = {
         let base_items_file = include_bytes!("../dist/base_items.min.json");
         let data: HashMap<String, BasetypeInfo> = serde_json::from_slice(base_items_file).unwrap();
         data.into_iter().fold(HashMap::new(), |mut acc, info| {
@@ -322,7 +323,19 @@ lazy_static! {
             acc
         })
     };
-    pub static ref BASE_TYPES: HashSet<String> = BASE_ITEMS.keys().cloned().collect();
+    static ref BASE_ITEMS_BY_ID: HashMap<String, BasetypeInfo> = {
+        let base_items_file = include_bytes!("../dist/base_items.min.json");
+        serde_json::from_slice(base_items_file).unwrap()
+    };
+    static ref BASE_ITEMS_MISSING_MAP_BY_ID: HashMap<String, String> = {
+        let mut hm = HashMap::new();
+        hm.insert(
+            "Metadata/Items/Gems/RainOfSpores".to_string(),
+            "Metadata/Items/Gems/SkillGemToxicRain".to_string(),
+        );
+        hm
+    };
+    pub static ref BASE_TYPES: HashSet<String> = BASE_ITEMS_BY_NAME.keys().cloned().collect();
     pub static ref MODS: SerializedModData = {
         let mods_file = include_bytes!("../dist/mods.data");
         bincode::deserialize(mods_file).unwrap()
@@ -335,6 +348,30 @@ impl LAZY_MODS_REGEX {
         self.entry(re.to_string())
             .or_insert(Regex::new(re).unwrap());
         self.get(re).unwrap()
+    }
+}
+
+pub struct BaseItems;
+
+impl BaseItems {
+    pub fn get_by_name(name: &str) -> Option<BasetypeInfo> {
+        BASE_ITEMS_BY_NAME.get(name).cloned()
+    }
+
+    pub fn contains_name(name: &str) -> bool {
+        BASE_ITEMS_BY_NAME.contains_key(name)
+    }
+
+    pub fn get_by_id(id: &str) -> Option<BasetypeInfo> {
+        let res = BASE_ITEMS_BY_ID.get(id).cloned();
+        if res.is_none() {
+            BASE_ITEMS_MISSING_MAP_BY_ID
+                .get(id)
+                .and_then(|id| BASE_ITEMS_BY_ID.get(id))
+                .cloned()
+        } else {
+            res
+        }
     }
 }
 

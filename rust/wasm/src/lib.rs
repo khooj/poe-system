@@ -30,3 +30,10 @@ pub fn get_pob_itemsets(s: String) -> Result<Vec<String>, WasmError> {
     let doc = pob.as_document()?;
     Ok(doc.get_itemsets_list()?)
 }
+
+#[wasm_bindgen]
+pub fn get_pob_skillsets(s: String) -> Result<Vec<String>, WasmError> {
+    let pob = Pob::from_pastebin_data(s)?;
+    let doc = pob.as_document()?;
+    Ok(doc.get_skillsets_list()?)
+}

@@ -10,7 +10,7 @@ use strum::{AsRefStr, EnumString};
 use thiserror::Error;
 use ts_rs::TS;
 
-use crate::data::{ModValue as DataModValue, BASE_ITEMS, MODS};
+use crate::data::{BaseItems, ModValue as DataModValue, MODS};
 
 #[derive(Error, Debug)]
 pub enum TypeError {
@@ -73,8 +73,7 @@ lazy_static::lazy_static! {
 
 impl Category {
     pub fn get_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Category, TypeError> {
-        let baseinfo = BASE_ITEMS
-            .get(basetype.as_ref())
+        let baseinfo = BaseItems::get_by_name(basetype.as_ref())
             .ok_or(TypeError::UnknownCategory(basetype.as_ref().to_string()))?;
         for (k, v) in CATEGORY_MAPPING.deref().iter() {
             if baseinfo.tags.contains(k) {
@@ -499,12 +498,9 @@ pub enum SubcategoryError {
 
 impl Subcategory {
     pub fn get_from_basetype<T: AsRef<str>>(basetype: T) -> Result<Subcategory, SubcategoryError> {
-        let baseinfo =
-            BASE_ITEMS
-                .get(basetype.as_ref())
-                .ok_or(SubcategoryError::UnknownSubcategory(
-                    basetype.as_ref().to_string(),
-                ))?;
+        let baseinfo = BaseItems::get_by_name(basetype.as_ref()).ok_or(
+            SubcategoryError::UnknownSubcategory(basetype.as_ref().to_string()),
+        )?;
 
         Ok(SUBCATEGORY_MAPPING
             .get(&baseinfo.item_class)

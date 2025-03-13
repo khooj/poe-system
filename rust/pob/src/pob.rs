@@ -2,7 +2,9 @@
 use crate::parser::{parse_pob_item, ParsedItem};
 
 use base64::{decode_config, URL_SAFE};
+use domain::data::BaseItems;
 use domain::item::Item;
+use domain::types::{Category, Property, Subcategory};
 use flate2::read::ZlibDecoder;
 use nom::error::VerboseError;
 use roxmltree::{Document, Node};
@@ -113,6 +115,96 @@ impl ItemSet {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct SkillSet {
+    title: String,
+    id: i32,
+    skills: Vec<Item>,
+}
+
+impl SkillSet {
+    fn try_from(
+        node: &Node,
+        default_gem_quality: Option<i32>,
+        default_gem_level: Option<i32>,
+    ) -> Result<SkillSet, PobError> {
+        if node.has_tag_name("SkillSet") {
+            let title = node.attribute("title").map_or("default", |v| v);
+            let id = node
+                .attribute("id")
+                .ok_or(PobError::Parse("cannot get id from skillset".into()))?;
+            let id = i32::from_str(id)?;
+
+            let skills = SkillSet::parse_skills(
+                node.descendants()
+                    .filter(|&x| x.tag_name().name() == "Gem")
+                    .collect(),
+                default_gem_quality,
+                default_gem_level,
+            )?;
+
+            Ok(SkillSet {
+                title: title.to_string(),
+                id,
+                skills,
+            })
+        } else {
+            let skills = SkillSet::parse_skills(
+                node.next_siblings()
+                    .flat_map(|n| n.descendants().filter(|&x| x.has_tag_name("Gem")))
+                    .collect(),
+                default_gem_quality,
+                default_gem_level,
+            )?;
+            Ok(SkillSet {
+                title: "default".to_string(),
+                id: 0,
+                skills,
+            })
+        }
+    }
+
+    fn parse_skills(
+        nodes: Vec<Node>,
+        default_gem_quality: Option<i32>,
+        default_gem_level: Option<i32>,
+    ) -> Result<Vec<Item>, PobError> {
+        Ok(nodes
+            .into_iter()
+            .filter_map(|n| {
+                if !n.has_attribute("gemId") {
+                    return None;
+                }
+
+                let gem_id = n.attribute("gemId").unwrap();
+                let quality = n
+                    .attribute("quality")
+                    .and_then(|q| i32::from_str(q).ok())
+                    .or(default_gem_quality)
+                    .unwrap();
+                let level = n
+                    .attribute("level")
+                    .and_then(|q| i32::from_str(q).ok())
+                    .or(default_gem_level)
+                    .unwrap();
+                let info = BaseItems::get_by_id(gem_id).unwrap();
+                Some(Item {
+                    name: info.name,
+                    category: Category::Gems,
+                    subcategories: Subcategory::Gem,
+                    quality,
+                    properties: vec![Property {
+                        name: "Level".to_string(),
+                        value: Some(format!("{}", level)),
+                        augmented: false,
+                    }],
+                    ..Default::default()
+                })
+            })
+            .collect())
+    }
+}
+
 #[derive(Debug)]
 pub struct PobDocument<'a> {
     doc: Document<'a>,
@@ -160,6 +252,44 @@ impl<'a> PobDocument<'a> {
         itemsets
     }
 
+    pub fn get_skillsets(&self) -> Vec<SkillSet> {
+        let mut nodes = self.doc.descendants();
+        let skills_node = nodes.find(|&x| x.has_tag_name("Skills")).unwrap();
+        let default_gem_quality = skills_node.attribute("defaultGemQuality").and_then(|s| {
+            if s == "normalMaximum" {
+                Some(20)
+            } else {
+                i32::from_str(s).ok()
+            }
+        });
+        let default_gem_level = skills_node.attribute("defaultGemLevel").and_then(|s| {
+            if s == "normalMaximum" {
+                Some(20)
+            } else {
+                i32::from_str(s).ok()
+            }
+        });
+        let child = skills_node.first_element_child().unwrap();
+        let skillsets = if child.has_tag_name("SkillSet") {
+            child
+                .next_siblings()
+                .filter_map(|sk| {
+                    if sk.is_text() {
+                        None
+                    } else {
+                        Some(
+                            SkillSet::try_from(&sk, default_gem_quality, default_gem_level)
+                                .unwrap(),
+                        )
+                    }
+                })
+                .collect()
+        } else {
+            vec![SkillSet::try_from(&child, default_gem_quality, default_gem_level).unwrap()]
+        };
+        skillsets
+    }
+
     pub fn get_first_itemset(&self) -> Result<ItemSet, PobError> {
         let itemsets = self.get_item_sets();
 
@@ -204,6 +334,27 @@ impl<'a> PobDocument<'a> {
 
         Ok(itemsets)
     }
+
+    pub fn get_skillsets_list(&self) -> Result<Vec<String>, PobError> {
+        let mut nodes = self.doc.descendants();
+        let skills_node = nodes.find(|&x| x.has_tag_name("Skills")).unwrap();
+        let child = skills_node.first_element_child().unwrap();
+        let skillsets = if child.has_tag_name("SkillSet") {
+            child
+                .next_siblings()
+                .filter_map(|sk| {
+                    if sk.is_text() {
+                        None
+                    } else {
+                        Some(sk.attribute("title").unwrap().to_string())
+                    }
+                })
+                .collect()
+        } else {
+            vec!["default".to_string()]
+        };
+        Ok(skillsets)
+    }
 }
 
 #[cfg(test)]
@@ -211,6 +362,7 @@ mod tests {
     const TESTPOB: &str = include_str!("pob.txt");
     const TESTPOB2: &str = include_str!("pob2.txt");
     const TESTPOB3: &str = include_str!("pob3.txt");
+    const TESTPOB_GEMS: &str = include_str!("pob_gems.txt");
 
     use super::Pob;
 
@@ -220,6 +372,7 @@ mod tests {
         let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
         let doc = pob.as_document()?;
         let _ = doc.get_item_sets();
+        let _ = doc.get_skillsets();
         Ok(())
     }
 
@@ -261,6 +414,28 @@ mod tests {
         assert_eq!(itemsets[1].id(), 2);
         assert_eq!(itemsets[0].items().len(), 18);
         println!("{:?}", itemsets[0].items);
+        Ok(())
+    }
+
+    #[test]
+    fn check_skillsets_default() -> Result<(), anyhow::Error> {
+        let pob = Pob::from_pastebin_data(TESTPOB.to_owned())?;
+        let doc = pob.as_document()?;
+        let skillsets = doc.get_skillsets();
+        assert_eq!(skillsets.len(), 1);
+        // assert_eq!(itemsets[0].title(), "default");
+        // assert_eq!(itemsets[0].id(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn check_skillsets_many() -> Result<(), anyhow::Error> {
+        let pob = Pob::from_pastebin_data(TESTPOB_GEMS.to_owned().trim().to_string())?;
+        let doc = pob.as_document()?;
+        let skillsets = doc.get_skillsets();
+        assert_eq!(skillsets.len(), 7);
+        // assert_eq!(itemsets[0].title(), "default");
+        // assert_eq!(itemsets[0].id(), 1);
         Ok(())
     }
 }

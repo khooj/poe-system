@@ -1,5 +1,5 @@
 use domain::{
-    data::{BASE_ITEMS, BASE_TYPES},
+    data::{BaseItems, BASE_TYPES},
     item::Item,
     types::{Category, Mod, ModType, Subcategory},
 };
@@ -85,7 +85,7 @@ fn rarity<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 fn basetype_map<'a>(name: &'a str, basetype: &'a str) -> Result<ItemValue<'a>, PobParseError> {
-    if BASE_ITEMS.contains_key(basetype) {
+    if BaseItems::contains_name(basetype) {
         return Ok(ItemValue::BaseType {
             name,
             base: basetype,
@@ -119,7 +119,7 @@ where
 {
     let (i, name) = context("name_normal_rare", cut(not_line_ending))(i)?;
 
-    if BASE_ITEMS.contains_key(name) {
+    if BaseItems::contains_name(name) {
         Ok((i, ItemValue::BaseType { name, base: name }))
     } else {
         let prs = map_res(preceded(multispace0, cut(not_line_ending)), |basetype| {
