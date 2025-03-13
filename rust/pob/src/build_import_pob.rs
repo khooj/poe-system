@@ -6,7 +6,7 @@ use domain::{
         BuildInfo, BuildItemsWithConfig, ItemWithConfig,
     },
     item::Item,
-    types::Subcategory,
+    types::{Category, Subcategory},
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -43,9 +43,47 @@ fn fill(prov_item: &mut ItemWithConfig, it: &Item) -> Result<(), ImportPobError>
 fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
     let mut builditems = BuildItemsWithConfig::default();
     for it in itemset.items() {
-        #[allow(clippy::single_match)]
         match it.subcategories {
+            Subcategory::Helmets => fill(&mut builditems.helmet, it)?,
+            Subcategory::BodyArmour => fill(&mut builditems.body, it)?,
+            Subcategory::Ring => {
+                if builditems.ring1 == ItemWithConfig::default() {
+                    fill(&mut builditems.ring1, it)?
+                } else {
+                    fill(&mut builditems.ring2, it)?
+                }
+            }
+            Subcategory::Belt => fill(&mut builditems.belt, it)?,
+            Subcategory::Gloves => fill(&mut builditems.gloves, it)?,
             Subcategory::Boots => fill(&mut builditems.boots, it)?,
+            Subcategory::Shield => fill(&mut builditems.weapon2, it)?,
+            Subcategory::Weapon => {
+                if builditems.weapon1 == ItemWithConfig::default() {
+                    fill(&mut builditems.weapon1, it)?
+                } else {
+                    fill(&mut builditems.weapon2, it)?
+                }
+            }
+            Subcategory::Amulet => fill(&mut builditems.amulet, it)?,
+            _ => {}
+        }
+
+        match it.category {
+            Category::Flasks => {
+                let mut ic = ItemWithConfig::default();
+                fill(&mut ic, it)?;
+                builditems.flasks.push(ic);
+            }
+            Category::Gems => {
+                let mut ic = ItemWithConfig::default();
+                fill(&mut ic, it)?;
+                builditems.gems.push(ic);
+            }
+            Category::Jewels => {
+                let mut ic = ItemWithConfig::default();
+                fill(&mut ic, it)?;
+                builditems.jewels.push(ic);
+            }
             _ => {}
         }
     }

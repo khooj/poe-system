@@ -224,9 +224,24 @@ pub struct Item {
 impl TryFrom<Item> for TypedItem {
     type Error = TypedItemError;
     fn try_from(value: Item) -> core::result::Result<Self, Self::Error> {
-        let ext = value.extended.ok_or(TypedItemError::Unknown)?;
-        if !["weapons", "armour", "gems", "flasks", "jewels"].contains(&ext.category.as_str()) {
-            return Err(TypedItemError::Unknown);
+        let ext = value.extended.ok_or(TypedItemError::Unknown(format!(
+            "{} {}",
+            value.name, value.base_type
+        )))?;
+        if ![
+            "weapons",
+            "armour",
+            "gems",
+            "flasks",
+            "jewels",
+            "accessories",
+        ]
+        .contains(&ext.category.as_str())
+        {
+            return Err(TypedItemError::Unknown(format!(
+                "{} {}",
+                value.name, value.base_type
+            )));
         }
         let basetype = value.base_type;
         let category = Category::get_from_basetype(&basetype)?;
@@ -296,7 +311,10 @@ impl TryFrom<Item> for TypedItem {
             _ => None,
         };
         Ok(TypedItem {
-            info: info.ok_or(TypedItemError::Unknown)?,
+            info: info.ok_or(TypedItemError::Unknown(format!(
+                "{} {}",
+                value.name, basetype
+            )))?,
             id: value.id.unwrap_or(Uuid::new_v4().to_string()),
             basetype,
             category,

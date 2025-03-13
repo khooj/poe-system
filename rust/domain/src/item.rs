@@ -50,10 +50,14 @@ impl TryFrom<Item> for TypedItem {
             Category::Gems,
             Category::Flasks,
             Category::Jewels,
+            Category::Accessories,
         ]
         .contains(&cat)
         {
-            return Err(TypedItemError::Unknown);
+            return Err(TypedItemError::Unknown(format!(
+                "at category check: {} {}",
+                value.name, value.base_type
+            )));
         }
 
         let basetype = value.base_type;
@@ -106,10 +110,14 @@ impl TryFrom<Item> for TypedItem {
             }
             Category::Flasks => Some(ItemInfo::Flask { quality, mods }),
             Category::Jewels => Some(ItemInfo::Jewel { mods }),
+            Category::Accessories => Some(ItemInfo::Accessory { quality, mods }),
             _ => None,
         };
         Ok(TypedItem {
-            info: info.ok_or(TypedItemError::Unknown)?,
+            info: info.ok_or(TypedItemError::Unknown(format!(
+                "at info: {} {}",
+                value.name, basetype
+            )))?,
             id: value.id,
             basetype,
             category,

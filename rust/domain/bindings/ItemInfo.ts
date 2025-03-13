@@ -2,4 +2,4 @@
 import type { Mod } from "./Mod";
 import type { Property } from "./Property";
 
-export type ItemInfo = { "type": "Gem", level: number, quality: number, } | { "type": "Armor", quality: number, mods: Array<Mod>, properties: Array<Property>, } | { "type": "Weapon", quality: number, mods: Array<Mod>, properties: Array<Property>, } | { "type": "Jewel", mods: Array<Mod>, } | { "type": "Flask", quality: number, mods: Array<Mod>, };
+export type ItemInfo = { "type": "Gem", level: number, quality: number, } | { "type": "Armor", quality: number, mods: Array<Mod>, properties: Array<Property>, } | { "type": "Weapon", quality: number, mods: Array<Mod>, properties: Array<Property>, } | { "type": "Jewel", mods: Array<Mod>, } | { "type": "Flask", quality: number, mods: Array<Mod>, } | { "type": "Accessory", quality: number, mods: Array<Mod>, };

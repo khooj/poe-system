@@ -42,6 +42,10 @@ pub enum ItemInfo {
         quality: u8,
         mods: Vec<Mod>,
     },
+    Accessory {
+        quality: u8,
+        mods: Vec<Mod>,
+    },
 }
 
 impl Default for ItemInfo {
@@ -60,12 +64,13 @@ impl ItemInfo {
             ItemInfo::Weapon { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
             ItemInfo::Jewel { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
             ItemInfo::Flask { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
+            ItemInfo::Accessory { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
             ItemInfo::Gem { .. } => panic!("gems have no mods"),
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct TypedItem {
     pub id: String,
@@ -84,14 +89,15 @@ impl TypedItem {
             ItemInfo::Gem { .. } => vec![],
             ItemInfo::Flask { mods, .. } => mods.clone(),
             ItemInfo::Jewel { mods, .. } => mods.clone(),
+            ItemInfo::Accessory { mods, .. } => mods.clone(),
         }
     }
 }
 
 #[derive(Error, Debug)]
 pub enum TypedItemError {
-    #[error("unknown item")]
-    Unknown,
+    #[error("unknown item: {0}")]
+    Unknown(String),
     #[error("unknown category: {0}")]
     UnknownCategory(#[from] TypeError),
     #[error("unknown subcategory: {0}")]

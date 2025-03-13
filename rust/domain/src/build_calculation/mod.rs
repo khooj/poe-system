@@ -29,9 +29,10 @@ pub struct BuildItemsWithConfig {
     pub flasks: Vec<ItemWithConfig>,
     pub gems: Vec<ItemWithConfig>,
     pub jewels: Vec<ItemWithConfig>,
+    pub amulet: ItemWithConfig,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, TS)]
+#[derive(Serialize, Deserialize, Debug, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct ItemWithConfig {
     pub config: Vec<ModConfig>,
@@ -53,4 +54,5 @@ pub struct FoundBuildItems {
     pub flasks: Option<Vec<TypedItem>>,
     pub gems: Option<Vec<TypedItem>>,
     pub jewels: Option<Vec<TypedItem>>,
+    pub amulet: Option<TypedItem>,
 }

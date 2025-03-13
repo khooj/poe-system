@@ -439,6 +439,15 @@ mod test {
         }
     );
     gen_test!(
+        name_check_stygian,
+        name,
+        "Loath Cut\nStygian Vise",
+        ItemValue::BaseType {
+            name: "Loath Cut",
+            base: "Stygian Vise",
+        }
+    );
+    gen_test!(
         name_normal_rare_custom,
         name_normal_rare,
         "Lategame Boots\nTwo-Toned Boots (Armour/EnergyShield)",
