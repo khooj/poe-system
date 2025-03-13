@@ -3,4 +3,4 @@ import type { Category } from "./Category";
 import type { ItemInfo } from "./ItemInfo";
 import type { Subcategory } from "./Subcategory";
 
-export type TypedItem = { id: string, basetype: string, category: Category, subcategory: Subcategory, info: ItemInfo, };
+export type TypedItem = { id: string, basetype: string, category: Category, subcategory: Subcategory, info: ItemInfo, name: string, };

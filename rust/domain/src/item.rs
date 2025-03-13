@@ -114,6 +114,7 @@ impl TryFrom<Item> for TypedItem {
             basetype,
             category,
             subcategory,
+            name: value.name,
         })
     }
 }

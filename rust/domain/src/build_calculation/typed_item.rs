@@ -73,6 +73,7 @@ pub struct TypedItem {
     pub category: Category,
     pub subcategory: Subcategory,
     pub info: ItemInfo,
+    pub name: String,
 }
 
 impl TypedItem {
