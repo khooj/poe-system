@@ -1,5 +1,5 @@
 use crate::storage::{postgresql::items::ItemRepository, LatestStashId};
-use domain::build_calculation::typed_item::TypedItem;
+use domain::{build_calculation::typed_item::TypedItem, item::Item};
 use public_stash::{client::Error as StashError, models::PublicStashData};
 use tracing::{info, instrument, trace};
 
@@ -63,7 +63,8 @@ impl StashReceiver {
             let items = d
                 .items
                 .into_iter()
-                .filter_map(|i| TypedItem::try_from(i).ok())
+                .filter_map(|i| Item::try_from(i).ok())
+                .map(|i| TypedItem::from(i))
                 .collect::<Vec<_>>();
             self.repository.insert_items(items.clone(), stash).await?;
         }

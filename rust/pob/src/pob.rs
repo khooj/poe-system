@@ -3,8 +3,10 @@ use crate::parser::{parse_pob_item, ParsedItem};
 
 use base64::{decode_config, URL_SAFE};
 use domain::data::BaseItems;
-use domain::item::Item;
-use domain::types::{Category, Property, Subcategory};
+use domain::item::{
+    types::{Category, Property, Subcategory, TypeError},
+    Item,
+};
 use flate2::read::ZlibDecoder;
 use nom::error::VerboseError;
 use roxmltree::{Document, Node};
@@ -26,7 +28,7 @@ pub enum PobError {
     ItemsetNameNotFound(String),
 
     #[error("type error: {0}")]
-    TypeError(#[from] domain::types::TypeError),
+    TypeError(#[from] TypeError),
     #[error("xml error")]
     XmlError(#[from] roxmltree::Error),
     #[error("base64 error")]

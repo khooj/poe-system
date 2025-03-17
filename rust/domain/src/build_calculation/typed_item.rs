@@ -1,4 +1,7 @@
-use crate::types::{Category, Mod, Subcategory, SubcategoryError, TypeError};
+use crate::item::{
+    types::{Category, Mod, Subcategory, SubcategoryError, TypeError},
+    Item,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
@@ -102,4 +105,91 @@ pub enum TypedItemError {
     UnknownCategory(#[from] TypeError),
     #[error("unknown subcategory: {0}")]
     UnknownSubcategory(#[from] SubcategoryError),
+}
+
+impl TryFrom<Item> for TypedItem {
+    type Error = TypedItemError;
+    fn try_from(value: Item) -> core::result::Result<Self, Self::Error> {
+        let cat = value.category;
+        if ![
+            Category::Weapons,
+            Category::Armour,
+            Category::Gems,
+            Category::Flasks,
+            Category::Jewels,
+            Category::Accessories,
+        ]
+        .contains(&cat)
+        {
+            return Err(TypedItemError::Unknown(format!(
+                "at category check: {} {}",
+                value.name, value.base_type
+            )));
+        }
+
+        let basetype = value.base_type;
+        let category = Category::get_from_basetype(&basetype)?;
+        let subcategory = Subcategory::get_from_basetype(&basetype)?;
+        let mods = value.mods;
+        let props = value.properties;
+        let quality = value.quality as u8;
+        let info = match cat {
+            t @ (Category::Weapons | Category::Armour) => {
+                let properties = props
+                    .iter()
+                    .filter_map(|p| {
+                        if p.value.is_none() {
+                            None
+                        } else {
+                            Some(Property {
+                                augmented: p.augmented,
+                                name: p.name.clone(),
+                                value: p.value.clone().unwrap(),
+                            })
+                        }
+                    })
+                    .collect();
+
+                Some(if t == Category::Weapons {
+                    ItemInfo::Weapon {
+                        quality,
+                        mods,
+                        properties,
+                    }
+                } else {
+                    ItemInfo::Armor {
+                        quality,
+                        mods,
+                        properties,
+                    }
+                })
+            }
+            Category::Gems => {
+                let level = props
+                    .iter()
+                    .find(|p| p.name == "Level")
+                    .map(|q| q.value.clone().unwrap())
+                    .unwrap_or("0".to_string())
+                    .parse::<u8>()
+                    .unwrap_or(0);
+
+                Some(ItemInfo::Gem { level, quality })
+            }
+            Category::Flasks => Some(ItemInfo::Flask { quality, mods }),
+            Category::Jewels => Some(ItemInfo::Jewel { mods }),
+            Category::Accessories => Some(ItemInfo::Accessory { quality, mods }),
+            _ => None,
+        };
+        Ok(TypedItem {
+            info: info.ok_or(TypedItemError::Unknown(format!(
+                "at info: {} {}",
+                value.name, basetype
+            )))?,
+            id: value.id,
+            basetype,
+            category,
+            subcategory,
+            name: value.name,
+        })
+    }
 }

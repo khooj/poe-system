@@ -1,23 +1,16 @@
-use crate::build_calculation::typed_item::{
-    ItemInfo, Property as TypedProperty, TypedItem, TypedItemError,
-};
+pub mod types;
 
-use super::types::{
-    Category, Class, Hybrid, Influence, ItemLvl, League, Mod, Property, Subcategory,
-};
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::cmp::Eq;
-use std::collections::HashMap;
 use std::default::Default;
-use std::ops::Deref;
+use types::{Category, Hybrid, Influence, League, Mod, Property, Rarity, Sockets, Subcategory};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Item {
     pub id: String,
     pub league: League,
 
-    pub item_lvl: ItemLvl,
+    pub rarity: Rarity,
+    pub item_lvl: Option<i32>,
     pub identified: bool,
     pub name: String,
     pub category: Category,
@@ -30,168 +23,14 @@ pub struct Item {
     pub synthesised: bool,
     pub mods: Vec<Mod>,
     pub hybrid: Hybrid,
-    pub class: Class,
     pub image_link: String,
-    pub rarity: String,
     pub lvl_req: i32,
-    pub sockets: String,
+    pub sockets: Sockets,
     pub quality: i32,
     pub properties: Vec<Property>,
 }
 
-// TODO: somehow unify item struct
-impl TryFrom<Item> for TypedItem {
-    type Error = TypedItemError;
-    fn try_from(value: Item) -> core::result::Result<Self, Self::Error> {
-        let cat = value.category;
-        if ![
-            Category::Weapons,
-            Category::Armour,
-            Category::Gems,
-            Category::Flasks,
-            Category::Jewels,
-            Category::Accessories,
-        ]
-        .contains(&cat)
-        {
-            return Err(TypedItemError::Unknown(format!(
-                "at category check: {} {}",
-                value.name, value.base_type
-            )));
-        }
-
-        let basetype = value.base_type;
-        let category = Category::get_from_basetype(&basetype)?;
-        let subcategory = Subcategory::get_from_basetype(&basetype)?;
-        let mods = value.mods;
-        let props = value.properties;
-        let quality = value.quality as u8;
-        let info = match cat {
-            t @ (Category::Weapons | Category::Armour) => {
-                let properties = props
-                    .iter()
-                    .filter_map(|p| {
-                        if p.value.is_none() {
-                            None
-                        } else {
-                            Some(TypedProperty {
-                                augmented: p.augmented,
-                                name: p.name.clone(),
-                                value: p.value.clone().unwrap(),
-                            })
-                        }
-                    })
-                    .collect();
-
-                Some(if t == Category::Weapons {
-                    ItemInfo::Weapon {
-                        quality,
-                        mods,
-                        properties,
-                    }
-                } else {
-                    ItemInfo::Armor {
-                        quality,
-                        mods,
-                        properties,
-                    }
-                })
-            }
-            Category::Gems => {
-                let level = props
-                    .iter()
-                    .find(|p| p.name == "Level")
-                    .map(|q| q.value.clone().unwrap())
-                    .unwrap_or("0".to_string())
-                    .parse::<u8>()
-                    .unwrap_or(0);
-
-                Some(ItemInfo::Gem { level, quality })
-            }
-            Category::Flasks => Some(ItemInfo::Flask { quality, mods }),
-            Category::Jewels => Some(ItemInfo::Jewel { mods }),
-            Category::Accessories => Some(ItemInfo::Accessory { quality, mods }),
-            _ => None,
-        };
-        Ok(TypedItem {
-            info: info.ok_or(TypedItemError::Unknown(format!(
-                "at info: {} {}",
-                value.name, basetype
-            )))?,
-            id: value.id,
-            basetype,
-            category,
-            subcategory,
-            name: value.name,
-        })
-    }
-}
-
-#[derive(Default, PartialEq, PartialOrd, Debug)]
-pub struct SimilarityScore(i64);
-
-impl Deref for SimilarityScore {
-    type Target = i64;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-pub struct Sockets {
-    groups: Vec<SocketGroup>,
-}
-
-impl Sockets {
-    pub fn max_links(&self) -> usize {
-        self.groups
-            .iter()
-            .map(|s| s.sockets.len())
-            .max()
-            .unwrap_or_default()
-    }
-
-    pub fn colors(&self) -> HashMap<SocketColor, usize> {
-        self.groups.iter().flat_map(|s| s.sockets.clone()).counts()
-    }
-}
-
-pub struct SocketGroup {
-    sockets: Vec<SocketColor>,
-}
-
-#[derive(Hash, PartialEq, Eq, Clone)]
-pub enum SocketColor {
-    R,
-    G,
-    B,
-    W,
-    NotSupported,
-}
-
-impl Item {
-    pub fn sockets(&self) -> Sockets {
-        let links: Vec<&str> = self.sockets.split(' ').collect();
-        let l = links
-            .into_iter()
-            .map(|l| {
-                let scks: Vec<&str> = l.split('-').collect();
-                let s = scks
-                    .into_iter()
-                    .map(|s| match s {
-                        "R" => SocketColor::R,
-                        "G" => SocketColor::G,
-                        "B" => SocketColor::B,
-                        "W" => SocketColor::W,
-                        _ => SocketColor::NotSupported,
-                    })
-                    .collect();
-                SocketGroup { sockets: s }
-            })
-            .collect();
-        Sockets { groups: l }
-    }
-}
+impl Item {}
 
 #[cfg(test)]
 mod test {}

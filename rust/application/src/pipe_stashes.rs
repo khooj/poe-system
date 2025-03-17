@@ -1,4 +1,4 @@
-use domain::types::{Mod, ModType};
+use domain::item::types::{Mod, ModType};
 use public_stash::models::Item;
 
 pub fn parse_mods(item: &Item) -> Vec<Mod> {

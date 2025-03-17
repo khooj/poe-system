@@ -1,5 +1,5 @@
 use super::{mod_config::ModConfig, typed_item::TypedItem};
-use crate::types::Mod;
+use crate::item::types::Mod;
 
 pub struct Comparator {}
 

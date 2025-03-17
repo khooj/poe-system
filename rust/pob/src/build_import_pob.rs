@@ -5,8 +5,10 @@ use domain::{
         typed_item::{TypedItem, TypedItemError},
         BuildInfo, BuildItemsWithConfig, ItemWithConfig,
     },
-    item::Item,
-    types::{Category, Subcategory},
+    item::{
+        types::{Category, Subcategory},
+        Item,
+    },
 };
 
 #[derive(Debug, thiserror::Error)]

@@ -1,11 +1,6 @@
-use anyhow::Result;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    convert::TryFrom,
-    ops::{Deref, RangeInclusive, Sub},
-    str::FromStr,
-};
+use std::{collections::HashMap, convert::TryFrom, ops::Deref, str::FromStr};
 use strum::{AsRefStr, EnumString};
 use thiserror::Error;
 use ts_rs::TS;
@@ -18,19 +13,8 @@ pub enum TypeError {
     RarityParse(String),
     #[error("unknown category: {0}")]
     UnknownCategory(String),
-}
-
-#[allow(non_camel_case_types)]
-#[derive(Clone, Debug)]
-pub enum __category_tmp {
-    Flasks,
-    Jewellery,
-    OneHandedWeapon,
-    TwoHandedWeapon,
-    Gems,
-    Offhand,
-    Armor,
-    Other,
+    #[error("parsing enum from string error: {0}")]
+    Strum(#[from] strum::ParseError),
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq, AsRefStr, TS)]
@@ -84,276 +68,6 @@ impl Category {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default)]
-#[strum(ascii_case_insensitive)]
-pub enum Class {
-    #[default]
-    LifeFlask,
-    ManaFlask,
-    HybridFlask,
-    Currency,
-    Amulet,
-    Ring,
-    Claws,
-    Dagger,
-    Wand,
-    OneHandSword,
-    ThrustingOneHandSword,
-    OneHandAxe,
-    OneHandMace,
-    Bow,
-    Staff,
-    TwoHandSword,
-    TwoHandAxe,
-    TwoHandMace,
-    ActiveSkillGem,
-    SupportSkillGem,
-    Quiver,
-    Belt,
-    Gloves,
-    Boots,
-    BodyArmour,
-    Helmet,
-    Shield,
-    StackableCurrency,
-    Sceptre,
-    UtilityFlask,
-    CriticalUtilityFlask,
-    Map,
-    FishingRod,
-    MapFragment,
-    Jewel,
-    DivinationCard,
-    LabyrinthItem,
-    LabyrinthTrinket,
-    LabyrinthMapItem,
-    MiscMapItem,
-    Leaguestones,
-    PantheonSoul,
-    Piece,
-    AbyssJewel,
-    IncursionItem,
-    DelveSocketableCurrency,
-    Incubator,
-    Shard,
-    ShardHeart,
-    RuneDagger,
-    Warstaff,
-    DelveStackableSocketableCurrency,
-    AtlasRegionUpgradeItem,
-    MetamorphSample,
-    HarvestSeed,
-    SeedEnhancer,
-    Contract,
-    HeistGear,
-    HeistTool,
-    HeistCloak,
-    HeistBrooch,
-    Blueprint,
-    Trinket,
-    HeistTarget,
-    // TODO: do i need this?
-    SmallClusterJewel,
-    MediumClusterJewel,
-    LargeClusterJewel,
-}
-
-#[derive(Error, Debug)]
-pub enum ClassError {
-    #[error("parse error: {0}")]
-    ParseError(#[from] strum::ParseError),
-}
-
-impl Class {
-    pub fn from_itemclass(itemclass: &str) -> Result<Class, ClassError> {
-        use std::str::FromStr;
-
-        let mut s = itemclass.to_string();
-        s.retain(|c| !c.is_whitespace());
-        Ok(Class::from_str(&s)?)
-    }
-}
-
-#[derive(Debug, EnumString, PartialEq)]
-#[strum(ascii_case_insensitive)]
-pub enum Jewels {
-    SmallClusterJewel,
-    MediumClusterJewel,
-    LargeClusterJewel,
-    ViridianJewel,
-}
-
-#[derive(Debug, EnumString, PartialEq)]
-#[strum(ascii_case_insensitive)]
-pub enum Weapons {
-    OrnateQuiver,
-    DeathBow,
-}
-
-#[derive(Debug, EnumString, PartialEq)]
-#[strum(ascii_case_insensitive)]
-pub enum BootsBase {
-    // str
-    IronGreaves,
-    SteelGreaves,
-    BasemetalTreads,
-    PlatedGreaves,
-    ReinforcedGreaves,
-    AntiqueGreaves,
-    AncientGreaves,
-    DarksteelTreads,
-    GoliathGreaves,
-    VaalGreaves,
-    TitanGreaves,
-    BrimstoneGreaves,
-    // dex
-    RawhideBoots,
-    GoathideBoots,
-    CloudwhisperBoots,
-    DeerskinBoots,
-    NubuckBoots,
-    EelskinBoots,
-    SharkskinBoots,
-    WindbreakBoots,
-    ShagreenBoots,
-    StealthBoots,
-    SlinkBoots,
-    StormriderBoots,
-    // int
-    WoolShoes,
-    VelvetSlippers,
-    DuskwalkSlippers,
-    SilkSlippers,
-    ScholarBoots,
-    SatinSlippers,
-    SamiteSlippers,
-    NightwindSlippers,
-    ConjurerBoots,
-    ArcanistSlippers,
-    SorcererBoots,
-    DreamquestSlippers,
-}
-
-#[allow(unused)]
-enum BodyArmour {
-    // str
-    PlateVest,
-    Chestplate,
-    CopperPlate,
-    WarPlate,
-    FullPlate,
-    ArenaPlate,
-    LordlyPlate,
-    BronzePlate,
-    BattlePlate,
-    SunPlate,
-    ColosseumPlate,
-    MajesticPlace,
-    GoldenPlate,
-    CrusaderPlate,
-    AstralPlate,
-    GladiatorPlate,
-    GloriousPlate,
-
-    // dex
-    ShabbyJerkin,
-    StrappedLeather,
-    BuckskinTunic,
-    WildLeather,
-    FullLeather,
-    SunLeather,
-    ThiefsGarb,
-    EelskinTunic,
-    FrontierLeather,
-    GloriousLeather,
-    CoronalLeather,
-    CutthroatsGarb,
-    SharkskinTunic,
-    DestinyLeather,
-    ExquisiteLeather,
-    ZodiacLeather,
-    AssassinsGarb,
-
-    // int
-    SimpleRobe,
-    SilkenVest,
-    ScholarsRobe,
-    SilkenGarb,
-    MageVestmest,
-    SilkRobe,
-    CabalistRegalia,
-    SagesRobe,
-    SilkenWrap,
-    ConjurerVestment,
-    SpidersilkRobbe,
-    DestroyerRegalia,
-    SavantsRobe,
-    NecromancerSilks,
-    OccultistsVestment,
-    WidowsilkRobe,
-    VaalRegalia,
-
-    // str/dex
-    ScaleVest,
-    LightBrigandine,
-    ScaleDoublet,
-    InfantryBrigandine,
-    FullScaleArmour,
-    SoldiersBrigandine,
-    FieldLamellar,
-    WyrmscaleDoublet,
-    HussarBrigandine,
-    FullWyrmscale,
-    CommandersBrigandine,
-    BattleLamellar,
-    DragonscaleDoublet,
-    DesertBrigandine,
-    FullDragonscale,
-    GeneralsBrigandine,
-    TriumphantLamellar,
-
-    // str/int
-    ChainmailVest,
-    ChainmailTunic,
-    RingmailCoat,
-    ChainmailDoublet,
-    FullRingmail,
-    FullChainmail,
-    HolyChainmail,
-    LatticedRingmail,
-    CrusaderChainmail,
-    OrnateRingmail,
-    ChainHauberk,
-    DevoutChainmail,
-    LoricatedRingmail,
-    ConquestChainmail,
-    ElegantRingmail,
-    SaintsHauberk,
-    SaintlyChainmail,
-
-    // int/dex
-    PaddedVest,
-    OiledVest,
-    PaddedJacket,
-    OiledCoat,
-    ScarletRaiment,
-    WaxedGarb,
-    BoneArmour,
-    QuiltedJacket,
-    SleekCoat,
-    CrimsonRaiment,
-    LacqueredGarb,
-    CryptArmour,
-    SentinetJacket,
-    VarnishedCoat,
-    BloodRaiment,
-    SadistGarb,
-    CarnalArmour,
-
-    // str/dex/int
-    SacrificialGarb,
-}
-
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub enum League {
     #[default]
@@ -390,28 +104,6 @@ impl From<Option<String>> for League {
         match t {
             Some(k) => League::from(k),
             None => League::Standard,
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
-pub enum ItemLvl {
-    #[default]
-    No,
-    Yes(i32),
-}
-
-impl From<i32> for ItemLvl {
-    fn from(value: i32) -> Self {
-        ItemLvl::Yes(value)
-    }
-}
-
-impl From<Option<i32>> for ItemLvl {
-    fn from(v: Option<i32>) -> Self {
-        match v {
-            Some(k) => ItemLvl::Yes(k),
-            None => ItemLvl::No,
         }
     }
 }
@@ -608,8 +300,7 @@ pub struct Hybrid {
     pub sec_descr_text: Option<String>,
 }
 
-#[allow(unused)]
-#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, PartialEq)]
 pub enum Rarity {
     #[default]
     Normal,
@@ -618,16 +309,16 @@ pub enum Rarity {
     Unique,
 }
 
-impl TryFrom<String> for Rarity {
+impl TryFrom<&str> for Rarity {
     type Error = TypeError;
 
-    fn try_from(v: String) -> Result<Rarity, Self::Error> {
+    fn try_from(v: &str) -> Result<Rarity, Self::Error> {
         match v.to_lowercase().as_str() {
             "magic" => Ok(Rarity::Normal),
             "rare" => Ok(Rarity::Rare),
             "unique" => Ok(Rarity::Unique),
             "normal" => Ok(Rarity::Normal),
-            _ => Err(TypeError::RarityParse(v)),
+            _ => Err(TypeError::RarityParse(v.to_string())),
         }
     }
 }
@@ -638,6 +329,57 @@ pub struct Property {
     pub name: String,
     pub value: Option<String>,
     pub augmented: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Sockets {
+    groups: Vec<SocketGroup>,
+}
+
+impl TryFrom<&str> for Sockets {
+    type Error = TypeError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let mut g = vec![];
+        let sg_raw = value
+            .split(' ')
+            .map(|s| s.split('-').map(SocketColor::from_str));
+        for sg in sg_raw {
+            let s = sg.process_results(|s| s.collect())?;
+            g.push(SocketGroup { sockets: s })
+        }
+        Ok(Sockets { groups: g })
+    }
+}
+
+impl Sockets {
+    pub fn max_links(&self) -> usize {
+        self.groups
+            .iter()
+            .map(|s| s.sockets.len())
+            .max()
+            .unwrap_or_default()
+    }
+
+    pub fn colors(&self) -> HashMap<SocketColor, usize> {
+        self.groups.iter().flat_map(|s| s.sockets.clone()).counts()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct SocketGroup {
+    sockets: Vec<SocketColor>,
+}
+
+#[derive(Hash, PartialEq, Eq, Clone, Serialize, Deserialize, Debug, Default, EnumString)]
+pub enum SocketColor {
+    R,
+    G,
+    B,
+    W,
+    A,
+    #[default]
+    NotSupported,
 }
 
 #[cfg(test)]

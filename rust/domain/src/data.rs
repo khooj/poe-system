@@ -1,8 +1,6 @@
 use dashmap::{mapref::one::Ref, DashMap};
 use lazy_static::lazy_static;
 use regex::bytes::{Match, Regex};
-use serde::Deserialize;
-use serde_json::Value;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -115,9 +113,6 @@ impl FromStr for ModValue {
     }
 }
 
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct ModInfo {}
-
 #[derive(Debug, serde::Deserialize)]
 struct ModTmp {
     text: Option<String>,
@@ -137,13 +132,13 @@ pub struct Id(String);
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 pub enum ModType {
-    Variants(HashMap<Id, ModInfo>),
+    Variants(HashSet<Id>),
 }
 
 impl ModType {
     pub fn get_id(&self) -> String {
         match self {
-            ModType::Variants(hm) => hm.keys().nth(0).map(|v| v.0.clone()).unwrap_or_default(),
+            ModType::Variants(hm) => hm.iter().nth(0).map(|v| v.0.clone()).unwrap_or_default(),
         }
     }
 }
@@ -177,12 +172,12 @@ const WHITELIST_DOMAINS: &[&str] = &[
 
 const DOUBLE_MOD: &[&str] = &["Immunity to Ignite during Effect", "Removes Burning on use"];
 
-macro_rules! hashmap {
-    ($($k:expr => $v:expr),+) => {{
-        use std::collections::HashMap;
-        let mut hm = HashMap::new();
+macro_rules! hashset {
+    ($($k:expr),+) => {{
+        use std::collections::HashSet;
+        let mut hm = HashSet::new();
         $(
-            hm.insert($k, $v);
+            hm.insert($k);
         )+
         hm
     }};
@@ -253,8 +248,8 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
 
                 mods.push((
                     key,
-                    ModType::Variants(hashmap! {
-                        Id(id) => ModInfo { }
+                    ModType::Variants(hashset! {
+                        Id(id)
                     }),
                 ));
                 continue;
@@ -272,9 +267,9 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
                 });
                 mods.push((
                     key,
-                    ModType::Variants(hashmap! {
-                        Id(stat.id.clone()) => ModInfo {
-                    }}),
+                    ModType::Variants(hashset! {
+                        Id(stat.id.clone())
+                    }),
                 ));
                 prev_stat_count1 = Some(stat);
             } else if capture_groups_count == 2 {
@@ -282,10 +277,9 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
                 let stat2 = stats.next().unwrap();
                 mods.push((
                     key,
-                    ModType::Variants(hashmap! {
-                        Id(stat1.id)  => ModInfo {
-                        },
-                        Id(stat2.id) =>  ModInfo { }
+                    ModType::Variants(hashset! {
+                        Id(stat1.id),
+                        Id(stat2.id)
                     }),
                 ));
             } else {
@@ -295,7 +289,7 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
 
         for (key, modinfo) in mods {
             let _regex = Regex::new(&key).unwrap();
-            let en = acc.entry(key).or_insert(ModType::Variants(HashMap::new()));
+            let en = acc.entry(key).or_insert(ModType::Variants(HashSet::new()));
             match modinfo {
                 ModType::Variants(hm) => match en {
                     ModType::Variants(hm2) => {
@@ -380,7 +374,7 @@ pub struct ModExtractor<'a> {
     m: &'a ModType,
 }
 
-impl<'a> ModExtractor<'a> {
+impl ModExtractor<'_> {
     pub fn extract_values(&self, value: &str) -> (Option<ModValue>, Option<ModValue>) {
         match self.m {
             ModType::Variants(_) => {
@@ -412,11 +406,11 @@ impl<'a> ModExtractor<'a> {
         let v1 = range1
             .map(|s| (*s.start(), *s.end()))
             .map(|(st, en)| st + (((en - st) as f32) * range).trunc() as i32)
-            .map(|val| ModValue::Int(val));
+            .map(ModValue::Int);
         let v2 = range2
             .map(|s| (*s.start(), *s.end()))
             .map(|(st, en)| st + (((en - st) as f32) * range).trunc() as i32)
-            .map(|val| ModValue::Int(val));
+            .map(ModValue::Int);
         (v1, v2)
     }
 
@@ -438,7 +432,7 @@ impl MODS {
 mod tests {
     use std::time::Instant;
 
-    use super::{Id, ModInfo, ModType, ModValue, MODS};
+    use super::{Id, ModType, ModValue, MODS};
 
     #[test]
     fn check_load_time() {
@@ -455,9 +449,9 @@ mod tests {
         let (val1, val2) = ext.extract_values(m);
         assert_eq!(
             ext.mod_type(),
-            &ModType::Variants(hashmap! {
-                Id("additional_strength".to_string()) => ModInfo {
-            }})
+            &ModType::Variants(hashset! {
+                Id("additional_strength".to_string())
+            })
         );
         assert_eq!(val1, Some(ModValue::Int(22)));
         assert_eq!(val2, None);

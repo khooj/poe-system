@@ -1,4 +1,4 @@
-use crate::types::{Mod, ModValue};
+use crate::item::types::{Mod, ModValue};
 use serde::{Deserialize, Serialize};
 use std::ops::RangeInclusive;
 use ts_rs::TS;

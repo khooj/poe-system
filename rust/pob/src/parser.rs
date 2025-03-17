@@ -1,27 +1,28 @@
 use domain::{
     data::{BaseItems, BASE_TYPES},
-    item::Item,
-    types::{Category, Mod, ModType, Subcategory},
+    item::{
+        types::{Category, Mod, ModType, Rarity, Sockets, Subcategory, TypeError},
+        Item,
+    },
 };
 use nom::{
     branch::alt,
-    bytes::complete::{is_not, tag, take_till},
+    bytes::complete::{is_not, tag},
     character::complete::{
-        alpha0, alpha1, alphanumeric1, char, digit1, line_ending, multispace0, not_line_ending,
-        space0,
+        alpha1, alphanumeric1, char, digit1, line_ending, multispace0, not_line_ending,
     },
-    combinator::{cut, map, map_res, not, opt},
+    combinator::{cut, map, map_res, not},
     error::{context, ContextError, FromExternalError, ParseError},
-    multi::{length_count, many0, many0_count},
+    multi::{length_count, many0},
     sequence::{delimited, pair, preceded, tuple},
     IResult,
 };
 
 use std::{
     num::{ParseFloatError, ParseIntError},
-    str::ParseBoolError,
+    ops::Deref,
+    str::FromStr,
 };
-use std::{ops::Deref, str::FromStr};
 
 #[derive(thiserror::Error, Debug)]
 pub enum PobParseError {
@@ -30,7 +31,7 @@ pub enum PobParseError {
     #[error("unknown category: {0}")]
     UnknownCategory(String),
     #[error("unknown category type: {0}")]
-    CategoryType(#[from] domain::types::TypeError),
+    CategoryType(#[from] TypeError),
     #[error("it is not a range")]
     NotRange,
     #[error("error parsing range: {0}")]
@@ -102,18 +103,14 @@ fn basetype_map<'a>(name: &'a str, basetype: &'a str) -> Result<ItemValue<'a>, P
     Err(PobParseError::UnknownCategory(basetype.to_string()))
 }
 
-fn name<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
-    i: &'a str,
-) -> IResult<&'a str, ItemValue, E>
+fn name<'a, E>(i: &'a str) -> IResult<&'a str, ItemValue<'a>, E>
 where
     E: ParseError<&'a str> + ContextError<&'a str> + FromExternalError<&'a str, PobParseError>,
 {
     context("name", alt((name_normal_rare, name_magic)))(i)
 }
 
-fn name_normal_rare<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
-    i: &'a str,
-) -> IResult<&'a str, ItemValue, E>
+fn name_normal_rare<'a, E>(i: &'a str) -> IResult<&'a str, ItemValue, E>
 where
     E: ParseError<&'a str> + ContextError<&'a str> + FromExternalError<&'a str, PobParseError>,
 {
@@ -334,7 +331,7 @@ where
 
     for val in items {
         match val {
-            ItemValue::Rarity(r) => item.rarity = r.to_string(),
+            ItemValue::Rarity(r) => item.rarity = Rarity::try_from(r).unwrap(),
             ItemValue::BaseType { base, name } => {
                 item.category = Category::get_from_basetype(base).unwrap();
                 item.subcategories = Subcategory::get_from_basetype(base).unwrap();
@@ -342,9 +339,9 @@ where
                 item.base_type = base.to_string();
             }
             ItemValue::UniqueId(id) => item.id = id.to_string(),
-            ItemValue::ItemLevel(il) => item.item_lvl = domain::types::ItemLvl::Yes(il),
+            ItemValue::ItemLevel(il) => item.item_lvl = Some(il),
             ItemValue::LevelReq(lr) => item.lvl_req = lr,
-            ItemValue::Sockets(s) => item.sockets = s.to_string(),
+            ItemValue::Sockets(s) => item.sockets = Sockets::try_from(s).unwrap(),
             ItemValue::Quality(q) => item.quality = q,
             ItemValue::Implicits(implicits) => mods.extend(
                 implicits
@@ -377,7 +374,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use domain::types::Mod;
+    use domain::item::types::Mod;
     use nom::error::VerboseError;
 
     use super::*;
@@ -568,14 +565,14 @@ Added Small Passive Skills also grant: +5 to Strength
 1 Added Passive Skill is Elegant Form"#;
 
         let (_, item) = parse_pob_item::<VerboseError<&str>>(item)?;
-        assert_eq!(item.item.rarity, "RARE");
+        assert_eq!(item.item.rarity, Rarity::Rare);
         assert_eq!(item.item.name, "Loath Cut");
         assert_eq!(item.item.base_type, "Small Cluster Jewel");
         assert_eq!(
             item.item.id,
             "c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb"
         );
-        assert_eq!(item.item.item_lvl, domain::types::ItemLvl::Yes(84));
+        assert_eq!(item.item.item_lvl, Some(84));
         assert_eq!(item.item.lvl_req, 54);
         assert_eq!(
             item.item.mods,
