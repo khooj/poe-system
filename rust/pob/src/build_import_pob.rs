@@ -1,4 +1,4 @@
-use crate::{ItemSet, Pob};
+use crate::{ItemSet, Pob, SkillSet};
 
 use domain::{
     build_calculation::{
@@ -20,16 +20,24 @@ pub enum ImportPobError {
 pub fn import_build_from_pob<T: AsRef<str>>(
     pob: &Pob,
     itemset: T,
+    skillset: T,
 ) -> Result<BuildInfo, ImportPobError> {
     let doc = pob.as_document()?;
     let itemset = doc.get_itemset(itemset.as_ref())?;
-    import(itemset)
+    let skillset = doc
+        .get_skillsets()
+        .iter()
+        .find(|s| s.title() == skillset.as_ref())
+        .unwrap()
+        .clone();
+    import(itemset, skillset)
 }
 
 pub fn import_build_from_pob_first_itemset(pob: &Pob) -> Result<BuildInfo, ImportPobError> {
     let doc = pob.as_document()?;
     let itemset = doc.get_first_itemset()?;
-    import(itemset)
+    let skillset = doc.get_skillsets().first().unwrap().clone();
+    import(itemset, skillset)
 }
 
 fn fill(prov_item: &mut ItemWithConfig, it: &Item) -> Result<(), ImportPobError> {
@@ -40,7 +48,7 @@ fn fill(prov_item: &mut ItemWithConfig, it: &Item) -> Result<(), ImportPobError>
     Ok(())
 }
 
-fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
+fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobError> {
     let mut builditems = BuildItemsWithConfig::default();
     for it in itemset.items() {
         match it.subcategories {
@@ -74,11 +82,6 @@ fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
                 fill(&mut ic, it)?;
                 builditems.flasks.push(ic);
             }
-            Category::Gems => {
-                let mut ic = ItemWithConfig::default();
-                fill(&mut ic, it)?;
-                builditems.gems.push(ic);
-            }
             Category::Jewels => {
                 let mut ic = ItemWithConfig::default();
                 fill(&mut ic, it)?;
@@ -87,6 +90,16 @@ fn import(itemset: ItemSet) -> Result<BuildInfo, ImportPobError> {
             _ => {}
         }
     }
+
+    builditems.gems = skillset
+        .gems()
+        .into_iter()
+        .map(|it| {
+            let mut ic = ItemWithConfig::default();
+            fill(&mut ic, &it).unwrap();
+            ic
+        })
+        .collect();
 
     Ok(BuildInfo {
         provided: builditems,

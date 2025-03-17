@@ -189,7 +189,8 @@ impl SkillSet {
                     .unwrap();
                 let info = BaseItems::get_by_id(gem_id).unwrap();
                 Some(Item {
-                    name: info.name,
+                    name: info.name.clone(),
+                    base_type: info.name,
                     category: Category::Gems,
                     subcategories: Subcategory::Gem,
                     quality,
@@ -202,6 +203,14 @@ impl SkillSet {
                 })
             })
             .collect())
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn gems(&self) -> Vec<Item> {
+        self.skills.clone()
     }
 }
 

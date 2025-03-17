@@ -7,17 +7,18 @@ type Props = {
 }
 
 const Build = ({ data }: Props) => {
+  console.log(data.found);
   return (
-    <Container className="d-flex flex-row align-items-center justify-content-center">
-      <div className='d-flex flex-column'>
+    <div className="d-flex flex-fill flex-row justify-content-evenly border border-danger">
+      <div className='d-flex flex-column vw-50 border'>
         <span>Provided</span>
         <ItemList {...data.provided} />
       </div>
-      <div className='d-flex flex-column'>
+      <div className='d-flex flex-column vw-50 border'>
         <span>Found</span>
         <ItemList {...data.found} />
       </div>
-    </Container>
+    </div>
   )
 }
 

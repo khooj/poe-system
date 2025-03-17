@@ -1,14 +1,10 @@
 import { ItemInfo } from '@bindings/domain/bindings/ItemInfo'
 import { Mod } from '@bindings/domain/bindings/Mod'
 import { TypedItem } from '@bindings/domain/bindings/TypedItem'
-import React from 'react'
+import { Container, Row } from 'react-bootstrap'
 
 type Props = {
   item: TypedItem
-}
-
-const isWeapon = (v: ItemInfo) => {
-  return v.type === "Weapon";
 }
 
 const isNotGem = (v: ItemInfo) => {
@@ -16,18 +12,28 @@ const isNotGem = (v: ItemInfo) => {
 }
 
 const TypedItemComponent = ({ item }: Props) => {
-  const renderMods = (item: ItemInfo) => {
-    if (isNotGem(item)) {
-      return item.mods.map(m => <><span>{m.text}</span><br /></>)
+  const renderMods = (mods: Mod[]) => {
+    return mods.map(m => <div className=''>{m.text}</div>)
+  };
+
+  const renderItem = (item: TypedItem) => {
+    if (isNotGem(item.info)) {
+      return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
+        <div className='border'>
+          <span>{item.name}<br />{item.basetype}</span>
+        </div>
+        <div className='border'>
+          <div>{renderMods(item.info.mods)}</div>
+        </div>
+      </div >;
+    } else {
+      return <div className='m-2 border' style={{ fontSize: '14px' }}>
+        <p>{item.name} {item.info.level}lvl/+{item.info.quality}%</p>
+      </div>;
     }
   };
 
-  return (<div>
-    <p>{item.name}</p>
-    <p>{item.basetype}</p>
-    <p>{renderMods(item.info)}</p>
-  </div>
-  )
+  return renderItem(item);
 }
 
 export default TypedItemComponent

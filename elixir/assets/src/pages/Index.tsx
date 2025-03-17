@@ -1,9 +1,13 @@
-import { useForm } from '@inertiajs/react'
+import { Link, useForm } from '@inertiajs/react'
 import { ChangeEventHandler, FormEvent, useState } from 'react';
 import { Container, Form, Spinner } from 'react-bootstrap'
 import * as wasm from 'wasm';
 
-const Index = () => {
+type Props = {
+  buildIds: string[],
+};
+
+const Index = ({ buildIds }: Props) => {
   const { setData, post } = useForm({
     pobData: null,
     itemset: null,
@@ -67,6 +71,10 @@ const Index = () => {
           <Form.Control type="submit" value="Proceed" />
         </Form.Group>
       </Form>
+      <div className='d-flex flex-column'>
+        <div>or select build id</div>
+        {buildIds.map(id => <div><Link href={`/build/${id}`}>{id}</Link></div>)}
+      </div>
     </Container>
   )
 }

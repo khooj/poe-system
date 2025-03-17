@@ -4,7 +4,7 @@ defmodule RustPoe.Native do
     crate: :elixir,
     path: "../rust/elixir"
 
-  def extract_build_config(_pobxml, _itemset), do: error()
+  def extract_build_config(_pobxml, _itemset, _skillset), do: error()
 
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

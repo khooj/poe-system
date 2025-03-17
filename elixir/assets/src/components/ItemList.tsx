@@ -31,27 +31,29 @@ export const ItemList = (items: Props) => {
       return <ItemWithConfigComponent item={v} />
     }
     if (isItemWithConfigArray(v)) {
-      return <div className="d-flex flex-row">
-        {v.map(item => <ItemWithConfigComponent item={item} />)}
-      </div>
+      return v.map(item => <ItemWithConfigComponent item={item} />);
     }
     if (isTypedItem(v)) {
       return <TypedItemComponent item={v} />
     }
     if (isTypedItemArray(v)) {
-      return <div className="d-flex flex-row">
-        {v.map(item => <TypedItemComponent item={item} />)}
-      </div>
+      return v.map(item => <TypedItemComponent item={item} />);
     }
 
     return null;
   };
 
-  return <div className="d-flex flex-column">
-    {
-      Object.entries(items).map(([k, v]) => {
-        return renderItem(k, v);
-      })
+  const renderList = (items: Props) => {
+    if (!Object.entries(items).some(i => !!i[1])) {
+      return <div>Nothing found yet</div>
     }
+
+    return Object.entries(items).map(([k, v]) => {
+      return renderItem(k, v);
+    }).flat();
+  };
+
+  return <div className="d-flex flex-column">
+    {renderList(items)}
   </div>
 };

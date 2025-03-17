@@ -36,14 +36,25 @@ fn extract_build_config<'a>(
     env: Env<'a>,
     pobdata: Binary<'a>,
     itemset: Binary<'a>,
+    skillset: Binary<'a>,
 ) -> Result<Term<'a>, Error> {
-    let pobdata = String::from_utf8(pobdata.as_slice().to_vec()).map_err(RustError::from)?;
-    let pob = Pob::from_pastebin_data(pobdata).map_err(RustError::from)?;
-    let itemset = std::str::from_utf8(itemset.trim_ascii()).map_err(RustError::from)?;
-    let info = import_build_from_pob(&pob, itemset).map_err(RustError::from)?;
+    Ok(extract_build_config_impl(env, pobdata, itemset, skillset)?)
+}
+
+fn extract_build_config_impl<'a>(
+    env: Env<'a>,
+    pobdata: Binary<'a>,
+    itemset: Binary<'a>,
+    skillset: Binary<'a>,
+) -> Result<Term<'a>, RustError> {
+    let pobdata = String::from_utf8(pobdata.as_slice().to_vec())?;
+    let pob = Pob::from_pastebin_data(pobdata)?;
+    let itemset = std::str::from_utf8(itemset.trim_ascii())?;
+    let skillset = std::str::from_utf8(skillset.trim_ascii())?;
+    let info = import_build_from_pob(&pob, itemset, skillset)?;
     // TODO: optimize serialize/deserialize
-    let json = serde_json::to_string(&info).map_err(RustError::from)?;
-    let m: HashMap<String, Value> = serde_json::from_str(&json).map_err(RustError::from)?;
+    let json = serde_json::to_string(&info)?;
+    let m: HashMap<String, Value> = serde_json::from_str(&json)?;
     let term = SerdeTerm(m).encode(env);
     Ok((atoms::ok(), term).encode(env))
 }

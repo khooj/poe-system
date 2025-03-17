@@ -8,8 +8,8 @@ type Props = {
 
 export default function Layout({ children }: Props) {
   return (
-    <Container fluid className="d-flex flex-row">
-      <Nav defaultActiveKey="/" className='flex-column vh-100'>
+    <Container fluid className="d-flex flex-row border border-info justify-content-start">
+      <Nav defaultActiveKey="/" className='flex-column vh-100 border border-warning'>
         <Nav.Item>
           <Nav.Link disabled>Path of Exile 1</Nav.Link>
         </Nav.Item>
@@ -17,7 +17,9 @@ export default function Layout({ children }: Props) {
           <Nav.Link href="/">New build</Nav.Link>
         </Nav.Item>
       </Nav>
-      {children}
+      <div className='d-flex border border-danger'>
+        {children}
+      </div>
     </Container>
   )
 }
