@@ -71,6 +71,10 @@ impl TryFrom<ItemProperty> for Property {
     type Error = PublicStashError;
 
     fn try_from(value: ItemProperty) -> Result<Self, Self::Error> {
+        if value.values.is_empty() {
+            return Err(PublicStashError::EmptyProperty);
+        }
+
         let [val, aug] = &value.values[0][..] else {
             return Err(PublicStashError::PropertyFormat);
         };
@@ -305,6 +309,8 @@ pub enum PublicStashError {
     Subcategory(#[from] SubcategoryError),
     #[error("unknown property format")]
     PropertyFormat,
+    #[error("empty property (not an error)")]
+    EmptyProperty,
 }
 
 fn concat_option_vecs<T>(v: [Option<(Vec<T>, ModType)>; 7]) -> Vec<(Vec<T>, ModType)> {
@@ -345,7 +351,10 @@ impl TryFrom<Item> for DomainItem {
             .map(|p| p.try_into());
         let mut properties = vec![];
         for it in prop_it {
-            properties.push(it?);
+            match it {
+                Err(PublicStashError::EmptyProperty) => continue,
+                a => properties.push(a?),
+            }
         }
 
         Ok(DomainItem {
