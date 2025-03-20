@@ -195,12 +195,18 @@ impl SkillSet {
                     base_type: info.name,
                     category: Category::Gems,
                     subcategories: Subcategory::Gem,
-                    quality,
-                    properties: vec![Property {
-                        name: "Level".to_string(),
-                        value: Some(format!("{}", level)),
-                        augmented: false,
-                    }],
+                    properties: vec![
+                        Property {
+                            name: "Level".to_string(),
+                            value: Some(format!("{}", level)),
+                            augmented: false,
+                        },
+                        Property {
+                            name: "Quality".to_string(),
+                            value: Some(format!("+{}%", quality)),
+                            augmented: true,
+                        },
+                    ],
                     ..Default::default()
                 })
             })

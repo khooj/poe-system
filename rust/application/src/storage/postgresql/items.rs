@@ -1,7 +1,7 @@
 use crate::storage::{ItemRepositoryError, LatestStashId};
 use domain::{
     build_calculation::typed_item::TypedItem,
-    types::{Category, Mod, Subcategory},
+    item::types::{Category, Mod, Subcategory},
 };
 use serde::Serialize;
 use sqlx::Row;

@@ -64,7 +64,7 @@ impl StashReceiver {
                 .items
                 .into_iter()
                 .filter_map(|i| Item::try_from(i).ok())
-                .map(|i| TypedItem::from(i))
+                .filter_map(|i| TypedItem::try_from(i).ok())
                 .collect::<Vec<_>>();
             self.repository.insert_items(items.clone(), stash).await?;
         }

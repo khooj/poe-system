@@ -22,11 +22,8 @@ pub struct Item {
     pub fractured: bool,
     pub synthesised: bool,
     pub mods: Vec<Mod>,
-    pub hybrid: Hybrid,
     pub image_link: String,
-    pub lvl_req: i32,
     pub sockets: Sockets,
-    pub quality: i32,
     pub properties: Vec<Property>,
 }
 

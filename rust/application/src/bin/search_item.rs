@@ -1,6 +1,6 @@
 use application::pipe_stashes::parse_mods;
 use clap::{Parser, Subcommand};
-use domain::types::Mod;
+use domain::item::types::Mod;
 use public_stash::models::PublicStashData;
 use redis::AsyncCommands;
 use std::{

@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use domain::{build_calculation::typed_item::TypedItem, types::Mod};
+use domain::{build_calculation::typed_item::TypedItem, item::types::Mod};
 use redis::AsyncCommands;
 use thiserror::Error;
 

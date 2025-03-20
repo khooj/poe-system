@@ -1,7 +1,7 @@
 use domain::{
     data::{BaseItems, BASE_TYPES},
     item::{
-        types::{Category, Mod, ModType, Rarity, Sockets, Subcategory, TypeError},
+        types::{Category, Mod, ModType, Property, Rarity, Sockets, Subcategory, TypeError},
         Item,
     },
 };
@@ -340,9 +340,12 @@ where
             }
             ItemValue::UniqueId(id) => item.id = id.to_string(),
             ItemValue::ItemLevel(il) => item.item_lvl = Some(il),
-            ItemValue::LevelReq(lr) => item.lvl_req = lr,
             ItemValue::Sockets(s) => item.sockets = Sockets::try_from(s).unwrap(),
-            ItemValue::Quality(q) => item.quality = q,
+            ItemValue::Quality(q) => item.properties.push(Property {
+                name: "Quality".into(),
+                value: Some(format!("+{}%", q)),
+                augmented: true,
+            }),
             ItemValue::Implicits(implicits) => mods.extend(
                 implicits
                     .into_iter()
@@ -573,7 +576,6 @@ Added Small Passive Skills also grant: +5 to Strength
             "c9ec1ff43acb2852474f462ce952d771edbf874f9710575a9e9ebd80b6e6dbfb"
         );
         assert_eq!(item.item.item_lvl, Some(84));
-        assert_eq!(item.item.lvl_req, 54);
         assert_eq!(
             item.item.mods,
             vec![

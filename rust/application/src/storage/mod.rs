@@ -1,7 +1,7 @@
 pub mod postgresql;
 pub mod redis;
 
-use domain::{build_calculation::typed_item::TypedItem, types::Mod};
+use domain::{build_calculation::typed_item::TypedItem, item::types::Mod};
 use thiserror::Error;
 
 #[derive(Error, Debug)]

@@ -132,7 +132,16 @@ impl TryFrom<Item> for TypedItem {
         let subcategory = Subcategory::get_from_basetype(&basetype)?;
         let mods = value.mods;
         let props = value.properties;
-        let quality = value.quality as u8;
+        let quality = props
+            .iter()
+            .find_map(|p| {
+                if p.name == "Quality" {
+                    p.value.as_ref().unwrap().parse().ok()
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_default();
         let info = match cat {
             t @ (Category::Weapons | Category::Armour) => {
                 let properties = props

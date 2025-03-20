@@ -1,4 +1,13 @@
+use domain::item::{
+    types::{
+        Category, Influence, Mod, ModError, ModType, Property, Sockets, Subcategory,
+        SubcategoryError, TypeError,
+    },
+    Item as DomainItem,
+};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -6,6 +15,28 @@ pub struct ItemSocket {
     pub group: i32,
     pub attr: Option<String>,
     pub s_colour: Option<String>,
+}
+
+struct OptSockets(Option<Vec<ItemSocket>>);
+
+impl TryFrom<OptSockets> for Sockets {
+    type Error = PublicStashError;
+
+    fn try_from(value: OptSockets) -> Result<Self, Self::Error> {
+        if let Some(v) = value.0 {
+            let s = v.into_iter().chunk_by(|k| k.group).into_iter().fold(
+                String::new(),
+                |mut acc, s| {
+                    acc.push_str(&s.1.map(|s| s.s_colour.unwrap()).join("-"));
+                    acc.push(' ');
+                    acc
+                },
+            );
+            Ok(Sockets::try_from(s.trim_end())?)
+        } else {
+            Ok(Sockets::default())
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -36,6 +67,25 @@ pub struct ItemProperty {
     pub suffix: Option<String>,
 }
 
+impl TryFrom<ItemProperty> for Property {
+    type Error = PublicStashError;
+
+    fn try_from(value: ItemProperty) -> Result<Self, Self::Error> {
+        let [val, aug] = &value.values[0][..] else {
+            return Err(PublicStashError::PropertyFormat);
+        };
+        Ok(Property {
+            name: value.name,
+            value: if let PropertyValueType::Value(s) = val {
+                Some(s.clone())
+            } else {
+                None
+            },
+            augmented: matches!(aug, PropertyValueType::Type(1)),
+        })
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Influences {
@@ -45,6 +95,31 @@ pub struct Influences {
     pub crusader: Option<bool>,
     pub warlord: Option<bool>,
     pub redeemer: Option<bool>,
+}
+
+impl Influences {
+    fn into_domain_influences(self) -> Vec<Influence> {
+        let mut inf = vec![];
+        if self.shaper.unwrap_or_default() {
+            inf.push(Influence::Shaper);
+        }
+        if self.elder.unwrap_or_default() {
+            inf.push(Influence::Elder);
+        }
+        if self.hunter.unwrap_or_default() {
+            inf.push(Influence::Hunter);
+        }
+        if self.crusader.unwrap_or_default() {
+            inf.push(Influence::Crusader);
+        }
+        if self.warlord.unwrap_or_default() {
+            inf.push(Influence::Warlord);
+        }
+        if self.redeemer.unwrap_or_default() {
+            inf.push(Influence::Redeemer);
+        }
+        inf
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -214,6 +289,89 @@ pub struct Item {
     pub socket: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub colour: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rarity: Option<String>,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum PublicStashError {
+    #[error("unknown league: {0:?}")]
+    UnknownLeague(Option<String>),
+    #[error("mod parse error: {0}")]
+    Mod(#[from] ModError),
+    #[error("category type parse error: {0}")]
+    Category(#[from] TypeError),
+    #[error("subcategory parse error: {0}")]
+    Subcategory(#[from] SubcategoryError),
+    #[error("unknown property format")]
+    PropertyFormat,
+}
+
+fn concat_option_vecs<T>(v: [Option<(Vec<T>, ModType)>; 7]) -> Vec<(Vec<T>, ModType)> {
+    v.into_iter().fold(vec![], |mut acc, c| {
+        if let Some(k) = c {
+            acc.push(k);
+        }
+        acc
+    })
+}
+
+impl TryFrom<Item> for DomainItem {
+    type Error = PublicStashError;
+
+    fn try_from(value: Item) -> Result<Self, Self::Error> {
+        let mods = concat_option_vecs([
+            value.explicit_mods.map(|m| (m, ModType::Explicit)),
+            value.crafted_mods.map(|m| (m, ModType::Crafted)),
+            value.veiled_mods.map(|m| (m, ModType::Veiled)),
+            value.implicit_mods.map(|m| (m, ModType::Implicit)),
+            value.utility_mods.map(|m| (m, ModType::Utility)),
+            value.fractured_mods.map(|m| (m, ModType::Fractured)),
+            value.enchant_mods.map(|m| (m, ModType::Enchant)),
+        ]);
+
+        let mods_it = mods
+            .into_iter()
+            .flat_map(|(m, t)| m.into_iter().map(move |s| Mod::try_by_stat(&s, t)));
+        let mut mods = vec![];
+        for it in mods_it {
+            mods.push(it?);
+        }
+
+        let prop_it = value
+            .properties
+            .unwrap_or_default()
+            .into_iter()
+            .map(|p| p.try_into());
+        let mut properties = vec![];
+        for it in prop_it {
+            properties.push(it?);
+        }
+
+        Ok(DomainItem {
+            id: value.id.unwrap_or(Uuid::new_v4().to_string()),
+            league: value.league.into(),
+            rarity: value.rarity.unwrap_or_default().as_str().try_into()?,
+            item_lvl: value.item_level,
+            identified: value.identified,
+            name: value.name,
+            category: Category::get_from_basetype(&value.base_type)?,
+            subcategories: Subcategory::get_from_basetype(&value.base_type)?,
+            base_type: value.base_type,
+            type_line: value.type_line,
+            corrupted: value.corrupted.unwrap_or_default(),
+            influences: value
+                .influences
+                .map(|i| i.into_domain_influences())
+                .unwrap_or_default(),
+            fractured: value.fractured.unwrap_or_default(),
+            synthesised: value.synthesised.unwrap_or_default(),
+            image_link: value.icon,
+            sockets: OptSockets(value.sockets).try_into()?,
+            properties,
+            mods,
+        })
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
