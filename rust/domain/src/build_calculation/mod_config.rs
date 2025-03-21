@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::RangeInclusive;
 use ts_rs::TS;
 
-#[derive(Debug, Serialize, Deserialize, TS, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, TS, PartialEq, Clone)]
 #[ts(export)]
 pub enum Config {
     Exact(i32),
@@ -13,7 +13,7 @@ pub enum Config {
     Exist,
 }
 
-#[derive(Debug, Serialize, Deserialize, TS, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, TS, PartialEq, Clone)]
 #[ts(export)]
 pub struct ModConfig {
     pub stat_id: String,
