@@ -1,5 +1,6 @@
 defmodule PoeSystemWeb.Router do
   use PoeSystemWeb, :router
+  use Routes
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -18,9 +19,18 @@ defmodule PoeSystemWeb.Router do
   scope "/", PoeSystemWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
-    post "/new", PageController, :new
-    get "/build/:id", PageController, :get_build
+    get "/", IndexController, :index
+  end
+
+  scope "/poe1", PoeSystemWeb do
+    pipe_through :browser
+
+    get "/", Poe1Controller, :index
+    post "/new/:id", Poe1Controller, :new
+    post "/extract", Poe1Controller, :extract
+    get "/preview/:id", Poe1Controller, :preview
+    patch "/preview/:id", Poe1Controller, :update_preview
+    get "/build/:id", Poe1Controller, :get_build
   end
 
   # Other scopes may use custom stacks.

@@ -48,7 +48,8 @@ defmodule PoeSystem.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:inertia, "~> 2.2.0"},
-      {:rustler, "~> 0.36.1", runtime: false}
+      {:rustler, "~> 0.36.1", runtime: false},
+      {:routes, "~> 0.1.0"}
     ]
   end
 

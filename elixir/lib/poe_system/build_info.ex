@@ -11,7 +11,7 @@ defmodule PoeSystem.BuildInfo do
 
   schema "builds" do
     field :id, Ecto.UUID, primary_key: true
-    embeds_one :data, BuildData
+    field :data, :map
     field :processed, :boolean, default: false
 
     timestamps(type: :utc_datetime, inserted_at: :created_at)
@@ -20,14 +20,13 @@ defmodule PoeSystem.BuildInfo do
   @doc false
   def changeset(build_info, attrs) do
     build_info
-    |> cast(attrs, [:id, :processed])
-    |> cast_embed(:data, required: true)
+    |> cast(attrs, [:id, :data, :processed])
     |> validate_required([:id, :data, :processed])
   end
 
-  def add_build(data) do
+  def add_build(id, data) do
     changeset(%__MODULE__{}, %{
-      id: UUID.bingenerate(),
+      id: id,
       data: data
     })
     |> Repo.insert()

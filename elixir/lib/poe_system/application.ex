@@ -21,6 +21,13 @@ defmodule PoeSystem.Application do
       PoeSystemWeb.Endpoint
     ]
 
+    children =
+      if Mix.env() == :dev do
+        children ++ [{Routes.Watcher, []}]
+      else
+        children
+      end
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: PoeSystem.Supervisor]

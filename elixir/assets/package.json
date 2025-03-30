@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "vite_watch": "vite build -w",
@@ -21,6 +21,7 @@
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.9",
     "react-dom": "^19.0.0",
+    "swr": "^2.3.3",
     "wasm": "file:../../rust/wasm/pkg"
   },
   "devDependencies": {

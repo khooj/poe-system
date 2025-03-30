@@ -20,6 +20,9 @@ export default defineConfig(({ command }) => {
       emptyOutDir: true,
       sourcemap: true,
       manifest: false,
+      commonjsOptions: {
+        include: [/routes/, /node_modules/]
+      },
       rollupOptions: {
         external: [
           "/vite.svg"
@@ -40,7 +43,8 @@ export default defineConfig(({ command }) => {
     resolve: {
       alias: [
         { find: /@\/(.*)$/, replacement: './src/$1.tsx' },
-        { find: /@bindings\/(.*)$/, replacement: '../../rust/$1.ts' }
+        { find: /@bindings\/(.*)$/, replacement: '../../rust/$1.ts' },
+        { find: /@routes/, replacement: './src/routes.js' }
       ],
     },
     css: {

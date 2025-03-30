@@ -120,8 +120,26 @@ mod tests {
     #[test]
     fn check_import_items() -> anyhow::Result<()> {
         let pob = Pob::new(POB);
+        let first_itemset = pob.as_document()?.get_first_itemset()?;
+        let weapon = first_itemset
+            .items()
+            .iter()
+            .find(|it| it.name == "Cataclysm Mark")
+            .unwrap();
         let buildinfo = import_build_from_pob_first_itemset(&pob)?;
-        assert_ne!(buildinfo.provided.boots.item.info, ItemInfo::default(),);
+        assert_ne!(buildinfo.provided.weapon1.item.info, ItemInfo::default(),);
+
+        match buildinfo.provided.weapon1.item.info {
+            ItemInfo::Weapon { quality, .. } => {
+                assert_eq!(quality, 20);
+            }
+            _ => {
+                panic!("wrong item type")
+            }
+        }
+
+        println!("{:?}", weapon);
+        println!("{:?}", buildinfo.provided.weapon1);
         Ok(())
     }
 }

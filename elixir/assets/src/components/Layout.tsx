@@ -1,6 +1,6 @@
-import { Link } from '@inertiajs/react';
+import { TypedLink } from '@/components/TypedLink';
 import { ReactNode } from 'react';
-import { Container, Nav, Navbar } from 'react-bootstrap';
+import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 
 type Props = {
   children: ReactNode
@@ -8,18 +8,21 @@ type Props = {
 
 export default function Layout({ children }: Props) {
   return (
-    <Container fluid className="d-flex flex-row border border-info justify-content-start">
-      <Nav defaultActiveKey="/" className='flex-column vh-100 border border-warning'>
-        <Nav.Item>
-          <Nav.Link disabled>Path of Exile 1</Nav.Link>
-        </Nav.Item>
-        <Nav.Item>
-          <Nav.Link href="/">New build</Nav.Link>
-        </Nav.Item>
-      </Nav>
-      <div className='d-flex border border-danger'>
-        {children}
-      </div>
-    </Container>
+    <>
+      <Navbar expand='lg' className='bg-body-tertiary'>
+        <Container>
+          <TypedLink to='index' className='navbar-brand'>Home</TypedLink>
+          <Navbar.Toggle aria-controls='basic-navbar-nav' />
+          <Navbar.Collapse id='basic-navbar-nav'>
+            <Nav className='me-auto'>
+              <NavDropdown title='Path of Exile 1' id='poe1-nav-dropdown'>
+                <TypedLink to='poe1.index' className='dropdown-item'>New build</TypedLink>
+              </NavDropdown>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+      {children}
+    </>
   )
 }

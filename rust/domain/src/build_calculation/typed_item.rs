@@ -136,7 +136,12 @@ impl TryFrom<Item> for TypedItem {
             .iter()
             .find_map(|p| {
                 if p.name == "Quality" {
-                    p.value.as_ref().unwrap().parse().ok()
+                    p.value
+                        .as_ref()
+                        .map(|s| s.trim_matches(['+', '%']))
+                        .unwrap()
+                        .parse()
+                        .ok()
                 } else {
                     None
                 }

@@ -1,17 +1,20 @@
+import { Config } from '@bindings/domain/bindings/Config'
 import { ItemInfo } from '@bindings/domain/bindings/ItemInfo'
 import { Mod } from '@bindings/domain/bindings/Mod'
 import { TypedItem } from '@bindings/domain/bindings/TypedItem'
 import { Container, Row } from 'react-bootstrap'
 
 type Props = {
-  item: TypedItem
+  item: TypedItem,
+  config?: Config,
+  configDisabled?: boolean,
 }
 
 const isNotGem = (v: ItemInfo) => {
   return v.type !== "Gem";
 }
 
-const TypedItemComponent = ({ item }: Props) => {
+const TypedItemComponent = ({ item, config, configDisabled }: Props) => {
   const renderMods = (mods: Mod[]) => {
     return mods.map(m => <div className=''>{m.text}</div>)
   };
