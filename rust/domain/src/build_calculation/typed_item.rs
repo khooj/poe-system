@@ -1,3 +1,5 @@
+use std::ops::DerefMut;
+
 use crate::item::{
     types::{Category, Mod, Subcategory, SubcategoryError, TypeError},
     Item,
@@ -5,6 +7,8 @@ use crate::item::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
+
+use super::mod_config::ModConfig;
 
 #[derive(Debug)]
 pub struct Stash {
@@ -30,24 +34,24 @@ pub enum ItemInfo {
     },
     Armor {
         quality: u8,
-        mods: Vec<Mod>,
+        mods: Vec<(Mod, Option<ModConfig>)>,
         properties: Vec<Property>,
     },
     Weapon {
         quality: u8,
-        mods: Vec<Mod>,
+        mods: Vec<(Mod, Option<ModConfig>)>,
         properties: Vec<Property>,
     },
     Jewel {
-        mods: Vec<Mod>,
+        mods: Vec<(Mod, Option<ModConfig>)>,
     },
     Flask {
         quality: u8,
-        mods: Vec<Mod>,
+        mods: Vec<(Mod, Option<ModConfig>)>,
     },
     Accessory {
         quality: u8,
-        mods: Vec<Mod>,
+        mods: Vec<(Mod, Option<ModConfig>)>,
     },
 }
 
@@ -61,15 +65,53 @@ impl Default for ItemInfo {
 }
 
 impl ItemInfo {
-    pub fn first_mod_id(&self) -> &str {
+    pub fn mod_ids(&self) -> Vec<&str> {
         match self {
-            ItemInfo::Armor { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
-            ItemInfo::Weapon { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
-            ItemInfo::Jewel { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
-            ItemInfo::Flask { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
-            ItemInfo::Accessory { mods, .. } => mods.first().map(|m| m.stat_id.as_str()).unwrap(),
+            ItemInfo::Armor { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
+            ItemInfo::Weapon { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
+            ItemInfo::Jewel { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
+            ItemInfo::Flask { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
+            ItemInfo::Accessory { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
             ItemInfo::Gem { .. } => panic!("gems have no mods"),
         }
+    }
+
+    pub fn mods(&self) -> &[(Mod, Option<ModConfig>)] {
+        match self {
+            ItemInfo::Weapon { mods, .. } => &mods[..],
+            ItemInfo::Armor { mods, .. } => &mods[..],
+            ItemInfo::Gem { .. } => &[],
+            ItemInfo::Flask { mods, .. } => &mods[..],
+            ItemInfo::Jewel { mods, .. } => &mods[..],
+            ItemInfo::Accessory { mods, .. } => &mods[..],
+        }
+    }
+
+    pub fn mut_mods(&mut self) -> Option<&mut Vec<(Mod, Option<ModConfig>)>> {
+        Some(match self {
+            ItemInfo::Weapon { mods, .. } => mods,
+            ItemInfo::Armor { mods, .. } => mods,
+            ItemInfo::Gem { .. } => return None,
+            ItemInfo::Flask { mods, .. } => mods,
+            ItemInfo::Jewel { mods, .. } => mods,
+            ItemInfo::Accessory { mods, .. } => mods,
+        })
+    }
+
+    pub fn add_or_update_config(&mut self, stat_id: &str, cfg: ModConfig) -> bool {
+        if matches!(self, ItemInfo::Gem { .. }) {
+            return false;
+        }
+
+        let modcfg = self
+            .mut_mods()
+            .map(|mods| mods.iter_mut().find(|m| m.0.stat_id == stat_id))
+            .unwrap_or_default();
+        if let Some(mc) = modcfg {
+            mc.1 = Some(cfg);
+            return true;
+        }
+        false
     }
 }
 
@@ -84,18 +126,7 @@ pub struct TypedItem {
     pub name: String,
 }
 
-impl TypedItem {
-    pub fn mods(&self) -> Vec<Mod> {
-        match &self.info {
-            ItemInfo::Weapon { mods, .. } => mods.clone(),
-            ItemInfo::Armor { mods, .. } => mods.clone(),
-            ItemInfo::Gem { .. } => vec![],
-            ItemInfo::Flask { mods, .. } => mods.clone(),
-            ItemInfo::Jewel { mods, .. } => mods.clone(),
-            ItemInfo::Accessory { mods, .. } => mods.clone(),
-        }
-    }
-}
+impl TypedItem {}
 
 #[derive(Error, Debug)]
 pub enum TypedItemError {
@@ -130,7 +161,7 @@ impl TryFrom<Item> for TypedItem {
         let basetype = value.base_type;
         let category = Category::get_from_basetype(&basetype)?;
         let subcategory = Subcategory::get_from_basetype(&basetype)?;
-        let mods = value.mods;
+        let mods = value.mods.into_iter().map(|m| (m, None)).collect();
         let props = value.properties;
         let quality = props
             .iter()

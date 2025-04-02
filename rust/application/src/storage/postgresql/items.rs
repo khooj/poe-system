@@ -27,20 +27,22 @@ impl ItemRepository {
 }
 
 #[derive(Debug, Serialize)]
-struct SearchMods {
-    mods: Vec<ModObj>,
+struct SearchMods<'a> {
+    mods: Vec<ModObj<'a>>,
 }
 
 #[derive(Debug, Serialize)]
-struct ModObj {
-    stat_id: String,
+struct ModObj<'a> {
+    stat_id: &'a str,
 }
 
-impl From<Vec<Mod>> for SearchMods {
-    fn from(value: Vec<Mod>) -> Self {
+impl<'a> From<Vec<&'a Mod>> for SearchMods<'a> {
+    fn from(value: Vec<&'a Mod>) -> Self {
         let mods = value
             .into_iter()
-            .map(|m| ModObj { stat_id: m.stat_id })
+            .map(|m| ModObj {
+                stat_id: &m.stat_id,
+            })
             .collect();
         SearchMods { mods }
     }
@@ -172,7 +174,7 @@ impl ItemRepository {
         basetype: Option<&str>,
         category: Option<Category>,
         subcategory: Option<Subcategory>,
-        mods: Option<Vec<Mod>>,
+        mods: Option<Vec<&Mod>>,
     ) -> Result<Vec<TypedItem>, ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
 

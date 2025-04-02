@@ -8,7 +8,7 @@ use application::{
         MIGRATOR,
     },
 };
-use domain::build_calculation::mod_config::{Config, ModConfig};
+use domain::build_calculation::mod_config::ModConfig;
 use pob::build_import_pob::import_build_from_pob_first_itemset;
 use public_stash::models::PublicStashData;
 use sqlx::{postgres::PgPoolOptions, types::chrono::Utc};
@@ -48,10 +48,21 @@ pub async fn setup_db() -> anyhow::Result<TestContext> {
 
     let pob = pob::Pob::new(POB_FILE);
     let mut data = import_build_from_pob_first_itemset(&pob)?;
-    data.provided.boots.config.extend([ModConfig {
-        stat_id: data.provided.boots.item.info.first_mod_id().to_string(),
-        configuration: Config::Exist,
-    }]);
+    let first_stat_id = data
+        .provided
+        .boots
+        .item
+        .info
+        .mod_ids()
+        .first()
+        .map(|s| s.to_string())
+        .unwrap();
+    assert!(data
+        .provided
+        .boots
+        .item
+        .info
+        .add_or_update_config(&first_stat_id, ModConfig::Exist));
 
     build_repo
         .upsert_build(&BuildData {

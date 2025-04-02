@@ -59,14 +59,14 @@ impl<'a> UnverifiedBuildItemsWithConfig<'a> {
             .flatten(),
         );
 
-        for item in items {
-            for cfg in &item.config {
-                let modcfg_not_exist = !item.item.mods().iter().any(|m| m.stat_id == cfg.stat_id);
-                if modcfg_not_exist {
-                    return None;
-                }
-            }
-        }
+        // for item in items {
+        //     for cfg in &item.config {
+        //         let modcfg_not_exist = !item.item.mods().iter().any(|m| m.stat_id == cfg.stat_id);
+        //         if modcfg_not_exist {
+        //             return None;
+        //         }
+        //     }
+        // }
 
         Some(self.0)
     }
@@ -104,7 +104,16 @@ impl BuildItemsWithConfig {
         let orig = self.mut_iter();
         let other = other.mut_iter();
         for (item, applied_item) in orig.zip(other) {
-            item.config = applied_item.config.clone();
+            let applied_mods = applied_item.item.info.mods();
+            if let Some(mv) = item.item.info.mut_mods() {
+                mv.iter_mut().for_each(|mc| {
+                    mc.1 = applied_mods
+                        .iter()
+                        .find(|mc2| mc2.0.stat_id == mc.0.stat_id)
+                        .map(|m| m.1.clone())
+                        .unwrap_or_default();
+                });
+            };
         }
     }
 }
@@ -124,7 +133,6 @@ pub fn validate_and_apply_config(
 #[derive(Serialize, Deserialize, Debug, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct ItemWithConfig {
-    pub config: Vec<ModConfig>,
     pub item: TypedItem,
 }
 

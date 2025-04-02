@@ -93,7 +93,7 @@ impl RedisIndexRepository {
                 .pool
                 .spawn(async move {
                     let mut affixes: HashMap<String, Vec<&str>> = HashMap::new();
-                    for m in item.mods() {
+                    for (m, _) in item.info.mods() {
                         let lst = affixes.entry(format!("affix:{}", m.stat_id)).or_default();
                         lst.push(item.id.as_str());
                     }

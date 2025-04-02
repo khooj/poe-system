@@ -97,7 +97,7 @@ async fn find_similar(
     items_repo: &mut ItemRepository,
     item: &ItemWithConfig,
 ) -> anyhow::Result<Option<TypedItem>> {
-    let mods_for_search = Comparator::extract_mods_for_search(&item.config, &item.item);
+    let mods_for_search = Comparator::extract_mods_for_search(&item.item);
     let found_items = items_repo
         .search_items_by_attrs(
             None,
