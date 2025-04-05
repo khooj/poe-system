@@ -1,12 +1,134 @@
+import { ModConfig } from "@bindings/domain/bindings/ModConfig";
+import { isNotGem } from "@/domainutils";
+import { Form } from "react-bootstrap";
+import { ChangeEventHandler, useContext, useState } from "react";
+import { Mod } from "@bindings/domain/bindings/Mod";
+import { ItemsContext } from "@states/preview";
+import { useStore } from "zustand";
 import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
-import TypedItemComponent from "./TypedItemComponent";
+import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
 
-type Props = {
-  item: ItemWithConfig
+type ItemWithConfigProps = {
+  k: keyof BuildItemsWithConfig,
+  item: ItemWithConfig,
+  m: Mod,
+  origCfg: ModConfig | null,
+  setCfgCb: (cf: ModConfig) => void,
 };
 
-export const ItemWithConfigComponent = ({ item }: Props) => {
+const ItemModWithConfig = ({ m, origCfg, setCfgCb }: ItemWithConfigProps) => {
+  const defaultConfigValue = (config: ModConfig) => {
+    if (config === "Exist") {
+      return "Exist";
+    }
+    if ("Exact" in config) {
+      return "Exact";
+    }
+    if ("Range" in config) {
+      return "Range";
+    }
+    if ("Min" in config) {
+      return "Min";
+    }
+    if ("Max" in config) {
+      return "Max";
+    }
+    throw new Error("unknown config type");
+  };
+
+  const renderAdditionalForSelect = () => {
+    if (!origCfg) {
+      return <></>
+    }
+
+    if (origCfg === 'Exist') {
+      return <></>
+    }
+
+    if ("Range" in origCfg) {
+      const vals = m.current_value_int || m.current_value_float;
+      if (!vals) throw new Error('current value for mod');
+      const [first, second] = vals;
+      return <>
+        <Form.Label>Min</Form.Label>
+        <Form.Range min={0} max={1000} value={first} onChange={(e) => setCfgCb({ Range: { ...origCfg.Range, start: parseInt(e.target.value) } })} />
+        <Form.Label>Max</Form.Label>
+        <Form.Range min={0} max={1000} value={second || first} onChange={(e) => setCfgCb({ Range: { ...origCfg.Range, end: parseInt(e.target.value) } })} />
+      </>
+    } else {
+      return <p>not supported</p>
+    }
+  };
+
+  const onChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
+    e.preventDefault();
+    if (e.target.value === 'Exist') {
+      setCfgCb('Exist');
+    } else if (e.target.value === 'Exact') {
+      setCfgCb({ Exact: (m.current_value_int && m.current_value_int[0]) || (m.current_value_float && m.current_value_float[0]) || 0 });
+    } else if (e.target.value === 'Range') {
+      setCfgCb({ Range: { start: 0, end: 1000 } });
+    }
+  };
+
+  return <div className='d-flex'>
+    <div>{m.text}</div>
+    <div className="d-flex flex-column">
+      <Form.Select onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "default"}>
+        <option value="default" unselectable="on">Select search type</option>
+        <option value="Exist">Exist</option>
+        <option value="Exact">Exact match</option>
+        <option value="Range">Range match</option>
+        <option value="Min">Min</option>
+        <option value="Max">Max</option>
+        <option value="ignore">Ignore</option>
+      </Form.Select>
+      {renderAdditionalForSelect()}
+    </div>
+  </div>
+};
+
+type Props = {
+  itemKey: keyof BuildItemsWithConfig,
+  item?: ItemWithConfig,
+  items?: ItemWithConfig[],
+  setItemCb: (itemKey: keyof BuildItemsWithConfig, item: ItemWithConfig | ItemWithConfig[]) => void,
+};
+
+export const ItemWithConfigComponent = ({ itemKey, item, items, setItemCb }: Props) => {
+  if (!item && !items) {
+    return <></>
+  }
+
+  if (item) {
+    if (isNotGem(item.item.info)) {
+      const setCfgCb = (stat_id: string) => {
+        return (cfg: ModConfig) => {
+          const m = item.item.info.mods.find(([m, _]) => m.stat_id === stat_id);
+          console.log(m);
+          m[1] = cfg;
+          setItemCb(itemKey, item);
+        };
+      };
+
+      return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
+        <div className='border'>
+          <span>{item.item.name}<br />{item.item.basetype}</span>
+        </div>
+        <div className='border'>
+          <Form.Group>
+            <div>{item.item.info.mods.map(([m, cf], idx) => <ItemModWithConfig key={idx} setCfgCb={setCfgCb(m.stat_id)} k={itemKey} item={item} m={m} origCfg={cf} />)}</div>
+          </Form.Group>
+        </div>
+      </div >;
+    } else {
+      return <div className='m-2 border' style={{ fontSize: '14px' }}>
+        <p>{item.item.name} {item.item.info.level}lvl/+{item.item.info.quality}%</p>
+      </div>;
+    }
+  }
+
   return <div>
-    <TypedItemComponent item={item.item} />
+    <p>not rendering for now</p>
   </div>
 };

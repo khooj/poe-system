@@ -26,7 +26,6 @@ defmodule PoeSystemWeb.Poe1Controller do
         "skillset" => skillset
       }) do
     {:ok, extracted_config} = RustPoe.Native.extract_build_config(pob_data, itemset, skillset)
-    # IO.inspect(extracted_config)
     {:ok, data} = BuildInfoPreview.add_build(extracted_config, itemset, skillset, pob_data)
 
     conn

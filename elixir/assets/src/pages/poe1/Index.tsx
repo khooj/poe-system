@@ -14,7 +14,7 @@ type Props = {
 };
 
 const Index = ({ buildIds }: Props) => {
-  const { data: formData, setData, post } = useForm({
+  const { setData, post } = useForm({
     pobData: null,
     itemset: null,
     skillset: null,
@@ -25,10 +25,6 @@ const Index = ({ buildIds }: Props) => {
   const [parsing, setParsing] = useState(false);
   const [pobFormError, setPobFormError] = useState(null as string | null);
   const { data: wasm, error: wasmError, isLoading: wasmLoading } = useSWR('wasm', wasmLoader);
-  const [fetchConfig, setFetchConfig] = useState(false);
-  const { data: buildInfo, error: buildInfoError, isLoading: buildInfoLoading } = useSWR(
-    fetchConfig ? Routes.path('poe1.extract.extract') : null,
-    (url) => axios.post(url, formData).then(r => r.data));
 
   const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     e.preventDefault();
@@ -54,7 +50,7 @@ const Index = ({ buildIds }: Props) => {
 
   const itemsetSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setFetchConfig(true);
+    post(Routes.path('poe1.extract.extract'))
   };
 
   return (
@@ -64,7 +60,7 @@ const Index = ({ buildIds }: Props) => {
         <span>Loading wasm bundle</span>
       </>}
       {wasmError && <span>Wasm loading error, try to reload page: {wasmError}</span>}
-      {!wasmLoading && !wasmError && !fetchConfig && <>
+      {!wasmLoading && !wasmError && <>
         <Form onSubmit={itemsetSubmit} encType='multipart/form-data'>
           <Form.Group className="mb-3" controlId="formBuildFile">
             <Form.Label>Path of Building data</Form.Label>
@@ -92,11 +88,6 @@ const Index = ({ buildIds }: Props) => {
           <div>or select build id</div>
           {buildIds.map(id => <div><Link href={`/build/${id}`}>{id}</Link></div>)}
         </div>
-      </>}
-      {buildInfoLoading && <><Spinner animation='border' role='status'></Spinner><span>Loading build config</span></>}
-      {buildInfoError && <span>Error loading build config, try to reload page: {buildInfoError}</span>}
-      {fetchConfig && !buildInfoLoading && <>
-        <ItemListConfig {...buildInfo.provided} />
       </>}
     </Container>
   )

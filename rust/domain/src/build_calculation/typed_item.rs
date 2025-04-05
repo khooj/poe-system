@@ -1,8 +1,11 @@
-use std::ops::DerefMut;
+use std::ops::RangeInclusive;
 
-use crate::item::{
-    types::{Category, Mod, Subcategory, SubcategoryError, TypeError},
-    Item,
+use crate::{
+    data::ModValue as DataModValue,
+    item::{
+        types::{Category, Mod as DomainMod, ModValue, Subcategory, SubcategoryError, TypeError},
+        Item,
+    },
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -22,6 +25,40 @@ pub struct Property {
     pub augmented: bool,
     pub name: String,
     pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
+#[ts(export)]
+pub struct Mod {
+    pub stat_id: String,
+    pub text: String,
+    pub current_value_int: Option<(i32, Option<i32>)>,
+    pub current_value_float: Option<(f32, Option<f32>)>,
+}
+
+impl From<DomainMod> for Mod {
+    fn from(value: DomainMod) -> Self {
+        Mod {
+            stat_id: value.stat_id,
+            text: value.text,
+            current_value_int: match value.numeric_value {
+                ModValue::Exact(DataModValue::Int(i)) => Some((i, None)),
+                ModValue::DoubleExact {
+                    from: DataModValue::Int(a),
+                    to: DataModValue::Int(b),
+                } => Some((a, Some(b))),
+                _ => None,
+            },
+            current_value_float: match value.numeric_value {
+                ModValue::Exact(DataModValue::Float(i)) => Some((i, None)),
+                ModValue::DoubleExact {
+                    from: DataModValue::Float(a),
+                    to: DataModValue::Float(b),
+                } => Some((a, Some(b))),
+                _ => None,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
@@ -161,7 +198,7 @@ impl TryFrom<Item> for TypedItem {
         let basetype = value.base_type;
         let category = Category::get_from_basetype(&basetype)?;
         let subcategory = Subcategory::get_from_basetype(&basetype)?;
-        let mods = value.mods.into_iter().map(|m| (m, None)).collect();
+        let mods = value.mods.into_iter().map(|m| (m.into(), None)).collect();
         let props = value.properties;
         let quality = props
             .iter()

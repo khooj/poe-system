@@ -8,8 +8,7 @@ config :poe_system, PoeSystem.Repo,
   database: "khooj",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10,
-  priv: "/tmp"
+  pool_size: 10
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -30,12 +29,12 @@ config :poe_system, PoeSystemWeb.Endpoint,
       ~w(run vite_watch) ++
         [
           cd: Path.expand("../assets", __DIR__)
-        ],
-    npm:
-      ~w(run vite_ssr_watch) ++
-        [
-          cd: Path.expand("../assets", __DIR__)
         ]
+    # npm:
+    #   ~w(run vite_ssr_watch) ++
+    #     [
+    #       cd: Path.expand("../assets", __DIR__)
+    #     ]
     # npm: ~w(run tsc_watch) ++  [
     #   cd: Path.expand("../assets", __DIR__)
     # ]

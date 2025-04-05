@@ -29,7 +29,7 @@ defmodule PoeSystemWeb.Router do
     post "/new/:id", Poe1Controller, :new
     post "/extract", Poe1Controller, :extract
     get "/preview/:id", Poe1Controller, :preview
-    patch "/preview/:id", Poe1Controller, :update_preview
+    patch "/preview", Poe1Controller, :update_preview
     get "/build/:id", Poe1Controller, :get_build
   end
 

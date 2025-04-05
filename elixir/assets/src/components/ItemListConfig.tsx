@@ -1,55 +1,49 @@
 import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
-import { TypedItem } from "@bindings/domain/bindings/TypedItem";
 import { ItemWithConfigComponent } from "./ItemWithConfig";
+import { Form } from "react-bootstrap";
+import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
+import { BuildInfo } from "@bindings/domain/bindings/BuildInfo";
 
-type ItemType = ItemWithConfig | ItemWithConfig[] | TypedItem | TypedItem[] | null;
-type Props = {
-  [item: string]: ItemType;
-};
+type ItemType = ItemWithConfig | ItemWithConfig[];
 
 const isItemWithConfig = (v: ItemType): v is ItemWithConfig => {
-  return !!v && (v as ItemWithConfig).config !== undefined;
+  return !!v && !Array.isArray(v);
 };
 
 const isItemWithConfigArray = (v: ItemType): v is ItemWithConfig[] => {
-  // TODO: change config check in possible empty array
-  return !!v && Array.isArray(v) && v.some(isItemWithConfig)
+  return !!v && Array.isArray(v);
 };
 
-const isTypedItem = (v: ItemType): v is TypedItem => {
-  return !!v && (v as TypedItem).id !== undefined;
+type Props = {
+  data: BuildInfo,
+  setItemCb: (k: keyof BuildItemsWithConfig, it: ItemWithConfig | ItemWithConfig[]) => void,
 };
 
-const isTypedItemArray = (v: ItemType): v is TypedItem[] => {
-  return !!v && Array.isArray(v) && v.some(isTypedItem)
-};
-
-export const ItemListConfig = (items: Props) => {
-  const renderItem = (_k: string, v: ItemType) => {
+export const ItemListConfig = ({ data, setItemCb }: Props) => {
+  const renderItem = (k: keyof BuildItemsWithConfig, v: ItemWithConfig | ItemWithConfig[]) => {
     if (isItemWithConfig(v)) {
-      return <ItemWithConfigComponent item={v} />
+      return <ItemWithConfigComponent itemKey={k} item={v} setItemCb={setItemCb} />
     }
     if (isItemWithConfigArray(v)) {
-      return v.map(item => <ItemWithConfigComponent item={item} />);
-    }
-    if (isTypedItem(v) || isTypedItemArray(v)) {
-      return <span>error rendering</span>
+      return <ItemWithConfigComponent itemKey={k} items={v} setItemCb={setItemCb} />
     }
 
-    return null;
+    throw new Error("unknown item type");
   };
 
-  const renderList = (items: Props) => {
-    if (!Object.entries(items).some(i => !!i[1])) {
+  const renderList = () => {
+    if (!Object.entries(data.provided).some(i => !!i[1])) {
       return <div>Nothing found yet</div>
     }
 
-    return Object.entries(items).map(([k, v]) => {
-      return renderItem(k, v);
+    return Object.entries(data.provided).map(([k, v]) => {
+      return renderItem(k as keyof BuildItemsWithConfig, v);
     }).flat();
   };
 
   return <div className="d-flex flex-column">
-    {renderList(items)}
+    <Form encType="multipart/form-data">
+      {renderList()}
+    </Form>
   </div>
 };

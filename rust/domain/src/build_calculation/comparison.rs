@@ -1,5 +1,4 @@
-use super::typed_item::TypedItem;
-use crate::item::types::Mod;
+use super::typed_item::{Mod, TypedItem};
 
 pub struct Comparator {}
 

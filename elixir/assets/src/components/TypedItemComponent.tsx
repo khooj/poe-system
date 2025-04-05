@@ -1,3 +1,4 @@
+import { isNotGem } from '@/domainutils'
 import { Config } from '@bindings/domain/bindings/Config'
 import { ItemInfo } from '@bindings/domain/bindings/ItemInfo'
 import { Mod } from '@bindings/domain/bindings/Mod'
@@ -8,10 +9,6 @@ type Props = {
   item: TypedItem,
   config?: Config,
   configDisabled?: boolean,
-}
-
-const isNotGem = (v: ItemInfo) => {
-  return v.type !== "Gem";
 }
 
 const TypedItemComponent = ({ item, config, configDisabled }: Props) => {

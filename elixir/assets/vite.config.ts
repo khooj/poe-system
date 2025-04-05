@@ -21,7 +21,7 @@ export default defineConfig(({ command }) => {
       sourcemap: true,
       manifest: false,
       commonjsOptions: {
-        include: [/routes/, /node_modules/]
+        include: [/routes/, /node_modules/, /states/, /bindings/]
       },
       rollupOptions: {
         external: [
@@ -42,9 +42,10 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       alias: [
-        { find: /@\/(.*)$/, replacement: './src/$1.tsx' },
         { find: /@bindings\/(.*)$/, replacement: '../../rust/$1.ts' },
-        { find: /@routes/, replacement: './src/routes.js' }
+        { find: /@states\/(.*)$/, replacement: './src/states/$1.ts' },
+        { find: /@routes/, replacement: './src/routes.js' },
+        { find: /@\/(.*)$/, replacement: './src/$1.tsx' },
       ],
     },
     css: {
