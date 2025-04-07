@@ -1,6 +1,7 @@
 defmodule PoeSystemWeb.Poe1Controller do
   alias PoeSystem.BuildInfoPreview
   alias PoeSystem.BuildInfo
+  alias Ecto.Multi
   use PoeSystemWeb, :controller
 
   def index(conn, _params) do
@@ -13,8 +14,14 @@ defmodule PoeSystemWeb.Poe1Controller do
 
   def new(conn, %{"id" => id}) do
     build = BuildInfoPreview.get_build(id)
-    {:ok, _} = BuildInfo.add_build(id, build.data)
-    {:ok, _} = BuildInfoPreview.remove(id)
+
+    multi = Multi.new()
+      |> Multi.insert(:insert, BuildInfo.add_build_changeset(id, build.data))
+      |> Multi.delete(:delete, %BuildInfoPreview{id: id})
+      |> PoeSystem.Repo.transaction()
+
+    # {:ok, _} = BuildInfo.add_build(id, build.data)
+    # {:ok, _} = BuildInfoPreview.remove(%BuildInfoPreview{id: id})
 
     conn
     |> redirect(to: ~p"/poe1/build/#{id}")

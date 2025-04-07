@@ -24,11 +24,15 @@ defmodule PoeSystem.BuildInfo do
     |> validate_required([:id, :data, :processed])
   end
 
-  def add_build(id, data) do
+  def add_build_changeset(id, data) do
     changeset(%__MODULE__{}, %{
       id: id,
       data: data
     })
+  end
+
+  def add_build(id, data)  do
+   add_build_changeset(id, data) 
     |> Repo.insert()
   end
 

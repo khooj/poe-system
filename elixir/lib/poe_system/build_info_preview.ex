@@ -28,7 +28,7 @@ defmodule PoeSystem.BuildInfoPreview do
     |> validate_required([:id, :data, :itemset, :skillset, :pob])
   end
 
-  def add_build(data, itemset, skillset, pob) do
+  def add_build_changeset(data, itemset, skillset, pob) do
     changeset(%__MODULE__{}, %{
       id: UUID.bingenerate(),
       data: data,
@@ -36,6 +36,10 @@ defmodule PoeSystem.BuildInfoPreview do
       skillset: skillset,
       pob: pob
     })
+  end
+
+  def add_build(data, itemset, skillset, pob) do
+    add_build_changeset(data, itemset, skillset, pob)
     |> Repo.insert()
   end
 

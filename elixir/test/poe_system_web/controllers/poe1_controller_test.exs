@@ -43,7 +43,7 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
 
     test "PATCH /preview", %{conn: conn, id: id} do
       cfg = Testdata.extract_config()
-      conn = patch(conn, ~p"/poe1/preview/#{id}", config: cfg)
+      conn = patch(conn, ~p"/poe1/preview", config: cfg, id: id)
       assert response(conn, 302)
       assert %{id: ^id} = redirected_params(conn)
     end

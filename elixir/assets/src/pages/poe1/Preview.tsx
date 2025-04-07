@@ -1,7 +1,7 @@
 import { BuildInfo } from '@bindings/domain/bindings/BuildInfo';
 import { Button, Container, Spinner } from 'react-bootstrap';
 import { ItemListConfig } from '@/components/ItemListConfig';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import Routes from '../../routes.js';
 import { BuildItemsWithConfig } from '@bindings/domain/bindings/BuildItemsWithConfig.js';
 import { ItemWithConfig } from '@bindings/domain/bindings/ItemWithConfig.js';
@@ -9,6 +9,8 @@ import { ItemWithConfig } from '@bindings/domain/bindings/ItemWithConfig.js';
 import * as _ from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
 import { ToggleButton } from 'react-bootstrap';
+import useSWR from 'swr';
+import axios from 'axios';
 
 type BuildPreviewData = {
   id: string,
@@ -72,6 +74,10 @@ const Preview = ({ buildData }: Props) => {
     }
   }, [autosave, setData, data, patchForm, setIsDirty]);
 
+  // const { errors: submitErrors, isLoading: submitIsLoading } = useSWR(
+  //   [Routes.path('poe1.new.new'), buildData.id], 
+  //   (u, i) => axios)
+
   return (
     <Container fluid className='d-flex flex-column'>
       <div>itemset: {buildData.itemset} skillset: {buildData.skillset}
@@ -89,7 +95,7 @@ const Preview = ({ buildData }: Props) => {
           onClick={patchForm}>
           {renderSave()}
         </Button>
-        <Button disabled={processing}>Submit build</Button>
+        <Button disabled={save !== 'noChanges'} onClick={() => router.post(Routes.path('poe1.new.new', { id: buildData.id }))}>Submit build</Button>
       </div>
 
       <ItemListConfig data={data.config!} setItemCb={setItemCb} />
