@@ -7,6 +7,7 @@ import { ItemsContext } from "@states/preview";
 import { useStore } from "zustand";
 import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
 import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
+import _ from "lodash";
 
 type ItemWithConfigProps = {
   k: keyof BuildItemsWithConfig,
@@ -46,15 +47,27 @@ const ItemModWithConfig = ({ m, origCfg, setCfgCb }: ItemWithConfigProps) => {
     }
 
     if ("Range" in origCfg) {
-      const vals = m.current_value_int || m.current_value_float;
-      if (!vals) throw new Error('current value for mod');
-      const [first, second] = vals;
+      const debouncedOnChangeMin = _.debounce((e) => setCfgCb({ Range: { ...origCfg.Range, start: parseInt(e.target.value) } }), 300);
+      const debouncedOnChangeMax = _.debounce((e) => setCfgCb({ Range: { ...origCfg.Range, end: parseInt(e.target.value) } }), 300);
+      const { start, end } = origCfg.Range;
       return <>
         <Form.Label>Min</Form.Label>
-        <Form.Range min={0} max={1000} value={first} onChange={(e) => setCfgCb({ Range: { ...origCfg.Range, start: parseInt(e.target.value) } })} />
+        <Form.Range
+          min={0}
+          max={1000}
+          defaultValue={start}
+          onChange={debouncedOnChangeMin}
+        />
         <Form.Label>Max</Form.Label>
-        <Form.Range min={0} max={1000} value={second || first} onChange={(e) => setCfgCb({ Range: { ...origCfg.Range, end: parseInt(e.target.value) } })} />
+        <Form.Range
+          min={0}
+          max={1000}
+          defaultValue={end}
+          onChange={debouncedOnChangeMax}
+        />
       </>
+    } else if ("Exact" in origCfg) {
+      return <></>
     } else {
       return <p>not supported</p>
     }

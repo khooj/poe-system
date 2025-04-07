@@ -6,6 +6,7 @@ import Routes from '../../routes.js';
 import { BuildItemsWithConfig } from '@bindings/domain/bindings/BuildItemsWithConfig.js';
 import { ItemWithConfig } from '@bindings/domain/bindings/ItemWithConfig.js';
 import * as _ from 'lodash';
+import { useEffect, useState } from 'react';
 
 type BuildPreviewData = {
   id: string,
@@ -29,12 +30,27 @@ const Preview = ({ buildData }: Props) => {
     config: buildData.data,
     id: buildData.id,
   } as InertiaFormType);
-  const debouncedPatch = _.debounce(patch, 1000, { trailing: true });
+
+  // const [debouncerPatch, setDebouncerPatch] = useState(null);
+
+  // useEffect(() => {
+  //   const debouncedPatch = _.debounce((a) => {
+  //     console.log('debouncer patch');
+  //     return patch(a);
+  //   }, 1000, { trailing: true });
+  //
+  //
+  //   return () => {
+  //     debouncedPatch.cancel();
+  //   };
+  // }, [patch]);
+
 
   const setItemCb = (k: keyof BuildItemsWithConfig, it: ItemWithConfig | ItemWithConfig[]) => {
+    console.log('setitemcb');
     const d = { ...data.config! };
     setData('config', { ...d, provided: { ...data.config!.provided, [k]: it } });
-    debouncedPatch(Routes.path('poe1.preview.update_preview'));
+    patch(Routes.path('poe1.preview.update_preview'));
   };
 
   return (
@@ -43,7 +59,7 @@ const Preview = ({ buildData }: Props) => {
         processing && <><Spinner animation='border' role='status'></Spinner><p>Saving...</p></>
       }{errors.config && <p>Error occured: {errors.config}</p>}{isDirty && <p>Changes not saved</p>}
       </span>
-      <ItemListConfig data={buildData.data} setItemCb={setItemCb} />
+      <ItemListConfig data={data.config!} setItemCb={setItemCb} />
     </Container>
   )
 }

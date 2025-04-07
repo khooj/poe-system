@@ -39,6 +39,11 @@
               postgres."pg1" = {
                 enable = true;
               };
+              pgadmin."pgadm1" = {
+                enable = true;
+                initialEmail = "example@example.com";
+                initialPassword = "12345678";
+              };
             };
 
             settings = {
