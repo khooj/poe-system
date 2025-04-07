@@ -1,12 +1,14 @@
 import { BuildInfo } from '@bindings/domain/bindings/BuildInfo';
-import { Container, Spinner } from 'react-bootstrap';
+import { Button, Container, Spinner } from 'react-bootstrap';
 import { ItemListConfig } from '@/components/ItemListConfig';
 import { useForm } from '@inertiajs/react';
 import Routes from '../../routes.js';
 import { BuildItemsWithConfig } from '@bindings/domain/bindings/BuildItemsWithConfig.js';
 import { ItemWithConfig } from '@bindings/domain/bindings/ItemWithConfig.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as _ from 'lodash';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { ToggleButton } from 'react-bootstrap';
 
 type BuildPreviewData = {
   id: string,
@@ -21,44 +23,75 @@ type Props = {
 };
 
 type InertiaFormType = {
-  config: BuildInfo | null,
+  config: BuildInfo,
   id: string
 };
 
 const Preview = ({ buildData }: Props) => {
-  const { patch, setData, errors, processing, data, isDirty } = useForm({
+  // isDirty probably does not work because of using shallow equal
+  const { patch, setData, errors, processing, data } = useForm({
     config: buildData.data,
     id: buildData.id,
   } as InertiaFormType);
 
-  // const [debouncerPatch, setDebouncerPatch] = useState(null);
+  const [autosave, setAutosave] = useState(true);
+  const [save, setSave] = useState<'haveChanges' | 'saving' | 'noChanges'>('noChanges');
+  const [isDirty, setIsDirty] = useState(false);
 
-  // useEffect(() => {
-  //   const debouncedPatch = _.debounce((a) => {
-  //     console.log('debouncer patch');
-  //     return patch(a);
-  //   }, 1000, { trailing: true });
-  //
-  //
-  //   return () => {
-  //     debouncedPatch.cancel();
-  //   };
-  // }, [patch]);
+  useEffect(() => {
+    if (isDirty) {
+      setSave('haveChanges');
+    } else if (processing) {
+      setSave('saving');
+    } else if (!isDirty) {
+      setSave('noChanges');
+    }
+  }, [isDirty, processing]);
 
+  const renderSave = useCallback(() => {
+    switch (save) {
+      case 'noChanges': return <>Up to date</>
+      case 'saving': return <>Saving<Spinner animation="border" size="sm" role="status"></Spinner></>
+      case 'haveChanges': return <>Save</>
+    }
+  }, [save]);
 
-  const setItemCb = (k: keyof BuildItemsWithConfig, it: ItemWithConfig | ItemWithConfig[]) => {
+  const patchForm = useCallback(() => {
+    patch(Routes.path('poe1.preview.update_preview'), {
+      onSuccess: () => setIsDirty(false),
+    });
+  }, [patch, setIsDirty]);
+
+  const setItemCb = useCallback((k: keyof BuildItemsWithConfig, it: ItemWithConfig | ItemWithConfig[]) => {
     console.log('setitemcb');
-    const d = { ...data.config! };
-    setData('config', { ...d, provided: { ...data.config!.provided, [k]: it } });
-    patch(Routes.path('poe1.preview.update_preview'));
-  };
+    const d = { ...data.config };
+    setData('config', { found: d.found, provided: { ...data.config.provided, [k]: it } });
+    setIsDirty(true);
+    if (autosave) {
+      patchForm();
+    }
+  }, [autosave, setData, data, patchForm, setIsDirty]);
 
   return (
     <Container fluid className='d-flex flex-column'>
-      <span>itemset: {buildData.itemset} skillset: {buildData.skillset}{
-        processing && <><Spinner animation='border' role='status'></Spinner><p>Saving...</p></>
-      }{errors.config && <p>Error occured: {errors.config}</p>}{isDirty && <p>Changes not saved</p>}
-      </span>
+      <div>itemset: {buildData.itemset} skillset: {buildData.skillset}
+        {errors.config && <p>Error occured: {errors.config}</p>}
+      </div>
+      <div className='d-flex'>
+        <ToggleButton id="autosave-toggle" value="1" type="checkbox" variant="outline-success" checked={autosave} onChange={(e) => setAutosave(e.currentTarget.checked)}>
+          {autosave && "Autosave enabled" || "Enable autosave"}
+        </ToggleButton>
+        {isDirty && <p>Changes not saved</p>}
+      </div>
+      <div>
+        <Button
+          disabled={save !== 'haveChanges'}
+          onClick={patchForm}>
+          {renderSave()}
+        </Button>
+        <Button disabled={processing}>Submit build</Button>
+      </div>
+
       <ItemListConfig data={data.config!} setItemCb={setItemCb} />
     </Container>
   )
