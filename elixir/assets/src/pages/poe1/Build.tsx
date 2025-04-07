@@ -7,9 +7,8 @@ type Props = {
 }
 
 const Build = ({ data }: Props) => {
-  console.log(data.found);
   return (
-    <div className="d-flex flex-fill flex-row justify-content-evenly border border-danger">
+    <Container fluid className="d-flex flex-fill flex-row justify-content-evenly border border-danger">
       <div className='d-flex flex-column vw-50 border'>
         <span>Provided</span>
         <ItemList {...data.provided} />
@@ -18,7 +17,7 @@ const Build = ({ data }: Props) => {
         <span>Found</span>
         <ItemList {...data.found} />
       </div>
-    </div>
+    </Container>
   )
 }
 

@@ -30,7 +30,7 @@ config :logger, :console,
 config :inertia,
   endpoint: PoeSystemWeb.Endpoint,
   static_paths: ["/assets/main.js"],
-  camelize_props: true,
+  camelize_props: false,
   ssr: false,
   raise_on_ssr_failure: config_env() != :prod
 

@@ -9,8 +9,6 @@ import { ItemWithConfig } from '@bindings/domain/bindings/ItemWithConfig.js';
 import * as _ from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
 import { ToggleButton } from 'react-bootstrap';
-import useSWR from 'swr';
-import axios from 'axios';
 
 type BuildPreviewData = {
   id: string,
@@ -21,7 +19,7 @@ type BuildPreviewData = {
 };
 
 type Props = {
-  buildData: BuildPreviewData
+  build_data: BuildPreviewData
 };
 
 type InertiaFormType = {
@@ -29,11 +27,11 @@ type InertiaFormType = {
   id: string
 };
 
-const Preview = ({ buildData }: Props) => {
+const Preview = ({ build_data }: Props) => {
   // isDirty probably does not work because of using shallow equal
   const { patch, setData, errors, processing, data } = useForm({
-    config: buildData.data,
-    id: buildData.id,
+    config: build_data.data,
+    id: build_data.id,
   } as InertiaFormType);
 
   const [autosave, setAutosave] = useState(true);

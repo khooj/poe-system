@@ -9,7 +9,7 @@ type Props = {
 };
 
 const isItemWithConfig = (v: ItemType): v is ItemWithConfig => {
-  return !!v && (v as ItemWithConfig).config !== undefined;
+  return !!v && (v as ItemWithConfig).item !== undefined;
 };
 
 const isItemWithConfigArray = (v: ItemType): v is ItemWithConfig[] => {
@@ -28,19 +28,19 @@ const isTypedItemArray = (v: ItemType): v is TypedItem[] => {
 export const ItemList = (items: Props) => {
   const renderItem = (k: string, v: ItemType) => {
     if (isItemWithConfig(v)) {
-      return <ItemWithConfigComponent item={v} />
+      return <TypedItemComponent item={v.item} />
     }
-    if (isItemWithConfigArray(v)) {
-      return v.map(item => <ItemWithConfigComponent item={item} />);
-    }
+    // if (isItemWithConfigArray(v)) {
+    //   return v.map(item => <ItemWithConfigComponent item={item} />);
+    // }
     if (isTypedItem(v)) {
       return <TypedItemComponent item={v} />
     }
-    if (isTypedItemArray(v)) {
-      return v.map(item => <TypedItemComponent item={item} />);
-    }
+    // if (isTypedItemArray(v)) {
+    //   return v.map(item => <TypedItemComponent item={item} />);
+    // }
 
-    return null;
+    return <p>not rendering for now</p>;
   };
 
   const renderList = (items: Props) => {
