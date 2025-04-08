@@ -10,10 +10,10 @@ import { ItemListConfig } from '@/components/ItemListConfig';
 const wasmLoader = async () => await import('wasm');
 
 type Props = {
-  buildIds: string[],
+  build_ids: string[],
 };
 
-const Index = ({ buildIds }: Props) => {
+const Index = ({ build_ids }: Props) => {
   const { setData, post } = useForm({
     pobData: null,
     itemset: null,
@@ -86,7 +86,7 @@ const Index = ({ buildIds }: Props) => {
         </Form>
         <div className='d-flex flex-column'>
           <div>or select build id</div>
-          {buildIds.map(id => <div><Link href={`/build/${id}`}>{id}</Link></div>)}
+          {build_ids.map(id => <div><Link href={`/build/${id}`}>{id}</Link></div>)}
         </div>
       </>}
     </Container>

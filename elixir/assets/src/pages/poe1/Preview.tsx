@@ -78,7 +78,7 @@ const Preview = ({ build_data }: Props) => {
 
   return (
     <Container fluid className='d-flex flex-column'>
-      <div>itemset: {buildData.itemset} skillset: {buildData.skillset}
+      <div>itemset: {build_data.itemset} skillset: {build_data.skillset}
         {errors.config && <p>Error occured: {errors.config}</p>}
       </div>
       <div className='d-flex'>
@@ -93,7 +93,7 @@ const Preview = ({ build_data }: Props) => {
           onClick={patchForm}>
           {renderSave()}
         </Button>
-        <Button disabled={save !== 'noChanges'} onClick={() => router.post(Routes.path('poe1.new.new', { id: buildData.id }))}>Submit build</Button>
+        <Button disabled={save !== 'noChanges'} onClick={() => router.post(Routes.path('poe1.new.new', { id: build_data.id }))}>Submit build</Button>
       </div>
 
       <ItemListConfig data={data.config!} setItemCb={setItemCb} />

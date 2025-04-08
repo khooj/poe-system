@@ -14,7 +14,7 @@ defmodule PoeSystem.BuildInfo do
     field :data, :map
     field :processed, :boolean, default: false
 
-    timestamps(type: :utc_datetime, inserted_at: :created_at)
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
@@ -31,8 +31,8 @@ defmodule PoeSystem.BuildInfo do
     })
   end
 
-  def add_build(id, data)  do
-   add_build_changeset(id, data) 
+  def add_build(id, data) do
+    add_build_changeset(id, data)
     |> Repo.insert()
   end
 
