@@ -5,7 +5,7 @@ pub mod typed_item;
 use mod_config::ModConfig;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-use typed_item::TypedItem;
+use typed_item::{Mod, TypedItem};
 
 #[derive(Serialize, Deserialize, Debug, Default, TS)]
 #[ts(export)]
@@ -59,17 +59,13 @@ impl<'a> UnverifiedBuildItemsWithConfig<'a> {
             .flatten(),
         );
 
-        // for item in items {
-        //     for cfg in &item.config {
-        //         let modcfg_not_exist = !item.item.mods().iter().any(|m| m.stat_id == cfg.stat_id);
-        //         if modcfg_not_exist {
-        //             return None;
-        //         }
-        //     }
-        // }
-
         Some(self.0)
     }
+}
+
+pub enum FillRules {
+    AllRanges,
+    AllExist,
 }
 
 impl BuildItemsWithConfig {
@@ -115,6 +111,32 @@ impl BuildItemsWithConfig {
                 });
             };
         }
+    }
+
+    pub fn fill_configs_by_rule(&mut self, rule: FillRules) {
+        match rule {
+            FillRules::AllRanges => self.fill_all(BuildItemsWithConfig::all_ranges),
+            FillRules::AllExist => self.fill_all(BuildItemsWithConfig::all_exist),
+        }
+    }
+
+    fn all_ranges((m, cf): &mut (Mod, Option<ModConfig>)) {
+        let (min, opt_max) = m.current_value_int.unwrap_or((0, Some(100)));
+        *cf = Some(ModConfig::Range(min..=opt_max.unwrap_or(100)));
+    }
+
+    fn all_exist((_, cf): &mut (Mod, Option<ModConfig>)) {
+        *cf = Some(ModConfig::Exist);
+    }
+
+    fn fill_all<T>(&mut self, func: T)
+    where
+        for<'a> T: FnMut(&'a mut (Mod, Option<ModConfig>)),
+    {
+        self.mut_iter()
+            .filter_map(|ic| ic.item.info.mut_mods())
+            .flat_map(|m| m.iter_mut())
+            .for_each(func);
     }
 }
 

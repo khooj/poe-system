@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use domain::build_calculation::{
-    validate_and_apply_config, BuildInfo, UnverifiedBuildItemsWithConfig,
+    validate_and_apply_config, BuildInfo, FillRules, UnverifiedBuildItemsWithConfig,
 };
 use pob::{build_import_pob::import_build_from_pob, Pob};
 use rustler::{Binary, Decoder, Encoder, Env, Error, NifResult, SerdeTerm, Term};
@@ -56,7 +56,8 @@ fn extract_build_config_impl<'a>(
     let pob = Pob::from_pastebin_data(pobdata)?;
     let itemset = std::str::from_utf8(itemset.trim_ascii())?;
     let skillset = std::str::from_utf8(skillset.trim_ascii())?;
-    let info = import_build_from_pob(&pob, itemset, skillset)?;
+    let mut info = import_build_from_pob(&pob, itemset, skillset)?;
+    info.provided.fill_configs_by_rule(FillRules::AllExist);
     let term = encode_config(env, &info)?;
     Ok((atoms::ok(), term).encode(env))
 }
