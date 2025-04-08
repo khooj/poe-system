@@ -7,6 +7,7 @@ use sqlx::types::{
     Uuid,
 };
 use thiserror::Error;
+use tracing::instrument;
 
 #[derive(Error, Debug)]
 pub enum PostgresRepositoryError {
@@ -22,7 +23,7 @@ pub struct BuildData {
     #[sqlx(json)]
     pub data: BuildInfo,
     pub processed: bool,
-    pub created_at: DateTime<Utc>,
+    pub inserted_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -32,7 +33,7 @@ impl BuildData {
             id,
             data,
             processed: false,
-            created_at: Utc::now(),
+            inserted_at: Utc::now(),
             updated_at: Utc::now(),
         }
     }
@@ -53,7 +54,7 @@ impl BuildRepository {
         id: T,
     ) -> Result<BuildData, PostgresRepositoryError> {
         let data: BuildData = sqlx::query_as(
-            "select id, data, processed, created_at, updated_at from builds where id = $1",
+            "select id, data, processed, inserted_at, updated_at from builds where id = $1",
         )
         .bind(id.as_ref())
         .fetch_one(&self.pool)
@@ -64,7 +65,7 @@ impl BuildRepository {
 
     pub async fn get_builds(&mut self) -> Result<Vec<BuildData>, PostgresRepositoryError> {
         let data: Vec<BuildData> =
-            sqlx::query_as("select id, data, processed, created_at, updated_at from builds")
+            sqlx::query_as("select id, data, processed, inserted_at, updated_at from builds")
                 .fetch_all(&self.pool)
                 .await?;
 
@@ -73,14 +74,14 @@ impl BuildRepository {
 
     pub async fn upsert_build(&mut self, data: &BuildData) -> Result<(), PostgresRepositoryError> {
         sqlx::query(
-            r#"insert into builds(id, data, created_at, updated_at, processed) 
+            r#"insert into builds(id, data, inserted_at, updated_at, processed) 
                 values ($1, $2::jsonb, $3, $4, $5) 
                 on conflict (id) do update 
                 set data = EXCLUDED.data, updated_at = now(), processed = EXCLUDED.processed"#,
         )
         .bind(data.id)
         .bind(serde_json::to_string(&data.data)?)
-        .bind(data.created_at)
+        .bind(data.inserted_at)
         .bind(data.updated_at)
         .bind(data.processed)
         .execute(&self.pool)
@@ -88,11 +89,12 @@ impl BuildRepository {
         Ok(())
     }
 
+    #[instrument(skip_all, err)]
     pub async fn get_build_for_processing(
         &mut self,
     ) -> Result<Option<BuildData>, PostgresRepositoryError> {
         let mut tx = self.pool.begin().await?;
-        let data: Option<(i32, Uuid)> = sqlx::query_as(
+        let data: Option<(i64, Uuid)> = sqlx::query_as(
             r#"select id, build_id from new_builds where processing = FALSE and started_at is NULL 
             limit 1
             for update skip locked
@@ -109,7 +111,7 @@ impl BuildRepository {
             .await?;
 
             let data: BuildData = sqlx::query_as(
-                r#"select id, data, processed, created_at, updated_at from builds where id = $1"#,
+                r#"select id, data, processed, inserted_at, updated_at from builds where id = $1"#,
             )
             .bind(uid)
             .fetch_one(&mut *tx)

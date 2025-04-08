@@ -1,29 +1,40 @@
 use domain::build_calculation::{comparison::Comparator, typed_item::TypedItem, ItemWithConfig};
 use metrics::histogram;
 use std::time::Duration;
-use tokio::time::Instant;
+use tokio::time::{self, Instant};
 use tokio_util::sync::CancellationToken;
+use tracing::{debug, info, instrument, span, trace, Instrument};
 
 use crate::storage::postgresql::{
     builds::{BuildData, BuildRepository},
     items::ItemRepository,
 };
 
+#[instrument(skip_all, ret, err)]
 pub async fn process_builds(
     cancel: CancellationToken,
     mut items_repo: ItemRepository,
     mut build_repo: BuildRepository,
 ) -> anyhow::Result<()> {
+    let mut interval = time::interval(Duration::from_millis(500));
+    let cancelled = cancel.cancelled();
+    tokio::pin!(cancelled);
     loop {
         tokio::select! {
-            _ = cancel.cancelled() => break,
-            else => {}
+            _ = &mut cancelled => { break }
+            _ = interval.tick() => {},
         };
 
         let mut build = match build_repo.get_build_for_processing().await? {
-            Some(b) => b,
+            Some(b) => {
+                debug!(
+                    message = "got build to process",
+                    build_id = b.id.to_string()
+                );
+                b
+            }
             None => {
-                tokio::time::sleep(Duration::from_millis(500)).await;
+                trace!(message = "no builds to process, sleeping");
                 continue;
             }
         };
@@ -45,6 +56,7 @@ pub async fn process_builds(
     Ok(())
 }
 
+#[instrument(skip_all, ret, err)]
 pub async fn process_single_build(
     items_repo: &mut ItemRepository,
     build: &mut BuildData,
@@ -58,6 +70,7 @@ pub async fn process_single_build(
     build.data.found.ring1 = find_similar(items_repo, &build.data.provided.ring1).await?;
     build.data.found.ring2 = find_similar(items_repo, &build.data.provided.ring2).await?;
     build.data.found.belt = find_similar(items_repo, &build.data.provided.belt).await?;
+    build.data.found.amulet = find_similar(items_repo, &build.data.provided.amulet).await?;
 
     let mut flasks = vec![];
     for it in &build.data.provided.flasks {

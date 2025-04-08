@@ -5,7 +5,6 @@ use application::{
     storage::postgresql::{
         builds::{BuildData, BuildRepository},
         items::ItemRepository,
-        MIGRATOR,
     },
 };
 use domain::build_calculation::mod_config::ModConfig;
@@ -40,8 +39,6 @@ pub async fn setup_db() -> anyhow::Result<TestContext> {
         .connect("postgres://khooj@localhost/testing")
         .await?;
 
-    MIGRATOR.run(&pool).await?;
-
     let item_repo = ItemRepository::new(pool.clone()).await?;
     import_items(item_repo.clone(), "../slice1").await?;
     let mut build_repo = BuildRepository::new(pool.clone()).await?;
@@ -68,7 +65,7 @@ pub async fn setup_db() -> anyhow::Result<TestContext> {
         .upsert_build(&BuildData {
             id: Uuid::new_v4(),
             processed: false,
-            created_at: Utc::now(),
+            inserted_at: Utc::now(),
             updated_at: Utc::now(),
             data,
         })

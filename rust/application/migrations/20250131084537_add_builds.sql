@@ -1,7 +1,0 @@
-CREATE TABLE IF NOT EXISTS builds(
-  id UUID PRIMARY KEY,
-  data JSONB NOT NULL,
-  processed BOOLEAN NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL,
-  updated_at TIMESTAMPTZ NOT NULL
-);
