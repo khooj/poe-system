@@ -1,4 +1,7 @@
-use crate::storage::{ItemRepositoryError, LatestStashId};
+use crate::storage::{
+    ItemInsertTrait, ItemRepositoryError, ItemRepositoryTrait, LatestStashId,
+    SearchItemsByModsTrait, StashRepositoryTrait,
+};
 use domain::{
     build_calculation::typed_item::{Mod, TypedItem},
     item::types::{Category, Subcategory},
@@ -77,21 +80,9 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperTypedItem {
     }
 }
 
-impl ItemRepository {
-    pub async fn get_stash_id(&mut self) -> Result<LatestStashId, ItemRepositoryError> {
-        let id: Option<(String,)> = sqlx::query_as("select id from latest_stash")
-            .fetch_optional(&self.pool)
-            .await?;
-        if id.is_none() {
-            Ok(LatestStashId { id: None })
-        } else {
-            Ok(LatestStashId {
-                id: Some(id.unwrap().0),
-            })
-        }
-    }
-
-    pub async fn insert_items(
+#[async_trait::async_trait]
+impl ItemInsertTrait for ItemRepository {
+    async fn insert_items(
         &mut self,
         items: Vec<TypedItem>,
         stash_id: &str,
@@ -134,11 +125,20 @@ impl ItemRepository {
 
         Ok(())
     }
+}
 
-    pub async fn clear_stash(
-        &mut self,
-        stash_id: &str,
-    ) -> Result<Vec<String>, ItemRepositoryError> {
+#[async_trait::async_trait]
+impl StashRepositoryTrait for ItemRepository {
+    async fn get_stash_id(&mut self) -> Result<LatestStashId, ItemRepositoryError> {
+        let id: Option<(String,)> = sqlx::query_as("select id from latest_stash")
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(LatestStashId {
+            id: id.map(|v| v.0),
+        })
+    }
+
+    async fn clear_stash(&mut self, stash_id: &str) -> Result<Vec<String>, ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         let ids: Vec<(String,)> = sqlx::query_as("select item_id from stashes where id = $1")
             .bind(stash_id)
@@ -156,7 +156,7 @@ impl ItemRepository {
         Ok(ids.into_iter().map(|s| s.0).collect())
     }
 
-    pub async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError> {
+    async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         sqlx::query("truncate table latest_stash")
             .execute(&mut *tx)
@@ -168,8 +168,11 @@ impl ItemRepository {
         tx.commit().await?;
         Ok(())
     }
+}
 
-    pub async fn search_items_by_attrs(
+#[async_trait::async_trait]
+impl SearchItemsByModsTrait for ItemRepository {
+    async fn search_items_by_attrs(
         &mut self,
         basetype: Option<&str>,
         category: Option<Category>,
@@ -226,3 +229,5 @@ impl ItemRepository {
         Ok(result.into_iter().map(|s| s.0).collect())
     }
 }
+
+impl ItemRepositoryTrait for ItemRepository {}

@@ -317,7 +317,7 @@ impl TryFrom<&str> for Rarity {
             "magic" => Ok(Rarity::Normal),
             "rare" => Ok(Rarity::Rare),
             "unique" => Ok(Rarity::Unique),
-            "normal" => Ok(Rarity::Normal),
+            "normal" | "" => Ok(Rarity::Normal),
             _ => Err(TypeError::RarityParse(v.to_string())),
         }
     }

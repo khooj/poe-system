@@ -22,6 +22,7 @@ pub struct Item {
     pub fractured: bool,
     pub synthesised: bool,
     pub mods: Vec<Mod>,
+    pub unknown_mods: Vec<String>,
     pub image_link: String,
     pub sockets: Sockets,
     pub properties: Vec<Property>,

@@ -1,9 +1,12 @@
-use crate::storage::{postgresql::items::ItemRepository, LatestStashId};
+use crate::storage::{
+    postgresql::items::ItemRepository, ItemInsertTrait, ItemRepositoryTrait, LatestStashId,
+    StashRepositoryTrait,
+};
 use domain::{build_calculation::typed_item::TypedItem, item::Item};
 use public_stash::{client::Error as StashError, models::PublicStashData};
 use tracing::{info, instrument, trace};
 
-pub type PgStashReceiver = StashReceiver;
+pub type PgStashReceiver = StashReceiver<ItemRepository>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum StashReceiverError {
@@ -13,13 +16,13 @@ pub enum StashReceiverError {
     Skip,
 }
 
-pub struct StashReceiver {
-    repository: ItemRepository,
+pub struct StashReceiver<T> {
+    repository: T,
     only_leagues: Vec<String>,
 }
 
-impl StashReceiver {
-    pub fn new(repository: ItemRepository, only_leagues: Vec<String>) -> StashReceiver {
+impl<T> StashReceiver<T> {
+    pub fn new(repository: T, only_leagues: Vec<String>) -> Self {
         StashReceiver {
             repository,
             only_leagues,
@@ -27,7 +30,7 @@ impl StashReceiver {
     }
 }
 
-impl StashReceiver {
+impl<T: ItemInsertTrait + StashRepositoryTrait> StashReceiver<T> {
     pub async fn get_latest_stash(&mut self) -> Result<LatestStashId, anyhow::Error> {
         Ok(self.repository.get_stash_id().await?)
     }

@@ -1,7 +1,10 @@
 pub mod postgresql;
 pub mod redis;
 
-use domain::{build_calculation::typed_item::TypedItem, item::types::Mod};
+use domain::{
+    build_calculation::typed_item::{Mod, TypedItem},
+    item::types::{Category, Subcategory},
+};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -18,19 +21,32 @@ pub struct LatestStashId {
 }
 
 #[async_trait::async_trait]
-pub trait ItemRepositoryTrait {
+pub trait StashRepositoryTrait {
     async fn get_stash_id(&mut self) -> Result<LatestStashId, ItemRepositoryError>;
     async fn set_stash_id(&mut self, next: LatestStashId) -> Result<(), ItemRepositoryError>;
     async fn clear_stash(&mut self, stash_id: &str) -> Result<Vec<String>, ItemRepositoryError>;
+}
+
+#[async_trait::async_trait]
+pub trait ItemInsertTrait {
     async fn insert_items(
         &mut self,
         items: Vec<TypedItem>,
         stash_id: &str,
     ) -> Result<(), ItemRepositoryError>;
-    async fn search_items_by_mods(
+}
+
+#[async_trait::async_trait]
+pub trait SearchItemsByModsTrait {
+    async fn search_items_by_attrs(
         &mut self,
-        mods: Vec<Mod>,
+        basetype: Option<&str>,
+        category: Option<Category>,
+        subcategory: Option<Subcategory>,
+        mods: Option<Vec<&Mod>>,
     ) -> Result<Vec<TypedItem>, ItemRepositoryError>;
 }
+
+pub trait ItemRepositoryTrait: ItemInsertTrait + SearchItemsByModsTrait {}
 
 pub type DynItemRepository = Box<dyn ItemRepositoryTrait>;

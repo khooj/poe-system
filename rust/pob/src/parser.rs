@@ -356,21 +356,25 @@ where
         };
     }
 
-    let mods = mods
-        .into_iter()
-        .filter_map(|(val, affixes, modtype)| {
-            if let Some(range) = affixes.iter().find(|a| a.is_range()) {
-                let range = range
-                    .get_range()
-                    .expect("tried to parse range on range affix");
-                Mod::try_by_range_stat(val, range, modtype).ok()
-            } else {
-                Mod::try_by_stat(val, modtype).ok()
-            }
-        })
-        .collect();
+    let mut known_mods = vec![];
+    let mut unknown_mods = vec![];
+    mods.into_iter().for_each(|(val, affixes, modtype)| {
+        let m = if let Some(range) = affixes.iter().find(|a| a.is_range()) {
+            let range = range
+                .get_range()
+                .expect("tried to parse range on range affix");
+            Mod::try_by_range_stat(val, range, modtype)
+        } else {
+            Mod::try_by_stat(val, modtype)
+        };
+        match m {
+            Ok(mm) => known_mods.push(mm),
+            Err(_) => unknown_mods.push(val.to_string()),
+        }
+    });
 
-    item.mods = mods;
+    item.mods = known_mods;
+    item.unknown_mods = unknown_mods;
 
     Ok((i, ParsedItem { item }))
 }

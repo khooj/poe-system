@@ -338,10 +338,14 @@ impl TryFrom<Item> for DomainItem {
 
         let mods_it = mods
             .into_iter()
-            .flat_map(|(m, t)| m.into_iter().map(move |s| Mod::try_by_stat(&s, t)));
+            .flat_map(|(m, t)| m.into_iter().map(move |s| (Mod::try_by_stat(&s, t), s)));
         let mut mods = vec![];
+        let mut unknown_mods = vec![];
         for it in mods_it {
-            mods.push(it?);
+            match it {
+                (Ok(m), _) => mods.push(m),
+                (Err(_), s) => unknown_mods.push(s),
+            }
         }
 
         let prop_it = value
@@ -379,6 +383,7 @@ impl TryFrom<Item> for DomainItem {
             sockets: OptSockets(value.sockets).try_into()?,
             properties,
             mods,
+            unknown_mods,
         })
     }
 }
