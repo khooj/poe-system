@@ -1,8 +1,7 @@
 pub mod postgresql;
-pub mod redis;
 
 use domain::{
-    build_calculation::typed_item::{Mod, TypedItem},
+    build_calculation::{required_item::Mod as RequiredMod, stored_item::StoredItem},
     item::types::{Category, Subcategory},
 };
 use thiserror::Error;
@@ -31,7 +30,7 @@ pub trait StashRepositoryTrait {
 pub trait ItemInsertTrait {
     async fn insert_items(
         &mut self,
-        items: Vec<TypedItem>,
+        items: Vec<StoredItem>,
         stash_id: &str,
     ) -> Result<(), ItemRepositoryError>;
 }
@@ -43,8 +42,8 @@ pub trait SearchItemsByModsTrait {
         basetype: Option<&str>,
         category: Option<Category>,
         subcategory: Option<Subcategory>,
-        mods: Option<Vec<&Mod>>,
-    ) -> Result<Vec<TypedItem>, ItemRepositoryError>;
+        mods: Option<Vec<&RequiredMod>>,
+    ) -> Result<Vec<StoredItem>, ItemRepositoryError>;
 }
 
 pub trait ItemRepositoryTrait: ItemInsertTrait + SearchItemsByModsTrait {}

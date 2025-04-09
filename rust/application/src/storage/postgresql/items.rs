@@ -3,7 +3,7 @@ use crate::storage::{
     SearchItemsByModsTrait, StashRepositoryTrait,
 };
 use domain::{
-    build_calculation::typed_item::{Mod, TypedItem},
+    build_calculation::{required_item::Mod as RequiredMod, stored_item::StoredItem},
     item::types::{Category, Subcategory},
 };
 use serde::Serialize;
@@ -29,6 +29,10 @@ impl ItemRepository {
     }
 }
 
+// TODO: somehow bind this struct to json representation
+// of mods in StoredItem to prevent incorrect search
+// by different json structure (if changed)
+// FIXME: json structure (test?)
 #[derive(Debug, Serialize)]
 struct SearchMods<'a> {
     mods: Vec<ModObj<'a>>,
@@ -39,8 +43,8 @@ struct ModObj<'a> {
     stat_id: &'a str,
 }
 
-impl<'a> From<Vec<&'a Mod>> for SearchMods<'a> {
-    fn from(value: Vec<&'a Mod>) -> Self {
+impl<'a> From<Vec<&'a RequiredMod>> for SearchMods<'a> {
+    fn from(value: Vec<&'a RequiredMod>) -> Self {
         let mods = value
             .into_iter()
             .map(|m| ModObj {
@@ -51,11 +55,11 @@ impl<'a> From<Vec<&'a Mod>> for SearchMods<'a> {
     }
 }
 
-struct WrapperTypedItem(TypedItem);
+struct WrapperStoredItem(StoredItem);
 
-impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperTypedItem {
+impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperStoredItem {
     fn from_row(row: &'_ sqlx::postgres::PgRow) -> Result<Self, sqlx::Error> {
-        Ok(Self(TypedItem {
+        Ok(Self(StoredItem {
             id: row.try_get("id")?,
             basetype: row.try_get("basetype")?,
             category: row
@@ -84,7 +88,7 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperTypedItem {
 impl ItemInsertTrait for ItemRepository {
     async fn insert_items(
         &mut self,
-        items: Vec<TypedItem>,
+        items: Vec<StoredItem>,
         stash_id: &str,
     ) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
@@ -177,8 +181,8 @@ impl SearchItemsByModsTrait for ItemRepository {
         basetype: Option<&str>,
         category: Option<Category>,
         subcategory: Option<Subcategory>,
-        mods: Option<Vec<&Mod>>,
-    ) -> Result<Vec<TypedItem>, ItemRepositoryError> {
+        mods: Option<Vec<&RequiredMod>>,
+    ) -> Result<Vec<StoredItem>, ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
 
         let query = "select id, data, basetype, category, subcategory, name from items";
@@ -224,7 +228,7 @@ impl SearchItemsByModsTrait for ItemRepository {
             sqx_query = sqx_query.bind(search_mods);
         }
 
-        let result: Vec<WrapperTypedItem> = sqx_query.fetch_all(&mut *tx).await?;
+        let result: Vec<WrapperStoredItem> = sqx_query.fetch_all(&mut *tx).await?;
         tx.commit().await?;
         Ok(result.into_iter().map(|s| s.0).collect())
     }

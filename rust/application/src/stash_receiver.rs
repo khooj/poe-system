@@ -1,8 +1,7 @@
 use crate::storage::{
-    postgresql::items::ItemRepository, ItemInsertTrait, ItemRepositoryTrait, LatestStashId,
-    StashRepositoryTrait,
+    postgresql::items::ItemRepository, ItemInsertTrait, LatestStashId, StashRepositoryTrait,
 };
-use domain::{build_calculation::typed_item::TypedItem, item::Item};
+use domain::{build_calculation::stored_item::StoredItem, item::Item};
 use public_stash::{client::Error as StashError, models::PublicStashData};
 use tracing::{info, instrument, trace};
 
@@ -67,7 +66,7 @@ impl<T: ItemInsertTrait + StashRepositoryTrait> StashReceiver<T> {
                 .items
                 .into_iter()
                 .filter_map(|i| Item::try_from(i).ok())
-                .filter_map(|i| TypedItem::try_from(i).ok())
+                .filter_map(|i| StoredItem::try_from(i).ok())
                 .collect::<Vec<_>>();
             self.repository.insert_items(items.clone(), stash).await?;
         }

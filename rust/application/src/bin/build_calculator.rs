@@ -6,6 +6,8 @@ use serde::Deserialize;
 use sqlx::postgres::PgPoolOptions;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, info};
+use tracing_flame::FlameLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Deserialize, Debug)]
 struct Settings {
@@ -14,7 +16,13 @@ struct Settings {
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt().init();
+    let fmt_layer = tracing_subscriber::fmt::Layer::default();
+    let (flame_layer, _guard) = FlameLayer::with_file("./framegraph.folded")?;
+
+    tracing_subscriber::registry()
+        .with(fmt_layer)
+        .with(flame_layer)
+        .init();
 
     let settings: Settings = config::Config::builder()
         .add_source(
@@ -44,6 +52,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ctrlc.await?;
     token.cancel();
     handle.await??;
+
+    _guard.flush()?;
 
     Ok(())
 }

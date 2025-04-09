@@ -2,7 +2,7 @@ use crate::{ItemSet, Pob, SkillSet};
 
 use domain::{
     build_calculation::{
-        typed_item::{TypedItem, TypedItemError},
+        required_item::{RequiredItem, RequiredItemError},
         BuildInfo, BuildItemsWithConfig, ItemWithConfig,
     },
     item::{
@@ -13,10 +13,10 @@ use domain::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImportPobError {
-    #[error("pob error")]
+    #[error("pob error: {0}")]
     Pob(#[from] crate::PobError),
-    #[error("domain item convert to typed error")]
-    Convert(#[from] TypedItemError),
+    #[error("domain item convert to required item error: {0}")]
+    Convert(#[from] RequiredItemError),
 }
 
 pub fn import_build_from_pob<T: AsRef<str>>(
@@ -44,8 +44,7 @@ pub fn import_build_from_pob_first_itemset(pob: &Pob) -> Result<BuildInfo, Impor
 
 fn fill(prov_item: &mut ItemWithConfig, it: &Item) -> Result<(), ImportPobError> {
     *prov_item = ItemWithConfig {
-        item: TypedItem::try_from(it.clone())?,
-        ..Default::default()
+        item: RequiredItem::try_from(it.clone())?,
     };
     Ok(())
 }
@@ -113,7 +112,7 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
 mod tests {
     use super::import_build_from_pob_first_itemset;
     use crate::Pob;
-    use domain::build_calculation::typed_item::ItemInfo;
+    use domain::build_calculation::required_item::ItemInfo;
 
     const POB: &str = include_str!("pob.xml");
 

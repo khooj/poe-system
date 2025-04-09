@@ -1,5 +1,3 @@
-use std::ops::RangeInclusive;
-
 use crate::{
     data::ModValue as DataModValue,
     item::{
@@ -10,8 +8,6 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
-
-use super::mod_config::ModConfig;
 
 #[derive(Debug)]
 pub struct Stash {
@@ -71,24 +67,24 @@ pub enum ItemInfo {
     },
     Armor {
         quality: u8,
-        mods: Vec<(Mod, Option<ModConfig>)>,
+        mods: Vec<Mod>,
         properties: Vec<Property>,
     },
     Weapon {
         quality: u8,
-        mods: Vec<(Mod, Option<ModConfig>)>,
+        mods: Vec<Mod>,
         properties: Vec<Property>,
     },
     Jewel {
-        mods: Vec<(Mod, Option<ModConfig>)>,
+        mods: Vec<Mod>,
     },
     Flask {
         quality: u8,
-        mods: Vec<(Mod, Option<ModConfig>)>,
+        mods: Vec<Mod>,
     },
     Accessory {
         quality: u8,
-        mods: Vec<(Mod, Option<ModConfig>)>,
+        mods: Vec<Mod>,
     },
 }
 
@@ -104,16 +100,16 @@ impl Default for ItemInfo {
 impl ItemInfo {
     pub fn mod_ids(&self) -> Vec<&str> {
         match self {
-            ItemInfo::Armor { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
-            ItemInfo::Weapon { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
-            ItemInfo::Jewel { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
-            ItemInfo::Flask { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
-            ItemInfo::Accessory { mods, .. } => mods.iter().map(|m| m.0.stat_id.as_str()).collect(),
+            ItemInfo::Armor { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
+            ItemInfo::Weapon { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
+            ItemInfo::Jewel { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
+            ItemInfo::Flask { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
+            ItemInfo::Accessory { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
             ItemInfo::Gem { .. } => panic!("gems have no mods"),
         }
     }
 
-    pub fn mods(&self) -> &[(Mod, Option<ModConfig>)] {
+    pub fn mods(&self) -> &[Mod] {
         match self {
             ItemInfo::Weapon { mods, .. } => &mods[..],
             ItemInfo::Armor { mods, .. } => &mods[..],
@@ -124,7 +120,7 @@ impl ItemInfo {
         }
     }
 
-    pub fn mut_mods(&mut self) -> Option<&mut Vec<(Mod, Option<ModConfig>)>> {
+    pub fn mut_mods(&mut self) -> Option<&mut Vec<Mod>> {
         Some(match self {
             ItemInfo::Weapon { mods, .. } => mods,
             ItemInfo::Armor { mods, .. } => mods,
@@ -134,27 +130,11 @@ impl ItemInfo {
             ItemInfo::Accessory { mods, .. } => mods,
         })
     }
-
-    pub fn add_or_update_config(&mut self, stat_id: &str, cfg: ModConfig) -> bool {
-        if matches!(self, ItemInfo::Gem { .. }) {
-            return false;
-        }
-
-        let modcfg = self
-            .mut_mods()
-            .map(|mods| mods.iter_mut().find(|m| m.0.stat_id == stat_id))
-            .unwrap_or_default();
-        if let Some(mc) = modcfg {
-            mc.1 = Some(cfg);
-            return true;
-        }
-        false
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
 #[ts(export)]
-pub struct TypedItem {
+pub struct StoredItem {
     pub id: String,
     pub basetype: String,
     pub category: Category,
@@ -163,10 +143,10 @@ pub struct TypedItem {
     pub name: String,
 }
 
-impl TypedItem {}
+impl StoredItem {}
 
 #[derive(Error, Debug)]
-pub enum TypedItemError {
+pub enum StoredItemError {
     #[error("unknown item: {0}")]
     Unknown(String),
     #[error("unknown category: {0}")]
@@ -175,8 +155,8 @@ pub enum TypedItemError {
     UnknownSubcategory(#[from] SubcategoryError),
 }
 
-impl TryFrom<Item> for TypedItem {
-    type Error = TypedItemError;
+impl TryFrom<Item> for StoredItem {
+    type Error = StoredItemError;
     fn try_from(value: Item) -> core::result::Result<Self, Self::Error> {
         let cat = value.category;
         if ![
@@ -189,7 +169,7 @@ impl TryFrom<Item> for TypedItem {
         ]
         .contains(&cat)
         {
-            return Err(TypedItemError::Unknown(format!(
+            return Err(StoredItemError::Unknown(format!(
                 "at category check: {} {}",
                 value.name, value.base_type
             )));
@@ -198,7 +178,7 @@ impl TryFrom<Item> for TypedItem {
         let basetype = value.base_type;
         let category = Category::get_from_basetype(&basetype)?;
         let subcategory = Subcategory::get_from_basetype(&basetype)?;
-        let mods = value.mods.into_iter().map(|m| (m.into(), None)).collect();
+        let mods = value.mods.into_iter().map(|m| m.into()).collect();
         let props = value.properties;
         let quality = props
             .iter()
@@ -262,8 +242,8 @@ impl TryFrom<Item> for TypedItem {
             Category::Accessories => Some(ItemInfo::Accessory { quality, mods }),
             _ => None,
         };
-        Ok(TypedItem {
-            info: info.ok_or(TypedItemError::Unknown(format!(
+        Ok(StoredItem {
+            info: info.ok_or(StoredItemError::Unknown(format!(
                 "at info: {} {}",
                 value.name, basetype
             )))?,

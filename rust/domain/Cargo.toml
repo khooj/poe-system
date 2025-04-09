@@ -23,6 +23,7 @@ clap = { version = "4.5.27", features = ["derive"] }
 anyhow = "1"
 dashmap = "6.1.0"
 ts-rs = "10.1.0"
+tracing = "0.1.41"
 
 [dev-dependencies]
 anyhow = "1"

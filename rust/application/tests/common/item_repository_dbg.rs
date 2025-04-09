@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use application::storage::SearchItemsByModsTrait;
-use domain::{build_calculation::typed_item::TypedItem, item::Item as DomainItem};
-use public_stash::models::{Item, PublicStashData};
+use domain::{build_calculation::stored_item::StoredItem, item::Item as DomainItem};
+use public_stash::models::PublicStashData;
 
 pub struct ItemRepositoryDbg {
-    items: HashMap<String, TypedItem>,
+    items: HashMap<String, StoredItem>,
 }
 
 #[async_trait::async_trait]
@@ -15,9 +15,9 @@ impl SearchItemsByModsTrait for ItemRepositoryDbg {
         basetype: Option<&str>,
         category: Option<domain::item::types::Category>,
         subcategory: Option<domain::item::types::Subcategory>,
-        mods: Option<Vec<&domain::build_calculation::typed_item::Mod>>,
+        mods: Option<Vec<&domain::build_calculation::required_item::Mod>>,
     ) -> Result<
-        Vec<domain::build_calculation::typed_item::TypedItem>,
+        Vec<domain::build_calculation::stored_item::StoredItem>,
         application::storage::ItemRepositoryError,
     > {
         Ok(self
@@ -30,8 +30,7 @@ impl SearchItemsByModsTrait for ItemRepositoryDbg {
                 let p4 = mods.as_ref().is_none_or(|x| {
                     let hs1: HashSet<String> =
                         HashSet::from_iter(x.iter().map(|s| s.stat_id.clone()));
-                    let hs2 =
-                        HashSet::from_iter(it.info.mods().iter().map(|s| s.0.stat_id.clone()));
+                    let hs2 = HashSet::from_iter(it.info.mods().iter().map(|s| s.stat_id.clone()));
                     hs1.is_superset(&hs2)
                 });
                 p1 && p2 && p3 && p4
@@ -53,7 +52,7 @@ impl ItemRepositoryDbg {
                         Ok(i) => i,
                         Err(_) => continue,
                     };
-                    let itm: TypedItem = itm.try_into()?;
+                    let itm: StoredItem = itm.try_into()?;
                     items.insert(itm.id.clone(), itm);
                 }
             }

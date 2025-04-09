@@ -1,11 +1,11 @@
 use domain::build_calculation::{
-    comparison::Comparator, typed_item::TypedItem, BuildInfo, ItemWithConfig,
+    comparison::Comparator, stored_item::StoredItem, BuildInfo, ItemWithConfig,
 };
 use metrics::histogram;
 use std::time::Duration;
 use tokio::time::{self, Instant};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, info, instrument, span, trace, Instrument};
+use tracing::{debug, info, instrument, span, trace, Instrument, Level};
 
 use crate::storage::{
     postgresql::{
@@ -111,18 +111,31 @@ pub async fn process_single_build<T: SearchItemsByModsTrait>(
     Ok(())
 }
 
+#[instrument(level = Level::TRACE, skip_all, fields(item_id = item.item.id))]
 async fn find_similar<T: SearchItemsByModsTrait>(
     item_searcher: &mut T,
     item: &ItemWithConfig,
-) -> anyhow::Result<Option<TypedItem>> {
+) -> anyhow::Result<Option<StoredItem>> {
     let mods_for_search = Comparator::extract_mods_for_search(&item.item);
+    trace!(
+        mods = ?mods_for_search,
+        "extracted mods for search",
+    );
     let found_items = item_searcher
         .search_items_by_attrs(
-            None,
+            if item.item.search_basetype {
+                Some(item.item.basetype.as_str())
+            } else {
+                None
+            },
             Some(item.item.category.clone()),
-            Some(item.item.subcategory.clone()),
+            if item.item.search_subcategory {
+                Some(item.item.subcategory.clone())
+            } else {
+                None
+            },
             Some(mods_for_search),
         )
         .await?;
-    Ok(found_items.first().cloned())
+    Ok(Comparator::closest_item(&item.item, found_items))
 }

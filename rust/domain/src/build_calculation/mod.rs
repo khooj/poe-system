@@ -1,11 +1,13 @@
 pub mod comparison;
 pub mod mod_config;
-pub mod typed_item;
+pub mod required_item;
+pub mod stored_item;
 
 use mod_config::ModConfig;
+use required_item::{Mod, RequiredItem};
 use serde::{Deserialize, Serialize};
+use stored_item::StoredItem;
 use ts_rs::TS;
-use typed_item::{Mod, TypedItem};
 
 #[derive(Serialize, Deserialize, Debug, Default, TS)]
 #[ts(export)]
@@ -155,23 +157,23 @@ pub fn validate_and_apply_config(
 #[derive(Serialize, Deserialize, Debug, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct ItemWithConfig {
-    pub item: TypedItem,
+    pub item: RequiredItem,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, TS)]
 #[ts(export)]
 pub struct FoundBuildItems {
-    pub helmet: Option<TypedItem>,
-    pub body: Option<TypedItem>,
-    pub boots: Option<TypedItem>,
-    pub gloves: Option<TypedItem>,
-    pub weapon1: Option<TypedItem>,
-    pub weapon2: Option<TypedItem>,
-    pub ring1: Option<TypedItem>,
-    pub ring2: Option<TypedItem>,
-    pub belt: Option<TypedItem>,
-    pub flasks: Option<Vec<TypedItem>>,
-    pub gems: Option<Vec<TypedItem>>,
-    pub jewels: Option<Vec<TypedItem>>,
-    pub amulet: Option<TypedItem>,
+    pub helmet: Option<StoredItem>,
+    pub body: Option<StoredItem>,
+    pub boots: Option<StoredItem>,
+    pub gloves: Option<StoredItem>,
+    pub weapon1: Option<StoredItem>,
+    pub weapon2: Option<StoredItem>,
+    pub ring1: Option<StoredItem>,
+    pub ring2: Option<StoredItem>,
+    pub belt: Option<StoredItem>,
+    pub flasks: Option<Vec<StoredItem>>,
+    pub gems: Option<Vec<StoredItem>>,
+    pub jewels: Option<Vec<StoredItem>>,
+    pub amulet: Option<StoredItem>,
 }
