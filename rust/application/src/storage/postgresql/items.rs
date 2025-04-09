@@ -100,7 +100,7 @@ impl ItemInsertTrait for ItemRepository {
         for item in items {
             let json = serde_json::to_string(&item.info).unwrap();
             let line = format!(
-                "{};@{}@;{};{};{};{}\n",
+                "{};@{}@;{};{};{};@{}@\n",
                 item.id,
                 json,
                 item.basetype,
