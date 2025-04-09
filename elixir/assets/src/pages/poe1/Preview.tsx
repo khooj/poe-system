@@ -2,7 +2,7 @@ import { BuildInfo } from '@bindings/domain/bindings/BuildInfo';
 import { Button, Container, Spinner } from 'react-bootstrap';
 import { ItemListConfig } from '@/components/ItemListConfig';
 import { useForm, router } from '@inertiajs/react';
-import Routes from '../../routes.js';
+import * as Routes from '../../routes.js';
 import { BuildItemsWithConfig } from '@bindings/domain/bindings/BuildItemsWithConfig.js';
 import { ItemWithConfig } from '@bindings/domain/bindings/ItemWithConfig.js';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

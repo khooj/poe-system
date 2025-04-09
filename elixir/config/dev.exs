@@ -25,16 +25,16 @@ config :poe_system, PoeSystemWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "vMKHgGP1w1R9KH19Kr9ybO7jixqFcTLFXRoj+z1P/WsrqGseIs6ilLLvR+/uO9bL",
   watchers: [
-    npm:
+    bun:
       ~w(run vite_watch) ++
         [
           cd: Path.expand("../assets", __DIR__)
+        ],
+    bun:
+      ~w(run vite_ssr_watch) ++
+        [
+          cd: Path.expand("../assets", __DIR__)
         ]
-    # npm:
-    #   ~w(run vite_ssr_watch) ++
-    #     [
-    #       cd: Path.expand("../assets", __DIR__)
-    #     ]
     # npm: ~w(run tsc_watch) ++  [
     #   cd: Path.expand("../assets", __DIR__)
     # ]
@@ -91,3 +91,6 @@ config :phoenix_live_view,
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+config :inertia,
+  ssr: true

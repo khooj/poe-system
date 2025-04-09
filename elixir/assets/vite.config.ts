@@ -4,7 +4,7 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => {
+export default defineConfig(() => {
   process.stdin.on("close", () => {
     process.exit(0);
   })
@@ -13,9 +13,14 @@ export default defineConfig(({ command }) => {
 
   return {
     publicDir: "public",
-    plugins: [react(), wasm(), topLevelAwait()],
+    plugins: [
+      react(),
+      wasm(),
+      // topLevelAwait(),
+    ],
     base: "/assets/",
     build: {
+      target: 'esnext',
       outDir: "../priv/static/assets",
       emptyOutDir: true,
       sourcemap: true,
@@ -24,9 +29,6 @@ export default defineConfig(({ command }) => {
         include: [/routes/, /node_modules/, /states/, /bindings/]
       },
       rollupOptions: {
-        external: [
-          "/vite.svg"
-        ],
         input: {
           main: "src/main.tsx",
         },

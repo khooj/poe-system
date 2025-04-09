@@ -4,7 +4,7 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => {
+export default defineConfig(() => {
   process.stdin.on("close", () => {
     process.exit(0);
   })
@@ -12,8 +12,9 @@ export default defineConfig(({ command }) => {
   process.stdin.resume();
   return {
     publicDir: "public",
-    plugins: [react(), wasm(), topLevelAwait()],
+    plugins: [react(), wasm(),],
     build: {
+      target: 'esnext',
       outDir: "../priv/static/assets/ssr",
       emptyOutDir: true,
       sourcemap: true,
@@ -36,7 +37,10 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       alias: [
-        { find: /@\/(.*)$/, replacement: './src/$1.tsx' }
+        { find: /@bindings\/(.*)$/, replacement: '../../rust/$1.ts' },
+        { find: /@states\/(.*)$/, replacement: './src/states/$1.ts' },
+        { find: /@routes/, replacement: './src/routes.js' },
+        { find: /@\/(.*)$/, replacement: './src/$1.tsx' },
       ],
     },
     css: {
