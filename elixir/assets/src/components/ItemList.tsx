@@ -1,9 +1,7 @@
 import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
-import { TypedItem } from "@bindings/domain/bindings/TypedItem";
-import { ItemWithConfigComponent } from "./ItemWithConfig";
-import TypedItemComponent from "./TypedItemComponent";
+import RequiredItemComponent from "./RequiredItemComponent";
 
-type ItemType = ItemWithConfig | ItemWithConfig[] | TypedItem | TypedItem[] | null;
+type ItemType = ItemWithConfig | ItemWithConfig[] | null;
 type Props = {
   [item: string]: ItemType;
 };
@@ -12,33 +10,11 @@ const isItemWithConfig = (v: ItemType): v is ItemWithConfig => {
   return !!v && (v as ItemWithConfig).item !== undefined;
 };
 
-const isItemWithConfigArray = (v: ItemType): v is ItemWithConfig[] => {
-  // TODO: change config check in possible empty array
-  return !!v && Array.isArray(v) && v.some(isItemWithConfig)
-};
-
-const isTypedItem = (v: ItemType): v is TypedItem => {
-  return !!v && (v as TypedItem).id !== undefined;
-};
-
-const isTypedItemArray = (v: ItemType): v is TypedItem[] => {
-  return !!v && Array.isArray(v) && v.some(isTypedItem)
-};
-
 export const ItemList = (items: Props) => {
   const renderItem = (k: string, v: ItemType) => {
     if (isItemWithConfig(v)) {
-      return <TypedItemComponent item={v.item} />
+      return <RequiredItemComponent item={v.item} />
     }
-    // if (isItemWithConfigArray(v)) {
-    //   return v.map(item => <ItemWithConfigComponent item={item} />);
-    // }
-    if (isTypedItem(v)) {
-      return <TypedItemComponent item={v} />
-    }
-    // if (isTypedItemArray(v)) {
-    //   return v.map(item => <TypedItemComponent item={item} />);
-    // }
 
     return <p>not rendering for now</p>;
   };

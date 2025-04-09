@@ -4,8 +4,6 @@ import { Link, useForm } from '@inertiajs/react'
 import { ChangeEventHandler, FormEvent, useState } from 'react';
 import { Container, Form, Spinner } from 'react-bootstrap'
 import useSWR from 'swr';
-import axios from 'axios';
-import { ItemListConfig } from '@/components/ItemListConfig';
 
 const wasmLoader = async () => await import('wasm');
 
@@ -30,9 +28,11 @@ const Index = ({ build_ids }: Props) => {
     e.preventDefault();
     try {
       setParsing(true);
+      // @ts-expect-error undefined wasm
       const itemsets = wasm.get_pob_itemsets(e.target.value);
       setItemsets(itemsets);
       setData('itemset', itemsets[0]);
+      // @ts-expect-error undefined wasm
       const skillsets = wasm.get_pob_skillsets(e.target.value);
       setSkillsets(skillsets);
       setData('skillset', skillsets[0]);

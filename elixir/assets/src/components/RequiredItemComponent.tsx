@@ -1,16 +1,13 @@
 import { isNotGem } from '@/domainutils'
-import { Config } from '@bindings/domain/bindings/Config'
-import { ItemInfo } from '@bindings/domain/bindings/ItemInfo'
 import { Mod } from '@bindings/domain/bindings/Mod'
 import { ModConfig } from '@bindings/domain/bindings/ModConfig'
-import { TypedItem } from '@bindings/domain/bindings/TypedItem'
-import { Container, Row } from 'react-bootstrap'
+import { RequiredItem } from '@bindings/domain/bindings/RequiredItem'
 
 type Props = {
-  item: TypedItem,
+  item: RequiredItem,
 }
 
-const TypedItemComponent = ({ item }: Props) => {
+const RequiredItemComponent = ({ item }: Props) => {
   const renderConfig = (cf: ModConfig | null) => {
     if (!cf) {
       return <></>
@@ -48,4 +45,4 @@ const TypedItemComponent = ({ item }: Props) => {
   }
 }
 
-export default TypedItemComponent
+export default RequiredItemComponent

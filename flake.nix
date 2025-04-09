@@ -94,7 +94,7 @@
 
                 "build_calculation" = {
                   disabled = true;
-                  command = "RUST_LOG=debug cargo run --release --bin build_calculator";
+                  command = "RUST_LOG=info cargo run --release --bin build_calculator";
                   working_dir = "./rust";
                 };
 

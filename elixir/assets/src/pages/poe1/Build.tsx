@@ -1,6 +1,7 @@
 import { Container } from 'react-bootstrap'
 import { type BuildInfo } from '@bindings/domain/bindings/BuildInfo';
 import { ItemList } from '@/components/ItemList';
+import { ItemListFound } from '@/components/ItemListFound';
 
 type Props = {
   data: BuildInfo,
@@ -15,7 +16,7 @@ const Build = ({ data }: Props) => {
       </div>
       <div className='d-flex flex-column vw-50 border'>
         <span>Found</span>
-        <ItemList {...data.found} />
+        <ItemListFound {...data.found} />
       </div>
     </Container>
   )

@@ -24,7 +24,7 @@ pub struct Property {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
-#[ts(export)]
+#[ts(export, rename = "StoredMod")]
 pub struct Mod {
     pub stat_id: String,
     pub text: String,
@@ -59,7 +59,7 @@ impl From<DomainMod> for Mod {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
 #[serde(tag = "type")]
-#[ts(export)]
+#[ts(export, rename = "StoredItemInfo")]
 pub enum ItemInfo {
     Gem {
         level: u8,

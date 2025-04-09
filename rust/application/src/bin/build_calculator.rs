@@ -17,11 +17,11 @@ struct Settings {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fmt_layer = tracing_subscriber::fmt::Layer::default();
-    let (flame_layer, _guard) = FlameLayer::with_file("./framegraph.folded")?;
+    // let (flame_layer, _guard) = FlameLayer::with_file("./framegraph.folded")?;
 
     tracing_subscriber::registry()
         .with(fmt_layer)
-        .with(flame_layer)
+        // .with(flame_layer)
         .init();
 
     let settings: Settings = config::Config::builder()
@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     token.cancel();
     handle.await??;
 
-    _guard.flush()?;
+    // _guard.flush()?;
 
     Ok(())
 }
