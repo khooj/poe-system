@@ -2,13 +2,15 @@ import { BuildInfo } from '@bindings/domain/bindings/BuildInfo';
 import { Button, Container, Spinner } from 'react-bootstrap';
 import { ItemListConfig } from '@/components/ItemListConfig';
 import { useForm, router } from '@inertiajs/react';
-import * as Routes from '../../routes.js';
+import Routes from '@routes';
 import { BuildItemsWithConfig } from '@bindings/domain/bindings/BuildItemsWithConfig.js';
 import { ItemWithConfig } from '@bindings/domain/bindings/ItemWithConfig.js';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as _ from 'lodash';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ToggleButton } from 'react-bootstrap';
+import { createItemsStore, InertiaFormType, ItemsContext } from '@states/preview';
+import { useStore } from 'zustand';
 
 type BuildPreviewData = {
   id: string,
@@ -22,21 +24,19 @@ type Props = {
   build_data: BuildPreviewData
 };
 
-type InertiaFormType = {
-  config: BuildInfo,
-  id: string
-};
-
 const Preview = ({ build_data }: Props) => {
+  const store = useRef(createItemsStore({ data: build_data.data })).current;
+  const zustandData = useStore(store, s => s.data);
+
   // isDirty probably does not work because of using shallow equal
-  const { patch, setData, errors, processing, data } = useForm({
-    config: build_data.data,
+  const { patch, data, setData, isDirty, errors, processing } = useForm({
+    config: zustandData,
     id: build_data.id,
   } as InertiaFormType);
 
-  const [autosave, setAutosave] = useState(true);
+  const [autosave, setAutosave] = useState(false);
   const [save, setSave] = useState<'haveChanges' | 'saving' | 'noChanges'>('noChanges');
-  const [isDirty, setIsDirty] = useState(false);
+  // const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     if (isDirty) {
@@ -58,23 +58,43 @@ const Preview = ({ build_data }: Props) => {
 
   const patchForm = useCallback(() => {
     patch(Routes.path('poe1.preview.update_preview'), {
-      onSuccess: () => setIsDirty(false),
+      // onSuccess: () => setIsDirty(false),
     });
-  }, [patch, setIsDirty]);
+  }, [patch]);
 
-  const setItemCb = useCallback((k: keyof BuildItemsWithConfig, it: ItemWithConfig | ItemWithConfig[]) => {
-    console.log('setitemcb');
-    const d = { ...data.config };
-    setData('config', { found: d.found, provided: { ...data.config.provided, [k]: it } });
-    setIsDirty(true);
+  const autosaveCb = useCallback((state) => {
+    setData('config', state.data);
     if (autosave) {
+      console.log('trigger autosave');
       patchForm();
     }
-  }, [autosave, setData, data, patchForm, setIsDirty]);
+  }, [setData, autosave, patchForm]);
 
-  // const { errors: submitErrors, isLoading: submitIsLoading } = useSWR(
-  //   [Routes.path('poe1.new.new'), buildData.id], 
-  //   (u, i) => axios)
+  useEffect(() => {
+    console.log('subscribe for data');
+    const unsub = store.subscribe(autosaveCb);
+    return () => {
+      unsub();
+    };
+  }, [autosaveCb, store]);
+
+  const setItemCb =
+    // useCallback(
+    (k: keyof BuildItemsWithConfig, it: ItemWithConfig | ItemWithConfig[]) => {
+      // console.log('setitemcb');
+      // const d = { ...data.config };
+      // setData('config', { found: d.found, provided: { ...data.config.provided, [k]: it } });
+      // setIsDirty(true);
+      // if (autosave) {
+      //   patchForm();
+      // }
+    }
+  // , [autosave, setData, data, patchForm, setIsDirty]);
+
+  // useEffect(() => {
+  //   console.log('zustand set');
+  //   // setData('config', zustandData);
+  // }, [zustandData]);
 
   return (
     <Container fluid className='d-flex flex-column'>
@@ -95,10 +115,11 @@ const Preview = ({ build_data }: Props) => {
         </Button>
         <Button disabled={save !== 'noChanges'} onClick={() => router.post(Routes.path('poe1.new.new', { id: build_data.id }))}>Submit build</Button>
       </div>
-
-      <ItemListConfig data={data.config!} setItemCb={setItemCb} />
+      <ItemsContext.Provider value={store}>
+        <ItemListConfig data={zustandData} setItemCb={setItemCb} />
+      </ItemsContext.Provider>
     </Container>
   )
 }
 
-export default Preview
+export default Preview;

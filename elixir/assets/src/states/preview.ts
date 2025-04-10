@@ -8,6 +8,12 @@ import { immer } from "zustand/middleware/immer";
 import { createContext } from "react";
 import { ModConfig } from "@bindings/domain/bindings/ModConfig";
 import Routes from "@routes";
+import { InertiaFormProps } from "@inertiajs/react";
+
+export type InertiaFormType = {
+  config: BuildInfo,
+  id: string
+};
 
 interface PreviewProps {
   data: BuildInfo,
@@ -23,6 +29,7 @@ export const createItemsStore = (initProps: PreviewProps) => {
   return createStore<ItemsState>()(devtools(immer((set) => ({
     ...initProps,
     setItemConfig: (k: keyof BuildItemsWithConfig, stat_id: string, cfg: ModConfig) => set((state) => {
+      console.log('called set item config with args', k, stat_id, cfg);
       const item = state.data.provided[k];
       if (Array.isArray(item)) {
         return;
@@ -32,10 +39,10 @@ export const createItemsStore = (initProps: PreviewProps) => {
       }
 
       const itemModIdx = item.item.info.mods.findIndex(([m, _]) => m.stat_id === stat_id);
-      // const itemMod = item.item.info.mods[itemModIdx][0];
-      state.data.provided[k].item.info.mods[itemModIdx].pop();
-      state.data.provided[k].item.info.mods[itemModIdx].push(cfg);
-    }, true),
+      state.data.provided[k].item.info.mods[itemModIdx][1] = cfg;
+      // state.data.provided[k].item.info.mods[itemModIdx].pop();
+      // state.data.provided[k].item.info.mods[itemModIdx].push(cfg);
+    }),
   }))));
 };
 

@@ -1,11 +1,13 @@
 import { ModConfig } from "@bindings/domain/bindings/ModConfig";
 import { isNotGem } from "@/domainutils";
 import { Form } from "react-bootstrap";
-import { ChangeEventHandler } from "react";
+import { ChangeEventHandler, useContext } from "react";
 import { Mod } from "@bindings/domain/bindings/Mod";
 import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
 import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
 import _ from "lodash";
+import { ItemsContext } from "@states/preview";
+import { useStore } from "zustand";
 
 type ItemWithConfigProps = {
   k: keyof BuildItemsWithConfig,
@@ -15,7 +17,13 @@ type ItemWithConfigProps = {
   setCfgCb: (cf: ModConfig | null) => void,
 };
 
-const ItemModWithConfig = ({ m, origCfg, setCfgCb }: ItemWithConfigProps) => {
+const ItemModWithConfig = ({ k, m, origCfg, setCfgCb }: ItemWithConfigProps) => {
+  const store = useContext(ItemsContext);
+  if (!store) {
+    throw new Error('missing context');
+  }
+  const setItemConfig = useStore(store, s => s.setItemConfig);
+
   const defaultConfigValue = (config: ModConfig) => {
     if (config === "Exist") {
       return "Exist";
@@ -70,9 +78,13 @@ const ItemModWithConfig = ({ m, origCfg, setCfgCb }: ItemWithConfigProps) => {
     } else if ("Exact" in origCfg) {
       return <></>
     } else if ("Min" in origCfg) {
+      // const debouncedOnChangeMin = _.debounce((e) => {
+      //   const v = parseInt(e.target.value);
+      //   setCfgCb({ Min: v });
+      // }, 300);
       const debouncedOnChangeMin = _.debounce((e) => {
         const v = parseInt(e.target.value);
-        setCfgCb({ Min: v });
+        setItemConfig(k, m.stat_id, { Min: v });
       }, 300);
       const min = origCfg.Min;
       return <>
@@ -107,13 +119,15 @@ const ItemModWithConfig = ({ m, origCfg, setCfgCb }: ItemWithConfigProps) => {
   const onChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
     e.preventDefault();
     if (e.target.value === 'Exist') {
-      setCfgCb('Exist');
+      // setCfgCb('Exist');
+      setItemConfig(k, m.stat_id, 'Exist');
     } else if (e.target.value === 'Exact') {
       setCfgCb({ Exact: (m.current_value_int && m.current_value_int[0]) || (m.current_value_float && m.current_value_float[0]) || 0 });
     } else if (e.target.value === 'Range') {
       setCfgCb({ Range: { start: 0, end: 1000 } });
     } else if (e.target.value === 'Min') {
-      setCfgCb({ Min: 0 });
+      // setCfgCb({ Min: 0 });
+      setItemConfig(k, m.stat_id, { Min: 0 });
     } else if (e.target.value === 'Max') {
       setCfgCb({ Max: 1000 });
     } else if (e.target.value === 'ignore') {
