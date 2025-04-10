@@ -1,9 +1,8 @@
 import { ModConfig } from "@bindings/domain/bindings/ModConfig";
 import { isNotGem } from "@/domainutils";
 import { Form } from "react-bootstrap";
-import { ChangeEventHandler, useContext } from "react";
+import { ChangeEventHandler, useCallback, useContext } from "react";
 import { Mod } from "@bindings/domain/bindings/Mod";
-import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
 import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
 import _ from "lodash";
 import { ItemsContext } from "@states/preview";
@@ -11,13 +10,11 @@ import { useStore } from "zustand";
 
 type ItemWithConfigProps = {
   k: keyof BuildItemsWithConfig,
-  item: ItemWithConfig,
   m: Mod,
   origCfg: ModConfig | null,
-  setCfgCb: (cf: ModConfig | null) => void,
 };
 
-const ItemModWithConfig = ({ k, m, origCfg, setCfgCb }: ItemWithConfigProps) => {
+const ItemModWithConfig = ({ k, m, origCfg }: ItemWithConfigProps) => {
   const store = useContext(ItemsContext);
   if (!store) {
     throw new Error('missing context');
@@ -42,6 +39,10 @@ const ItemModWithConfig = ({ k, m, origCfg, setCfgCb }: ItemWithConfigProps) => 
     }
     throw new Error("unknown config type");
   };
+
+  const setCfgCb = useCallback((cf: ModConfig | null) => {
+    setItemConfig(k, m.stat_id, cf)
+  }, [k, m, setItemConfig]);
 
   const renderAdditionalForSelect = () => {
     if (!origCfg) {
@@ -78,13 +79,9 @@ const ItemModWithConfig = ({ k, m, origCfg, setCfgCb }: ItemWithConfigProps) => 
     } else if ("Exact" in origCfg) {
       return <></>
     } else if ("Min" in origCfg) {
-      // const debouncedOnChangeMin = _.debounce((e) => {
-      //   const v = parseInt(e.target.value);
-      //   setCfgCb({ Min: v });
-      // }, 300);
       const debouncedOnChangeMin = _.debounce((e) => {
         const v = parseInt(e.target.value);
-        setItemConfig(k, m.stat_id, { Min: v });
+        setCfgCb({ Min: v });
       }, 300);
       const min = origCfg.Min;
       return <>
@@ -154,34 +151,23 @@ const ItemModWithConfig = ({ k, m, origCfg, setCfgCb }: ItemWithConfigProps) => 
 
 type Props = {
   itemKey: keyof BuildItemsWithConfig,
-  item?: ItemWithConfig,
-  items?: ItemWithConfig[],
-  setItemCb: (itemKey: keyof BuildItemsWithConfig, item: ItemWithConfig | ItemWithConfig[]) => void,
 };
 
-export const ItemWithConfigComponent = ({ itemKey, item, items, setItemCb }: Props) => {
-  if (!item && !items) {
-    return <></>
-  }
+export const ItemWithConfigComponent = ({ itemKey }: Props) => {
+  const store = useContext(ItemsContext);
+  if (!store) throw new Error('missing items context');
+  const data = useStore(store, s => s.data);
+  const item = data.provided[itemKey];
 
-  if (item) {
+  if (!Array.isArray(item)) {
     if (isNotGem(item.item.info)) {
-      const setCfgCb = (stat_id: string) => {
-        return (cfg: ModConfig | null) => {
-          // @ts-expect-error mods does not exist on gem type
-          const m = item.item.info.mods.find(([m]) => m.stat_id === stat_id);
-          m[1] = cfg;
-          setItemCb(itemKey, item);
-        };
-      };
-
       return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
         <div className='border'>
           <span>{item.item.name}<br />{item.item.basetype}</span>
         </div>
         <div className='border'>
           <Form.Group>
-            <div>{item.item.info.mods.map(([m, cf], idx) => <ItemModWithConfig key={idx} setCfgCb={setCfgCb(m.stat_id)} k={itemKey} item={item} m={m} origCfg={cf} />)}</div>
+            <div>{item.item.info.mods.map(([m, cf], idx) => <ItemModWithConfig key={idx} k={itemKey} m={m} origCfg={cf} />)}</div>
           </Form.Group>
         </div>
       </div >;

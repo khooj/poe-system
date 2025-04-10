@@ -168,11 +168,18 @@
                 wasm-pack
                 cargo-modules
                 graphviz
+                playwright-driver.browsers
+                playwright
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config
                 nixpkgs-fmt
               ];
+
+              shellHook = ''
+                export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
+                export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+              '';
             };
         };
       }

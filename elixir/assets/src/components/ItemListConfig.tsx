@@ -2,7 +2,9 @@ import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
 import { ItemWithConfigComponent } from "./ItemWithConfig";
 import { Form } from "react-bootstrap";
 import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
-import { BuildInfo } from "@bindings/domain/bindings/BuildInfo";
+import { useContext } from "react";
+import { ItemsContext } from "@states/preview";
+import { useStore } from "zustand";
 
 type ItemType = ItemWithConfig | ItemWithConfig[];
 
@@ -14,18 +16,17 @@ const isItemWithConfigArray = (v: ItemType): v is ItemWithConfig[] => {
   return !!v && Array.isArray(v);
 };
 
-type Props = {
-  data: BuildInfo,
-  setItemCb: (k: keyof BuildItemsWithConfig, it: ItemWithConfig | ItemWithConfig[]) => void,
-};
+export const ItemListConfig = () => {
+  const store = useContext(ItemsContext);
+  if (!store) throw new Error('missing items context');
 
-export const ItemListConfig = ({ data, setItemCb }: Props) => {
+  const data = useStore(store, s => s.data);
   const renderItem = (k: keyof BuildItemsWithConfig, v: ItemWithConfig | ItemWithConfig[]) => {
     if (isItemWithConfig(v)) {
-      return <ItemWithConfigComponent itemKey={k} item={v} setItemCb={setItemCb} />
+      return <ItemWithConfigComponent itemKey={k} />
     }
     if (isItemWithConfigArray(v)) {
-      return <ItemWithConfigComponent itemKey={k} items={v} setItemCb={setItemCb} />
+      return <ItemWithConfigComponent itemKey={k} />
     }
 
     throw new Error("unknown item type");

@@ -1,0 +1,15 @@
+error: macro expansion ignores `;` and any tokens following
+ --> tests/ui/file_not_exist.rs:3:37
+  |
+3 | pub static TYPES: &[&'static str] = static_array_from_file!("file.txt");
+  |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ caused by the macro expansion here
+  |
+  = note: the usage of `static_array_from_file!` is likely invalid in expression context
+
+error: cant open file: $WORKSPACE/target/tests/trybuild/macros/file.txt
+ --> tests/ui/file_not_exist.rs:3:37
+  |
+3 | pub static TYPES: &[&'static str] = static_array_from_file!("file.txt");
+  |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `static_array_from_file` (in Nightly builds, run with -Z macro-backtrace for more info)
