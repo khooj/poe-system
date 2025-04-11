@@ -13,7 +13,7 @@ interface PreviewProps {
 }
 
 interface ItemsState extends PreviewProps {
-  setItemConfig: (k: keyof BuildItemsWithConfig, stat_id: string, cfg: ModConfig | null) => void,
+  setItemConfig: (k: keyof BuildItemsWithConfig, stat_id: string, cfg: ModConfig | null, multipleIndex?: number) => void,
 }
 
 export type ItemsStore = ReturnType<typeof createItemsStore>;
@@ -21,10 +21,15 @@ export type ItemsStore = ReturnType<typeof createItemsStore>;
 export const createItemsStore = (initProps: PreviewProps) => {
   return createStore<ItemsState>()(devtools(immer((set) => ({
     ...initProps,
-    setItemConfig: (k: keyof BuildItemsWithConfig, stat_id: string, cfg: ModConfig | null) => set((state) => {
+    setItemConfig: (k: keyof BuildItemsWithConfig, stat_id: string, cfg: ModConfig | null, multipleIndex?: number) => set((state) => {
       const item = state.data.provided[k];
       if (Array.isArray(item)) {
-        return;
+        const itemIndexed = item[multipleIndex!].item;
+        if (!isNotGem(itemIndexed.info)) {
+          return
+        }
+        const itemModIdx = itemIndexed.info.mods.findIndex(mcf => mcf[0].stat_id === stat_id);
+        itemIndexed.info.mods[itemModIdx][1] = cfg;
       } else {
         if (!isNotGem(item.item.info)) {
           return;

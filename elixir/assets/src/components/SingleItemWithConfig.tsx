@@ -7,14 +7,16 @@ import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithCo
 import _ from "lodash";
 import { ItemsContext } from "@states/preview";
 import { useStore } from "zustand";
+import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
 
 type ItemWithConfigProps = {
   k: keyof BuildItemsWithConfig,
   m: Mod,
   origCfg: ModConfig | null,
+  multipleIndex?: number,
 };
 
-const ItemModWithConfig = ({ k, m, origCfg }: ItemWithConfigProps) => {
+const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps) => {
   const store = useContext(ItemsContext);
   if (!store) {
     throw new Error('missing context');
@@ -41,8 +43,8 @@ const ItemModWithConfig = ({ k, m, origCfg }: ItemWithConfigProps) => {
   };
 
   const setCfgCb = useCallback((cf: ModConfig | null) => {
-    setItemConfig(k, m.stat_id, cf)
-  }, [k, m, setItemConfig]);
+    setItemConfig(k, m.stat_id, cf, multipleIndex);
+  }, [k, m, setItemConfig, multipleIndex]);
 
   const renderAdditionalForSelect = () => {
     if (!origCfg) {
@@ -116,15 +118,13 @@ const ItemModWithConfig = ({ k, m, origCfg }: ItemWithConfigProps) => {
   const onChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
     e.preventDefault();
     if (e.target.value === 'Exist') {
-      // setCfgCb('Exist');
-      setItemConfig(k, m.stat_id, 'Exist');
+      setCfgCb('Exist');
     } else if (e.target.value === 'Exact') {
       setCfgCb({ Exact: (m.current_value_int && m.current_value_int[0]) || (m.current_value_float && m.current_value_float[0]) || 0 });
     } else if (e.target.value === 'Range') {
       setCfgCb({ Range: { start: 0, end: 1000 } });
     } else if (e.target.value === 'Min') {
-      // setCfgCb({ Min: 0 });
-      setItemConfig(k, m.stat_id, { Min: 0 });
+      setCfgCb({ Min: 0 });
     } else if (e.target.value === 'Max') {
       setCfgCb({ Max: 1000 });
     } else if (e.target.value === 'ignore') {
@@ -136,7 +136,6 @@ const ItemModWithConfig = ({ k, m, origCfg }: ItemWithConfigProps) => {
     <div>{m.text}</div>
     <div className="d-flex flex-column">
       <Form.Select onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"}>
-        {/* <option value="ignore" unselectable="on">Select search type</option> */}
         <option value="Exist">Exist</option>
         <option value="Exact">Exact match</option>
         <option value="Range">Range match</option>
@@ -151,15 +150,16 @@ const ItemModWithConfig = ({ k, m, origCfg }: ItemWithConfigProps) => {
 
 type Props = {
   itemKey: keyof BuildItemsWithConfig,
+  multipleIndex?: number,
 };
 
-export const ItemWithConfigComponent = ({ itemKey }: Props) => {
+export const SingleItemWithConfig = ({ itemKey, multipleIndex }: Props) => {
   const store = useContext(ItemsContext);
   if (!store) throw new Error('missing items context');
   const data = useStore(store, s => s.data);
   const item = data.provided[itemKey];
 
-  if (!Array.isArray(item)) {
+  const renderItem = (item: ItemWithConfig) => {
     if (isNotGem(item.item.info)) {
       return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
         <div className='border'>
@@ -167,18 +167,20 @@ export const ItemWithConfigComponent = ({ itemKey }: Props) => {
         </div>
         <div className='border'>
           <Form.Group>
-            <div>{item.item.info.mods.map(([m, cf], idx) => <ItemModWithConfig key={idx} k={itemKey} m={m} origCfg={cf} />)}</div>
+            <div>{item.item.info.mods.map(([m, cf], idx) => <ItemModWithConfig key={idx} k={itemKey} m={m} origCfg={cf} multipleIndex={multipleIndex} />)}</div>
           </Form.Group>
         </div>
-      </div >;
+      </div>;
     } else {
       return <div className='m-2 border' style={{ fontSize: '14px' }}>
         <p>{item.item.name} {item.item.info.level}lvl/+{item.item.info.quality}%</p>
       </div>;
     }
-  }
+  };
 
-  return <div>
-    <p>not rendering for now</p>
-  </div>
+  if (!Array.isArray(item)) {
+    return renderItem(item);
+  } else {
+    return renderItem(item[multipleIndex!]);
+  }
 };

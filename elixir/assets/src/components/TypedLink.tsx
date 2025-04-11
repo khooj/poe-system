@@ -2,6 +2,7 @@ import { Link as InertiaLink, InertiaLinkProps } from "@inertiajs/react";
 import React from "react";
 // @ts-expect-error no default in routes
 import type { PathParamsWithQuery, RouteName } from "@routes";
+// @ts-expect-error no default in routes
 import Routes from "@routes";
 
 type TypedLinkProps<T extends RouteName> = Omit<InertiaLinkProps, "href"> & {

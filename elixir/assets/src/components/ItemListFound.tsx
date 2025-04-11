@@ -1,11 +1,10 @@
+import { FoundBuildItems } from "@bindings/domain/bindings/FoundBuildItems";
 import { StoredItem } from "@bindings/domain/bindings/StoredItem";
 import { StoredItemInfo } from "@bindings/domain/bindings/StoredItemInfo";
-import { StoredMod } from "@bindings/domain/bindings/StoredMod";
+import { useId, useState } from "react";
+import { Collapse } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 
-type ItemType = StoredItem | StoredItem[] | null;
-type Props = {
-  [item: string]: ItemType;
-};
 
 const isSingleItem = (v: ItemType): v is StoredItem => {
   return !!v && !Array.isArray(v);
@@ -15,39 +14,67 @@ const isNotGem = (v: StoredItemInfo) => {
   return v.type !== "Gem";
 }
 
+type SingleItemProps = {
+  item: StoredItem,
+};
+
+const SingleItem = ({ item }: SingleItemProps) => {
+  if (isNotGem(item.info)) {
+    return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
+      <div className='border'>
+        <span>{item.name}<br />{item.basetype}</span>
+      </div>
+      <div className='border'>
+        <div>{item.info.mods.map(m => <div>{m.text}</div>)}</div>
+      </div>
+    </div >;
+  } else {
+    return <div className='m-2 border' style={{ fontSize: '14px' }}>
+      <p>{item.name} {item.info.level}lvl/+{item.info.quality}%</p>
+    </div>;
+  }
+};
+
+type MultipleItemsProps = {
+  items: StoredItem[],
+  itemKey: string,
+};
+
+const MultipleItems = ({ items, itemKey }: MultipleItemsProps) => {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+
+  return <div>
+    <Button onClick={() => setOpen(!open)} aria-controls={id} aria-expanded={open}>{itemKey}</Button>
+    <Collapse in={open}>
+      <div id={id}>
+        {items.map(si => <SingleItem item={si} />)}
+      </div>
+    </Collapse>
+  </div>
+};
+
+const itemsOrder: (keyof FoundBuildItems)[] = [
+  'helmet', 'body', 'gloves', 'boots',
+  'weapon1', 'weapon2', 'belt', 'amulet',
+  'ring1', 'ring2', 'jewels', 'gems',
+  'flasks'
+];
+
+type ItemType = StoredItem | StoredItem[] | null;
+type Props = {
+  [item: string]: ItemType;
+};
+
 export const ItemListFound = (items: Props) => {
   const renderItem = (k: string, item: ItemType) => {
-    if (isSingleItem(item)) {
-      const renderMods = (mods: StoredMod[]) => {
-        return mods.map((m) => <div className=''>{m.text}</div>)
-      };
-
-      if (isNotGem(item.info)) {
-        return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
-          <div className='border'>
-            <span>{item.name}<br />{item.basetype}</span>
-          </div>
-          <div className='border'>
-            <div>{renderMods(item.info.mods)}</div>
-          </div>
-        </div >;
-      } else {
-        return <div className='m-2 border' style={{ fontSize: '14px' }}>
-          <p>{item.name} {item.info.level}lvl/+{item.info.quality}%</p>
-        </div>;
-      }
+    if (!item) {
+      return <div>Item not found</div>
+    } else if (isSingleItem(item)) {
+      return <SingleItem item={item} />
+    } else {
+      return <MultipleItems items={item} itemKey={k} />
     }
-    // // if (isItemWithConfigArray(v)) {
-    // //   return v.map(item => <ItemWithConfigComponent item={item} />);
-    // // }
-    // if (isRequiredItem(v)) {
-    //   return <RequiredItemComponent item={v} />
-    // }
-    // // if (isRequiredItemArray(v)) {
-    // //   return v.map(item => <RequiredItemComponent item={item} />);
-    // // }
-
-    return <p>not rendering for now</p>;
   };
 
   const renderList = (items: Props) => {
@@ -55,9 +82,9 @@ export const ItemListFound = (items: Props) => {
       return <div>Nothing found yet</div>
     }
 
-    return Object.entries(items).map(([k, v]) => {
-      return renderItem(k, v);
-    }).flat();
+    return itemsOrder.map(k => {
+      return renderItem(k, items[k]);
+    })
   };
 
   return <div className="d-flex flex-column">

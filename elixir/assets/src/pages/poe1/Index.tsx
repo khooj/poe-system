@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/react'
 import { ChangeEventHandler, FormEvent, useState } from 'react';
 import { Container, Form, Spinner } from 'react-bootstrap'
 import useSWR from 'swr';
+import { TypedLink } from '@/components/TypedLink';
 
 const wasmLoader = async () => await import('wasm');
 
@@ -86,7 +87,7 @@ const Index = ({ build_ids }: Props) => {
         </Form>
         <div className='d-flex flex-column'>
           <div>or select build id</div>
-          {build_ids.map(id => <div><Link href={`/build/${id}`}>{id}</Link></div>)}
+          {build_ids.map(id => <div><TypedLink to='poe1.build.get_build' params={{ id }}>{id}</TypedLink></div>)}
         </div>
       </>}
     </Container>
