@@ -2,31 +2,19 @@ import { isNotGem } from '@/domainutils'
 import { Mod } from '@bindings/domain/bindings/Mod'
 import { ModConfig } from '@bindings/domain/bindings/ModConfig'
 import { RequiredItem } from '@bindings/domain/bindings/RequiredItem'
+import { JSX } from 'react'
 
 type Props = {
   item: RequiredItem,
+  modConfigComponent: ([m, cf]: [Mod, ModConfig | null], idx?: number) => JSX.Element,
 }
 
-const RequiredItemComponent = ({ item }: Props) => {
-  const renderConfig = (cf: ModConfig | null) => {
-    if (!cf) {
-      return <></>
-    }
-
-    if (cf === 'Exist') {
-      return <p>exist</p>
-    } else if ('Exact' in cf) {
-      return <p>exact: {cf.Exact}</p>
-    } else if ('Range' in cf) {
-      return <p>range: {cf.Range.start}-{cf.Range.end}</p>
-    } else if ('Min' in cf) {
-      return <p>min: {cf.Min}</p>
-    } else if ('Max' in cf) {
-      return <p>max: {cf.Max}</p>
-    }
-  };
+const RequiredItemComponent = ({ item, modConfigComponent }: Props) => {
   const renderMods = (mods: [Mod, ModConfig | null][]) => {
-    return mods.map(([m, cf]) => <div className=''>{m.text} ({renderConfig(cf)})</div>)
+    return mods.map((m, idx) => <div className='d-flex'>
+      <div>{m[0].text}</div>
+      {modConfigComponent(m, idx)}
+    </div>);
   };
 
   if (isNotGem(item.info)) {
@@ -39,6 +27,10 @@ const RequiredItemComponent = ({ item }: Props) => {
       </div>
     </div >;
   } else {
+    if (item.subcategory === 'Empty') {
+      return <></>
+    }
+
     return <div className='m-2 border' style={{ fontSize: '14px' }}>
       <p>{item.name} {item.info.level}lvl/+{item.info.quality}%</p>
     </div>;

@@ -1,38 +1,12 @@
 import { FoundBuildItems } from "@bindings/domain/bindings/FoundBuildItems";
 import { StoredItem } from "@bindings/domain/bindings/StoredItem";
-import { StoredItemInfo } from "@bindings/domain/bindings/StoredItemInfo";
 import { useId, useState } from "react";
 import { Collapse } from "react-bootstrap";
 import { Button } from "react-bootstrap";
-
+import { StoredItemComponent } from "./StoredItemComponent";
 
 const isSingleItem = (v: ItemType): v is StoredItem => {
   return !!v && !Array.isArray(v);
-};
-
-const isNotGem = (v: StoredItemInfo) => {
-  return v.type !== "Gem";
-}
-
-type SingleItemProps = {
-  item: StoredItem,
-};
-
-const SingleItem = ({ item }: SingleItemProps) => {
-  if (isNotGem(item.info)) {
-    return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
-      <div className='border'>
-        <span>{item.name}<br />{item.basetype}</span>
-      </div>
-      <div className='border'>
-        <div>{item.info.mods.map(m => <div>{m.text}</div>)}</div>
-      </div>
-    </div >;
-  } else {
-    return <div className='m-2 border' style={{ fontSize: '14px' }}>
-      <p>{item.name} {item.info.level}lvl/+{item.info.quality}%</p>
-    </div>;
-  }
 };
 
 type MultipleItemsProps = {
@@ -48,7 +22,7 @@ const MultipleItems = ({ items, itemKey }: MultipleItemsProps) => {
     <Button onClick={() => setOpen(!open)} aria-controls={id} aria-expanded={open}>{itemKey}</Button>
     <Collapse in={open}>
       <div id={id}>
-        {items.map(si => <SingleItem item={si} />)}
+        {items.map(si => <StoredItemComponent item={si} />)}
       </div>
     </Collapse>
   </div>
@@ -69,9 +43,9 @@ type Props = {
 export const ItemListFound = (items: Props) => {
   const renderItem = (k: string, item: ItemType) => {
     if (!item) {
-      return <div>Item not found</div>
+      return <div>Item ({k}) not found</div>
     } else if (isSingleItem(item)) {
-      return <SingleItem item={item} />
+      return <StoredItemComponent item={item} />
     } else {
       return <MultipleItems items={item} itemKey={k} />
     }

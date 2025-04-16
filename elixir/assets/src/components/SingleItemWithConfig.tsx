@@ -1,5 +1,4 @@
 import { ModConfig } from "@bindings/domain/bindings/ModConfig";
-import { isNotGem } from "@/domainutils";
 import { Form } from "react-bootstrap";
 import { ChangeEventHandler, useCallback, useContext } from "react";
 import { Mod } from "@bindings/domain/bindings/Mod";
@@ -8,6 +7,7 @@ import _ from "lodash";
 import { ItemsContext } from "@states/preview";
 import { useStore } from "zustand";
 import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
+import RequiredItemComponent from "./RequiredItemComponent";
 
 type ItemWithConfigProps = {
   k: keyof BuildItemsWithConfig,
@@ -132,20 +132,17 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
     }
   };
 
-  return <div className='d-flex'>
-    <div>{m.text}</div>
-    <div className="d-flex flex-column">
-      <Form.Select onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"}>
-        <option value="Exist">Exist</option>
-        <option value="Exact">Exact match</option>
-        <option value="Range">Range match</option>
-        <option value="Min">Min</option>
-        <option value="Max">Max</option>
-        <option value="ignore">Ignore</option>
-      </Form.Select>
-      {renderAdditionalForSelect()}
-    </div>
-  </div>
+  return <div className="d-flex flex-column">
+    <Form.Select onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"}>
+      <option value="Exist">Exist</option>
+      <option value="Exact">Exact match</option>
+      <option value="Range">Range match</option>
+      <option value="Min">Min</option>
+      <option value="Max">Max</option>
+      <option value="ignore">Ignore</option>
+    </Form.Select>
+    {renderAdditionalForSelect()}
+  </div>;
 };
 
 type Props = {
@@ -160,22 +157,14 @@ export const SingleItemWithConfig = ({ itemKey, multipleIndex }: Props) => {
   const item = data.provided[itemKey];
 
   const renderItem = (item: ItemWithConfig) => {
-    if (isNotGem(item.item.info)) {
-      return <div className='border border-primary m-2 flex-fill' style={{ fontSize: '14px' }}>
-        <div className='border'>
-          <span>{item.item.name}<br />{item.item.basetype}</span>
+    return <RequiredItemComponent
+      item={item.item}
+      modConfigComponent={([m, cf], idx) => <Form.Group>
+        <div>
+          <ItemModWithConfig key={idx} k={itemKey} m={m} origCfg={cf} multipleIndex={multipleIndex} />
         </div>
-        <div className='border'>
-          <Form.Group>
-            <div>{item.item.info.mods.map(([m, cf], idx) => <ItemModWithConfig key={idx} k={itemKey} m={m} origCfg={cf} multipleIndex={multipleIndex} />)}</div>
-          </Form.Group>
-        </div>
-      </div>;
-    } else {
-      return <div className='m-2 border' style={{ fontSize: '14px' }}>
-        <p>{item.item.name} {item.item.info.level}lvl/+{item.item.info.quality}%</p>
-      </div>;
-    }
+      </Form.Group>}
+    />
   };
 
   if (!Array.isArray(item)) {
