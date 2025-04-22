@@ -26,6 +26,7 @@ pub struct Item {
     pub image_link: String,
     pub sockets: Sockets,
     pub properties: Vec<Property>,
+    pub note: Option<String>,
 }
 
 impl Item {}

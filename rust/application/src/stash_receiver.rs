@@ -66,6 +66,12 @@ impl<T: ItemInsertTrait + StashRepositoryTrait> StashReceiver<T> {
                 .items
                 .into_iter()
                 .filter_map(|i| Item::try_from(i).ok())
+                .map(|mut i| {
+                    if i.note.is_none() {
+                        i.note = Some(stash.clone());
+                    }
+                    i
+                })
                 .filter_map(|i| StoredItem::try_from(i).ok())
                 .collect::<Vec<_>>();
             self.repository.insert_items(items.clone(), stash).await?;

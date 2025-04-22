@@ -5,6 +5,7 @@ use crate::{
         Item,
     },
 };
+use regex::bytes::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
@@ -132,6 +133,20 @@ impl ItemInfo {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, TS, PartialEq)]
+#[ts(export)]
+pub enum Price {
+    Chaos(i32),
+    Divine(i32),
+    Custom(String, i32),
+}
+
+impl Default for Price {
+    fn default() -> Self {
+        Price::Chaos(0)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct StoredItem {
@@ -141,9 +156,28 @@ pub struct StoredItem {
     pub subcategory: Subcategory,
     pub info: ItemInfo,
     pub name: String,
+    pub price: Price,
 }
 
-impl StoredItem {}
+lazy_static::lazy_static! {
+    static ref PRICE_REGEX: regex::bytes::Regex = Regex::new(r#"~(price|b/o) ([0-9\.]+) ([a-z]+)"#).unwrap();
+}
+
+impl StoredItem {
+    fn extract_price(s: &str) -> Option<Price> {
+        let c = PRICE_REGEX.captures(s.as_bytes())?;
+        let count = c.get(2)?;
+        let curr = c.get(3)?;
+        let count = std::str::from_utf8(count.as_bytes()).unwrap();
+        let count: f32 = count.parse().unwrap_or_default();
+        let count: i32 = unsafe { count.floor().to_int_unchecked() };
+        Some(match curr.as_bytes() {
+            b"chaos" => Price::Chaos(count),
+            b"div" | b"divine" => Price::Divine(count),
+            a => Price::Custom(String::from_utf8_lossy(a).to_string(), count),
+        })
+    }
+}
 
 #[derive(Error, Debug)]
 pub enum StoredItemError {
@@ -194,6 +228,10 @@ impl TryFrom<Item> for StoredItem {
                     None
                 }
             })
+            .unwrap_or_default();
+        let price = value
+            .note
+            .and_then(|s| StoredItem::extract_price(&s))
             .unwrap_or_default();
         let info = match cat {
             t @ (Category::Weapons | Category::Armour) => {
@@ -252,6 +290,40 @@ impl TryFrom<Item> for StoredItem {
             category,
             subcategory,
             name: value.name,
+            price,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_price() {
+        assert_eq!(
+            Some(Price::Chaos(10)),
+            StoredItem::extract_price("~price 10 chaos")
+        );
+        assert_eq!(
+            Some(Price::Chaos(10)),
+            StoredItem::extract_price("~b/o 10 chaos")
+        );
+        assert_eq!(
+            Some(Price::Divine(10)),
+            StoredItem::extract_price("~b/o 10 divine")
+        );
+        assert_eq!(
+            Some(Price::Divine(10)),
+            StoredItem::extract_price("~b/o 10 divine custom text")
+        );
+        assert_eq!(
+            Some(Price::Divine(10)),
+            StoredItem::extract_price("~b/o 10.99 divine custom text")
+        );
+        assert_eq!(
+            Some(Price::Custom("alt".to_string(), 10)),
+            StoredItem::extract_price("~b/o 10.99 alt custom text")
+        );
     }
 }

@@ -384,6 +384,7 @@ impl TryFrom<Item> for DomainItem {
             properties,
             mods,
             unknown_mods,
+            note: value.note,
         })
     }
 }

@@ -80,6 +80,9 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperStoredItem {
                 .try_get::<'_, sqlx::types::Json<_>, &str>("data")
                 .map(|x| x.0)?,
             name: row.try_get("name")?,
+            price: row
+                .try_get::<'_, sqlx::types::Json<_>, &str>("price")
+                .map(|x| x.0)?,
         }))
     }
 }
@@ -93,20 +96,21 @@ impl ItemInsertTrait for ItemRepository {
     ) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         let mut copyin = tx
-            .copy_in_raw(r#"COPY items(id, data, basetype, category, subcategory, name) FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'@')"#)
+            .copy_in_raw(r#"COPY items(id, data, basetype, category, subcategory, name, price) FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'@')"#)
             .await?;
         let mut ids = Vec::with_capacity(items.len());
         let items_len = items.len();
         for item in items {
             let json = serde_json::to_string(&item.info).unwrap();
             let line = format!(
-                "{};@{}@;{};{};{};@{}@\n",
+                "{};@{}@;{};{};{};@{}@;@{}@\n",
                 item.id,
                 json,
                 item.basetype,
                 item.category.as_ref(),
                 item.subcategory.as_ref(),
                 item.name,
+                serde_json::to_string(&item.price).unwrap(),
             );
             copyin.send(line.as_bytes()).await?;
             ids.push(item.id);
@@ -185,7 +189,7 @@ impl SearchItemsByModsTrait for ItemRepository {
     ) -> Result<Vec<StoredItem>, ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
 
-        let query = "select id, data, basetype, category, subcategory, name from items";
+        let query = "select id, data, basetype, category, subcategory, name, price from items";
         let mut filters = vec![];
         let mut count = 0;
         if basetype.is_some() {
