@@ -24,6 +24,8 @@ defmodule PoeSystem.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import PoeSystem.DataCase
+
+      use Oban.Testing, repo: PoeSystem.Repo
     end
   end
 
