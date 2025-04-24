@@ -6,6 +6,9 @@ defmodule RustPoe.Native do
 
   def extract_build_config(_pobxml, _itemset, _skillset), do: error()
   def validate_and_apply_config(_extracted_config, _user_config), do: error()
+  def process_single_build(_pid), do: error()
+  def extract_mods_for_search(_req_item), do: error()
+  def closest_item(_item, _items), do: error()
 
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

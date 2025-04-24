@@ -1,7 +1,7 @@
 defmodule PoeSystem.BuildInfoPreview do
   require Protocol
-  alias PoeSystem.BuildInfoPreview
   alias PoeSystem.BuildInfo.BuildData
+  alias PoeSystem.BuildInfoPreview
   alias PoeSystem.Repo
   alias Ecto.UUID
   use Ecto.Schema

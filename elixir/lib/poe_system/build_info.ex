@@ -3,7 +3,6 @@ defmodule PoeSystem.BuildInfo do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Ecto.UUID
   alias PoeSystem.Repo
   alias PoeSystem.BuildInfo.BuildData
 
@@ -18,9 +17,10 @@ defmodule PoeSystem.BuildInfo do
   end
 
   @doc false
-  def changeset(build_info, attrs) do
+  def changeset(build_info, attrs \\ %{}) do
     build_info
-    |> cast(attrs, [:id, :data, :processed])
+    |> cast(attrs, [:id, :processed, :data])
+    # |> cast_embed(:data, required: true)
     |> validate_required([:id, :data, :processed])
   end
 
@@ -36,6 +36,7 @@ defmodule PoeSystem.BuildInfo do
     |> Repo.insert()
   end
 
+  @spec get_build(Ecto.UUID.t()) :: %__MODULE__{}
   def get_build(id) do
     Repo.get!(__MODULE__, id)
   end
@@ -43,5 +44,10 @@ defmodule PoeSystem.BuildInfo do
   def get_ids() do
     Repo.all(from b in __MODULE__, select: [b.id])
     |> Enum.flat_map(& &1)
+  end
+
+  def update_build(build, attrs) do
+    changeset(build, attrs)
+    |> Repo.update()
   end
 end

@@ -2,6 +2,7 @@ defmodule PoeSystem.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
+  alias PoeSystem.BuildProcessing
 
   use Application
 
@@ -12,6 +13,7 @@ defmodule PoeSystem.Application do
       PoeSystem.Repo,
       {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PoeSystem.PubSub},
+      BuildProcessing,
       # Start a worker by calling: PoeSystem.Worker.start_link(arg)
       # {PoeSystem.Worker, arg},
       {Inertia.SSR,

@@ -1,6 +1,6 @@
 defmodule PoeSystem.BuildInfo.BuildItemsWithConfig do
+  alias PoeSystem.BuildInfo.ItemWithConfig
   use Ecto.Schema
-  import Ecto.Changeset
 
   embedded_schema do
     embeds_one :helmet, ItemWithConfig

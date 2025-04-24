@@ -1,6 +1,7 @@
 defmodule PoeSystem.BuildInfo.FoundBuildItems do
   use Ecto.Schema
 
+  @primary_key false
   embedded_schema do
     field :helmet, :map
     field :body, :map
@@ -11,6 +12,7 @@ defmodule PoeSystem.BuildInfo.FoundBuildItems do
     field :ring1, :map
     field :ring2, :map
     field :belt, :map
+    field :amulet, :map
     field :flasks, {:array, :map}
     field :gems, {:array, :map}
     field :jewels, {:array, :map}

@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 
-use domain::build_calculation::{
-    validate_and_apply_config, BuildInfo, FillRules, UnverifiedBuildItemsWithConfig,
-};
-use pob::{build_import_pob::import_build_from_pob, Pob};
-use rustler::{Binary, Decoder, Encoder, Env, Error, NifResult, SerdeTerm, Term};
+use rustler::{Encoder, Env, Error, SerdeTerm, Term};
 use serde_json::Value;
+
+mod build_calculation;
+mod config;
 
 mod atoms {
     rustler::atoms! {
         ok,
         error,
+        get_items,
     }
 }
 
@@ -36,71 +36,23 @@ impl From<RustError> for Error {
     }
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn extract_build_config<'a>(
-    env: Env<'a>,
-    pobdata: Binary<'a>,
-    itemset: Binary<'a>,
-    skillset: Binary<'a>,
-) -> NifResult<Term<'a>> {
-    Ok(extract_build_config_impl(env, pobdata, itemset, skillset)?)
-}
-
-fn extract_build_config_impl<'a>(
-    env: Env<'a>,
-    pobdata: Binary<'a>,
-    itemset: Binary<'a>,
-    skillset: Binary<'a>,
-) -> Result<Term<'a>, RustError> {
-    let pobdata = String::from_utf8(pobdata.as_slice().to_vec())?;
-    let pob = Pob::from_pastebin_data(pobdata)?;
-    let itemset = std::str::from_utf8(itemset.trim_ascii())?;
-    let skillset = std::str::from_utf8(skillset.trim_ascii())?;
-    let mut info = import_build_from_pob(&pob, itemset, skillset)?;
-    info.provided.fill_configs_by_rule(FillRules::AllExist);
-    let term = encode_config(env, &info)?;
-    Ok((atoms::ok(), term).encode(env))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-fn validate_and_apply_config<'a>(
-    env: Env<'a>,
-    extracted_config: Term<'a>,
-    user_config: Term<'a>,
-) -> NifResult<Term<'a>> {
-    let extracted = SerdeTerm::<HashMap<String, Value>>::decode(extracted_config)?;
-    let user = SerdeTerm::<HashMap<String, Value>>::decode(user_config)?;
-    Ok(validate_and_apply_config_impl(env, extracted, user)?)
-}
-
-fn decode_config(conf: SerdeTerm<HashMap<String, Value>>) -> Result<BuildInfo, RustError> {
-    let json = serde_json::to_string(&conf.0)?;
+fn decode_config<T>(conf: HashMap<String, Value>) -> Result<T, RustError>
+where
+    T: for<'a> serde::de::Deserialize<'a>,
+{
+    let json = serde_json::to_string(&conf)?;
     let info = serde_json::from_str(&json)?;
     Ok(info)
 }
 
 // TODO: optimize serialize/deserialize
-fn encode_config<'a>(env: Env<'a>, bi: &BuildInfo) -> Result<Term<'a>, RustError> {
+fn encode_config<'a, T>(env: Env<'a>, bi: &T) -> Result<Term<'a>, RustError>
+where
+    T: serde::ser::Serialize,
+{
     let json = serde_json::to_string(bi)?;
     let m: HashMap<String, Value> = serde_json::from_str(&json)?;
     Ok(SerdeTerm(m).encode(env))
-}
-
-fn validate_and_apply_config_impl(
-    env: Env<'_>,
-    extracted_config: SerdeTerm<HashMap<String, Value>>,
-    user_config: SerdeTerm<HashMap<String, Value>>,
-) -> Result<Term<'_>, RustError> {
-    let mut extracted = decode_config(extracted_config)?;
-    let mut user = decode_config(user_config)?;
-    if validate_and_apply_config(
-        &mut extracted.provided,
-        UnverifiedBuildItemsWithConfig(&mut user.provided),
-    ) {
-        Ok((atoms::ok(), encode_config(env, &extracted)?).encode(env))
-    } else {
-        Err(RustError::InvalidUserBuildInfo)
-    }
 }
 
 rustler::init!("Elixir.RustPoe.Native");

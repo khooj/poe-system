@@ -1,4 +1,6 @@
 defmodule PoeSystem.BuildInfo.BuildData do
+  alias PoeSystem.BuildInfo.FoundBuildItems
+  alias PoeSystem.BuildInfo.BuildItemsWithConfig
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -6,12 +8,14 @@ defmodule PoeSystem.BuildInfo.BuildData do
 
   @derive Jason.Encoder
   embedded_schema do
-    field :provided, :map
-    field :found, :map
+    embeds_one :provided, :map
+    embeds_one :found, :map
   end
 
-  def changeset(data, attrs \\ %{}) do
-    data
-    |> cast(attrs, [:provided, :found])
-  end
+  # def changeset(data, attrs \\ %{}) do
+  #   data
+  #   |> cast(attrs, [])
+  #   |> cast_embed(:provided, required: true)
+  #   |> cast_embed(:found, required: true)
+  # end
 end
