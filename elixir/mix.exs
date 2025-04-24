@@ -50,7 +50,8 @@ defmodule PoeSystem.MixProject do
       {:inertia, "~> 2.2.0"},
       {:rustler, "~> 0.36.1", runtime: false},
       {:routes, path: "custom/routes"},
-      {:nodejs, path: "custom/elixir-nodejs", override: true}
+      {:nodejs, path: "custom/elixir-nodejs", override: true},
+      {:oban, "~> 2.19.4"}
     ]
   end
 

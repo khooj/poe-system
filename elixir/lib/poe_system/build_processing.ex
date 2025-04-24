@@ -2,29 +2,21 @@ defmodule PoeSystem.BuildProcessing do
   require Logger
   alias PoeSystem.Repo
   alias PoeSystem.BuildInfo
-  alias PoeSystem.BuildInfo.BuildData
-  alias PoeSystem.Items.Item
-  alias PoeSystem.BuildInfo.RequiredItem
   alias PoeSystem.Items
   alias RustPoe.Native
-  use GenServer
-  import Ecto.Query
+  use Oban.Worker, queue: :new_builds
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def queue_processing_build_multi(multi, name, id) do
+    multi
+    |> Oban.insert(name, new(%{id: id}))
   end
 
-  def start_processing_build(id) do
-    GenServer.cast(__MODULE__, {:process, id})
+  def queue_processing_build(id) do
+    Oban.insert(new(%{id: id}))
   end
 
-  @impl true
-  def init(init_arg) do
-    {:ok, init_arg}
-  end
-
-  @impl true
-  def handle_cast({:process, id}, state) do
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"id" => id} = _args}) do
     build = BuildInfo.get_build(id)
     build_data = process_single_build(build.data)
 
@@ -36,7 +28,7 @@ defmodule PoeSystem.BuildProcessing do
     {:ok, _} = BuildInfo.update_build(build, build_attrs)
     Logger.debug("end processing")
 
-    {:noreply, state}
+    :ok
   end
 
   # @spec process_single_build(BuildData) :: BuildData

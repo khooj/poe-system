@@ -1,4 +1,5 @@
 defmodule PoeSystemWeb.Poe1Controller do
+  alias PoeSystem.BuildProcessing
   alias PoeSystem.BuildInfoPreview
   alias PoeSystem.BuildInfo
   alias Ecto.Multi
@@ -18,6 +19,7 @@ defmodule PoeSystemWeb.Poe1Controller do
     Multi.new()
     |> Multi.insert(:insert, BuildInfo.add_build_changeset(id, build.data))
     |> Multi.delete(:delete, %BuildInfoPreview{id: id})
+    |> BuildProcessing.queue_processing_build_multi(:new_job, id)
     |> PoeSystem.Repo.transaction()
 
     # {:ok, _} = BuildInfo.add_build(id, build.data)

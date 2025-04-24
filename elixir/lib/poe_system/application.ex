@@ -13,7 +13,7 @@ defmodule PoeSystem.Application do
       PoeSystem.Repo,
       {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PoeSystem.PubSub},
-      BuildProcessing,
+      {Oban, Application.fetch_env!(:poe_system, Oban)},
       # Start a worker by calling: PoeSystem.Worker.start_link(arg)
       # {PoeSystem.Worker, arg},
       {Inertia.SSR,
