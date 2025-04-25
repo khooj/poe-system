@@ -23,15 +23,15 @@ fn extract_mods_for_search(
 #[rustler::nif]
 fn closest_item(
     env: Env<'_>,
-    req_item: SerdeTerm<RequiredItem>,
-    items: SerdeTerm<Vec<StoredItem>>,
+    req_item: SerdeTerm<HashMap<String, Value>>,
+    items: SerdeTerm<Vec<HashMap<String, Value>>>,
 ) -> NifResult<SerdeTerm<Option<StoredItem>>> {
-    // let req_item = decode_config(req_item.0)?;
-    // let items = items
-    //     .0
-    //     .into_iter()
-    //     .map(|i| decode_config(i).expect("cannot decode stored item in vec"))
-    //     .collect();
-    let result = Comparator::closest_item(&req_item.0, items.0);
+    let req_item = decode_config(req_item.0)?;
+    let items = items
+        .0
+        .into_iter()
+        .map(|i| decode_config(i).expect("cannot decode stored item in vec"))
+        .collect();
+    let result = Comparator::closest_item(&req_item, items);
     Ok(SerdeTerm(result))
 }

@@ -92,18 +92,6 @@
                   };
                 };
 
-                "build_calculation" = {
-                  disabled = true;
-                  command = "RUST_LOG=info cargo run --release --bin build_calculator";
-                  working_dir = "./rust";
-                };
-
-                "build_unlocker" = {
-                  disabled = true;
-                  command = "cargo run --release --bin build_unlocker";
-                  working_dir = "./rust";
-                };
-
                 "stash_receiver" = {
                   disabled = true;
                   command = "cargo run --release --bin stash_receiver";

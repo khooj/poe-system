@@ -24,7 +24,7 @@ defmodule PoeSystem.BuildProcessing do
     build_attrs =
       %{}
       |> Map.put(:processed, true)
-      |> Map.put(:data, build_data)
+      |> Map.put(:info, build_data)
 
     {:ok, _} = BuildInfo.update_build(build, build_attrs)
     Logger.debug("end processing")
@@ -32,38 +32,10 @@ defmodule PoeSystem.BuildProcessing do
     :ok
   end
 
-  # @spec process_single_build(BuildData) :: BuildData
   def process_single_build(build) do
-    # boots = find_similar(get_in(build["provided"]["boots"]["item"]))
-    # helmet = find_similar(get_in(build["provided"]["helmet"]["item"]))
-    # body = find_similar(get_in(build["provided"]["body"]["item"]))
-    # gloves = find_similar(get_in(build["provided"]["gloves"]["item"]))
-    # weapon1 = find_similar(get_in(build["provided"]["weapon1"]["item"]))
-    # weapon2 = find_similar(get_in(build["provided"]["weapon2"]["item"]))
-    # ring1 = find_similar(get_in(build["provided"]["ring1"]["item"]))
-    # ring2 = find_similar(get_in(build["provided"]["ring2"]["item"]))
-    # belt = find_similar(get_in(build["provided"]["belt"]["item"]))
-    # amulet = find_similar(get_in(build["provided"]["amulet"]["item"]))
-    #
-    # items = [
-    #   "boots",
-    #   "helmet",
-    #   "body",
-    #   "gloves",
-    #   "weapon1",
-    #   "weapon2",
-    #   "ring1",
-    #   "ring2",
-    #   "belt",
-    #   "amulet",
-    #   "flasks",
-    #   "gems",
-    #   "jewels"
-    # ]
-
     found =
       build["provided"]
-      |> Enum.map(fn {k, v} -> {k, process_entry(IO.inspect(v))} end)
+      |> Enum.map(fn {k, v} -> {k, process_entry(v)} end)
       |> Enum.into(%{})
 
     put_in(build["found"], found)
@@ -81,7 +53,6 @@ defmodule PoeSystem.BuildProcessing do
     find_similar(item["item"])
   end
 
-  # @spec find_similar(%RequiredItem{}) :: {:ok, [%Item{}] | nil}
   def find_similar(item) do
     Logger.debug("extract mods")
     {:ok, mods} = Native.extract_mods_for_search(item)
@@ -105,16 +76,32 @@ defmodule PoeSystem.BuildProcessing do
       end)
 
     Logger.debug("closest_item")
-    Native.closest_item(IO.inspect(item), IO.inspect(items))
+    Native.closest_item(item, items)
   end
 
   defp opt(false, _), do: nil
   defp opt(nil, _), do: nil
   defp opt(_, v), do: v
 
+  defp keys_to_string(%{__struct__: _} = v) do
+    keys_to_string(Map.from_struct(v))
+  end
+
   defp keys_to_string(v) do
     v
     |> Enum.map(fn {k, v} -> {Atom.to_string(k), v} end)
     |> Enum.into(%{})
+  end
+
+  def test do
+    {:ok, _} = queue_processing_build("cb5bb0be-405a-4328-accc-6e8dadbe6397")
+  end
+
+  def drop_jobs do
+    a = Atom.to_string(__MODULE__)
+
+    Oban.Job
+    |> Ecto.Query.where(worker: ^a)
+    |> Oban.delete_all_jobs()
   end
 end

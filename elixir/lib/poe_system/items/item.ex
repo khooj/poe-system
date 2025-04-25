@@ -5,7 +5,7 @@ defmodule PoeSystem.Items.Item do
   @primary_key false
   schema "items" do
     field :id, :string, primary_key: true
-    field :data, :map
+    field :info, :map, source: :data
     field :basetype, :string
     field :category, :string
     field :subcategory, :string
