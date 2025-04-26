@@ -36,7 +36,10 @@ impl From<RustError> for Error {
     }
 }
 
-fn decode_config<T>(conf: HashMap<String, Value>) -> Result<T, RustError>
+type JsonHashMap = HashMap<String, Value>;
+type SerdeTermJson = SerdeTerm<JsonHashMap>;
+
+fn decode_config<T>(SerdeTerm(conf): SerdeTerm<HashMap<String, Value>>) -> Result<T, RustError>
 where
     T: for<'a> serde::de::Deserialize<'a>,
 {
@@ -46,13 +49,16 @@ where
 }
 
 // TODO: optimize serialize/deserialize
-fn encode_config<'a, T>(env: Env<'a>, bi: &T) -> Result<Term<'a>, RustError>
+fn encode_config<'a, T>(
+    env: Env<'a>,
+    bi: &T,
+) -> Result<SerdeTerm<HashMap<String, Value>>, RustError>
 where
     T: serde::ser::Serialize,
 {
     let json = serde_json::to_string(bi)?;
     let m: HashMap<String, Value> = serde_json::from_str(&json)?;
-    Ok(SerdeTerm(m).encode(env))
+    Ok(SerdeTerm(m))
 }
 
 rustler::init!("Elixir.RustPoe.Native");

@@ -7,22 +7,20 @@ defmodule PoeSystem.Items do
           {:basetype, String.t()}
           | {:category, String.t()}
           | {:subcategory, String.t()}
-          | {:mods, [mods()]}
 
   @type mods() :: %{stat_id: String.t()}
 
   @spec search_items_by_attrs([search_items_opt()]) :: [%Item{}]
-  def search_items_by_attrs(opts \\ []) do
-    search_items_by_attrs_query(opts)
+  def search_items_by_attrs(item_mods, opts \\ []) do
+    search_items_by_attrs_query(item_mods, opts)
     |> Repo.all()
   end
 
   @spec search_items_by_attrs_query([search_items_opt()]) :: %Ecto.Query{}
-  def search_items_by_attrs_query(opts \\ []) do
+  def search_items_by_attrs_query(item_mods, opts \\ []) do
     basetype = Keyword.get(opts, :basetype)
     category = Keyword.get(opts, :category)
     subcategory = Keyword.get(opts, :subcategory)
-    item_mods = Keyword.get(opts, :mods, [])
 
     mods =
       item_mods
@@ -34,7 +32,15 @@ defmodule PoeSystem.Items do
     |> opt(basetype, &where(&1, [m], m.basetype == ^basetype))
     |> opt(category, &where(&1, [m], m.category == ^category))
     |> opt(subcategory, &where(&1, [m], m.subcategory == ^subcategory))
-    |> opt(!Enum.empty?(mods.mods), &where(&1, [m], fragment("? @> ?", m.data, ^mods)))
+    |> where([m], fragment("? @> ?", m.data, ^mods))
+    |> order_by([m], m.id)
+  end
+
+  def append_id_cursor(query, nil), do: query
+
+  def append_id_cursor(query, id) do
+    query
+    |> where([m], m.id > ^id)
   end
 
   defp opt(q, nil, _), do: q

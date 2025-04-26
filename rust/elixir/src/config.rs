@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{decode_config, encode_config, RustError};
+use crate::{decode_config, encode_config, RustError, SerdeTermJson};
 
 use super::atoms;
 use domain::build_calculation::{
@@ -29,27 +29,27 @@ fn extract_build_config_impl<'a>(
     let pob = Pob::from_pastebin_data(pobdata.to_string())?;
     let mut info = import_build_from_pob(&pob, itemset, skillset)?;
     info.provided.fill_configs_by_rule(FillRules::AllExist);
-    // let term = encode_config(env, &info)?;
-    Ok((atoms::ok(), SerdeTerm(info)).encode(env))
+    let term = encode_config(env, &info)?;
+    Ok((atoms::ok(), term).encode(env))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 fn validate_and_apply_config(
     env: Env<'_>,
-    extracted_config: SerdeTerm<HashMap<String, Value>>,
-    user_config: SerdeTerm<HashMap<String, Value>>,
+    extracted_config: SerdeTermJson,
+    user_config: SerdeTermJson,
 ) -> NifResult<Term<'_>> {
     Ok(validate_and_apply_config_impl(
         env,
-        extracted_config.0,
-        user_config.0,
+        extracted_config,
+        user_config,
     )?)
 }
 
 fn validate_and_apply_config_impl(
     env: Env<'_>,
-    extracted_config: HashMap<String, Value>,
-    user_config: HashMap<String, Value>,
+    extracted_config: SerdeTermJson,
+    user_config: SerdeTermJson,
 ) -> Result<Term<'_>, RustError> {
     let mut extracted_config: BuildInfo = decode_config(extracted_config)?;
     let mut user_config: BuildInfo = decode_config(user_config)?;

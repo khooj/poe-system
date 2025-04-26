@@ -658,6 +658,7 @@ dependencies = [
  "async-trait",
  "domain",
  "pob",
+ "public_stash",
  "rustler",
  "serde",
  "serde_json",

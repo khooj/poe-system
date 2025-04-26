@@ -26,7 +26,8 @@ export default defineConfig(() => {
       sourcemap: true,
       manifest: false,
       commonjsOptions: {
-        include: [/routes/, /node_modules/, /states/, /bindings/]
+        include: [/routes/, /node_modules/, /states/, /bindings/],
+        strictRequires: "auto"
       },
       rollupOptions: {
         input: {

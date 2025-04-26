@@ -1,4 +1,6 @@
 defmodule PoeSystem.BuildProcessingTest do
+  alias PoeSystem.Items.Item
+  alias PoeSystem.Testdata
   alias PoeSystem.BuildProcessing
   use PoeSystem.DataCase
 
@@ -14,5 +16,10 @@ defmodule PoeSystem.BuildProcessingTest do
              |> Repo.transaction()
 
     assert_enqueued(worker: BuildProcessing, args: %{id: "testid"})
+  end
+
+  test "process single build w/ items" do
+    build = Testdata.extract_config()
+    assert BuildProcessing.process_single_build(build)
   end
 end

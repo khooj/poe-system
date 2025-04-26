@@ -67,7 +67,7 @@ defmodule PoeSystem.Repo.Migrations.CreateBuilds do
         CREATE OR REPLACE TRIGGER new_builds AFTER INSERT ON builds
         FOR EACH ROW EXECUTE FUNCTION new_build_added();
       """,
-      "DROP TRIGGER new_builds;"
+      "DROP TRIGGER new_builds ON builds;"
     )
   end
 end

@@ -15,7 +15,9 @@ defmodule PoeSystem.Items.Item do
 
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:id, :data, :basetype, :category, :subcategory, :name, :price])
-    |> validate_required([:id, :data, :basetype, :category, :subcategory, :name, :price])
+    |> cast(attrs, [:id, :info, :basetype, :category, :subcategory, :name, :price],
+      empty_values: []
+    )
+    |> validate_required([:id, :info, :basetype, :category, :subcategory, :price])
   end
 end

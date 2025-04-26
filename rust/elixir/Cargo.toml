@@ -16,3 +16,4 @@ thiserror = "2.0.12"
 domain = { path = "../domain" }
 async-trait = "0.1.88"
 serde = "1.0.219"
+public_stash = { path = "../public_stash" }

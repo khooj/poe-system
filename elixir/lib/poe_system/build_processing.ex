@@ -24,12 +24,17 @@ defmodule PoeSystem.BuildProcessing do
     build_attrs =
       %{}
       |> Map.put(:processed, true)
-      |> Map.put(:info, build_data)
+      |> Map.put(:data, build_data)
 
     {:ok, _} = BuildInfo.update_build(build, build_attrs)
     Logger.debug("end processing")
 
     :ok
+  end
+
+  @impl Oban.Worker
+  def backoff(_job) do
+    5
   end
 
   def process_single_build(build) do
@@ -44,39 +49,69 @@ defmodule PoeSystem.BuildProcessing do
   defp process_entry(nil), do: nil
 
   defp process_entry(items) when is_list(items) do
-    items
-    |> Enum.map(fn a -> find_similar(a["item"]) end)
-    |> Enum.filter(&(not is_nil(&1)))
+    result =
+      items
+      |> Enum.map(fn a -> find_similar(a["item"]) end)
+      |> Enum.filter(&(not is_nil(&1)))
+
+    Logger.debug("found items for few items: #{List.first(result)["id"]}")
+    result
   end
 
   defp process_entry(item) do
-    find_similar(item["item"])
+    result = find_similar(item["item"])
+    Logger.debug("found item for single item: #{result["id"]}")
+    result
   end
 
   def find_similar(item) do
     Logger.debug("extract mods")
     {:ok, mods} = Native.extract_mods_for_search(item)
 
-    Logger.debug("search_items")
+    if Enum.empty?(mods) do
+      nil
+    else
+      Logger.debug("search_items")
 
-    items_stream =
-      Items.search_items_by_attrs_query(
-        basetype: opt(item["search_basetype"], item["basetype"]),
-        category: opt(item["search_category"], item["category"]),
-        subcategory: opt(item["search_subcategory"], item["subcategory"]),
-        mods: mods
-      )
-      |> limit(10)
-      |> Repo.stream()
+      items_stream =
+        Items.search_items_by_attrs_query(
+          mods,
+          basetype: opt(item["search_basetype"], item["basetype"]),
+          category: opt(item["search_category"], item["category"]),
+          subcategory: opt(item["search_subcategory"], item["subcategory"])
+        )
 
+      process_items_stream(items_stream, item)
+    end
+  end
+
+  defp process_items_stream(query, req_item, last_id \\ nil, last_item \\ nil) do
     {:ok, items} =
       Repo.transaction(fn ->
-        Enum.to_list(items_stream)
-        |> Enum.map(&keys_to_string/1)
+        query
+        |> limit(500)
+        |> Items.append_id_cursor(last_id)
+        |> Repo.stream()
+        |> Stream.map(&keys_to_string/1)
+        |> Enum.to_list()
       end)
 
-    Logger.debug("closest_item")
-    Native.closest_item(item, items)
+    if Enum.empty?(items) do
+      last_item
+    else
+      new_last_id = List.last(items)["id"]
+
+      result =
+        if last_item do
+          {:ok, i} = Native.closest_item(req_item, [last_item | items])
+          i
+        else
+          {:ok, i} = Native.closest_item(req_item, items)
+          i
+        end
+
+      process_items_stream(query, req_item, new_last_id, result)
+    end
   end
 
   defp opt(false, _), do: nil
@@ -85,6 +120,11 @@ defmodule PoeSystem.BuildProcessing do
 
   defp keys_to_string(%{__struct__: _} = v) do
     keys_to_string(Map.from_struct(v))
+  end
+
+  defp keys_to_string(nil) do
+    Logger.critical("nil keys_to_string")
+    nil
   end
 
   defp keys_to_string(v) do
