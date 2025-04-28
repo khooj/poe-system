@@ -1,6 +1,6 @@
 use domain::item::{
     types::{
-        Category, Influence, Mod, ModError, ModType, Property, Sockets, Subcategory,
+        Category, Influence, Mod, ModError, ModType, Property, Rarity, Sockets, Subcategory,
         SubcategoryError, TypeError,
     },
     Item as DomainItem,
@@ -293,8 +293,19 @@ pub struct Item {
     pub socket: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub colour: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rarity: Option<String>,
+}
+
+struct FrameType(Option<i32>);
+
+impl From<FrameType> for Rarity {
+    fn from(value: FrameType) -> Self {
+        match value.0.unwrap_or_default() {
+            1 => Rarity::Magic,
+            2 => Rarity::Rare,
+            3 => Rarity::Unique,
+            _ => Rarity::Normal,
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -364,7 +375,7 @@ impl TryFrom<Item> for DomainItem {
         Ok(DomainItem {
             id: value.id.unwrap_or(Uuid::new_v4().to_string()),
             league: value.league.into(),
-            rarity: value.rarity.unwrap_or_default().as_str().try_into()?,
+            rarity: FrameType(value.frame_type).into(),
             item_lvl: value.item_level,
             identified: value.identified,
             name: value.name,

@@ -163,6 +163,7 @@ pub struct RequiredItem {
     pub name: String,
     pub search_basetype: bool,
     pub search_subcategory: bool,
+    pub rarity: String,
 }
 
 impl RequiredItem {}
@@ -276,6 +277,7 @@ impl TryFrom<Item> for RequiredItem {
             name: value.name,
             search_basetype: false,
             search_subcategory: false,
+            rarity: value.rarity.into(),
         })
     }
 }

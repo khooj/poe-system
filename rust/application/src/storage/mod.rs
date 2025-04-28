@@ -35,17 +35,6 @@ pub trait ItemInsertTrait {
     ) -> Result<(), ItemRepositoryError>;
 }
 
-#[async_trait::async_trait]
-pub trait SearchItemsByModsTrait {
-    async fn search_items_by_attrs(
-        &mut self,
-        basetype: Option<&str>,
-        category: Option<Category>,
-        subcategory: Option<Subcategory>,
-        mods: Option<Vec<&RequiredMod>>,
-    ) -> Result<Vec<StoredItem>, ItemRepositoryError>;
-}
-
-pub trait ItemRepositoryTrait: ItemInsertTrait + SearchItemsByModsTrait {}
+pub trait ItemRepositoryTrait: ItemInsertTrait {}
 
 pub type DynItemRepository = Box<dyn ItemRepositoryTrait>;

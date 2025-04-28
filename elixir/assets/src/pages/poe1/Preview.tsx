@@ -86,7 +86,7 @@ const Preview = ({ build_data }: Props) => {
   }, [data, patchForm]);
 
   return (
-    <Container fluid className='d-flex flex-column'>
+    <Container fluid className='d-flex flex-column align-content-center main-color'>
       <div>itemset: {build_data.itemset} skillset: {build_data.skillset}
         {errors.config && <p>Error occured: {errors.config}</p>}
       </div>

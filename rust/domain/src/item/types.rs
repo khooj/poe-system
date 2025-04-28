@@ -323,6 +323,18 @@ impl TryFrom<&str> for Rarity {
     }
 }
 
+impl Into<String> for Rarity {
+    fn into(self) -> String {
+        (match self {
+            Rarity::Normal => "normal",
+            Rarity::Rare => "rare",
+            Rarity::Magic => "magic",
+            Rarity::Unique => "unique",
+        })
+        .into()
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug, Default, TS)]
 #[ts(export)]
 pub struct Property {

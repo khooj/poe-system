@@ -1,6 +1,5 @@
 use crate::storage::{
-    ItemInsertTrait, ItemRepositoryError, ItemRepositoryTrait, LatestStashId,
-    SearchItemsByModsTrait, StashRepositoryTrait,
+    ItemInsertTrait, ItemRepositoryError, ItemRepositoryTrait, LatestStashId, StashRepositoryTrait,
 };
 use domain::{
     build_calculation::{required_item::Mod as RequiredMod, stored_item::StoredItem},
@@ -83,6 +82,7 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for WrapperStoredItem {
             price: row
                 .try_get::<'_, sqlx::types::Json<_>, &str>("price")
                 .map(|x| x.0)?,
+            rarity: row.try_get("rarity")?,
         }))
     }
 }
@@ -96,14 +96,14 @@ impl ItemInsertTrait for ItemRepository {
     ) -> Result<(), ItemRepositoryError> {
         let mut tx = self.pool.begin().await?;
         let mut copyin = tx
-            .copy_in_raw(r#"COPY items(id, data, basetype, category, subcategory, name, price) FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'@')"#)
+            .copy_in_raw(r#"COPY items(id, data, basetype, category, subcategory, name, price, rarity) FROM STDIN WITH (FORMAT CSV, DELIMITER ';', QUOTE E'@')"#)
             .await?;
         let mut ids = Vec::with_capacity(items.len());
         let items_len = items.len();
         for item in items {
             let json = serde_json::to_string(&item.info).unwrap();
             let line = format!(
-                "{};@{}@;{};{};{};@{}@;@{}@\n",
+                "{};@{}@;{};{};{};@{}@;@{}@;@{}@\n",
                 item.id,
                 json,
                 item.basetype,
@@ -111,6 +111,7 @@ impl ItemInsertTrait for ItemRepository {
                 item.subcategory.as_ref(),
                 item.name,
                 serde_json::to_string(&item.price).unwrap(),
+                item.rarity,
             );
             copyin.send(line.as_bytes()).await?;
             ids.push(item.id);
@@ -175,66 +176,6 @@ impl StashRepositoryTrait for ItemRepository {
             .await?;
         tx.commit().await?;
         Ok(())
-    }
-}
-
-#[async_trait::async_trait]
-impl SearchItemsByModsTrait for ItemRepository {
-    async fn search_items_by_attrs(
-        &mut self,
-        basetype: Option<&str>,
-        category: Option<Category>,
-        subcategory: Option<Subcategory>,
-        mods: Option<Vec<&RequiredMod>>,
-    ) -> Result<Vec<StoredItem>, ItemRepositoryError> {
-        let mut tx = self.pool.begin().await?;
-
-        let query = "select id, data, basetype, category, subcategory, name, price from items";
-        let mut filters = vec![];
-        let mut count = 0;
-        if basetype.is_some() {
-            count += 1;
-            filters.push(format!("basetype = ${}", count));
-        }
-        if category.is_some() {
-            count += 1;
-            filters.push(format!("category = ${}", count));
-        }
-        if subcategory.is_some() {
-            count += 1;
-            filters.push(format!("subcategory = ${}", count));
-        }
-        if mods.is_some() {
-            count += 1;
-            filters.push(format!("data @> ${}::jsonb", count));
-        }
-
-        let query = if filters.is_empty() {
-            query.to_string()
-        } else {
-            query.to_string() + " where " + &filters.join(" and ")
-        };
-
-        let mut sqx_query = sqlx::query_as(&query);
-
-        if let Some(b) = basetype {
-            sqx_query = sqx_query.bind(b);
-        }
-        if let Some(b) = category {
-            sqx_query = sqx_query.bind(b.as_ref().to_string());
-        }
-        if let Some(b) = subcategory {
-            sqx_query = sqx_query.bind(b.as_ref().to_string());
-        }
-        if let Some(b) = mods {
-            let search_mods: SearchMods = b.into();
-            let search_mods = serde_json::to_string(&search_mods)?;
-            sqx_query = sqx_query.bind(search_mods);
-        }
-
-        let result: Vec<WrapperStoredItem> = sqx_query.fetch_all(&mut *tx).await?;
-        tx.commit().await?;
-        Ok(result.into_iter().map(|s| s.0).collect())
     }
 }
 

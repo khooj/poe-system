@@ -11,13 +11,14 @@ defmodule PoeSystem.Items.Item do
     field :subcategory, :string
     field :name, :string
     field :price, :map
+    field :rarity, :string
   end
 
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:id, :info, :basetype, :category, :subcategory, :name, :price],
+    |> cast(attrs, [:id, :info, :basetype, :category, :subcategory, :name, :price, :rarity],
       empty_values: []
     )
-    |> validate_required([:id, :info, :basetype, :category, :subcategory, :price])
+    |> validate_required([:id, :info, :basetype, :category, :subcategory, :price, :rarity])
   end
 end

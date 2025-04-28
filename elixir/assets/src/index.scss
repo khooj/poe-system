@@ -1,2 +1,26 @@
 @import "bootstrap/scss/bootstrap";
 // @import "bootstrap-reboot";
+
+.item-color {
+  background-color: #69747C;
+}
+
+.item-rare {
+  border-color: #e2d15f !important;
+}
+
+.item-magic {
+  border-color: #4487ba !important;
+}
+
+.item-normal {
+  border-color: #9da9b2 !important;
+}
+
+.item-unique {
+  border-color: #d17a38 !important;
+}
+
+.main-color {
+  background-color: #545454;
+}

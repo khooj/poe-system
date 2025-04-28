@@ -4,4 +4,4 @@ import type { Price } from "./Price";
 import type { StoredItemInfo } from "./StoredItemInfo";
 import type { Subcategory } from "./Subcategory";
 
-export type StoredItem = { id: string, basetype: string, category: Category, subcategory: Subcategory, info: StoredItemInfo, name: string, price: Price, };
+export type StoredItem = { id: string, basetype: string, category: Category, subcategory: Subcategory, info: StoredItemInfo, name: string, price: Price, rarity: string, };

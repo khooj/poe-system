@@ -157,6 +157,7 @@ pub struct StoredItem {
     pub info: ItemInfo,
     pub name: String,
     pub price: Price,
+    pub rarity: String,
 }
 
 lazy_static::lazy_static! {
@@ -291,6 +292,7 @@ impl TryFrom<Item> for StoredItem {
             subcategory,
             name: value.name,
             price,
+            rarity: value.rarity.into(),
         })
     }
 }
