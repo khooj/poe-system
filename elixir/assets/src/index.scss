@@ -1,16 +1,18 @@
 @import "bootstrap/scss/bootstrap";
-// @import "bootstrap-reboot";
 
-.item-color {
-  background-color: #69747C;
-}
+// @import "bootstrap-reboot";
+//
+
+// .item-color {
+//   background-color: #69747C;
+// }
 
 .item-rare {
   border-color: #e2d15f !important;
 }
 
 .item-magic {
-  border-color: #4487ba !important;
+  border-color: #2d4bb7 !important;
 }
 
 .item-normal {
@@ -18,9 +20,20 @@
 }
 
 .item-unique {
-  border-color: #d17a38 !important;
+  border-color: #cc600e !important;
 }
 
-.main-color {
-  background-color: #545454;
+// .main-color {
+//   background-color: #545454;
+// }
+
+.select-color option {
+  // background-color: #545454 !important;
+  // color: #000000;
 }
+
+[data-bs-theme="poe1"] {
+  --bs-body-bg: #545454;
+  --bs-body-bg-rgb: #{to-rgb(#545454)};
+}
+

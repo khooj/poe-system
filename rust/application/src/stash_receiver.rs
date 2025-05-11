@@ -2,7 +2,9 @@ use crate::storage::{
     postgresql::items::ItemRepository, ItemInsertTrait, LatestStashId, StashRepositoryTrait,
 };
 use domain::{build_calculation::stored_item::StoredItem, item::Item};
+use metrics::{counter, histogram};
 use public_stash::{client::Error as StashError, models::PublicStashData};
+use tokio::time::Instant;
 use tracing::{info, instrument, trace};
 
 pub type PgStashReceiver = StashReceiver<ItemRepository>;
@@ -51,6 +53,7 @@ impl<T: ItemInsertTrait + StashRepositoryTrait> StashReceiver<T> {
         }
 
         for d in k.stashes {
+            let start_stash = Instant::now();
             if d.account_name.is_none() || d.stash.is_none() {
                 trace!("skipping stash because of empty account name or stash");
                 continue;
@@ -61,6 +64,8 @@ impl<T: ItemInsertTrait + StashRepositoryTrait> StashReceiver<T> {
                 self.repository.clear_stash(stash).await?;
                 continue;
             }
+
+            let start = Instant::now();
 
             let items = d
                 .items
@@ -74,7 +79,15 @@ impl<T: ItemInsertTrait + StashRepositoryTrait> StashReceiver<T> {
                 })
                 .filter_map(|i| StoredItem::try_from(i).ok())
                 .collect::<Vec<_>>();
-            self.repository.insert_items(items.clone(), stash).await?;
+
+            histogram!("stash_receiver.process_items.delta").record(start.elapsed());
+            counter!("stash_receiver.items_count").increment(items.len().try_into().unwrap());
+
+            let start = Instant::now();
+            self.repository.insert_items(items, stash).await?;
+            histogram!("stash_receiver.insert_items.delta").record(start.elapsed());
+            counter!("stash_receiver.stashes_count").increment(1);
+            histogram!("stash_receiver.process_stash.delta").record(start_stash.elapsed());
         }
         self.repository
             .set_stash_id(LatestStashId {

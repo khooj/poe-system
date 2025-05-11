@@ -9,7 +9,7 @@ type Props = {
 export default function Layout({ children }: Props) {
   return (
     <>
-      <Navbar expand='lg' className='bg-body-tertiary'>
+      <Navbar expand='lg' className=''>
         <Container>
           <TypedLink to='index' className='navbar-brand'>Home</TypedLink>
           <Navbar.Toggle aria-controls='basic-navbar-nav' />

@@ -40,11 +40,11 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
 
   if (isNotGem(item.info)) {
     return <div className={`border m-2 ${rarityColor}`}>
-      <div className={`border d-flex justify-content-between`}>
+      <div className={`border-bottom d-flex justify-content-between`}>
         <span>{item.name}<br />{item.basetype}</span>
         {itemNameComponent && itemNameComponent(item)}
       </div>
-      <div className='border'>
+      <div className=''>
         <div>{renderMods(item.info.mods)}</div>
       </div>
     </div >;

@@ -158,6 +158,7 @@
                 graphviz
                 playwright-driver.browsers
                 playwright
+                protobuf
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config

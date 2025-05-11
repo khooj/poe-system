@@ -133,7 +133,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
   };
 
   return <div className="d-flex flex-column">
-    <Form.Select onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"}>
+    <Form.Select className='' onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"}>
       <option value="Exist">Exist</option>
       <option value="Exact">Exact match</option>
       <option value="Range">Range match</option>

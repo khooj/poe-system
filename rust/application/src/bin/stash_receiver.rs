@@ -12,6 +12,7 @@ use serde::Deserialize;
 use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 use tokio::time::Instant;
+use tracing::Level;
 use utils::DEFAULT_USER_AGENT;
 
 #[derive(Parser)]
@@ -36,9 +37,9 @@ async fn launch_with_dir(mut receiver: PgStashReceiver, dir: &str) -> anyhow::Re
     for (_, content) in stashes {
         let start = Instant::now();
         let data: PublicStashData = serde_json::from_str(&content)?;
+        histogram!("stash_receiver.json_deserialize.delta").record(start.elapsed());
         receiver.receive(data).await?;
-        let delta = start.elapsed();
-        histogram!("stash_receiver.dir.time").record(delta);
+        histogram!("stash_receiver.one_json.delta").record(start.elapsed());
     }
 
     Ok(())
@@ -85,6 +86,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?
         .try_deserialize()?;
 
+    metrics_exporter_tcp::TcpBuilder::new().install()?;
+
+    let start = Instant::now();
+
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&settings.pg)
@@ -94,5 +99,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Command::Stash => {} //launch_with_api(receiver).await?,
         Command::Directory { dir } => launch_with_dir(receiver, dir.as_ref()).await?,
     };
+    histogram!("stash_receiver.full.delta").record(start.elapsed());
     Ok(())
 }
