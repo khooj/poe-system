@@ -1,4 +1,5 @@
 defmodule PoeSystemWeb.Poe1ControllerTest do
+  alias Ecto.UUID
   alias PoeSystem.BuildInfo
   alias PoeSystem.Repo
   use PoeSystemWeb.ConnCase
@@ -39,6 +40,11 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
       conn = get(conn, ~p"/poe1/preview/#{id}")
 
       assert inertia_component(conn)
+    end
+
+    test "GET /preview fail", %{conn: conn, id: id} do
+      conn = get(conn, ~p"/poe1/preview/#{UUID.bingenerate()}")
+      assert response(conn, 404)
     end
 
     test "PATCH /build", %{conn: conn, id: id} do

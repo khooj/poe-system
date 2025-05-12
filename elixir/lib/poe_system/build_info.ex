@@ -40,9 +40,8 @@ defmodule PoeSystem.BuildInfo do
     |> Repo.insert()
   end
 
-  @spec get_build(Ecto.UUID.t()) :: %__MODULE__{}
   def get_build(id) do
-    Repo.get!(__MODULE__, id)
+    Repo.get(__MODULE__, id)
   end
 
   def get_ids() do

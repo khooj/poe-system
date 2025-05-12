@@ -48,16 +48,22 @@ defmodule PoeSystemWeb.Poe1Controller do
   end
 
   def preview(conn, %{"id" => id}) do
-    build = BuildInfo.get_build(id)
+    case BuildInfo.get_build(id) do
+      nil ->
+        conn
+        |> put_flash(:info, "Build does not exist")
+        |> put_status(404)
+        |> redirect(to: ~p"/poe1")
 
-    if build.fixed do
-      conn
-      |> put_flash(:info, "Build already configured")
-      |> redirect(to: ~p"/poe1/build/#{id}")
-    else
-      conn
-      |> assign_prop(:build_data, build)
-      |> render_inertia("poe1/Preview")
+      %{fixed: true} ->
+        conn
+        |> put_flash(:info, "Build already configured")
+        |> redirect(to: ~p"/poe1/build/#{id}")
+
+      build ->
+        conn
+        |> assign_prop(:build_data, build)
+        |> render_inertia("poe1/Preview")
     end
   end
 
@@ -84,16 +90,22 @@ defmodule PoeSystemWeb.Poe1Controller do
   end
 
   def get_build(conn, %{"id" => id}) do
-    data = BuildInfo.get_build(id)
+    case BuildInfo.get_build(id) do
+      nil ->
+        conn
+        |> put_flash(:info, "Build does not exist")
+        |> put_status(404)
+        |> redirect(to: ~p"/poe1")
 
-    if data.fixed do
-      conn
-      |> assign_prop(:data, data.data)
-      |> render_inertia("poe1/Build")
-    else
-      conn
-      |> put_flash(:info, "Build not configured")
-      |> redirect(to: ~p"/poe1/preview/#{id}")
+      %{fixed: true} = data ->
+        conn
+        |> assign_prop(:data, data.data)
+        |> render_inertia("poe1/Build")
+
+      _ ->
+        conn
+        |> put_flash(:info, "Build not configured")
+        |> redirect(to: ~p"/poe1/preview/#{id}")
     end
   end
 end

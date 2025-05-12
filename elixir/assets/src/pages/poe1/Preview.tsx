@@ -57,7 +57,7 @@ const Preview = ({ build_data }: Props) => {
   };
 
   const patchForm = useCallback(() => {
-    patch(Routes.path('poe1.preview.update_preview'), {
+    patch(Routes.path('poe1.build.update_build_config'), {
       onSuccess: () => setDefaults(),
     });
   }, [patch, setDefaults]);
