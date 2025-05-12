@@ -17,3 +17,4 @@ domain = { path = "../domain" }
 async-trait = "0.1.88"
 serde = "1.0.219"
 public_stash = { path = "../public_stash" }
+serde_path_to_error = "0.1.17"

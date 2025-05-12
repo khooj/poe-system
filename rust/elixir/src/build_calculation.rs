@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{decode_config, encode_config, JsonHashMap, SerdeTermJson};
 
 use super::atoms;
@@ -9,6 +11,7 @@ use domain::{
 };
 use public_stash::models::{PublicStashChange, PublicStashData};
 use rustler::{Encoder, Env, NifResult, SerdeTerm, Term};
+use serde_json::{Map, Value};
 
 #[rustler::nif]
 fn extract_mods_for_search(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<Term<'_>> {
@@ -19,6 +22,18 @@ fn extract_mods_for_search(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<T
         .map(|m| encode_config(env, m).expect("cannot encode config"))
         .collect();
     Ok((atoms::ok(), mods).encode(env))
+}
+
+struct WrapperMap<'a>(&'a Map<String, Value>);
+
+impl<'a> From<WrapperMap<'a>> for HashMap<String, Value> {
+    fn from(value: WrapperMap<'a>) -> Self {
+        value
+            .0
+            .into_iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
+    }
 }
 
 #[rustler::nif]
@@ -37,7 +52,7 @@ fn closest_item(
 }
 
 #[rustler::nif]
-fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<SerdeTermJson>> {
+fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<SerdeTerm<Value>>> {
     let k: PublicStashData = serde_json::from_str(data).unwrap();
     let mut res_items = vec![];
 

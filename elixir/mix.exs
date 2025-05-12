@@ -51,7 +51,8 @@ defmodule PoeSystem.MixProject do
       {:rustler, "~> 0.36.1", runtime: false},
       {:routes, path: "custom/routes"},
       {:nodejs, path: "custom/elixir-nodejs", override: true},
-      {:oban, "~> 2.19.4"}
+      {:oban, "~> 2.19.4"},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 

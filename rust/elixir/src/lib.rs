@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error as StdError};
 
 use rustler::{Encoder, Env, Error, SerdeTerm, Term};
 use serde_json::Value;
+use serde_path_to_error::Path;
 
 mod build_calculation;
 mod config;
@@ -14,10 +15,14 @@ mod atoms {
     }
 }
 
+pub struct SerdePathError {}
+
 #[derive(Debug, thiserror::Error)]
 pub enum RustError {
     #[error("serde_json error: {0}")]
     SerdeJson(#[from] serde_json::Error),
+    #[error("serde_json error path: {0}: {2} (data: {1})")]
+    SerdeJsonPath(Path, String, Box<dyn StdError>),
     #[error("import build from pob: {0}")]
     ImportPob(#[from] pob::build_import_pob::ImportPobError),
     #[error("import pob from pastebin: {0}")]
@@ -44,21 +49,19 @@ where
     T: for<'a> serde::de::Deserialize<'a>,
 {
     let json = serde_json::to_string(&conf)?;
-    let info = serde_json::from_str(&json)?;
+    let info = &mut serde_json::Deserializer::from_str(&json);
+    let info = serde_path_to_error::deserialize(info)
+        .map_err(|e| RustError::SerdeJsonPath(e.path().clone(), json, Box::new(e)))?;
     Ok(info)
 }
 
 // TODO: optimize serialize/deserialize
-fn encode_config<'a, T>(
-    env: Env<'a>,
-    bi: &T,
-) -> Result<SerdeTerm<HashMap<String, Value>>, RustError>
+fn encode_config<'a, T>(env: Env<'a>, bi: &T) -> Result<SerdeTerm<Value>, RustError>
 where
     T: serde::ser::Serialize,
 {
-    let json = serde_json::to_string(bi)?;
-    let m: HashMap<String, Value> = serde_json::from_str(&json)?;
-    Ok(SerdeTerm(m))
+    let json = serde_json::to_value(bi)?;
+    Ok(SerdeTerm(json))
 }
 
 rustler::init!("Elixir.RustPoe.Native");
