@@ -1,7 +1,8 @@
 defmodule PoeSystemWeb.Poe1Controller do
+  alias Ecto.UUID
   alias PoeSystem.BuildProcessing
-  alias PoeSystem.BuildInfoPreview
   alias PoeSystem.BuildInfo
+  alias PoeSystem.Repo
   alias Ecto.Multi
   use PoeSystemWeb, :controller
 
@@ -14,16 +15,12 @@ defmodule PoeSystemWeb.Poe1Controller do
   end
 
   def new(conn, %{"id" => id}) do
-    build = BuildInfoPreview.get_build(id)
+    build = BuildInfo.get_build(id)
 
     Multi.new()
-    |> Multi.insert(:insert, BuildInfo.add_build_changeset(id, build.data))
-    |> Multi.delete(:delete, %BuildInfoPreview{id: id})
+    |> Multi.update(:update, BuildInfo.changeset(build, %{fixed: true}))
     |> BuildProcessing.queue_processing_build_multi(:new_job, id)
     |> PoeSystem.Repo.transaction()
-
-    # {:ok, _} = BuildInfo.add_build(id, build.data)
-    # {:ok, _} = BuildInfoPreview.remove(%BuildInfoPreview{id: id})
 
     conn
     |> redirect(to: ~p"/poe1/build/#{id}")
@@ -35,37 +32,68 @@ defmodule PoeSystemWeb.Poe1Controller do
         "skillset" => skillset
       }) do
     {:ok, extracted_config} = RustPoe.Native.extract_build_config(pob_data, itemset, skillset)
-    {:ok, data} = BuildInfoPreview.add_build(extracted_config, itemset, skillset, pob_data)
+
+    {:ok, data} =
+      BuildInfo.changeset(%BuildInfo{}, %{
+        id: UUID.bingenerate(),
+        data: extracted_config,
+        itemset: itemset,
+        skillset: skillset,
+        pob: pob_data
+      })
+      |> Repo.insert()
 
     conn
     |> redirect(to: ~p"/poe1/preview/#{data.id}")
   end
 
   def preview(conn, %{"id" => id}) do
-    data = BuildInfoPreview.get_build(id)
+    build = BuildInfo.get_build(id)
 
-    conn
-    |> assign_prop(:build_data, data)
-    |> render_inertia("poe1/Preview")
+    if build.fixed do
+      conn
+      |> put_flash(:info, "Build already configured")
+      |> redirect(to: ~p"/poe1/build/#{id}")
+    else
+      conn
+      |> assign_prop(:build_data, build)
+      |> render_inertia("poe1/Preview")
+    end
   end
 
-  def update_preview(conn, %{"id" => id, "config" => config}) do
-    build = BuildInfoPreview.get_build(id)
+  def update_build_config(conn, %{"id" => id, "config" => config}) do
+    build = BuildInfo.get_build(id)
 
-    {:ok, validated_config} =
-      RustPoe.Native.validate_and_apply_config(build.data, config)
+    if build.fixed do
+      conn
+      |> put_flash(:info, "Build config cannot be updated")
+      |> redirect(to: ~p"/poe1/build/#{id}")
+    else
+      {:ok, validated_config} =
+        RustPoe.Native.validate_and_apply_config(build.data, config)
 
-    {:ok, _} = BuildInfoPreview.update(build, validated_config)
+      {:ok, _} =
+        BuildInfo.changeset(build, %{
+          data: validated_config
+        })
+        |> Repo.update()
 
-    conn
-    |> redirect(to: ~p"/poe1/preview/#{id}")
+      conn
+      |> redirect(to: ~p"/poe1/preview/#{id}")
+    end
   end
 
   def get_build(conn, %{"id" => id}) do
     data = BuildInfo.get_build(id)
 
-    conn
-    |> assign_prop(:data, data.data)
-    |> render_inertia("poe1/Build")
+    if data.fixed do
+      conn
+      |> assign_prop(:data, data.data)
+      |> render_inertia("poe1/Build")
+    else
+      conn
+      |> put_flash(:info, "Build not configured")
+      |> redirect(to: ~p"/poe1/preview/#{id}")
+    end
   end
 end

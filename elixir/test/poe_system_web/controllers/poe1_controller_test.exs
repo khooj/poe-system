@@ -41,9 +41,9 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
       assert inertia_component(conn)
     end
 
-    test "PATCH /preview", %{conn: conn, id: id} do
+    test "PATCH /build", %{conn: conn, id: id} do
       cfg = Testdata.extract_config()
-      conn = patch(conn, ~p"/poe1/preview", config: cfg, id: id)
+      conn = patch(conn, ~p"/poe1/build", config: cfg, id: id)
       assert response(conn, 302)
       assert %{id: ^id} = redirected_params(conn)
     end
@@ -60,6 +60,6 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
 
     assert response(conn, 200)
     assert inertia_component(conn)
-    assert %{data: respData} = inertia_props(conn)
+    assert %{data: _} = inertia_props(conn)
   end
 end

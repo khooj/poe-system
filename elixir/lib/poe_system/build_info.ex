@@ -2,9 +2,8 @@ defmodule PoeSystem.BuildInfo do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-
   alias PoeSystem.Repo
-  alias PoeSystem.BuildInfo.BuildData
+  require Protocol
 
   @primary_key false
 
@@ -12,16 +11,21 @@ defmodule PoeSystem.BuildInfo do
     field :id, Ecto.UUID, primary_key: true
     field :data, :map
     field :processed, :boolean, default: false
+    field :itemset, :string
+    field :skillset, :string
+    field :pob, :string
+    field :fixed, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
 
+  Protocol.derive(Jason.Encoder, __MODULE__, except: [:__meta__])
+
   @doc false
   def changeset(build_info, attrs \\ %{}) do
     build_info
-    |> cast(attrs, [:id, :processed, :data])
-    # |> cast_embed(:data, required: true)
-    |> validate_required([:id, :data, :processed])
+    |> cast(attrs, [:id, :processed, :data, :itemset, :skillset, :pob, :fixed])
+    |> validate_required([:id, :data, :itemset, :skillset, :pob])
   end
 
   def add_build_changeset(id, data) do
