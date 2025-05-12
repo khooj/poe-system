@@ -32,6 +32,7 @@ const RenderConfig = ({ cf }: RenderConfigProps) => {
 
 type Props = {
   data: BuildInfo,
+  processed: boolean,
 }
 
 const itemsOrder: (keyof (BuildItemsWithConfig & FoundBuildItems))[] = [
@@ -41,7 +42,7 @@ const itemsOrder: (keyof (BuildItemsWithConfig & FoundBuildItems))[] = [
   'flasks'
 ];
 
-const Build = ({ data }: Props) => {
+const Build = ({ data, processed }: Props) => {
   const renderProvided = (k: keyof BuildItemsWithConfig) => {
     if (Array.isArray(data.provided[k])) {
       return <MultipleItems itemKey={k}>
@@ -83,11 +84,11 @@ const Build = ({ data }: Props) => {
       <div className='d-flex flex-column vw-50 border'>
         <Row>
           <Col className='d-flex justify-content-center'>Provided</Col>
-          <Col className='d-flex justify-content-center'>Found</Col>
+          <Col className='d-flex justify-content-center'>{processed && "Found" || "Build not processed, please return later"}</Col>
         </Row>
         {itemsOrder.map(k => <Row>
           <Col>{renderProvided(k)}</Col>
-          <Col>{renderFound(k)}</Col>
+          <Col>{processed && renderFound(k)}</Col>
         </Row>)}
       </div>
     </Container>

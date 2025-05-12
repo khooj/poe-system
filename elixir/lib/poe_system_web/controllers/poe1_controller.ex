@@ -100,6 +100,7 @@ defmodule PoeSystemWeb.Poe1Controller do
       %{fixed: true} = data ->
         conn
         |> assign_prop(:data, data.data)
+        |> assign_prop(:processed, data.processed)
         |> render_inertia("poe1/Build")
 
       _ ->
