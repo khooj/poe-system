@@ -16,6 +16,7 @@ export default function Layout({ children }: Props) {
           <Navbar.Collapse id='basic-navbar-nav'>
             <Nav className='me-auto'>
               <NavDropdown title='Path of Exile 1' id='poe1-nav-dropdown'>
+                <NavDropdown.Item disabled>Build cost calculator</NavDropdown.Item>
                 <TypedLink to='poe1.index' className='dropdown-item'>New build</TypedLink>
               </NavDropdown>
             </Nav>
