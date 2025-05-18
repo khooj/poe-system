@@ -1,35 +1,17 @@
-@import "bootstrap/scss/bootstrap";
-
-// @import "bootstrap-reboot";
-//
-
-// .item-color {
-//   background-color: #69747C;
-// }
-
-.item-rare {
-  border-color: #e2d15f !important;
+.border-item-rare {
+  --bs-border-color: #e2d15f;
 }
 
-.item-magic {
-  border-color: #2d4bb7 !important;
+.border-item-magic {
+  --bs-border-color: #2d4bb7;
 }
 
-.item-normal {
-  border-color: #9da9b2 !important;
+.border-item-normal {
+  --bs-border-color: #9da9b2;
 }
 
-.item-unique {
-  border-color: #cc600e !important;
-}
-
-// .main-color {
-//   background-color: #545454;
-// }
-
-.select-color option {
-  // background-color: #545454 !important;
-  // color: #000000;
+.border-item-unique {
+  --bs-border-color: #cc600e;
 }
 
 [data-bs-theme="poe1"] {
@@ -37,3 +19,4 @@
   --bs-body-bg-rgb: #{to-rgb(#545454)};
 }
 
+@import "bootstrap/scss/bootstrap";

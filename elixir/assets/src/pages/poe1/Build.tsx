@@ -100,13 +100,13 @@ const Build = ({ data, processed }: Props) => {
   const costString = Object.entries(cost).reduce((acc, x) => acc + ` ${x[0]}: ${x[1]}`, "");
 
   return (
-    <Container fluid className="d-flex flex-fill flex-row justify-content-evenly border main-color text-light">
-      <div className='d-flex flex-column vw-50 border'>
+    <Container fluid className="d-flex flex-fill flex-row justify-content-evenly">
+      <div className='d-flex flex-column vw-50'>
         <Row>
           <Col className='d-flex justify-content-center'>Provided</Col>
           <Col className='d-flex justify-content-center'>{processed && `Found (with cost: ${costString})` || "Build not processed, please return later"}</Col>
         </Row>
-        {itemsOrder.map(k => <Row>
+        {itemsOrder.map(k => <Row className='border'>
           <Col>{renderProvided(k)}</Col>
           <Col>{processed && renderFound(k)}</Col>
         </Row>)}

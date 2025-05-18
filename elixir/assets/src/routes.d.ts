@@ -7,7 +7,7 @@ interface Route {
   readonly params: readonly string[];
 }
 
-type HTTPMethod = GET | POST | PATCH;
+type HTTPMethod = GET | POST;
 
 type QueryParam = string | number | boolean | null | undefined;
 type QueryParams = Record<string, QueryParam | QueryParam[]>;
@@ -15,14 +15,12 @@ type QueryParams = Record<string, QueryParam | QueryParam[]>;
 type RouteParams = {
   "index": Record<string, never>;
   "poe1.index": Record<string, never>;
-  "poe1.new.new": {id: string | number};
-  "poe1.extract.extract": Record<string, never>;
-  "poe1.preview.preview": {id: string | number};
-  "poe1.build.update_build_config": Record<string, never>;
-  "poe1.build.get_build": {id: string | number}
+  "poe1.new.new": Record<string, never>;
+  "poe1.build.get_build": {id: string | number};
+  "api.extract.extract": Record<string, never>
 }
 
-type RouteName = "index" | "poe1.index" | "poe1.new.new" | "poe1.extract.extract" | "poe1.preview.preview" | "poe1.build.update_build_config" | "poe1.build.get_build";
+type RouteName = "index" | "poe1.index" | "poe1.new.new" | "poe1.build.get_build" | "api.extract.extract";
 
 type RouteParamsWithQuery<T extends Record<string, any>> = T & {
   _query?: QueryParams;
@@ -31,11 +29,9 @@ type RouteParamsWithQuery<T extends Record<string, any>> = T & {
 type RoutePathConfig = {
   "/": Record<string, never>;
       "/poe1": Record<string, never>;
-      "/poe1/new/:id": {id: string | number};
-      "/poe1/extract": Record<string, never>;
-      "/poe1/preview/:id": {id: string | number};
-      "/poe1/build": Record<string, never>;
-      "/poe1/build/:id": {id: string | number}
+      "/poe1/new": Record<string, never>;
+      "/poe1/build/:id": {id: string | number};
+      "/api/extract": Record<string, never>
 }
 
 type RoutePath = keyof RoutePathConfig;

@@ -8,9 +8,9 @@ defmodule PoeSystem.BuildProcessing do
   use Oban.Worker, queue: :new_builds
   import Ecto.Query
 
-  def queue_processing_build_multi(multi, name, id) do
+  def queue_processing_build_multi(multi, name, id_fn) do
     multi
-    |> Oban.insert(name, new(%{id: id}))
+    |> Oban.insert(name, &id_fn.(&1))
   end
 
   def queue_processing_build(id) do

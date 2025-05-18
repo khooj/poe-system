@@ -22,6 +22,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
     throw new Error('missing context');
   }
   const setItemConfig = useStore(store, s => s.setItemConfig);
+  const enabled = useStore(store, s => s.enabled);
 
   const defaultConfigValue = (config: ModConfig) => {
     if (config === "Exist") {
@@ -69,6 +70,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
           max={1000}
           defaultValue={start}
           onChange={debouncedOnChangeMin}
+          disabled={!enabled}
         />
         <Form.Label>Max {end}</Form.Label>
         <Form.Range
@@ -76,6 +78,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
           max={1000}
           defaultValue={end}
           onChange={debouncedOnChangeMax}
+          disabled={!enabled}
         />
       </>
     } else if ("Exact" in origCfg) {
@@ -93,6 +96,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
           max={1000}
           defaultValue={min}
           onChange={debouncedOnChangeMin}
+          disabled={!enabled}
         />
       </>
     } else if ("Max" in origCfg) {
@@ -108,6 +112,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
           max={1000}
           defaultValue={max}
           onChange={debouncedOnChangeMax}
+          disabled={!enabled}
         />
       </>
     } else {
@@ -123,22 +128,22 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
       setCfgCb({ Exact: (m.current_value_int && m.current_value_int[0]) || (m.current_value_float && m.current_value_float[0]) || 0 });
     } else if (e.target.value === 'Range') {
       setCfgCb({ Range: { start: 0, end: 1000 } });
-    } else if (e.target.value === 'Min') {
-      setCfgCb({ Min: 0 });
-    } else if (e.target.value === 'Max') {
-      setCfgCb({ Max: 1000 });
+      // } else if (e.target.value === 'Min') {
+      //   setCfgCb({ Min: 0 });
+      // } else if (e.target.value === 'Max') {
+      //   setCfgCb({ Max: 1000 });
     } else if (e.target.value === 'ignore') {
       setCfgCb(null);
     }
   };
 
   return <div className="d-flex flex-column">
-    <Form.Select className='' onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"}>
+    <Form.Select className='' onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"} disabled={!enabled}>
       <option value="Exist">Exist</option>
       <option value="Exact">Exact match</option>
       <option value="Range">Range match</option>
-      <option value="Min">Min</option>
-      <option value="Max">Max</option>
+      {/* <option value="Min">Min</option> */}
+      {/* <option value="Max">Max</option> */}
       <option value="ignore">Ignore</option>
     </Form.Select>
     {renderAdditionalForSelect()}

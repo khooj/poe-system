@@ -62,3 +62,15 @@ fn validate_and_apply_config_impl(
         Err(RustError::InvalidUserBuildInfo)
     }
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn validate_config(env: Env<'_>, config: SerdeTermJson) -> NifResult<Term<'_>> {
+    Ok(validate_config_impl(env, config)?)
+}
+
+fn validate_config_impl(env: Env<'_>, config: SerdeTermJson) -> Result<Term<'_>, RustError> {
+    // TODO: hint to compiler to not cut out?
+    #![allow(unused)]
+    let user_config: BuildInfo = decode_config(config)?;
+    Ok(atoms::ok().encode(env))
+}

@@ -38,6 +38,8 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
     rarityColor = 'item-unique';
   }
 
+  rarityColor = `border-${rarityColor}`;
+
   if (isNotGem(item.info)) {
     return <div className={`border m-2 ${rarityColor}`}>
       <div className={`border-bottom d-flex justify-content-between`}>

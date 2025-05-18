@@ -1,6 +1,4 @@
 defmodule PoeSystem.Testdata do
-  alias PoeSystem.Items.Item
-
   def pobdata_file() do
     String.trim(File.read!(Path.join([__DIR__, "../testdata/pob.txt"])))
   end

@@ -1,21 +1,18 @@
 defmodule PoeSystemWeb.Poe1ControllerTest do
-  alias Ecto.UUID
-  alias PoeSystem.BuildInfo
-  alias PoeSystem.Repo
   use PoeSystemWeb.ConnCase
   alias PoeSystem.Testdata
 
-  setup %{conn: conn} do
-    conn =
-      post(conn, ~p"/poe1/extract", %{
-        "itemset" => "Level 13 example",
-        "pobData" => Testdata.pobdata_file(),
-        "skillset" => "Maps"
-      })
-
-    %{id: id} = redirected_params(conn)
-    {:ok, id: id}
-  end
+  # setup %{conn: conn} do
+  #   conn =
+  #     post(conn, ~p"/poe1/extract", %{
+  #       "itemset" => "Level 13 example",
+  #       "pobData" => Testdata.pobdata_file(),
+  #       "skillset" => "Maps"
+  #     })
+  #
+  #   %{id: id} = redirected_params(conn)
+  #   {:ok, id: id}
+  # end
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/poe1")
@@ -25,47 +22,51 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
 
   test "POST /extract", %{conn: conn} do
     conn =
-      post(conn, ~p"/poe1/extract", %{
+      post(conn, ~p"/api/extract", %{
         "itemset" => "Level 13 example",
         "pobData" => Testdata.pobdata_file(),
         "skillset" => "Maps"
       })
 
-    assert %{id: id} = redirected_params(conn)
-    assert redirected_to(conn) =~ "/preview/#{id}"
+    assert %{"config" => _} = json_response(conn, 200)
   end
 
-  describe "/preview" do
-    test "GET /preview", %{conn: conn, id: id} do
-      conn = get(conn, ~p"/poe1/preview/#{id}")
+  test "POST /new", %{conn: conn} do
+    cfg = Testdata.extract_config()
 
-      assert inertia_component(conn)
-    end
+    conn =
+      post(conn, ~p"/poe1/new",
+        config: cfg,
+        itemset: "Level 13 example",
+        skillset: "Maps",
+        pobData: Testdata.pobdata_file()
+      )
 
-    test "GET /preview fail", %{conn: conn, id: id} do
-      conn = get(conn, ~p"/poe1/preview/#{UUID.bingenerate()}")
-      assert response(conn, 404)
-    end
+    assert redirected_to(conn) =~ "/build/"
+  end
 
-    test "PATCH /build", %{conn: conn, id: id} do
+  describe "GET /build" do
+    setup %{conn: conn} do
       cfg = Testdata.extract_config()
-      conn = patch(conn, ~p"/poe1/build", config: cfg, id: id)
-      assert response(conn, 302)
-      assert %{id: ^id} = redirected_params(conn)
+
+      conn =
+        post(conn, ~p"/poe1/new",
+          config: cfg,
+          itemset: "Level 13 example",
+          skillset: "Maps",
+          pobData: Testdata.pobdata_file()
+        )
+
+      %{id: id} = redirected_params(conn)
+      %{id: id}
     end
-  end
 
-  test "POST /new", %{conn: conn, id: id} do
-    conn = post(conn, ~p"/poe1/new/#{id}")
-    assert redirected_to(conn) =~ "/build/#{id}"
-  end
+    test "GET /build", %{conn: conn, id: id} do
+      conn = get(conn, ~p"/poe1/build/#{id}")
 
-  test "GET /build", %{conn: conn, id: id} do
-    conn = post(conn, ~p"/poe1/new/#{id}")
-    conn = get(conn, ~p"/poe1/build/#{id}")
-
-    assert response(conn, 200)
-    assert inertia_component(conn)
-    assert %{data: _} = inertia_props(conn)
+      assert response(conn, 200)
+      assert inertia_component(conn)
+      assert %{data: _} = inertia_props(conn)
+    end
   end
 end

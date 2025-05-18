@@ -10,9 +10,12 @@ import { ModConfig } from "@bindings/domain/bindings/ModConfig";
 
 interface PreviewProps {
   data: BuildInfo,
+  enabled: boolean,
 }
 
 interface ItemsState extends PreviewProps {
+  disableEdit: () => void,
+  enableEdit: () => void,
   setItemConfig: (k: keyof BuildItemsWithConfig, stat_id: string, cfg: ModConfig | null, multipleIndex?: number) => void,
 }
 
@@ -21,6 +24,12 @@ export type ItemsStore = ReturnType<typeof createItemsStore>;
 export const createItemsStore = (initProps: PreviewProps) => {
   return createStore<ItemsState>()(devtools(immer((set) => ({
     ...initProps,
+    disableEdit: () => set((state) => {
+      state.enabled = false;
+    }),
+    enableEdit: () => set((state) => {
+      state.enabled = true;
+    }),
     setItemConfig: (k: keyof BuildItemsWithConfig, stat_id: string, cfg: ModConfig | null, multipleIndex?: number) => set((state) => {
       const item = state.data.provided[k];
       if (Array.isArray(item)) {

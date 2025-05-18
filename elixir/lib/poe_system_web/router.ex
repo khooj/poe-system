@@ -26,17 +26,16 @@ defmodule PoeSystemWeb.Router do
     pipe_through :browser
 
     get "/", Poe1Controller, :index
-    post "/new/:id", Poe1Controller, :new
-    post "/extract", Poe1Controller, :extract
-    get "/preview/:id", Poe1Controller, :preview
-    patch "/build", Poe1Controller, :update_build_config
+    post "/new", Poe1Controller, :new
     get "/build/:id", Poe1Controller, :get_build
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", PoeSystemWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", PoeSystemWeb do
+    pipe_through :api
+
+    post "/extract", Poe1Controller, :extract
+  end
 
   # Enable LiveDashboard in development
   if Application.compile_env(:poe_system, :dev_routes) do
