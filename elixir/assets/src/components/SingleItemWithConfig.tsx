@@ -1,5 +1,5 @@
 import { ModConfig } from "@bindings/domain/bindings/ModConfig";
-import { Form } from "react-bootstrap";
+import { Col, Form, Row } from "react-bootstrap";
 import { ChangeEventHandler, useCallback, useContext } from "react";
 import { Mod } from "@bindings/domain/bindings/Mod";
 import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
@@ -63,7 +63,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
       }, 300);
       const debouncedOnChangeMax = _.debounce((e) => setCfgCb({ Range: { ...origCfg.Range, end: parseInt(e.target.value) } }), 300);
       const { start, end } = origCfg.Range;
-      return <>
+      return <><Col>
         <Form.Label>Min {start}</Form.Label>
         <Form.Range
           min={0}
@@ -72,14 +72,17 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
           onChange={debouncedOnChangeMin}
           disabled={!enabled}
         />
-        <Form.Label>Max {end}</Form.Label>
-        <Form.Range
-          min={0}
-          max={1000}
-          defaultValue={end}
-          onChange={debouncedOnChangeMax}
-          disabled={!enabled}
-        />
+      </Col>
+        <Col>
+          <Form.Label>Max {end}</Form.Label>
+          <Form.Range
+            min={0}
+            max={1000}
+            defaultValue={end}
+            onChange={debouncedOnChangeMax}
+            disabled={!enabled}
+          />
+        </Col>
       </>
     } else if ("Exact" in origCfg) {
       return <></>
@@ -137,7 +140,7 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
     }
   };
 
-  return <div className="d-flex flex-column">
+  return <div className="d-flex">
     <Form.Select className='' onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"} disabled={!enabled}>
       <option value="Exist">Exist</option>
       <option value="Exact">Exact match</option>
@@ -146,7 +149,9 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
       {/* <option value="Max">Max</option> */}
       <option value="ignore">Ignore</option>
     </Form.Select>
-    {renderAdditionalForSelect()}
+    <Form.Group as={Row}>
+      {renderAdditionalForSelect()}
+    </Form.Group>
   </div>;
 };
 
@@ -164,11 +169,9 @@ export const SingleItemWithConfig = ({ itemKey, multipleIndex }: Props) => {
   const renderItem = (item: ItemWithConfig) => {
     return <RequiredItemComponent
       item={item.item}
-      modConfigComponent={([m, cf], idx) => <Form.Group>
-        <div>
-          <ItemModWithConfig key={idx} k={itemKey} m={m} origCfg={cf} multipleIndex={multipleIndex} />
-        </div>
-      </Form.Group>}
+      modConfigComponent={([m, cf], idx) => <div>
+        <ItemModWithConfig key={idx} k={itemKey} m={m} origCfg={cf} multipleIndex={multipleIndex} />
+      </div>}
     />
   };
 
