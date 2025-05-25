@@ -1,8 +1,10 @@
 import { Container } from 'react-bootstrap'
 
-type Props = {};
+type Props = {
+  build_ids: string[],
+};
 
-const Index = (_a: Props) => {
+const Index = ({ build_ids }: Props) => {
   return (
     <Container className="d-flex flex-column align-items-center justify-content-center">
       <div className='d-flex flex-column'>
