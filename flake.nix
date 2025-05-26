@@ -27,7 +27,9 @@
           _module.args.pkgs = import self.inputs.nixpkgs {
             inherit system;
             config.allowUnfree = true;
-            overlays = [self.inputs.rust-overlay.overlays.default];
+            overlays = [
+              self.inputs.rust-overlay.overlays.default
+            ];
           };
 
           process-compose."services" = {
@@ -101,6 +103,49 @@
             };
           };
 
+          packages = let
+            beamPackages = pkgs.beam.packagesWith pkgs.beam.interpreters.erlang_27;
+            rustToolchain = pkgs.rust-bin.stable."1.84.0".minimal.override {
+              targets = ["wasm32-unknown-unknown"];
+            };
+            crossPkgs = import self.inputs.nixpkgs {
+              inherit system;
+              overlays = [self.inputs.rust-overlay.overlays.default];
+              crossSystem = {
+                inherit system;
+                rust.rustcTarget = "wasm32-unknown-unknown";
+              };
+            };
+            rustPlatform = pkgs.makeRustPlatform {
+              rustc = rustToolchain;
+              cargo = rustToolchain;
+            };
+            buildRustCrateForPkgs = pkgs:
+              pkgs.buildRustCrate.override {
+                defaultCrateOverrides =
+                  pkgs.defaultCrateOverrides
+                  // {
+                    compress-tools = attrs: {
+                      buildInputs = [pkgs.libarchive];
+                      nativeBuildInputs = [pkgs.pkg-config];
+                    };
+                  };
+                rustc = rustToolchain;
+                cargo = rustToolchain;
+              };
+            rustNix = pkgs.callPackage ./rust/Cargo.nix {
+              inherit buildRustCrateForPkgs;
+            };
+          in {
+            poe-system = pkgs.callPackage ./elixir-pkg.nix {
+              inherit beamPackages;
+              rust-elixir = config.packages.rust-elixir;
+              rust-wasm = config.packages.rust-wasm;
+            };
+            rust-elixir = rustNix.workspaceMembers.elixir.build;
+            rust-wasm = pkgs.callPackage ./rust/wasm-pkg.nix {};
+          };
+
           devShells.default = let
             bunNode = pkgs.writeShellApplication {
               name = "node";
@@ -124,6 +169,14 @@
                   ];
                   targets = ["wasm32-unknown-unknown"];
                 })
+                # (rust-bin.stable."1.84.0".default.override {
+                #   extensions = [
+                #     "rust-src"
+                #     "llvm-tools-preview"
+                #     "rust-analysis"
+                #   ];
+                #   targets = ["wasm32-unknown-unknown"];
+                # })
                 sqlite
                 openssl
                 cmake

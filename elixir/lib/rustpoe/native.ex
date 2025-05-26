@@ -1,8 +1,10 @@
 defmodule RustPoe.Native do
   use Rustler,
-    otp_app: :poe_system,
-    crate: :elixir,
-    path: "../rust/elixir"
+      [
+        otp_app: :poe_system,
+        crate: :elixir,
+        path: "../rust/elixir"
+      ] ++ Application.compile_env(:poe_system, Rustler, [])
 
   def extract_build_config(_pobxml, _itemset, _skillset), do: error()
   def validate_and_apply_config(_extracted_config, _user_config), do: error()

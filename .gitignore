@@ -2,7 +2,6 @@ test.json
 **/target
 /.vscode
 /slice1
-**/dist
 poe.sql.xz
 .direnv
 slices.tar
