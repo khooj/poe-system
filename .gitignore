@@ -2,7 +2,6 @@ test.json
 **/target
 /.vscode
 /slice1
-**/dist
 poe.sql.xz
 .direnv
 slices.tar
@@ -14,4 +13,5 @@ services-log.log
 unpack1
 slice*
 config.toml
-
+/result*
+erl_crash.dump

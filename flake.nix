@@ -7,6 +7,9 @@
     services-flake.url = "github:juspay/services-flake";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    naersk = {
+      url = "github:nix-community/naersk";
+    };
   };
 
   outputs = inputs:
@@ -27,7 +30,9 @@
           _module.args.pkgs = import self.inputs.nixpkgs {
             inherit system;
             config.allowUnfree = true;
-            overlays = [self.inputs.rust-overlay.overlays.default];
+            overlays = [
+              self.inputs.rust-overlay.overlays.default
+            ];
           };
 
           process-compose."services" = {
@@ -101,6 +106,46 @@
             };
           };
 
+          packages = let
+            beamPackages = pkgs.beam.packagesWith pkgs.beam.interpreters.erlang_27;
+            rustToolchain = pkgs.rust-bin.stable."1.84.0".minimal.override {
+              targets = ["wasm32-unknown-unknown"];
+            };
+            buildRustCrateForPkgs = pkgs:
+              pkgs.buildRustCrate.override {
+                defaultCrateOverrides =
+                  pkgs.defaultCrateOverrides
+                  // {
+                    compress-tools = attrs: {
+                      buildInputs = [pkgs.libarchive];
+                      nativeBuildInputs = [pkgs.pkg-config];
+                    };
+                  };
+                rustc = rustToolchain;
+                cargo = rustToolchain;
+              };
+
+            rustNix = pkgs.callPackage ./rust/Cargo.nix {
+              inherit buildRustCrateForPkgs;
+            };
+            naersk' = self.inputs.naersk.lib.${system}.override {
+              cargo = rustToolchain;
+              rustc = rustToolchain;
+            };
+            poe-system = pkgs.callPackage ./elixir {
+              inherit beamPackages;
+              rust-elixir = config.packages.rust-elixir;
+              rust-wasm = config.packages.rust-wasm;
+            };
+          in
+            {
+              rust-elixir = rustNix.workspaceMembers.elixir.build;
+              rust-wasm = pkgs.callPackage ./rust/wasm-pkg.nix {
+                naersk = naersk';
+              };
+            }
+            // poe-system;
+
           devShells.default = let
             bunNode = pkgs.writeShellApplication {
               name = "node";
@@ -124,6 +169,14 @@
                   ];
                   targets = ["wasm32-unknown-unknown"];
                 })
+                # (rust-bin.stable."1.84.0".default.override {
+                #   extensions = [
+                #     "rust-src"
+                #     "llvm-tools-preview"
+                #     "rust-analysis"
+                #   ];
+                #   targets = ["wasm32-unknown-unknown"];
+                # })
                 sqlite
                 openssl
                 cmake
@@ -159,6 +212,7 @@
                 playwright-driver.browsers
                 playwright
                 protobuf
+                node2nix
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config

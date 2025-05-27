@@ -9,7 +9,14 @@ defmodule PoeSystem.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      releases: [
+        poe_system: [
+          applications: [
+            poe_system: :permanent
+          ]
+        ]
+      ]
     ]
   end
 
