@@ -1,20 +1,22 @@
-{ config, pkgs, lib, ... }:
-with lib;
-let
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
+with lib; let
   cfg = config.services.poe-system;
   pkg = pkgs.poe-system;
 in {
   options.services.poe-system = {
-    database_url = lib.mkOption {
+    databaseUrl = lib.mkOption {
       type = types.str;
-      default = "/var/lib/poe-system/main.db";
+      default = "ecto://khooj@localhost:5432/khooj";
       description = "database connection url";
     };
-    start_change_id = lib.mkOption {
+    secretBaseKey = lib.mkOption {
       type = types.str;
-      default = "";
-      description =
-        "next_change_id variable to start with if db does not already have one";
+      description = "secret base key for phoenix";
     };
     enable = lib.mkOption {
       type = types.bool;
@@ -23,28 +25,20 @@ in {
     };
   };
 
-  config = {
-    systemd.services.poe-system = lib.mkIf cfg.enable {
-      wantedBy = [ "multi-user.target" ];
-      requires = [ ];
-      after = [ ];
-      preStart = ''
-        d=$(dirname ${cfg.database_url})
-        mkdir -p $d
-      '';
+  config = lib.mkIf cfg.enable {
+    systemd.services.poe-system = {
+      wantedBy = ["multi-user.target"];
+      requires = ["network-online.target"];
+      after = ["network-online.target"];
       environment = {
-          RUST_LOG = "info";
-          DATABASE_URL = cfg.database_url;
-          START_CHANGE_ID = cfg.start_change_id;
+        DATABASE_URL = cfg.databaseUrl;
+        SECRET_BASE_KEY = cfg.secretBaseKey;
       };
       serviceConfig = {
-        ExecStart = "${pkg}/bin/main";
+        ExecStart = "${pkg}/bin/poe_system start";
         Restart = "on-failure";
         RestartSec = "10";
-        User = "root";
       };
     };
-
-    users.users.poe-system = { isNormalUser = false; };
   };
 }

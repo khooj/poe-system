@@ -18,18 +18,36 @@
         "type": "github"
       }
     },
-    "nixpkgs": {
+    "naersk": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
       "locked": {
-        "lastModified": 1744098102,
-        "narHash": "sha256-tzCdyIJj9AjysC3OuKA+tMD/kDEDAF9mICPDU7ix0JA=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "c8cd81426f45942bb2906d5ed2fe21d2f19d95b7",
+        "lastModified": 1745925850,
+        "narHash": "sha256-cyAAMal0aPrlb1NgzMxZqeN1mAJ2pJseDhm2m6Um8T0=",
+        "owner": "nix-community",
+        "repo": "naersk",
+        "rev": "38bc60bbc157ae266d4a0c96671c6c742ee17a5f",
         "type": "github"
       },
       "original": {
-        "owner": "nixos",
-        "ref": "nixos-unstable",
+        "owner": "nix-community",
+        "repo": "naersk",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1748248602,
+        "narHash": "sha256-LanRAm0IRpL36KpCKSknEwkBFvTLc9mDHKeAmfTrHwg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "ad331efcaf680eb1c838cb339472399ea7b3cdab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -47,6 +65,22 @@
       }
     },
     "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1744098102,
+        "narHash": "sha256-tzCdyIJj9AjysC3OuKA+tMD/kDEDAF9mICPDU7ix0JA=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "c8cd81426f45942bb2906d5ed2fe21d2f19d95b7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
       "locked": {
         "lastModified": 1736320768,
         "narHash": "sha256-nIYdTAiKIGnFNugbomgBJR+Xv5F1ZQU+HfaBqJKroC0=",
@@ -80,7 +114,8 @@
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs",
+        "naersk": "naersk",
+        "nixpkgs": "nixpkgs_2",
         "process-compose": "process-compose",
         "rust-overlay": "rust-overlay",
         "services-flake": "services-flake"
@@ -88,7 +123,7 @@
     },
     "rust-overlay": {
       "inputs": {
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_3"
       },
       "locked": {
         "lastModified": 1738117527,

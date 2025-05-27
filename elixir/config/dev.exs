@@ -74,7 +74,11 @@ config :poe_system, PoeSystemWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :poe_system, dev_routes: true
+config :poe_system,
+  dev_routes: true,
+  additional_processes: [
+    {Routes.Watcher, []}
+  ]
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

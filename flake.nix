@@ -7,6 +7,9 @@
     services-flake.url = "github:juspay/services-flake";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    naersk = {
+      url = "github:nix-community/naersk";
+    };
   };
 
   outputs = inputs:
@@ -108,18 +111,6 @@
             rustToolchain = pkgs.rust-bin.stable."1.84.0".minimal.override {
               targets = ["wasm32-unknown-unknown"];
             };
-            crossPkgs = import self.inputs.nixpkgs {
-              inherit system;
-              overlays = [self.inputs.rust-overlay.overlays.default];
-              crossSystem = {
-                inherit system;
-                rust.rustcTarget = "wasm32-unknown-unknown";
-              };
-            };
-            rustPlatform = pkgs.makeRustPlatform {
-              rustc = rustToolchain;
-              cargo = rustToolchain;
-            };
             buildRustCrateForPkgs = pkgs:
               pkgs.buildRustCrate.override {
                 defaultCrateOverrides =
@@ -133,18 +124,27 @@
                 rustc = rustToolchain;
                 cargo = rustToolchain;
               };
+
             rustNix = pkgs.callPackage ./rust/Cargo.nix {
               inherit buildRustCrateForPkgs;
             };
-          in {
-            poe-system = pkgs.callPackage ./elixir-pkg.nix {
+            naersk' = self.inputs.naersk.lib.${system}.override {
+              cargo = rustToolchain;
+              rustc = rustToolchain;
+            };
+            poe-system = pkgs.callPackage ./elixir {
               inherit beamPackages;
               rust-elixir = config.packages.rust-elixir;
               rust-wasm = config.packages.rust-wasm;
             };
-            rust-elixir = rustNix.workspaceMembers.elixir.build;
-            rust-wasm = pkgs.callPackage ./rust/wasm-pkg.nix {};
-          };
+          in
+            {
+              rust-elixir = rustNix.workspaceMembers.elixir.build;
+              rust-wasm = pkgs.callPackage ./rust/wasm-pkg.nix {
+                naersk = naersk';
+              };
+            }
+            // poe-system;
 
           devShells.default = let
             bunNode = pkgs.writeShellApplication {
@@ -212,6 +212,7 @@
                 playwright-driver.browsers
                 playwright
                 protobuf
+                node2nix
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config

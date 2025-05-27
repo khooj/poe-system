@@ -9,27 +9,21 @@ defmodule PoeSystem.Application do
   def start(_type, _args) do
     :ok = Oban.Telemetry.attach_default_logger()
 
-    children = [
-      PoeSystemWeb.Telemetry,
-      PoeSystem.Repo,
-      {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: PoeSystem.PubSub},
-      {Oban, Application.fetch_env!(:poe_system, Oban)},
-      # Start a worker by calling: PoeSystem.Worker.start_link(arg)
-      # {PoeSystem.Worker, arg},
-      {Inertia.SSR,
-       path: Path.join([Application.app_dir(:poe_system), "priv/static/assets/ssr"]),
-       module: "ssr.mjs"},
-      # Start to serve requests, typically the last entry
-      PoeSystemWeb.Endpoint
-    ]
-
     children =
-      if Mix.env() == :dev do
-        children ++ [{Routes.Watcher, []}]
-      else
-        children
-      end
+      [
+        PoeSystemWeb.Telemetry,
+        PoeSystem.Repo,
+        {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},
+        {Phoenix.PubSub, name: PoeSystem.PubSub},
+        {Oban, Application.fetch_env!(:poe_system, Oban)},
+        # Start a worker by calling: PoeSystem.Worker.start_link(arg)
+        # {PoeSystem.Worker, arg},
+        {Inertia.SSR,
+         path: Path.join([Application.app_dir(:poe_system), "priv/static/assets/ssr"]),
+         module: "ssr.mjs"},
+        # Start to serve requests, typically the last entry
+        PoeSystemWeb.Endpoint
+      ] ++ Application.get_env(:poe_system, :additional_processes, [])
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

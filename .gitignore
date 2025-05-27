@@ -13,4 +13,5 @@ services-log.log
 unpack1
 slice*
 config.toml
-
+/result*
+erl_crash.dump
