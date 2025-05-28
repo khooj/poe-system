@@ -1,40 +1,38 @@
-{
+self: {
   config,
   pkgs,
   lib,
   ...
-}:
-with lib; let
+}: let
+  inherit (lib) types mkOption mkEnableOption mkIf;
+  inherit (pkgs.stdenv.hostPlatform) system;
+  defaultPkg = self.packages.${system}.default;
   cfg = config.services.poe-system;
-  pkg = pkgs.poe-system;
+  pkg = cfg.package;
 in {
   options.services.poe-system = {
-    databaseUrl = lib.mkOption {
-      type = types.str;
-      default = "ecto://khooj@localhost:5432/khooj";
-      description = "database connection url";
+    enable = mkEnableOption "enable poe-system service";
+    package = mkOption {
+      type = types.package;
+      default = defaultPkg;
     };
-    secretBaseKey = lib.mkOption {
-      type = types.str;
-      description = "secret base key for phoenix";
-    };
-    enable = lib.mkOption {
-      type = types.bool;
-      default = true;
-      description = "enable service";
+    secretsEnvFile = mkOption {
+      type = types.path;
+      description = "path to environment variables file with secrets";
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = mkIf cfg.enable {
     systemd.services.poe-system = {
       wantedBy = ["multi-user.target"];
       requires = ["network-online.target"];
       after = ["network-online.target"];
       environment = {
-        DATABASE_URL = cfg.databaseUrl;
-        SECRET_BASE_KEY = cfg.secretBaseKey;
+        PHX_SERVER = "1";
+        RELEASE_COOKIE = "none";
       };
       serviceConfig = {
+        EnvironmentFile = cfg.secretsEnvFile;
         ExecStart = "${pkg}/bin/poe_system start";
         Restart = "on-failure";
         RestartSec = "10";

@@ -21,6 +21,8 @@
 
         systems = ["x86_64-linux"];
 
+        flake.nixosModules.default = import ./module.nix self;
+
         perSystem = {
           pkgs,
           config,
@@ -139,6 +141,7 @@
             };
           in
             {
+              default = config.packages.poe-system;
               rust-elixir = rustNix.workspaceMembers.elixir.build;
               rust-wasm = pkgs.callPackage ./rust/wasm-pkg.nix {
                 naersk = naersk';

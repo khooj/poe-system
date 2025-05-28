@@ -4,6 +4,8 @@
   rust-elixir,
   rust-wasm,
   buildNpmPackage,
+  makeWrapper,
+  bun,
 }: let
   inherit (beamPackages) mixRelease fetchMixDeps;
   version = "0.1.0";
@@ -34,12 +36,15 @@ in {
   poe-system = mixRelease {
     inherit version src mixFodDeps;
     pname = "poe-system";
-
+    nativeBuildInputs = [makeWrapper];
     postBuild = ''
       mkdir -p _build/prod/lib/poe_system/priv/static/
       ln -s ${assets} _build/prod/lib/poe_system/priv/static/assets
       mkdir -p _build/prod/lib/poe_system/priv/native
       ln -s ${rust-elixir.lib}/lib/libelixir.so _build/prod/lib/poe_system/priv/native/libelixir.so
+    '';
+    postInstall = ''
+      wrapProgram $out/bin/poe_system --prefix PATH : ${lib.makeBinPath [bun]}
     '';
     meta.mainProgram = "poe_system";
   };
