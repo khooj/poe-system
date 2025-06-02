@@ -13,5 +13,12 @@ config :logger, level: :info
 
 config :poe_system, Rustler, skip_compilation?: true
 
+@oban_prune_days :timer.hours(7 * 24) / 1000
+config :poe_system, Oban,
+  plugins: [
+    {Oban.Plugins.Pruner, max_age: @oban_prune_days},
+    {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)}
+  ]
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

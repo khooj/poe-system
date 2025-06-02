@@ -11,7 +11,8 @@ defmodule PoeSystem.Application do
     # TODO: enable for traces
     :ok = OpentelemetryBandit.setup()
     :ok = OpentelemetryPhoenix.setup(adapter: :bandit)
-    :ok = OpentelemetryEcto.setup([:poe_system, :repo])
+    # FIXME: somehow throttle tracing for ecto because of honeycomb events limit
+    # :ok = OpentelemetryEcto.setup([:poe_system, :repo])
     :ok = OpentelemetryOban.setup()
 
     children =
