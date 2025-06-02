@@ -15,7 +15,8 @@ config :poe_system, Rustler, skip_compilation?: true
 
 config :poe_system, Oban,
   plugins: [
-    {Oban.Plugins.Pruner, max_age: :timer.hours(7 * 24) / 1000},
+    # 7 days
+    {Oban.Plugins.Pruner, max_age: 7 * 24 * 60 * 60},
     {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)}
   ]
 
