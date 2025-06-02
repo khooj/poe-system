@@ -12,7 +12,9 @@ defmodule PoeSystem.BuildProcessingTest do
   test "basic queue check multi" do
     assert {:ok, _} =
              Ecto.Multi.new()
-             |> BuildProcessing.queue_processing_build_multi(:new_job, "testid")
+             |> BuildProcessing.queue_processing_build_multi(:new_job, fn _ ->
+               BuildProcessing.new(%{id: "testid"})
+             end)
              |> Repo.transaction()
 
     assert_enqueued(worker: BuildProcessing, args: %{id: "testid"})

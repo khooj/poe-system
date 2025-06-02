@@ -14,9 +14,12 @@
 
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake {inherit inputs;} (
-      {self, ...}: {
+      {self, ...}: let
+        inherit (inputs.services-flake.lib) multiService;
+      in {
         imports = [
           inputs.process-compose.flakeModule
+          inputs.flake-parts.flakeModules.flakeModules
         ];
 
         systems = ["x86_64-linux"];
@@ -37,75 +40,9 @@
             ];
           };
 
-          process-compose."services" = {
-            imports = [
-              inputs.services-flake.processComposeModules.default
-            ];
-
-            services = {
-              postgres."pg1" = {
-                enable = true;
-              };
-              pgadmin."pgadm1" = {
-                enable = true;
-                initialEmail = "example@example.com";
-                initialPassword = "12345678";
-              };
-            };
-
-            settings = {
-              log_location = "services-log.log";
-
-              processes = {
-                "val1" = let
-                  unixSocket = "./valkey.sock";
-                  dataDir = "./data/val1";
-                  valkeyConfig = pkgs.writeText "valkey.conf" ''
-                    unixsocket ${unixSocket}
-                    unixsocketperm 0600
-                  '';
-
-                  startScript = pkgs.writeShellApplication {
-                    name = "start-vakley";
-                    runtimeInputs = [
-                      pkgs.coreutils
-                      pkgs.valkey
-                    ];
-                    text = ''
-                      set -euo pipefail
-                      export VALKEYDATA=${dataDir}
-                      if [[ ! -d "$VALKEYDATA" ]]; then
-                        mkdir -p "$VALKEYDATA"
-                      fi
-
-                      exec valkey-server ${valkeyConfig} --dir "$VALKEYDATA"
-                    '';
-                  };
-                  transformedSocketPath = "${dataDir}/${unixSocket}";
-                in {
-                  disabled = true;
-                  command = startScript;
-                  readiness_probe = {
-                    exec.command = "${pkgs.valkey}/bin/valkey-cli -s ${transformedSocketPath} 0 ping";
-                    initial_delay_seconds = 2;
-                    period_seconds = 10;
-                    timeout_seconds = 4;
-                    success_threshold = 1;
-                    failure_threshold = 5;
-                  };
-                  availability = {
-                    restart = "on_failure";
-                    max_restarts = 5;
-                  };
-                };
-
-                "stash_receiver" = {
-                  disabled = true;
-                  command = "cargo run --release --bin stash_receiver";
-                  working_dir = "./rust";
-                };
-              };
-            };
+          process-compose."services" = import ./processes.nix {
+            inherit inputs multiService;
+            inherit (config) packages;
           };
 
           packages = let
@@ -139,6 +76,9 @@
               rust-elixir = config.packages.rust-elixir;
               rust-wasm = config.packages.rust-wasm;
             };
+            additionalPackages = import ./packages.nix {
+              inherit (pkgs) callPackage;
+            };
           in
             {
               default = config.packages.poe-system;
@@ -147,7 +87,7 @@
                 naersk = naersk';
               };
             }
-            // poe-system;
+            // poe-system // additionalPackages;
 
           devShells.default = let
             bunNode = pkgs.writeShellApplication {

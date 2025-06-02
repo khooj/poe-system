@@ -8,7 +8,10 @@ defmodule PoeSystemWeb.Endpoint do
     store: :cookie,
     key: "_poe_system_key",
     signing_salt: "4X8fx9Ow",
-    same_site: "Lax"
+    encryption_salt: "mLQTvgj+",
+    same_site: "Lax",
+    http_only: true,
+    max_age: 86400
   ]
 
   socket "/live", Phoenix.LiveView.Socket,

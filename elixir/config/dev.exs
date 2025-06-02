@@ -95,3 +95,14 @@ config :phoenix_live_view,
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+config :opentelemetry,
+  resource: %{service: %{name: "poe_system", env: "dev"}},
+  span_processor: :batch,
+  traces_exporter: :otlp
+
+config :opentelemetry_exporter,
+  otlp_protocol: :http_protobuf,
+  otlp_compression: :gzip,
+  # otlp_endpoint: "http://localhost:8428/opentelemetry/v1/metrics"
+  otlp_endpoint: "https://api.eu1.honeycomb.io:443"

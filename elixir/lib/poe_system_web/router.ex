@@ -4,6 +4,7 @@ defmodule PoeSystemWeb.Router do
 
   pipeline :browser do
     plug :accepts, ["html"]
+    plug PoeSystemWeb.Plug.RateLimiter
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {PoeSystemWeb.Layouts, :root}

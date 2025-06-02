@@ -50,6 +50,12 @@ config :poe_system, Oban,
   engine: Oban.Engines.Basic,
   queues: [new_builds: 1]
 
+config :telemetria,
+  backend: Telemetria.Backend.OpenTelemetry,
+  otp_app: :poe_system,
+  purge_level: :debug,
+  level: :info
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

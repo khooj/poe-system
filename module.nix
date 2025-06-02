@@ -20,6 +20,15 @@ in {
       type = types.path;
       description = "path to environment variables file with secrets";
     };
+    port = mkOption {
+      type = types.int;
+      description = "listen port";
+      default = 4000;
+    };
+    host = mkOption {
+      type = types.str;
+      description = "host on which phoenix works (not ip)";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -29,6 +38,8 @@ in {
       after = ["network-online.target"];
       environment = {
         PHX_SERVER = "1";
+        PHX_HOST = cfg.host;
+        PORT = builtins.toString cfg.port;
         RELEASE_COOKIE = "none";
       };
       serviceConfig = {

@@ -8,6 +8,11 @@ defmodule PoeSystem.Application do
   @impl true
   def start(_type, _args) do
     :ok = Oban.Telemetry.attach_default_logger()
+    # TODO: enable for traces
+    :ok = OpentelemetryBandit.setup()
+    :ok = OpentelemetryPhoenix.setup(adapter: :bandit)
+    :ok = OpentelemetryEcto.setup([:poe_system, :repo])
+    :ok = OpentelemetryOban.setup()
 
     children =
       [
@@ -21,6 +26,7 @@ defmodule PoeSystem.Application do
         {Inertia.SSR,
          path: Path.join([Application.app_dir(:poe_system), "priv/static/assets/ssr"]),
          module: "ssr.mjs"},
+        {PoeSystemWeb.RateLimit, clean_period: :timer.minutes(10)},
         # Start to serve requests, typically the last entry
         PoeSystemWeb.Endpoint
       ] ++ Application.get_env(:poe_system, :additional_processes, [])

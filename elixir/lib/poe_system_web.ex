@@ -27,6 +27,7 @@ defmodule PoeSystemWeb do
       import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
+      import PoeSystemWeb.Plug.CSP
     end
   end
 

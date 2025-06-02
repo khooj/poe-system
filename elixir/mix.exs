@@ -10,10 +10,14 @@ defmodule PoeSystem.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      compilers: [:telemetria | Mix.compilers()],
       releases: [
         poe_system: [
           applications: [
-            poe_system: :permanent
+            poe_system: :permanent,
+            # TODO: enable for traces and metrics
+            opentelemetry_exporter: :permanent,
+            opentelemetry: :temporary
           ]
         ]
       ]
@@ -59,7 +63,23 @@ defmodule PoeSystem.MixProject do
       {:routes, path: "custom/routes"},
       {:nodejs, path: "custom/elixir-nodejs", override: true},
       {:oban, "~> 2.19.4"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:hammer, "~> 7.0"},
+      {:telemetria, "~> 0.1"},
+      {:opentelemetry_api, "~> 1.4"},
+      {:opentelemetry_exporter, "~> 1.8"},
+      {:opentelemetry, "~> 1.5"},
+      {:opentelemetry_phoenix, "~> 2.0"},
+      {:opentelemetry_bandit, "~> 0.2"},
+      {:opentelemetry_ecto, "~> 1.2"},
+      # FIXME: use official package after oban semconv changes merge
+      {:opentelemetry_oban,
+       git: "https://github.com/danschultzer/opentelemetry-erlang-contrib",
+       branch: "update-oban-attributes",
+       sparse: "instrumentation/opentelemetry_oban"},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:dotenvy, "~> 1.0.0"}
     ]
   end
 

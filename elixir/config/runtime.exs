@@ -1,4 +1,5 @@
 import Config
+import Dotenvy
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
@@ -16,6 +17,15 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+
+env_dir_prefix = System.get_env("RELEASE_ROOT") || Path.expand("./")
+
+source!([
+  Path.absname(".env.local", env_dir_prefix)
+])
+
+System.put_env("OTEL_EXPORTER_OTLP_HEADERS", env!("OTEL_EXPORTER_OTLP_HEADERS", :string!))
+
 if System.get_env("PHX_SERVER") do
   config :poe_system, PoeSystemWeb.Endpoint, server: true
 end
@@ -32,7 +42,6 @@ if config_env() == :prod do
       environment variable DATABASE_URL is missing.
       For example: ecto://USER:PASS@HOST/DATABASE
       """
-
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
@@ -66,7 +75,7 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: {127, 0, 0, 1},
       port: port
     ],
     secret_key_base: secret_key_base
