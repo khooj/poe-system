@@ -24,7 +24,12 @@ source!([
   Path.absname(".env.local", env_dir_prefix)
 ])
 
-System.put_env("OTEL_EXPORTER_OTLP_HEADERS", env!("OTEL_EXPORTER_OTLP_HEADERS", :string!))
+otel_exp_headers_key = "OTEL_EXPORTER_OTLP_HEADERS"
+
+# TODO: make more sane approach
+if !System.get_env(otel_exp_headers_key) do
+  System.put_env(otel_exp_headers_key, env!(otel_exp_headers_key, :string!))
+end
 
 if System.get_env("PHX_SERVER") do
   config :poe_system, PoeSystemWeb.Endpoint, server: true

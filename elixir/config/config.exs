@@ -56,6 +56,16 @@ config :telemetria,
   purge_level: :debug,
   level: :info
 
+config :opentelemetry,
+  resource: %{service: %{name: "poe_system"}},
+  span_processor: :batch,
+  traces_exporter: :otlp
+
+config :opentelemetry_exporter,
+  otlp_protocol: :http_protobuf,
+  otlp_compression: :gzip,
+  otlp_endpoint: "https://api.eu1.honeycomb.io:443"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
