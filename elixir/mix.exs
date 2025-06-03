@@ -79,7 +79,10 @@ defmodule PoeSystem.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
-      {:dotenvy, "~> 1.0.0"}
+      {:dotenvy, "~> 1.0.0"},
+      {:prom_ex, "~> 1.11"},
+      {:plug, "~> 1.0"},
+      {:plug_cowboy, "~> 2.0"}
     ]
   end
 

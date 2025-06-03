@@ -5,5 +5,6 @@ multiService: {
     ./otel-collector.nix
     ./jaeger.nix
     ./signoz.nix
+    ./openobserve.nix
   ];
 }

@@ -21,6 +21,42 @@
       enable = false;
       unixSocket = "./valkey.sock";
     };
+    openobserve."oo1" = {
+      enable = true;
+      initialEmail = "admin@admin.org";
+      initialPassword = "12345678";
+    };
+    otel-collector."otc1" = {
+      enable = true;
+      settings = {
+        receivers = {
+          prometheus.config.scrape_configs = [
+            {
+              job_name = "otel-collector";
+              scrape_interval = "5s";
+              static_configs = [{targets = ["localhost:4021"];}];
+            }
+          ];
+        };
+        processors.batch = {};
+        exporters = {
+          "otlphttp/openobserve" = {
+            endpoint = "http://localhost:5080/api/default";
+            headers = {
+              "Authorization" = "Basic YWRtaW5AYWRtaW4ub3JnOlJUeGJKa0lSMEJ0Z2FISWs=";
+              "stream-name" = "default";
+            };
+          };
+        };
+        service.pipelines = {
+          metrics = {
+            receivers = ["prometheus"];
+            processors = ["batch"];
+            exporters = ["otlphttp/openobserve"];
+          };
+        };
+      };
+    };
   };
 
   settings = {
@@ -31,10 +67,6 @@
         disabled = true;
         command = "cargo run --release --bin stash_receiver";
         working_dir = "./rust";
-      };
-      "docker-compose-signoz" = {
-        working_dir = "./data/dc-signoz1";
-        command = "docker compose up -f docker-compose-signoz.yaml";
       };
     };
   };

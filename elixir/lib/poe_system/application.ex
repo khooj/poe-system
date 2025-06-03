@@ -12,11 +12,12 @@ defmodule PoeSystem.Application do
     :ok = OpentelemetryBandit.setup()
     :ok = OpentelemetryPhoenix.setup(adapter: :bandit)
     # FIXME: somehow throttle tracing for ecto because of honeycomb events limit
-    # :ok = OpentelemetryEcto.setup([:poe_system, :repo])
+    :ok = OpentelemetryEcto.setup([:poe_system, :repo])
     :ok = OpentelemetryOban.setup()
 
     children =
       [
+        PoeSystem.PromEx,
         PoeSystemWeb.Telemetry,
         PoeSystem.Repo,
         {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},

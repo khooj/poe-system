@@ -66,6 +66,15 @@ config :opentelemetry_exporter,
   otlp_compression: :gzip,
   otlp_endpoint: "https://api.eu1.honeycomb.io:443"
 
+config :poe_system, PoeSystem.PromEx,
+  grafana: :disabled,
+  metrics_server: [
+    port: 4021,
+    cowboy_opts: [
+      ip: {127, 0, 0, 1}
+    ]
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

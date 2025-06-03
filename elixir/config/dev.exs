@@ -95,3 +95,11 @@ config :phoenix_live_view,
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+config :opentelemetry_exporter,
+  otlp_endpoint: "http://localhost:5080/api/default",
+  # otlp_traces_endpoint: "http://localhost:5080/api/default",
+  otlp_compression: :none,
+  otlp_headers: [
+    {"Authorization", "Basic YWRtaW5AYWRtaW4ub3JnOlJUeGJKa0lSMEJ0Z2FISWs="}
+  ]
