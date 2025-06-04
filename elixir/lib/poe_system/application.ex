@@ -17,7 +17,7 @@ defmodule PoeSystem.Application do
 
     children =
       [
-        PoeSystem.PromEx,
+        PoeSystemWeb.PromEx,
         PoeSystemWeb.Telemetry,
         PoeSystem.Repo,
         {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},

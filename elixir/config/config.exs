@@ -66,8 +66,12 @@ config :opentelemetry_exporter,
   otlp_compression: :gzip,
   otlp_endpoint: "https://api.eu1.honeycomb.io:443"
 
-config :poe_system, PoeSystem.PromEx,
+config :poe_system, PoeSystemWeb.PromEx,
   grafana: :disabled,
+  drop_metrics_groups: [
+    :phoenix_channel_event_metrics,
+    :phoenix_socket_event_metrics
+  ],
   metrics_server: [
     port: 4021,
     cowboy_opts: [

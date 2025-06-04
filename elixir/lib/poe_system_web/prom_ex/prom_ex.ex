@@ -1,4 +1,4 @@
-defmodule PoeSystem.PromEx do
+defmodule PoeSystemWeb.PromEx do
   @moduledoc """
   Be sure to add the following to finish setting up PromEx:
 
@@ -55,16 +55,22 @@ defmodule PoeSystem.PromEx do
   use PromEx, otp_app: :poe_system
 
   alias PromEx.Plugins
+  alias PoeSystemWeb.PromEx.Plugins, as: AppPlugins
 
   @impl true
   def plugins do
     [
       # PromEx built in plugins
-      Plugins.Application,
-      Plugins.Beam,
-      {Plugins.Phoenix, router: PoeSystemWeb.Router, endpoint: PoeSystemWeb.Endpoint},
-      Plugins.Ecto,
-      Plugins.Oban
+      # Plugins.Application,
+      # Plugins.Beam,
+      # {Plugins.Phoenix, router: PoeSystemWeb.Router, endpoint: PoeSystemWeb.Endpoint},
+      # Plugins.Ecto,
+      # Plugins.Oban,
+      # {Plugins.PlugRouter,
+      #  event_prefix: [:poe_system, :endpoint],
+      #  metric_prefix: [:prom_ex, :endpoint],
+      #  routers: [PoeSystemWeb.Router]},
+      AppPlugins.Extra
       # Plugins.PhoenixLiveView,
       # Plugins.Absinthe,
       # Plugins.Broadway,

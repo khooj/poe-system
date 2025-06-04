@@ -15,6 +15,7 @@ defmodule PoeSystemWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug PoeSystemWeb.Plug.RateLimiter
   end
 
   scope "/", PoeSystemWeb do
