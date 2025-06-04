@@ -62,10 +62,10 @@ defmodule PoeSystemWeb.PromEx do
     [
       # PromEx built in plugins
       # Plugins.Application,
-      # Plugins.Beam,
-      # {Plugins.Phoenix, router: PoeSystemWeb.Router, endpoint: PoeSystemWeb.Endpoint},
-      # Plugins.Ecto,
-      # Plugins.Oban,
+      Plugins.Beam,
+      {Plugins.Phoenix, router: PoeSystemWeb.Router, endpoint: PoeSystemWeb.Endpoint},
+      Plugins.Ecto,
+      Plugins.Oban,
       # {Plugins.PlugRouter,
       #  event_prefix: [:poe_system, :endpoint],
       #  metric_prefix: [:prom_ex, :endpoint],
