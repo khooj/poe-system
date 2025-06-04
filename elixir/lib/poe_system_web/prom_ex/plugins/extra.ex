@@ -27,6 +27,7 @@ defmodule PoeSystemWeb.PromEx.Plugins.Extra do
   end
 
   @impl true
+
   def polling_metrics(_opts), do: []
 
   @impl true

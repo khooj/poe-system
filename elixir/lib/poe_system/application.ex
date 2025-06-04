@@ -8,17 +8,15 @@ defmodule PoeSystem.Application do
   @impl true
   def start(_type, _args) do
     :ok = Oban.Telemetry.attach_default_logger()
-    # TODO: enable for traces
     :ok = OpentelemetryBandit.setup()
     :ok = OpentelemetryPhoenix.setup(adapter: :bandit)
-    # FIXME: somehow throttle tracing for ecto because of honeycomb events limit
     :ok = OpentelemetryEcto.setup([:poe_system, :repo])
     :ok = OpentelemetryOban.setup()
 
     children =
       [
         PoeSystemWeb.PromEx,
-        PoeSystemWeb.Telemetry,
+        # PoeSystemWeb.Telemetry,
         PoeSystem.Repo,
         {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},
         {Phoenix.PubSub, name: PoeSystem.PubSub},

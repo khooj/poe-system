@@ -7,17 +7,13 @@
 }: let
   inherit
     (lib)
-    mkEnableOption
     mkPackageOption
-    mkIf
     mkOption
     types
     getExe
     ;
   cfg = config;
   openobserve = cfg.package;
-
-  settingsFormat = pkgs.formats.yaml {};
 in {
   options = {
     package = mkPackageOption pkgs "openobserve" {};

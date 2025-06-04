@@ -63,8 +63,8 @@ config :opentelemetry,
 
 config :opentelemetry_exporter,
   otlp_protocol: :http_protobuf,
-  otlp_compression: :gzip,
-  otlp_endpoint: "https://api.eu1.honeycomb.io:443"
+  otlp_endpoint: "http://localhost:5080/api/default",
+  otlp_compression: :gzip
 
 config :poe_system, PoeSystemWeb.PromEx,
   grafana: :disabled,
