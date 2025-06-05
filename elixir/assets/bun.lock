@@ -5,6 +5,7 @@
       "name": "assets",
       "dependencies": {
         "@inertiajs/react": "^2.0.5",
+        "@microsoft/fetch-event-source": "^2.0.1",
         "@popperjs/core": "^2.11.8",
         "bootstrap": "^5.3.3",
         "bootstrap-reboot": "^4.5.6",
@@ -131,6 +132,8 @@
     "@inertiajs/core": ["@inertiajs/core@2.0.11", "", { "dependencies": { "axios": "^1.8.2", "es-toolkit": "^1.34.1", "qs": "^6.9.0" } }, "sha512-DSFdkPLvLwHC0hePc/692WK9ItRzddVZ+OS5ZO1B2+6TmZnZH3kTQZGEhaYAtkAB+DHKxOm1oGHPKQrsAZ54qQ=="],
 
     "@inertiajs/react": ["@inertiajs/react@2.0.11", "", { "dependencies": { "@inertiajs/core": "2.0.11", "es-toolkit": "^1.33.0" }, "peerDependencies": { "react": "^16.9.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-XCikPYwdSLfCZ+cEYjAzNOdPZ6OP4yMJCxIMZfUZCjfLrkHQug6FsKxugy6Ih8hSP+qSVWMuapFqx+6GGhX7ew=="],
+
+    "@microsoft/fetch-event-source": ["@microsoft/fetch-event-source@2.0.1", "", {}, "sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@0.2.10", "", { "dependencies": { "@emnapi/core": "^1.4.3", "@emnapi/runtime": "^1.4.3", "@tybys/wasm-util": "^0.9.0" } }, "sha512-bCsCyeZEwVErsGmyPNSzwfwFn4OdxBj0mmv6hOFucB/k81Ojdu68RbZdxYsRQUPc9l6SU5F/cG+bXgWs3oUgsQ=="],
 

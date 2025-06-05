@@ -73,8 +73,11 @@ defmodule PoeSystemWeb.Poe1Controller do
     case BuildInfo.get_build(id) do
       %{fixed: true} = data ->
         conn
-        |> assign_prop(:data, data.data)
+        # TODO: maybe use partial reload?
+        |> assign_prop(:provided, data.data["provided"])
+        |> assign_prop(:found, data.data["found"])
         |> assign_prop(:processed, data.processed)
+        |> assign_prop(:id, id)
         |> render_inertia("poe1/Build")
 
       _ ->

@@ -82,7 +82,8 @@ defmodule PoeSystem.MixProject do
       {:dotenvy, "~> 1.0.0"},
       {:prom_ex, "~> 1.11"},
       {:plug, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:sse_phoenix_pubsub, "~> 1.0"}
     ]
   end
 

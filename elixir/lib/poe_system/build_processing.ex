@@ -1,5 +1,6 @@
 defmodule PoeSystem.BuildProcessing do
   require Logger
+  alias Phoenix.PubSub
   alias RustPoe.NativeWrapper
   alias PoeSystem.Repo
   alias PoeSystem.BuildInfo
@@ -28,6 +29,7 @@ defmodule PoeSystem.BuildProcessing do
       |> Map.put(:data, build_data)
 
     {:ok, _} = BuildInfo.update_build(build, build_attrs)
+    PubSub.broadcast!(PoeSystem.PubSub, "build:#{id}", {PoeSystem.PubSub, "done"})
     Logger.debug("end processing")
 
     :ok

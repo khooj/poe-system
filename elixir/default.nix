@@ -13,13 +13,13 @@
   mixFodDeps = fetchMixDeps {
     inherit version src;
     pname = "poe-system-deps";
-    sha256 = "sha256-ouqwn1O8+jmKovLzvelxC/PYExH8qzjv/XZkXmUbd3Q=";
+    sha256 = "sha256-cI8+g591kr2IDF0GSFxTC/ukwk4Of4c5TZqLNgQrGD8=";
   };
   assets = buildNpmPackage {
     pname = "poe-system-assets";
     inherit version;
     src = "${src}/assets";
-    npmDepsHash = "sha256-XBTIa4oNiWQhGXRliv4KPetVQoVYEcK3ZkxQZsSnMuw=";
+    npmDepsHash = "sha256-K2MAU0ONhqYJeapSwI7vjezsZMMoffsBt0iJgF2z31w=";
     preBuild = ''
       rm ./node_modules/wasm
       mkdir -p ./node_modules/wasm

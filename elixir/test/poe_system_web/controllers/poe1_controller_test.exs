@@ -2,18 +2,6 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
   use PoeSystemWeb.ConnCase
   alias PoeSystem.Testdata
 
-  # setup %{conn: conn} do
-  #   conn =
-  #     post(conn, ~p"/poe1/extract", %{
-  #       "itemset" => "Level 13 example",
-  #       "pobData" => Testdata.pobdata_file(),
-  #       "skillset" => "Maps"
-  #     })
-  #
-  #   %{id: id} = redirected_params(conn)
-  #   {:ok, id: id}
-  # end
-
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/poe1")
     assert response(conn, 200)

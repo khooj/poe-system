@@ -1,12 +1,16 @@
 import { TypedLink } from '@/components/TypedLink';
+import { usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
 import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
+import Alert from '@/components/Alert';
 
 type Props = {
   children: ReactNode
 };
 
 export default function Layout({ children }: Props) {
+  const { flash } = usePage().props;
+
   return (
     <>
       <Navbar expand='lg' className=''>
@@ -23,6 +27,7 @@ export default function Layout({ children }: Props) {
           </Navbar.Collapse>
         </Container>
       </Navbar>
+      {flash.info && <Alert>{flash.info}</Alert>}
       {children}
     </>
   )

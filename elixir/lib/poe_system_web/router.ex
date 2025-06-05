@@ -18,6 +18,12 @@ defmodule PoeSystemWeb.Router do
     plug PoeSystemWeb.Plug.RateLimiter
   end
 
+  pipeline :sse do
+    plug :put_format, "text/event-stream"
+    plug PoeSystemWeb.Plug.RateLimiter
+    plug :fetch_session
+  end
+
   scope "/", PoeSystemWeb do
     pipe_through :browser
 
@@ -30,6 +36,12 @@ defmodule PoeSystemWeb.Router do
     get "/", Poe1Controller, :index
     post "/new", Poe1Controller, :new
     get "/build/:id", Poe1Controller, :get_build
+  end
+
+  scope "/poe1/sse", PoeSystemWeb do
+    pipe_through :sse
+
+    post "/", SseController, :subscribe
   end
 
   # Other scopes may use custom stacks.

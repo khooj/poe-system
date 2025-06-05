@@ -45,8 +45,8 @@ defmodule PoeSystemWeb.Endpoint do
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   plug Plug.Parsers,
-    parsers: [:multipart, :json],
-    pass: ["application/json", "multipart/form-data"],
+    parsers: [:urlencoded, :multipart, :json],
+    pass: ["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
     json_decoder: Phoenix.json_library()
 
   plug Plug.MethodOverride

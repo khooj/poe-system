@@ -8,6 +8,9 @@ import { ModConfig } from '@bindings/domain/bindings/ModConfig';
 import { StoredItemComponent } from '@/components/StoredItemComponent';
 import { Col } from 'react-bootstrap';
 import { Price } from '@bindings/domain/bindings/Price';
+import useSSE from '../../utils/useSSE.ts';
+import { router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 type RenderConfigProps = {
   cf: ModConfig | null,
@@ -32,7 +35,9 @@ const RenderConfig = ({ cf }: RenderConfigProps) => {
 };
 
 type Props = {
-  data: BuildInfo,
+  id: string,
+  provided: BuildItemsWithConfig,
+  found: FoundBuildItems,
   processed: boolean,
 }
 
@@ -53,27 +58,47 @@ const priceCurrency = (x: Price) => {
   }
 };
 
-const Build = ({ data, processed }: Props) => {
+const Build = ({ id, provided, found, processed }: Props) => {
+  const sub = useSSE('/poe1/sse', {
+    method: 'POST',
+    body: `topics=build:${id}`,
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
+  const [changeProcessed, setChangeProcessed] = useState(processed);
+
+  useEffect(() => {
+    if (!processed) {
+      return sub.subscribe(msg => {
+        console.log('msg received', msg);
+        if (msg === "done") {
+          router.reload({ only: ['found', 'processed'] });
+        }
+      });
+    }
+  }, [processed]);
+
   const renderProvided = (k: keyof BuildItemsWithConfig) => {
-    if (Array.isArray(data.provided[k])) {
+    if (Array.isArray(provided[k])) {
       return <MultipleItems itemKey={k}>
-        {data.provided[k].map(i => <RequiredItemComponent
+        {provided[k].map(i => <RequiredItemComponent
           item={i.item}
           modConfigComponent={(mcf) => <RenderConfig cf={mcf[1]} />}
         />)}
       </MultipleItems>
     } else {
       return <RequiredItemComponent
-        item={data.provided[k].item}
+        item={provided[k].item}
         modConfigComponent={(mcf) => <RenderConfig cf={mcf[1]} />}
       />
     }
   };
   const renderFound = (k: keyof FoundBuildItems) => {
-    if (Array.isArray(data.found[k])) {
-      if (data.found[k].length !== 0) {
+    if (Array.isArray(found[k])) {
+      if (found[k].length !== 0) {
         return <MultipleItems itemKey={k}>
-          {data.found[k].map(i => <RequiredItemComponent
+          {found[k].map(i => <RequiredItemComponent
             item={i.item}
             modConfigComponent={(mcf) => <RenderConfig cf={mcf[1]} />}
           />)}
@@ -82,15 +107,15 @@ const Build = ({ data, processed }: Props) => {
         return <div>Items ({k}) not found</div>
       }
     } else {
-      if (data.found[k]) {
-        return <StoredItemComponent item={data.found[k]} />
+      if (found[k]) {
+        return <StoredItemComponent item={found[k]} />
       } else {
         return <div>Item ({k}) not found</div>
       }
     }
   };
 
-  const cost: { [x: string]: number } = Object.entries(data.found).flatMap(it => it[1]).filter(it => !!it)
+  const cost: { [x: string]: number } = Object.entries(found).flatMap(it => it[1]).filter(it => !!it)
     .reduce((acc, prev) => {
       const { name, value } = priceCurrency(prev.price);
       acc[name] = (acc[name] ?? 0) + value;
