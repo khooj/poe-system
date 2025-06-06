@@ -27,7 +27,7 @@ export default function Layout({ children }: Props) {
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      {flash.info && <Alert>{flash.info}</Alert>}
+      {flash?.info && <Alert>{flash.info}</Alert>}
       {children}
     </>
   )

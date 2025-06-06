@@ -12,6 +12,12 @@ mod atoms {
         ok,
         error,
         get_items,
+        accessory,
+        gem,
+        armor,
+        weapon,
+        jewel,
+        flask
     }
 }
 
@@ -33,6 +39,8 @@ pub enum RustError {
     StrUtf8(#[from] std::str::Utf8Error),
     #[error("invalid user provided build info")]
     InvalidUserBuildInfo,
+    #[error("invalid item")]
+    InvalidItem,
 }
 
 impl From<RustError> for Error {

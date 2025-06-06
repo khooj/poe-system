@@ -2,31 +2,40 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
   use PoeSystemWeb.ConnCase
   alias PoeSystem.Testdata
 
+  setup do
+    {itemset, skillset} = Testdata.config_info()
+
+    %{
+      itemset: itemset,
+      skillset: skillset
+    }
+  end
+
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/poe1")
     assert response(conn, 200)
     assert inertia_component(conn)
   end
 
-  test "POST /extract", %{conn: conn} do
+  test "POST /extract", %{conn: conn, itemset: itemset, skillset: skillset} do
     conn =
       post(conn, ~p"/api/extract", %{
-        "itemset" => "Level 13 example",
+        "itemset" => itemset,
         "pobData" => Testdata.pobdata_file(),
-        "skillset" => "Maps"
+        "skillset" => skillset
       })
 
     assert %{"config" => _} = json_response(conn, 200)
   end
 
-  test "POST /new", %{conn: conn} do
+  test "POST /new", %{conn: conn, itemset: itemset, skillset: skillset} do
     cfg = Testdata.extract_config()
 
     conn =
       post(conn, ~p"/poe1/new",
         config: cfg,
-        itemset: "Level 13 example",
-        skillset: "Maps",
+        itemset: itemset,
+        skillset: skillset,
         pobData: Testdata.pobdata_file()
       )
 
@@ -34,14 +43,14 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
   end
 
   describe "GET /build" do
-    setup %{conn: conn} do
+    setup %{conn: conn, itemset: itemset, skillset: skillset} do
       cfg = Testdata.extract_config()
 
       conn =
         post(conn, ~p"/poe1/new",
           config: cfg,
-          itemset: "Level 13 example",
-          skillset: "Maps",
+          itemset: itemset,
+          skillset: skillset,
           pobData: Testdata.pobdata_file()
         )
 

@@ -4,6 +4,11 @@ defmodule PoeSystem.BuildProcessingTest do
   alias PoeSystem.BuildProcessing
   use PoeSystem.DataCase
 
+  setup do
+    build = Testdata.extract_config()
+    %{build: build}
+  end
+
   test "basic queue check" do
     assert {:ok, _} = BuildProcessing.queue_processing_build("testid")
     assert_enqueued(worker: BuildProcessing, args: %{id: "testid"})
@@ -20,8 +25,22 @@ defmodule PoeSystem.BuildProcessingTest do
     assert_enqueued(worker: BuildProcessing, args: %{id: "testid"})
   end
 
-  test "process single build w/ items" do
-    build = Testdata.extract_config()
+  test "process single build w/ items", %{build: build} do
     assert BuildProcessing.process_single_build(build)
+  end
+
+  # TODO: ensure that testdata have required items
+  @tag :skip
+  test "check gems processing", %{build: build} do
+    assert not Enum.empty?(build["provided"]["gems"])
+    processed = BuildProcessing.process_single_build(build)
+    assert not Enum.empty?(processed["found"]["gems"])
+  end
+
+  @tag :skip
+  test "check flasks processing", %{build: build} do
+    assert not Enum.empty?(build["provided"]["flasks"])
+    processed = BuildProcessing.process_single_build(build)
+    assert not Enum.empty?(processed["found"]["flasks"])
   end
 end

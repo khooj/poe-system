@@ -36,6 +36,28 @@ defmodule PoeSystem.Items do
     |> order_by([m], m.id)
   end
 
+  def search_gems_by_attrs_query(name, quality, level) do
+    n = "#{name}%"
+
+    Item
+    |> where([m], ilike(m.basetype, ^name))
+    |> where([m], m.subcategory == "Gem")
+    |> where([m], fragment("(?->'level')::int", m.data) >= ^level)
+    |> where([m], fragment("(?->'quality')::int", m.data) >= ^quality)
+    |> order_by([m], m.id)
+  end
+
+  # def search_flasks_by_attrs_query(name, quality, level) do
+  #   n = "#{name}%"
+  #
+  #   Item
+  #   |> where([m], ilike(m.basetype, ^name))
+  #   |> where([m], m.subcategory == "Gem")
+  #   |> where([m], fragment("(?->'level')::int", m.data) >= ^level)
+  #   |> where([m], fragment("(?->'quality')::int", m.data) >= ^quality)
+  #   |> order_by([m], m.id)
+  # end
+
   def append_id_cursor(query, nil), do: query
 
   def append_id_cursor(query, id) do

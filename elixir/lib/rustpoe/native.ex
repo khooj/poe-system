@@ -13,6 +13,10 @@ defmodule RustPoe.Native do
   def extract_mods_for_search(_req_item), do: error()
   def closest_item(_item, _items), do: error()
   def get_items_from_stash_data(_data), do: error()
+  def get_req_item_type(_data), do: error()
+  def get_stored_item_type(_data), do: error()
+  def extract_gem_props(_data), do: error()
+  def extract_flask_props(_data), do: error()
 
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

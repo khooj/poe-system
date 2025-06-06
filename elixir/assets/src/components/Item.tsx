@@ -56,7 +56,8 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
     }
 
     return <div className={`m-2 border`} style={{ fontSize: '14px' }}>
-      <p>{item.name} {item.info.level}lvl/+{item.info.quality}%</p>
+      <p>{item.basetype} {item.info.level}lvl/+{item.info.quality}%</p>
+      {itemNameComponent && itemNameComponent(item)}
     </div>;
   }
 }

@@ -27,6 +27,7 @@ defmodule PoeSystemWeb.Poe1Controller do
         "pobData" => pob_data,
         "skillset" => skillset
       }) do
+    # FIXME: check if it works correctly with nginx proxy passing
     case RateLimit.hit({conn.remote_ip, :new}, @ratelimit_opts.time_window, @ratelimit_opts.limit) do
       {:allow, _} ->
         :ok = RustPoe.Native.validate_config(config)

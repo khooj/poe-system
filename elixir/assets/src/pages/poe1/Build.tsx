@@ -98,10 +98,7 @@ const Build = ({ id, provided, found, processed }: Props) => {
     if (Array.isArray(found[k])) {
       if (found[k].length !== 0) {
         return <MultipleItems itemKey={k}>
-          {found[k].map(i => <RequiredItemComponent
-            item={i.item}
-            modConfigComponent={(mcf) => <RenderConfig cf={mcf[1]} />}
-          />)}
+          {found[k].map(i => <StoredItemComponent item={i} />)}
         </MultipleItems>
       } else {
         return <div>Items ({k}) not found</div>

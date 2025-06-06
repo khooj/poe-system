@@ -56,8 +56,10 @@ defmodule PoeSystem.BuildProcessing do
   defp process_entry(items) when is_list(items) do
     result =
       items
-      |> Enum.map(fn a -> find_similar(a["item"]) end)
-      |> Enum.filter(&(not is_nil(&1)))
+      |> Enum.map(fn a ->
+        find_similar(a["item"], Native.get_req_item_type(a["item"]["info"]))
+      end)
+      |> Enum.reject(&is_nil/1)
 
     Logger.debug("found items for few items: #{List.first(result)["id"]}")
     result
@@ -65,13 +67,38 @@ defmodule PoeSystem.BuildProcessing do
 
   @spec process_entry(map()) :: map()
   defp process_entry(item) do
-    result = find_similar(item["item"])
+    result = find_similar(item["item"], Native.get_req_item_type(item["item"]["info"]))
     Logger.debug("found item for single item: #{result["id"]}")
     result
   end
 
-  @spec find_similar(map()) :: map() | nil
-  def find_similar(item) do
+  @spec find_similar(map(), {:ok, :gem}) :: map() | nil
+  def find_similar(item, {:ok, :gem}) do
+    name = item["basetype"]
+    {:ok, quality, level} = Native.extract_gem_props(item)
+
+    items_stream =
+      Items.search_gems_by_attrs_query(name, quality, level)
+
+    process_items_stream(items_stream, item)
+  end
+
+  def find_similar(item, {:ok, :flask}) do
+    {:ok, mods} = Native.extract_mods_for_search(item)
+    {:ok, quality} = Native.extract_flask_props(item)
+
+    items_stream =
+      Items.search_items_by_attrs_query(
+        mods,
+        basetype: item["basetype"]
+      )
+      |> where([m], fragment("(?->'quality')::int", m.data) >= ^quality)
+
+    process_items_stream(items_stream, item)
+  end
+
+  @spec find_similar(map(), {:ok, any()}) :: map() | nil
+  def find_similar(item, {:ok, _}) do
     Logger.debug("extract mods")
     {:ok, mods} = Native.extract_mods_for_search(item)
 

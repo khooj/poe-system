@@ -1,16 +1,18 @@
 use std::collections::HashMap;
 
-use crate::{decode_config, encode_config, JsonHashMap, SerdeTermJson};
+use crate::{decode_config, encode_config, JsonHashMap, RustError, SerdeTermJson};
 
 use super::atoms;
 use domain::{
     build_calculation::{
-        comparison::Comparator, required_item::RequiredItem, stored_item::StoredItem,
+        comparison::Comparator,
+        required_item::{ItemInfo as ReqItemInfo, RequiredItem},
+        stored_item::{ItemInfo as StoredItemInfo, StoredItem},
     },
     item::Item,
 };
 use public_stash::models::{PublicStashChange, PublicStashData};
-use rustler::{Encoder, Env, NifResult, SerdeTerm, Term};
+use rustler::{Atom, Encoder, Env, NifResult, SerdeTerm, Term};
 use serde_json::{Map, Value};
 
 #[rustler::nif]
@@ -83,4 +85,52 @@ fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<S
     }
 
     Ok(res_items)
+}
+
+#[rustler::nif]
+fn get_req_item_type(info: SerdeTermJson) -> NifResult<(Atom, Atom)> {
+    let info: ReqItemInfo = decode_config(info)?;
+    let atom = match info {
+        ReqItemInfo::Accessory { .. } => atoms::accessory(),
+        ReqItemInfo::Gem { .. } => atoms::gem(),
+        ReqItemInfo::Armor { .. } => atoms::armor(),
+        ReqItemInfo::Weapon { .. } => atoms::weapon(),
+        ReqItemInfo::Jewel { .. } => atoms::jewel(),
+        ReqItemInfo::Flask { .. } => atoms::flask(),
+    };
+    Ok((atoms::ok(), atom))
+}
+
+#[rustler::nif]
+fn get_stored_item_type(info: SerdeTermJson) -> NifResult<(Atom, Atom)> {
+    let info: StoredItemInfo = decode_config(info)?;
+    let atom = match info {
+        StoredItemInfo::Accessory { .. } => atoms::accessory(),
+        StoredItemInfo::Gem { .. } => atoms::gem(),
+        StoredItemInfo::Armor { .. } => atoms::armor(),
+        StoredItemInfo::Weapon { .. } => atoms::weapon(),
+        StoredItemInfo::Jewel { .. } => atoms::jewel(),
+        StoredItemInfo::Flask { .. } => atoms::flask(),
+    };
+    Ok((atoms::ok(), atom))
+}
+
+#[rustler::nif]
+fn extract_gem_props(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<Term<'_>> {
+    let req_item: RequiredItem = decode_config(req_item)?;
+    if let ReqItemInfo::Gem { quality, level } = req_item.info {
+        Ok((atoms::ok(), quality, level).encode(env))
+    } else {
+        Err(RustError::InvalidItem.into())
+    }
+}
+
+#[rustler::nif]
+fn extract_flask_props(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<Term<'_>> {
+    let req_item: RequiredItem = decode_config(req_item)?;
+    if let ReqItemInfo::Flask { quality, .. } = req_item.info {
+        Ok((atoms::ok(), quality).encode(env))
+    } else {
+        Err(RustError::InvalidItem.into())
+    }
 }
