@@ -14,6 +14,8 @@ defmodule PoeSystemWeb.SseController do
 
       topics when is_list(topics) ->
         Logger.debug(fn -> "subscribed to topics #{inspect(topics)}" end)
+        # FIXME: if client reconnects right after build processed it does not
+        # receives message about page reload
         SsePhoenixPubsub.stream(conn, {PoeSystem.PubSub, topics})
     end
   end

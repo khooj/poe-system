@@ -59,6 +59,8 @@ const priceCurrency = (x: Price) => {
 };
 
 const Build = ({ id, provided, found, processed }: Props) => {
+  // TODO: render info that build processing still in progress
+  // with spinner 
   const sub = useSSE('/poe1/sse', {
     method: 'POST',
     body: `topics=build:${id}`,
@@ -66,7 +68,6 @@ const Build = ({ id, provided, found, processed }: Props) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
   });
-  const [changeProcessed, setChangeProcessed] = useState(processed);
 
   useEffect(() => {
     if (!processed) {

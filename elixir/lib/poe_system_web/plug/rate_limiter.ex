@@ -1,5 +1,6 @@
 defmodule PoeSystemWeb.Plug.RateLimiter do
   import Plug.Conn
+  require Logger
   alias PoeSystemWeb.RateLimit
 
   def init(opts), do: opts

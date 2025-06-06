@@ -51,6 +51,14 @@ defmodule PoeSystemWeb.Endpoint do
 
   plug Plug.MethodOverride
   plug Plug.Head
+  # X-Forwarded-For header should be set correctly on proxy
+  plug Plug.RewriteOn, [
+    :x_forwarded_for,
+    :x_forwarded_host,
+    :x_forwarded_port,
+    :x_forwarded_proto
+  ]
+
   plug Plug.Session, @session_options
   plug PoeSystemWeb.Router
 end
