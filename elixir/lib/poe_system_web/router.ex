@@ -10,6 +10,13 @@ defmodule PoeSystemWeb.Router do
     plug :put_root_layout, html: {PoeSystemWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+
+    plug :put_content_security_policy,
+      default_src: "'self'",
+      script_src: "'self' 'wasm-unsafe-eval' 'nonce'",
+      style_src: "'self' 'nonce' https://cdnjs.cloudflare.com",
+      img_src: "'self' data:"
+
     plug Inertia.Plug
   end
 

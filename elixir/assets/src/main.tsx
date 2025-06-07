@@ -8,6 +8,9 @@ import { resolve } from './utils.tsx';
 axios.defaults.xsrfHeaderName = "x-csrf-token";
 
 createInertiaApp({
+  progress: {
+    includeCSS: false,
+  },
   resolve,
   setup({ App, el, props }) {
     hydrateRoot(el, <SSRProvider>

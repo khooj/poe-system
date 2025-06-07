@@ -4,9 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta name="csp-nonce" content={get_csp_nonce()} />
     <.inertia_title>{assigns[:page_title] || "PoeSystem"}</.inertia_title>
     <.inertia_head content={@inertia_head} />
     <link phx-track-static rel="stylesheet" href={~p"/assets/main.css"} />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" integrity="sha512-42kB9yDlYiCEfx2xVwq0q7hT4uf26FUgSIZBK8uiaEnTdShXjwr8Ip1V4xGJMg3mHkUt9nNuTDxunHF0/EgxLQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script defer phx-track-static type="module" src={~p"/assets/main.js"}>
     </script>
   </head>
