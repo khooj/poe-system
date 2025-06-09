@@ -3,12 +3,12 @@ defmodule PoeSystemWeb.Vite do
 
   def main_js do
     {_, v} = main_entry()
-    v["file"]
+    "/" <> v["file"]
   end
 
   def main_css do
     {_, v} = main_entry()
-    List.first(v["css"])
+    "/" <> List.first(v["css"])
   end
 
   defp main_entry do
