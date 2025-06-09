@@ -7,9 +7,11 @@
     <meta name="csp-nonce" content={get_csp_nonce()} />
     <.inertia_title>{assigns[:page_title] || "PoeSystem"}</.inertia_title>
     <.inertia_head content={@inertia_head} />
-    <link phx-track-static rel="stylesheet" href={~p"/assets/main.css"} />
-    <script defer phx-track-static type="module" src={~p"/assets/main.js"} />
+    <%!-- <link phx-track-static rel="stylesheet" href={static_path(@conn, "/assets/main.css")} /> --%>
+    <%!-- <script defer phx-track-static type="module" src={static_path(@conn, "/assets/main.js")} /> --%>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" integrity="sha512-42kB9yDlYiCEfx2xVwq0q7hT4uf26FUgSIZBK8uiaEnTdShXjwr8Ip1V4xGJMg3mHkUt9nNuTDxunHF0/EgxLQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link phx-track-static rel="stylesheet" href={main_css()} />
+    <script defer phx-track-static type="module" src={main_js()} />
   </head>
   <body>
     {@inner_content}

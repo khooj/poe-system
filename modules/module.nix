@@ -36,6 +36,9 @@ in {
       wantedBy = ["multi-user.target"];
       requires = ["network-online.target"];
       after = ["network-online.target"];
+      preStart = ''
+        ${pkg}/bin/migrate
+      '';
       environment = {
         PHX_SERVER = "1";
         PHX_HOST = cfg.host;

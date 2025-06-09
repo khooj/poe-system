@@ -10,7 +10,7 @@ export const conf: UserConfig = {
     wasm(),
     // topLevelAwait(),
   ],
-  base: "/assets/",
+  base: "/",
   server: {
     hmr: {
       clientPort: 5173,
@@ -18,10 +18,10 @@ export const conf: UserConfig = {
   },
   build: {
     target: 'esnext',
-    outDir: "../priv/static/assets",
+    outDir: "../priv/static",
     emptyOutDir: true,
     sourcemap: false,
-    manifest: true,
+    manifest: "manifest.json",
     commonjsOptions: {
       include: [/routes/, /node_modules/, /states/, /bindings/],
       strictRequires: "auto"
@@ -30,11 +30,11 @@ export const conf: UserConfig = {
       input: {
         main: "src/main.tsx",
       },
-      output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "[name].js",
-        assetFileNames: "[name][extname]",
-      }
+      // output: {
+      //   entryFileNames: "[name]-[hash].js",
+      //   chunkFileNames: "[name]-[hash].js",
+      //   assetFileNames: "[name]-[hash][extname]",
+      // }
     },
   },
   resolve: {

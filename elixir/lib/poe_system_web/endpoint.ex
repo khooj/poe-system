@@ -26,7 +26,8 @@ defmodule PoeSystemWeb.Endpoint do
     at: "/",
     from: :poe_system,
     gzip: false,
-    only: PoeSystemWeb.static_paths()
+    only: PoeSystemWeb.static_paths(),
+    cache_control_for_etags: "public,max-age=31536000,immutable"
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

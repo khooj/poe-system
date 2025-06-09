@@ -81,6 +81,8 @@ defmodule PoeSystemWeb do
 
       import PoeSystemWeb.Plug.CSP, only: [get_csp_nonce: 0]
 
+      import PoeSystemWeb.Vite, only: [main_js: 0, main_css: 0]
+
       # Include general helpers for rendering HTML
       unquote(html_helpers())
     end

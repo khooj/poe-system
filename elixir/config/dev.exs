@@ -24,13 +24,12 @@ config :poe_system, PoeSystemWeb.Endpoint,
   code_reloader: false,
   debug_errors: true,
   secret_key_base: "vMKHgGP1w1R9KH19Kr9ybO7jixqFcTLFXRoj+z1P/WsrqGseIs6ilLLvR+/uO9bL",
-  # cache_static_manifest: "priv/static/cache_manifest.json",
   watchers: [
-    npx:
-      ~w(vite build -w) ++
-        [
-          cd: Path.expand("../assets", __DIR__)
-        ]
+    # npx:
+    #   ~w(vite build -w) ++
+    #     [
+    #       cd: Path.expand("../assets", __DIR__)
+    #     ]
     # bun:
     #   ~w(run vite_ssr_watch) ++
     #     [
