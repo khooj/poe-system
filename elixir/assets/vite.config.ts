@@ -1,6 +1,7 @@
 import { defineConfig, UserConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import wasm from 'vite-plugin-wasm';
+import * as path from 'path';
 
 export const conf: UserConfig = {
   publicDir: "public",
@@ -10,12 +11,17 @@ export const conf: UserConfig = {
     // topLevelAwait(),
   ],
   base: "/assets/",
+  server: {
+    hmr: {
+      clientPort: 5173,
+    },
+  },
   build: {
     target: 'esnext',
     outDir: "../priv/static/assets",
     emptyOutDir: true,
-    sourcemap: true,
-    manifest: false,
+    sourcemap: false,
+    manifest: true,
     commonjsOptions: {
       include: [/routes/, /node_modules/, /states/, /bindings/],
       strictRequires: "auto"
@@ -28,15 +34,15 @@ export const conf: UserConfig = {
         entryFileNames: "[name].js",
         chunkFileNames: "[name].js",
         assetFileNames: "[name][extname]",
-      },
+      }
     },
   },
   resolve: {
     alias: [
-      { find: /@bindings\/(.*)$/, replacement: '../../rust/$1.ts' },
-      { find: /@states\/(.*)$/, replacement: './src/states/$1.ts' },
-      { find: /@routes/, replacement: './src/routes.js' },
-      { find: /@\/(.*)$/, replacement: './src/$1.tsx' },
+      { find: '@bindings', replacement: path.resolve(__dirname, '../../rust/$1.ts') },
+      { find: '@states', replacement: path.resolve(__dirname, 'src/states') },
+      { find: '@routes', replacement: path.resolve(__dirname, 'src/routes.js') },
+      { find: '@', replacement: path.resolve(__dirname, 'src') },
     ],
   },
   css: {

@@ -83,7 +83,9 @@ defmodule PoeSystem.MixProject do
       {:prom_ex, "~> 1.11"},
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:sse_phoenix_pubsub, "~> 1.0"}
+      {:sse_phoenix_pubsub, "~> 1.0"},
+      {:req, "~> 0.5", only: [:dev, :test]},
+      {:websockex, "~> 0.4.3", only: [:dev, :test]}
     ]
   end
 

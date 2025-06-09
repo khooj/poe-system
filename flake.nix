@@ -156,6 +156,7 @@
                 playwright
                 protobuf
                 node2nix
+                websocat
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config

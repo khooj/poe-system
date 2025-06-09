@@ -9,7 +9,8 @@ import Config
 
 config :poe_system,
   ecto_repos: [PoeSystem.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  mode: config_env()
 
 # Configures the endpoint
 config :poe_system, PoeSystemWeb.Endpoint,

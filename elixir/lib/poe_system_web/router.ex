@@ -12,10 +12,12 @@ defmodule PoeSystemWeb.Router do
     plug :put_secure_browser_headers
 
     plug :put_content_security_policy,
-      default_src: "'self'",
-      script_src: "'self' 'wasm-unsafe-eval' 'nonce'",
-      style_src: "'self' 'nonce' https://cdnjs.cloudflare.com",
-      img_src: "'self' data:"
+         [
+           default_src: "'self'",
+           script_src: "'self' 'wasm-unsafe-eval' 'nonce'",
+           style_src: "'self' 'nonce' https://cdnjs.cloudflare.com",
+           img_src: "'self' data:"
+         ] ++ Application.compile_env(:poe_system, :additional_csp, [])
 
     plug Inertia.Plug
   end
