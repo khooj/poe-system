@@ -10,7 +10,8 @@ import Config
 config :poe_system,
   ecto_repos: [PoeSystem.Repo],
   generators: [timestamp_type: :utc_datetime],
-  mode: config_env()
+  mode: config_env(),
+  stash_receiver_producer: {PoeSystem.StashReceiver.Producer, []}
 
 # Configures the endpoint
 config :poe_system, PoeSystemWeb.Endpoint,

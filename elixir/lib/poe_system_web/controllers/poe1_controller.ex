@@ -1,7 +1,7 @@
 defmodule PoeSystemWeb.Poe1Controller do
   alias Ecto.UUID
   alias PoeSystem.BuildProcessing
-  alias PoeSystem.BuildInfo
+  alias PoeSystem.Build
   alias Ecto.Multi
   alias PoeSystemWeb.RateLimit
   use PoeSystemWeb, :controller
@@ -14,7 +14,7 @@ defmodule PoeSystemWeb.Poe1Controller do
 
   @telemetria level: :info, group: :poe1_build_cost_calc
   def index(conn, _params) do
-    build_ids = BuildInfo.get_ids()
+    build_ids = Build.get_ids()
 
     conn
     |> assign_prop(:build_ids, build_ids)
@@ -27,8 +27,11 @@ defmodule PoeSystemWeb.Poe1Controller do
         "pobData" => pob_data,
         "skillset" => skillset
       }) do
-    # FIXME: check if it works correctly with nginx proxy passing
-    case RateLimit.hit({conn.remote_ip, :new}, @ratelimit_opts.time_window, @ratelimit_opts.limit) do
+    case RateLimit.hit(
+           "#{conn.remote_ip}_new",
+           @ratelimit_opts.time_window,
+           @ratelimit_opts.limit
+         ) do
       {:allow, _} ->
         :ok = RustPoe.Native.validate_config(config)
 
@@ -36,7 +39,7 @@ defmodule PoeSystemWeb.Poe1Controller do
           Multi.new()
           |> Multi.insert(
             :bi,
-            BuildInfo.changeset(%BuildInfo{}, %{
+            Build.changeset(%Build{}, %{
               id: UUID.bingenerate(),
               data: config,
               itemset: itemset,
@@ -71,7 +74,7 @@ defmodule PoeSystemWeb.Poe1Controller do
   end
 
   def get_build(conn, %{"id" => id}) do
-    case BuildInfo.get_build(id) do
+    case Build.get_build(id) do
       %{fixed: true} = data ->
         conn
         # TODO: maybe use partial reload?

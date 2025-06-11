@@ -40,3 +40,6 @@ config :opentelemetry, traces_exporter: :none
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+config :poe_system,
+  stash_receiver_producer: {Broadway.DummyProducer, []}

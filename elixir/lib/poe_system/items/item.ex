@@ -1,6 +1,7 @@
 defmodule PoeSystem.Items.Item do
   use Ecto.Schema
   import Ecto.Changeset
+  alias __MODULE__
 
   @primary_key false
   schema "items" do
@@ -14,6 +15,12 @@ defmodule PoeSystem.Items.Item do
     field :rarity, :string
   end
 
+  @type t :: %__MODULE__{}
+  @type item_type :: :accessory | :gem | :armor | :weapon | :jewel | :flask
+  @type quality :: non_neg_integer()
+  @type level :: non_neg_integer()
+
+  @spec changeset(Item.t(), map()) :: Ecto.Changeset.t()
   def changeset(item, attrs) do
     item
     |> cast(attrs, [:id, :info, :basetype, :category, :subcategory, :name, :price, :rarity],

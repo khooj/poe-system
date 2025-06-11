@@ -1,7 +1,7 @@
 alias Ecto.UUID
 alias PoeSystem.Testdata
 alias PoeSystem.Items.Item
-alias PoeSystem.BuildInfo
+alias PoeSystem.Build
 alias PoeSystem.Repo
 
 if Mix.env() == :test do
@@ -12,7 +12,7 @@ if Mix.env() == :test do
 
   {itemset, skillset} = Testdata.config_info()
 
-  BuildInfo.changeset(%BuildInfo{}, %{
+  Build.changeset(%Build{}, %{
     id: UUID.bingenerate(),
     itemset: itemset,
     skillset: skillset,

@@ -3,8 +3,10 @@ defmodule PoeSystem.BuildProcessing do
   alias Phoenix.PubSub
   alias RustPoe.NativeWrapper
   alias PoeSystem.Repo
-  alias PoeSystem.BuildInfo
+  alias PoeSystem.Build
+  alias PoeSystem.Build.{BuildInfo, RequiredItem}
   alias PoeSystem.Items
+  alias PoeSystem.Items.Item
   alias RustPoe.Native
   use Oban.Worker, queue: :new_builds
   import Ecto.Query
@@ -14,13 +16,14 @@ defmodule PoeSystem.BuildProcessing do
     |> Oban.insert(name, &id_fn.(&1))
   end
 
+  @spec queue_processing_build(String.t()) :: {:ok, Oban.Job.t()} | {:error, Ecto.Changeset.t()}
   def queue_processing_build(id) do
     Oban.insert(new(%{id: id}))
   end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"id" => id} = _args}) do
-    build = BuildInfo.get_build(id)
+    build = Build.get_build(id)
     build_data = process_single_build(build.data)
 
     build_attrs =
@@ -28,7 +31,7 @@ defmodule PoeSystem.BuildProcessing do
       |> Map.put(:processed, true)
       |> Map.put(:data, build_data)
 
-    {:ok, _} = BuildInfo.update_build(build, build_attrs)
+    {:ok, _} = Build.update_build(build, build_attrs)
     PubSub.broadcast!(PoeSystem.PubSub, "build:#{id}", {PoeSystem.PubSub, "done"})
     Logger.debug("end processing")
 
@@ -40,7 +43,7 @@ defmodule PoeSystem.BuildProcessing do
     5
   end
 
-  @spec process_single_build(map()) :: map()
+  @spec process_single_build(BuildInfo.t()) :: BuildInfo.t()
   def process_single_build(build) do
     found =
       build["provided"]
@@ -50,9 +53,10 @@ defmodule PoeSystem.BuildProcessing do
     put_in(build["found"], found)
   end
 
+  @spec process_entry(nil) :: nil
   defp process_entry(nil), do: nil
 
-  @spec process_entry([map()]) :: [map()]
+  @spec process_entry([%{String.t() => RequiredItem.t()}]) :: [Item.t()] | []
   defp process_entry(items) when is_list(items) do
     result =
       items
@@ -65,14 +69,14 @@ defmodule PoeSystem.BuildProcessing do
     result
   end
 
-  @spec process_entry(map()) :: map()
+  @spec process_entry(%{String.t() => RequiredItem.t()}) :: Item.t() | nil
   defp process_entry(item) do
     result = find_similar(item["item"], Native.get_req_item_type(item["item"]["info"]))
     Logger.debug("found item for single item: #{result["id"]}")
     result
   end
 
-  @spec find_similar(map(), {:ok, :gem}) :: map() | nil
+  @spec find_similar(RequiredItem.t(), {:ok, :gem}) :: Item.t() | nil
   def find_similar(item, {:ok, :gem}) do
     name = item["basetype"]
     {:ok, quality, level} = Native.extract_gem_props(item)
@@ -83,6 +87,7 @@ defmodule PoeSystem.BuildProcessing do
     process_items_stream(items_stream, item)
   end
 
+  @spec find_similar(RequiredItem.t(), {:ok, :flask}) :: Item.t() | nil
   def find_similar(item, {:ok, :flask}) do
     {:ok, mods} = Native.extract_mods_for_search(item)
     {:ok, quality} = Native.extract_flask_props(item)
@@ -97,7 +102,7 @@ defmodule PoeSystem.BuildProcessing do
     process_items_stream(items_stream, item)
   end
 
-  @spec find_similar(map(), {:ok, any()}) :: map() | nil
+  @spec find_similar(RequiredItem.t(), {:ok, atom()}) :: Item.t() | nil
   def find_similar(item, {:ok, _}) do
     Logger.debug("extract mods")
     {:ok, mods} = Native.extract_mods_for_search(item)
@@ -119,8 +124,13 @@ defmodule PoeSystem.BuildProcessing do
     end
   end
 
-  @spec process_items_stream(Ecto.Query.t(), map(), Ecto.UUID.t() | nil, map() | nil) ::
-          map() | nil
+  @spec process_items_stream(
+          Ecto.Query.t(),
+          RequiredItem.t(),
+          Ecto.UUID.t() | nil,
+          Item.t() | nil
+        ) ::
+          Item.t() | nil
   defp process_items_stream(query, req_item, last_id \\ nil, last_item \\ nil) do
     {:ok, items} =
       Repo.transaction(fn ->
@@ -142,8 +152,12 @@ defmodule PoeSystem.BuildProcessing do
     end
   end
 
+  @spec closest_item(RequiredItem.t(), [Item.t()], nil) ::
+          {:ok, Item.t() | nil} | Native.nif_err()
   defp closest_item(req_item, items, nil), do: NativeWrapper.closest_item(req_item, items)
 
+  @spec closest_item(RequiredItem.t(), [Item.t()], Item.t()) ::
+          {:ok, Item.t() | nil} | Native.nif_err()
   defp closest_item(req_item, items, last_item),
     do: NativeWrapper.closest_item(req_item, [last_item | items])
 

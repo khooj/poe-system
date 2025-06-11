@@ -20,6 +20,9 @@ defmodule PoeSystem.MixProject do
             opentelemetry: :temporary
           ]
         ]
+      ],
+      dialyzer: [
+        plt_add_apps: [:mix]
       ]
     ]
   end
@@ -84,8 +87,10 @@ defmodule PoeSystem.MixProject do
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:sse_phoenix_pubsub, "~> 1.0"},
-      {:req, "~> 0.5", only: [:dev, :test]},
-      {:websockex, "~> 0.4.3", only: [:dev, :test]}
+      {:req, "~> 0.5"},
+      {:websockex, "~> 0.4.3", only: [:dev, :test]},
+      {:broadway, "~> 1.2"},
+      {:flow, "~> 1.2"}
     ]
   end
 
