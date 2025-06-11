@@ -10,7 +10,9 @@ defmodule Utils do
 
   def to_string_key_map(v) when is_struct(v), do: to_string_key_map(Map.from_struct(v))
 
-  def to_atom_key_map(k) when is_map(k) do
+  # sobelow_skip ["DOS.StringToAtom"]
+  # SECURITY: String.to_atom
+  def unsafe_to_atom_key_map(k) when is_map(k) do
     k
     |> Enum.map(fn
       {k, v} when is_binary(k) -> {String.to_atom(k), v}

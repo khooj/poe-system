@@ -1,0 +1,13 @@
+[
+  verbose: false, 
+  private: true, 
+  skip: true, 
+  router: "lib/poe_system_web/router.ex", 
+  exit: false, 
+  format: "txt", 
+  out: nil, 
+  threshold: :low, 
+  ignore: ["Config.HTTPS"], 
+  ignore_files: [], 
+  version: false
+]

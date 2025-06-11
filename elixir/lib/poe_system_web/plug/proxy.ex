@@ -5,6 +5,8 @@ defmodule PoeSystemWeb.Plug.Proxy do
 
   def init(opts), do: opts
 
+  # sobelow_skip ["XSS.SendResp"]
+  # SECURITY: plug used only in dev mode
   def call(conn, opts) do
     redirect_to = Keyword.fetch!(opts, :redirect_to)
     match_path = Keyword.fetch!(opts, :match_path)

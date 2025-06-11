@@ -9,6 +9,7 @@ defmodule PoeSystemWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {PoeSystemWeb.Layouts, :root}
     plug :protect_from_forgery
+    # Config.CSP should be in sobelow-skips
     plug :put_secure_browser_headers
 
     plug :put_content_security_policy,
@@ -27,6 +28,7 @@ defmodule PoeSystemWeb.Router do
     plug PoeSystemWeb.Plug.RateLimiter
   end
 
+  # Config.CSRF sse does not receive any msg so should be safe here
   pipeline :sse do
     plug :put_format, "text/event-stream"
     plug PoeSystemWeb.Plug.RateLimiter

@@ -11,6 +11,8 @@ defmodule PoeSystemWeb.Vite do
     "/" <> List.first(v["css"])
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # SECURITY: constant usage
   defp main_entry do
     case :persistent_term.get({__MODULE__, :mains}, nil) do
       nil ->

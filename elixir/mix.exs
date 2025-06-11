@@ -81,7 +81,7 @@ defmodule PoeSystem.MixProject do
        sparse: "instrumentation/opentelemetry_oban"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
       {:dotenvy, "~> 1.0.0"},
       {:prom_ex, "~> 1.11"},
       {:plug, "~> 1.0"},
