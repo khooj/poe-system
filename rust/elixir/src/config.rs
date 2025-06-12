@@ -30,7 +30,7 @@ fn extract_build_config_impl<'a>(
     let mut info = import_build_from_pob(&pob, itemset, skillset)?;
     info.provided.fill_configs_by_rule(FillRules::AllExist);
     let term = encode_config(env, &info)?;
-    Ok((atoms::ok(), term).encode(env))
+    Ok((atoms::ok(), SerdeTerm(term)).encode(env))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -57,7 +57,11 @@ fn validate_and_apply_config_impl(
         &mut extracted_config.provided,
         UnverifiedBuildItemsWithConfig(&mut user_config.provided),
     ) {
-        Ok((atoms::ok(), encode_config(env, &extracted_config)?).encode(env))
+        Ok((
+            atoms::ok(),
+            SerdeTerm(encode_config(env, &extracted_config)?),
+        )
+            .encode(env))
     } else {
         Err(RustError::InvalidUserBuildInfo)
     }

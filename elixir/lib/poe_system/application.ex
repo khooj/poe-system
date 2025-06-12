@@ -28,7 +28,7 @@ defmodule PoeSystem.Application do
         #  module: "ssr.mjs"},
         {PoeSystemWeb.RateLimit, clean_period: :timer.minutes(10)},
         # Start to serve requests, typically the last entry
-        {PoeSystem.StashReceiver, []},
+        PoeSystem.StashReceiver,
         PoeSystemWeb.Endpoint
       ] ++ Application.get_env(:poe_system, :additional_processes, [])
 

@@ -64,12 +64,12 @@ where
 }
 
 // TODO: optimize serialize/deserialize
-fn encode_config<'a, T>(env: Env<'a>, bi: &T) -> Result<SerdeTerm<Value>, RustError>
+fn encode_config<'a, T>(env: Env<'a>, bi: &T) -> Result<Value, RustError>
 where
     T: serde::ser::Serialize,
 {
     let json = serde_json::to_value(bi)?;
-    Ok(SerdeTerm(json))
+    Ok(json)
 }
 
 rustler::init!("Elixir.RustPoe.Native");

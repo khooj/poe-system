@@ -18,7 +18,11 @@ defmodule PoeSystem.Testdata do
     {@config_itemset, @config_skillset}
   end
 
+  def stash_json do
+    File.read!(Path.join([@testdata_dir, "stash.json"]))
+  end
+
   def items do
-    RustPoe.Native.get_items_from_stash_data(File.read!(Path.join([@testdata_dir, "stash.json"])))
+    RustPoe.Native.get_items_from_stash_data(stash_json())
   end
 end

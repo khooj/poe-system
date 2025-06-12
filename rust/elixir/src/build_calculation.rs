@@ -11,8 +11,9 @@ use domain::{
     },
     item::Item,
 };
-use public_stash::models::{PublicStashChange, PublicStashData};
+use public_stash::models::PublicStashData;
 use rustler::{Atom, Encoder, Env, NifResult, SerdeTerm, Term};
+use serde::Serialize;
 use serde_json::{Map, Value};
 
 #[rustler::nif]
@@ -21,7 +22,7 @@ fn extract_mods_for_search(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<T
     let mods = Comparator::extract_mods_for_search(&req_item);
     let mods: Vec<_> = mods
         .into_iter()
-        .map(|m| encode_config(env, m).expect("cannot encode config"))
+        .map(|m| SerdeTerm(encode_config(env, m).expect("cannot encode config")))
         .collect();
     Ok((atoms::ok(), mods).encode(env))
 }
@@ -50,7 +51,7 @@ fn closest_item(
         .map(|i| decode_config(SerdeTerm(i)).expect("cannot decode stored item in vec"))
         .collect();
     let result = Comparator::closest_item(&req_item, items);
-    Ok((atoms::ok(), encode_config(env, &result)?).encode(env))
+    Ok((atoms::ok(), SerdeTerm(encode_config(env, &result)?)).encode(env))
 }
 
 #[rustler::nif]
@@ -79,12 +80,58 @@ fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<S
                 i
             })
             .filter_map(|i| StoredItem::try_from(i).ok())
-            .map(|i| encode_config(env, &i).unwrap())
+            .map(|i| SerdeTerm(encode_config(env, &i).unwrap()))
             .collect::<Vec<_>>();
         res_items.append(&mut items);
     }
 
     Ok(res_items)
+}
+
+#[derive(Serialize)]
+struct StashData {
+    remove_stashes: Vec<String>,
+    stashes: HashMap<String, Vec<Value>>,
+    next_change_id: String,
+}
+
+#[rustler::nif]
+fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, SerdeTerm<Value>)> {
+    let k: PublicStashData = serde_json::from_str(data).unwrap();
+    let mut result = StashData {
+        stashes: HashMap::new(),
+        remove_stashes: vec![],
+        next_change_id: k.next_change_id,
+    };
+
+    for d in k.stashes {
+        if d.account_name.is_none() || d.stash.is_none() {
+            continue;
+        }
+        let stash = d.stash.as_ref().unwrap();
+
+        if d.items.is_empty() {
+            result.remove_stashes.push(stash.clone());
+            continue;
+        }
+
+        let items = d
+            .items
+            .into_iter()
+            .filter_map(|i| Item::try_from(i).ok())
+            .map(|mut i| {
+                if i.note.is_none() {
+                    i.note = Some(stash.clone());
+                }
+                i
+            })
+            .filter_map(|i| StoredItem::try_from(i).ok())
+            .map(|i| encode_config(env, &i).unwrap())
+            .collect::<Vec<_>>();
+        result.stashes.insert(stash.clone(), items);
+    }
+
+    Ok((atoms::ok(), SerdeTerm(encode_config(env, &result).unwrap())))
 }
 
 #[rustler::nif]

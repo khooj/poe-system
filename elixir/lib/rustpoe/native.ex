@@ -50,5 +50,8 @@ defmodule RustPoe.Native do
   @spec extract_flask_props(RequiredItem.t()) :: {:ok, Item.quality()} | nif_err()
   def extract_flask_props(_data), do: error()
 
+  @spec process_stash_data(String.t()) :: {:ok, map()} | nif_err()
+  def process_stash_data(_data), do: error()
+
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

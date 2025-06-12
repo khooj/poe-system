@@ -90,7 +90,8 @@ defmodule PoeSystem.MixProject do
       {:req, "~> 0.5"},
       {:websockex, "~> 0.4.3", only: [:dev, :test]},
       {:broadway, "~> 1.2"},
-      {:flow, "~> 1.2"}
+      {:flow, "~> 1.2"},
+      {:nimble_options, "~> 1.1"}
     ]
   end
 
