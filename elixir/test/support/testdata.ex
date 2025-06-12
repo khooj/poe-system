@@ -1,4 +1,8 @@
 defmodule PoeSystem.Testdata do
+  alias PoeSystem.Items.Item
+  alias PoeSystem.Build
+  alias PoeSystem.Repo
+  alias Ecto.UUID
   @testdata_dir Path.join([__DIR__, "../testdata"])
   @config_itemset "Midgame"
   @config_skillset "Maps"
@@ -24,5 +28,25 @@ defmodule PoeSystem.Testdata do
 
   def items do
     RustPoe.Native.get_items_from_stash_data(stash_json())
+  end
+
+  def insert_items do
+    for item <- items() do
+      Item.changeset(%Item{}, item)
+      |> Repo.insert_or_update!()
+    end
+  end
+
+  def insert_build do
+    {itemset, skillset} = config_info()
+
+    Build.changeset(%Build{}, %{
+      id: UUID.bingenerate(),
+      itemset: itemset,
+      skillset: skillset,
+      pob: pobdata_file(),
+      data: extract_config()
+    })
+    |> Repo.insert!()
   end
 end

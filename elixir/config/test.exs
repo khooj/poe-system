@@ -45,7 +45,7 @@ config :poe_system,
   stash_receiver_producer: {Broadway.DummyProducer, []}
 
 config :poe_system, PoeSystem.StashReceiver,
-  interval: :timer.seconds(1),
+  interval: 1,
   plug: {Req.Test, PoeSystem.StashReceiver},
   access_token: "empty",
   test: true

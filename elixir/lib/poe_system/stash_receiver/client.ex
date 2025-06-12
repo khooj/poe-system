@@ -1,7 +1,6 @@
 defmodule PoeSystem.StashReceiver.Client do
   def get_stash_data(next_stash_id, opts) do
-    plug = Keyword.get(opts, :plug)
-    access_token = Keyword.fetch!(opts, :access_token)
+    plug = Map.get(opts, :plug)
 
     req =
       Req.new(
@@ -9,7 +8,7 @@ defmodule PoeSystem.StashReceiver.Client do
         headers: [
           user_agent: "OAuth somepoetools/0.1.0 (contact: bladoff@gmail.com)"
         ],
-        auth: {:bearer, access_token},
+        auth: {:bearer, opts.access_token},
         retry: false,
         redirect: false,
         plug: plug,

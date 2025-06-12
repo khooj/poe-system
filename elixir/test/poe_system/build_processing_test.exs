@@ -25,22 +25,30 @@ defmodule PoeSystem.BuildProcessingTest do
     assert_enqueued(worker: BuildProcessing, args: %{id: "testid"})
   end
 
-  test "process single build w/ items", %{build: build} do
-    assert BuildProcessing.process_single_build(build)
-  end
+  describe "process single build" do
+    setup do
+      Testdata.insert_items()
+      Testdata.insert_build()
+      :ok
+    end
 
-  # TODO: ensure that testdata have required items
-  @tag :skip
-  test "check gems processing", %{build: build} do
-    assert not Enum.empty?(build["provided"]["gems"])
-    processed = BuildProcessing.process_single_build(build)
-    assert not Enum.empty?(processed["found"]["gems"])
-  end
+    test "w/ items", %{build: build} do
+      assert BuildProcessing.process_single_build(build)
+    end
 
-  @tag :skip
-  test "check flasks processing", %{build: build} do
-    assert not Enum.empty?(build["provided"]["flasks"])
-    processed = BuildProcessing.process_single_build(build)
-    assert not Enum.empty?(processed["found"]["flasks"])
+    # TODO: ensure that testdata have required items
+    @tag :skip
+    test "check gems", %{build: build} do
+      assert not Enum.empty?(build["provided"]["gems"])
+      processed = BuildProcessing.process_single_build(build)
+      assert not Enum.empty?(processed["found"]["gems"])
+    end
+
+    @tag :skip
+    test "check flasks", %{build: build} do
+      assert not Enum.empty?(build["provided"]["flasks"])
+      processed = BuildProcessing.process_single_build(build)
+      assert not Enum.empty?(processed["found"]["flasks"])
+    end
   end
 end

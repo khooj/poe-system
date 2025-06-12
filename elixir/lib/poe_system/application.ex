@@ -26,7 +26,7 @@ defmodule PoeSystem.Application do
         # {Inertia.SSR,
         #  path: Path.join([Application.app_dir(:poe_system), "priv/static/assets/ssr"]),
         #  module: "ssr.mjs"},
-        {PoeSystemWeb.RateLimit, clean_period: :timer.minutes(10)},
+        {PoeSystem.RateLimit, clean_period: :timer.minutes(10)},
         # Start to serve requests, typically the last entry
         PoeSystem.StashReceiver,
         PoeSystemWeb.Endpoint

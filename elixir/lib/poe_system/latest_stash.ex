@@ -9,7 +9,7 @@ defmodule PoeSystem.LatestStash do
 
   def changeset(ls, attrs \\ %{}) do
     ls
-    |> cast(attrs, [:id])
+    |> cast(attrs, [:id], empty_values: [])
     |> validate_required([:id])
     |> validate_length(:id, min: 1)
   end

@@ -15,6 +15,7 @@ use public_stash::models::PublicStashData;
 use rustler::{Atom, Encoder, Env, NifResult, SerdeTerm, Term};
 use serde::Serialize;
 use serde_json::{Map, Value};
+use uuid::Uuid;
 
 #[rustler::nif]
 fn extract_mods_for_search(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<Term<'_>> {
@@ -122,6 +123,9 @@ fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, Serde
             .map(|mut i| {
                 if i.note.is_none() {
                     i.note = Some(stash.clone());
+                }
+                if i.id.is_empty() {
+                    i.id = Uuid::new_v4().to_string();
                 }
                 i
             })

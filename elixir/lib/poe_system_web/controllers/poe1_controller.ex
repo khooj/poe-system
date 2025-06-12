@@ -3,7 +3,7 @@ defmodule PoeSystemWeb.Poe1Controller do
   alias PoeSystem.BuildProcessing
   alias PoeSystem.Build
   alias Ecto.Multi
-  alias PoeSystemWeb.RateLimit
+  alias PoeSystem.RateLimit
   use PoeSystemWeb, :controller
   use Telemetria
 
