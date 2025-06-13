@@ -49,3 +49,5 @@ config :poe_system, PoeSystem.StashReceiver,
   plug: {Req.Test, PoeSystem.StashReceiver},
   access_token: "empty",
   test: true
+
+config :poe_system, PoeSystemWeb.PromEx, disabled: true
