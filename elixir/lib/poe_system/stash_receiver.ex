@@ -11,6 +11,7 @@ defmodule PoeSystem.StashReceiver do
 
   @options NimbleOptions.new!(
              interval: [required: true, type: :pos_integer],
+             long_interval: [required: true, type: :pos_integer],
              plug: [type: :any, default: nil],
              access_token: [required: true, type: :string],
              test: [type: :boolean]
@@ -36,7 +37,11 @@ defmodule PoeSystem.StashReceiver do
   @impl true
   def handle_info(:cycle, state) do
     if ratelimit_allowed?(state) do
-      ls = Repo.one(from LatestStash, select: [:id])
+      ls =
+        case Repo.one(from LatestStash, select: [:id]) do
+          nil -> nil
+          a -> a.id
+        end
 
       resp = Client.get_stash_data(ls, state)
       process_stash(resp, ls, state)
@@ -67,6 +72,10 @@ defmodule PoeSystem.StashReceiver do
       |> String.to_integer()
 
     send(self(), {:ratelimited, retry_after})
+  end
+
+  defp process_stash(%Response{status: status}, _, state) when status != 200 do
+    send(self(), {:ratelimited, state.long_interval})
   end
 
   defp process_stash(resp, ls, state) do
@@ -192,16 +201,19 @@ defmodule PoeSystem.StashReceiver do
       )
       |> then(
         &Enum.reduce(Enum.with_index(stash_data.items), &1, fn {el, idx}, acc ->
-          Multi.insert(&1, {:insert_item, idx}, Item.changeset(%Item{}, el))
+          Multi.insert(acc, {:insert_item, idx}, Item.changeset(%Item{}, el))
         end)
       )
       |> then(fn
         m when is_nil(ls) -> m
         m -> Multi.delete(m, :delete_latest_id, %LatestStash{id: ls})
       end)
-      |> Multi.insert(:insert_latest_id, %LatestStash{
-        id: Map.fetch!(public_stash, "next_change_id")
-      })
+      |> Multi.insert(
+        :insert_latest_id,
+        LatestStash.changeset(%LatestStash{}, %{
+          id: Map.fetch!(public_stash, "next_change_id")
+        })
+      )
       |> Repo.transaction()
   end
 end

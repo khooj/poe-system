@@ -46,6 +46,7 @@ config :poe_system,
 
 config :poe_system, PoeSystem.StashReceiver,
   interval: 1,
+  long_interval: 10,
   plug: {Req.Test, PoeSystem.StashReceiver},
   access_token: "empty",
   test: true

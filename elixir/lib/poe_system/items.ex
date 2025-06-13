@@ -37,8 +37,6 @@ defmodule PoeSystem.Items do
   end
 
   def search_gems_by_attrs_query(name, quality, level) do
-    n = "#{name}%"
-
     Item
     |> where([m], ilike(m.basetype, ^name))
     |> where([m], m.subcategory == "Gem")

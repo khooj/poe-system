@@ -5,8 +5,6 @@ defmodule PoeSystemWeb.SseController do
   @allowed_topics ["build"]
 
   def subscribe(conn, params) do
-    IO.inspect(params)
-
     case get_allowed_topics(params) do
       t when is_list(t) and length(t) == 0 ->
         conn
@@ -24,7 +22,7 @@ defmodule PoeSystemWeb.SseController do
     get_topics(params)
     |> Enum.filter(fn t ->
       case String.split(t, ":", parts: 2) do
-        [key, rest] -> key in @allowed_topics
+        [key, _] -> key in @allowed_topics
         [key] -> key in @allowed_topics
         _ -> false
       end
