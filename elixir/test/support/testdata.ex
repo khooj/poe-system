@@ -11,9 +11,16 @@ defmodule PoeSystem.Testdata do
     String.trim(File.read!(Path.join([@testdata_dir, "pob.txt"])))
   end
 
-  def extract_config() do
+  def extract_config(opts \\ []) do
+    itemset =
+      if Keyword.get(opts, :early_setup, false) do
+        "Level 13 example"
+      else
+        @config_itemset
+      end
+
     {:ok, data} =
-      RustPoe.Native.extract_build_config(pobdata_file(), @config_itemset, @config_skillset)
+      RustPoe.Native.extract_build_config(pobdata_file(), itemset, @config_skillset)
 
     data
   end

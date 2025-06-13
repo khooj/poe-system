@@ -63,7 +63,7 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
 
       assert response(conn, 200)
       assert inertia_component(conn)
-      assert %{data: _} = inertia_props(conn)
+      assert %{provided: _, found: _, processed: _, id: _} = inertia_props(conn)
     end
   end
 end

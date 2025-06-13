@@ -15,7 +15,7 @@ defmodule RustPoe.NativeWrapper do
         a
 
       {:ok, result} ->
-        {:ok, Utils.to_atom_key_map(result)}
+        {:ok, Utils.unsafe_to_atom_key_map(result)}
 
       {:error, _} = a ->
         a

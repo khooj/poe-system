@@ -12,12 +12,12 @@ defmodule PoeSystemWeb.Plug.ProxyTest do
       )
 
     Req.Test.stub(PoeSystemWeb.Plug.Proxy, fn conn ->
-      Req.Test.json(conn, ~s|{"response": true}|)
+      Req.Test.json(conn, %{response: true})
     end)
 
     conn = conn(:get, "/test/asset.js")
     conn = Proxy.call(conn, opts)
-    assert conn.resp_body == ~s|{"response": true}|
+    assert conn.resp_body == ~s|{"response":true}|
   end
 
   test "check proxy passthrough work" do

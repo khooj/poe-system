@@ -27,8 +27,10 @@ defmodule PoeSystemWeb.Poe1Controller do
         "pobData" => pob_data,
         "skillset" => skillset
       }) do
+    ip = :inet.ntoa(conn.remote_ip)
+
     case RateLimit.hit(
-           "#{conn.remote_ip}_new",
+           "#{ip}_new",
            @ratelimit_opts.time_window,
            @ratelimit_opts.limit
          ) do

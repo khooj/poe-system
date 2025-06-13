@@ -18,12 +18,17 @@ defmodule PoeSystem.RustPoe.Native.Test do
   end
 
   describe "closest item" do
+    setup do
+      Testdata.insert_items()
+      :ok
+    end
+
     test "success" do
-      cfg = Testdata.extract_config()
+      cfg = Testdata.extract_config(early_setup: true)
       items = Repo.all(Item)
 
       assert {:ok, result} =
-               RustPoe.NativeWrapper.closest_item(cfg["provided"]["body"]["item"], items)
+               RustPoe.NativeWrapper.closest_item(cfg["provided"]["helmet"]["item"], items)
 
       assert result != nil
     end
