@@ -187,64 +187,71 @@ defmodule PoeSystem.StashReceiver do
     Logger.info("received stash data", id: ls)
 
     {:ok, public_stash} = Native.process_stash_data(public_stash_resp.body)
+    next_change_id = Map.fetch!(public_stash, "next_change_id")
 
-    stash_data =
-      for {stash_id, [stash_league, items]} <- public_stash["stashes"],
-          item <- items,
-          reduce: %{stashes: [], items: []} do
-        acc ->
-          if length(league) == 0 or stash_league in league do
-            sv = %{id: stash_id, item_id: item["id"]}
+    if next_change_id != "" do
+      stash_data =
+        for {stash_id, [stash_league, items]} <- public_stash["stashes"],
+            item <- items,
+            reduce: %{stashes: [], items: []} do
+          acc ->
+            if length(league) == 0 or stash_league in league do
+              sv = %{id: stash_id, item_id: item["id"]}
 
-            Map.update(acc, :stashes, [sv], &[sv | &1])
-            |> Map.update(:items, [item], &[item | &1])
-          else
-            acc
-          end
-      end
+              Map.update(acc, :stashes, [sv], &[sv | &1])
+              |> Map.update(:items, [item], &[item | &1])
+            else
+              acc
+            end
+        end
 
-    {:ok, _} =
-      Multi.new()
-      |> Multi.run(:remove_items_ids, fn repo, _changes ->
-        ids =
-          repo.all(
-            from s in Stash, where: s.id in ^public_stash["remove_stashes"], select: [s.item_id]
-          )
+      {:ok, _} =
+        Multi.new()
+        |> Multi.run(:remove_items_ids, fn repo, _changes ->
+          ids =
+            repo.all(
+              from s in Stash, where: s.id in ^public_stash["remove_stashes"], select: [s.item_id]
+            )
 
-        {:ok, ids}
-      end)
-      |> Multi.delete_all(:remove_items, fn %{remove_items_ids: ids} ->
-        from(i in Item, where: i.id in ^ids)
-      end)
-      |> Multi.delete_all(:remove_stashes, fn _ ->
-        from(i in Stash, where: i.id in ^public_stash["remove_stashes"])
-      end)
-      |> then(
-        &Enum.reduce(Enum.with_index(stash_data.stashes), &1, fn
-          # some entries can be with empty stash id
-          # probably private stashes somehow made it into response
-          {%{id: ""}, _}, acc ->
-            acc
-
-          {el, idx}, acc ->
-            Multi.insert(acc, {:insert_stash_id, idx}, Stash.changeset(%Stash{}, el))
+          {:ok, ids}
         end)
-      )
-      |> then(
-        &Enum.reduce(Enum.with_index(stash_data.items), &1, fn {el, idx}, acc ->
-          Multi.insert(acc, {:insert_item, idx}, Item.changeset(%Item{}, el))
+        |> Multi.delete_all(:remove_items, fn %{remove_items_ids: ids} ->
+          from(i in Item, where: i.id in ^ids)
         end)
-      )
-      |> then(fn
-        m when is_nil(ls) -> m
-        m -> Multi.delete(m, :delete_latest_id, %LatestStash{id: ls})
-      end)
-      |> Multi.insert(
-        :insert_latest_id,
-        LatestStash.changeset(%LatestStash{}, %{
-          id: Map.fetch!(public_stash, "next_change_id")
-        })
-      )
-      |> Repo.transaction()
+        |> Multi.delete_all(:remove_stashes, fn _ ->
+          from(i in Stash, where: i.id in ^public_stash["remove_stashes"])
+        end)
+        |> then(
+          &Enum.reduce(Enum.with_index(stash_data.stashes), &1, fn
+            # some entries can be with empty stash id
+            # probably private stashes somehow made it into response
+            {%{id: ""}, _}, acc ->
+              acc
+
+            {el, idx}, acc ->
+              Multi.insert(acc, {:insert_stash_id, idx}, Stash.changeset(%Stash{}, el))
+          end)
+        )
+        |> then(
+          &Enum.reduce(Enum.with_index(stash_data.items), &1, fn {el, idx}, acc ->
+            Multi.insert(acc, {:insert_item, idx}, Item.changeset(%Item{}, el))
+          end)
+        )
+        |> then(fn
+          m when is_nil(ls) -> m
+          m -> Multi.delete(m, :delete_latest_id, %LatestStash{id: ls})
+        end)
+        |> then(fn
+          m ->
+            Multi.insert(
+              m,
+              :insert_latest_id,
+              LatestStash.changeset(%LatestStash{}, %{
+                id: next_change_id
+              })
+            )
+        end)
+        |> Repo.transaction()
+    end
   end
 end
