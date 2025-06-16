@@ -38,6 +38,11 @@ end
 System.put_env("NODE_ENV", System.get_env("NODE_ENV") || "production")
 
 if config_env() == :prod do
+  config :poe_system, PoeSystem.StashReceiver,
+    access_token: env!("POE_STASH_API_TOKEN", :string!),
+    interval: env!("POE_STASH_API_INTERVAL", :integer!),
+    long_interval: env!("POE_STASH_API_LONG_INTERVAL", :integer!)
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
