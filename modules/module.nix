@@ -29,6 +29,16 @@ in {
       type = types.str;
       description = "host on which phoenix works (not ip)";
     };
+    stashInterval = mkOption {
+      type = types.int;
+      description = "public stash api request interval";
+      default = 1000;
+    };
+    stashLongInterval = mkOption {
+      type = types.int;
+      description = "public stash api request interval if external error occured (e.g. HTTP 500)";
+      default = 60000;
+    };
   };
 
   config = mkIf cfg.enable {
@@ -44,6 +54,8 @@ in {
         PHX_HOST = cfg.host;
         PORT = builtins.toString cfg.port;
         RELEASE_COOKIE = "none";
+        POE_STASH_API_INTERVAL = toString cfg.stashInterval;
+        POE_STASH_API_LONG_INTERVAL = toString cfg.stashLongInterval;
       };
       serviceConfig = {
         EnvironmentFile = cfg.secretsEnvFile;
