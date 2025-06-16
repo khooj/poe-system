@@ -2263,6 +2263,11 @@ rec {
             name = "thiserror";
             packageId = "thiserror 2.0.12";
           }
+          {
+            name = "uuid";
+            packageId = "uuid";
+            features = [ "v4" ];
+          }
         ];
 
       };

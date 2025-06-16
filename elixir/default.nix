@@ -13,7 +13,7 @@
   mixFodDeps = fetchMixDeps {
     inherit version src;
     pname = "poe-system-deps";
-    sha256 = "sha256-cI8+g591kr2IDF0GSFxTC/ukwk4Of4c5TZqLNgQrGD8=";
+    sha256 = "sha256-eHK6Ec8xwTpsOodGgKMdndL1TDaSRrqo4WiTQSIGiNw=";
   };
   assets = buildNpmPackage {
     pname = "poe-system-assets";
