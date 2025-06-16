@@ -2,6 +2,7 @@ defmodule PoeSystem.StashReceiverTest do
   use ExUnit.Case
   use PoeSystemWeb.ConnCase
   alias PoeSystem.{StashReceiver, Testdata, Repo, LatestStash}
+  alias PoeSystem.Items.Item
 
   setup do
     {:ok, opts} = StashReceiver.init(Application.fetch_env!(:poe_system, PoeSystem.StashReceiver))
@@ -37,6 +38,20 @@ defmodule PoeSystem.StashReceiverTest do
 
     assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
     assert_receive :cycle
+    assert Repo.exists?(Item)
+  end
+
+  test "league filter", %{opts: opts} do
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(200, Testdata.stash_json())
+    end)
+
+    opts = Map.put(opts, :league, ["league not exist"])
+    assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
+    assert not Repo.exists?(Item)
   end
 
   test "request api w/ latest stash id", %{opts: opts} do

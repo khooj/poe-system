@@ -49,6 +49,7 @@ config :poe_system, PoeSystem.StashReceiver,
   long_interval: 10,
   plug: {Req.Test, PoeSystem.StashReceiver},
   access_token: "empty",
-  test: true
+  test: true,
+  league: []
 
 config :poe_system, PoeSystemWeb.PromEx, disabled: true

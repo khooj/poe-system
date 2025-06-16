@@ -92,7 +92,7 @@ fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<S
 #[derive(Serialize)]
 struct StashData {
     remove_stashes: Vec<String>,
-    stashes: HashMap<String, Vec<Value>>,
+    stashes: HashMap<String, (String, Vec<Value>)>,
     next_change_id: String,
 }
 
@@ -132,7 +132,9 @@ fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, Serde
             .filter_map(|i| StoredItem::try_from(i).ok())
             .map(|i| encode_config(env, &i).unwrap())
             .collect::<Vec<_>>();
-        result.stashes.insert(stash.clone(), items);
+        result
+            .stashes
+            .insert(stash.clone(), (d.league.unwrap_or(String::new()), items));
     }
 
     Ok((atoms::ok(), SerdeTerm(encode_config(env, &result).unwrap())))

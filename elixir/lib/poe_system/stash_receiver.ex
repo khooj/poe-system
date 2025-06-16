@@ -14,7 +14,8 @@ defmodule PoeSystem.StashReceiver do
              long_interval: [required: true, type: :pos_integer],
              plug: [type: :any, default: nil],
              access_token: [required: true, type: :string],
-             test: [type: :boolean]
+             test: [type: :boolean],
+             league: [type: {:list, :string}, default: []]
            )
 
   def start_link(_) do
@@ -79,7 +80,7 @@ defmodule PoeSystem.StashReceiver do
   end
 
   defp process_stash(resp, ls, state) do
-    insert_stash_data(resp, ls)
+    insert_stash_data(resp, ls, state.league)
     Process.send_after(self(), :cycle, state.interval)
   end
 
@@ -158,18 +159,22 @@ defmodule PoeSystem.StashReceiver do
     true
   end
 
-  defp insert_stash_data(%Response{} = public_stash_resp, ls) do
+  defp insert_stash_data(%Response{} = public_stash_resp, ls, league) do
     {:ok, public_stash} = Native.process_stash_data(public_stash_resp.body)
 
     stash_data =
-      for {stash_id, items} <- public_stash["stashes"],
+      for {stash_id, [stash_league, items]} <- public_stash["stashes"],
           item <- items,
-          reduce: %{} do
+          reduce: %{stashes: [], items: []} do
         acc ->
-          sv = %{id: stash_id, item_id: item["id"]}
+          if length(league) == 0 or stash_league in league do
+            sv = %{id: stash_id, item_id: item["id"]}
 
-          Map.update(acc, :stashes, [sv], &[sv | &1])
-          |> Map.update(:items, [item], &[item | &1])
+            Map.update(acc, :stashes, [sv], &[sv | &1])
+            |> Map.update(:items, [item], &[item | &1])
+          else
+            acc
+          end
       end
 
     {:ok, _} =
