@@ -156,8 +156,6 @@ pub struct Hybrid {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Extended {
-    pub category: String,
-    pub subcategories: Option<Vec<String>>,
     pub prefixes: Option<i32>,
     pub suffixes: Option<i32>,
 }

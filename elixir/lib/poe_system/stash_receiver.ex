@@ -55,11 +55,27 @@ defmodule PoeSystem.StashReceiver do
   end
 
   def handle_info(:ratelimited, state) do
+    :telemetry.execute(
+      {:stash_receiver, :process_stash, :ratelimited},
+      %{value: state.interval},
+      %{retry_after: false, header: true}
+    )
+
+    Logger.debug("ratelimited by internal state", %{interval: state.interval})
+
     Process.send_after(self(), :cycle, state.interval)
     {:noreply, state}
   end
 
   def handle_info({:ratelimited, retry_after}, state) do
+    :telemetry.execute(
+      {:stash_receiver, :process_stash, :ratelimited},
+      %{value: retry_after},
+      %{retry_after: true, header: false}
+    )
+
+    Logger.debug("ratelimited by api", %{interval: retry_after})
+
     Process.send_after(self(), :cycle, :timer.seconds(retry_after))
     {:noreply, state}
   end
@@ -80,7 +96,15 @@ defmodule PoeSystem.StashReceiver do
   end
 
   defp process_stash(resp, ls, state) do
+    start = System.monotonic_time()
     insert_stash_data(resp, ls, state.league)
+    delta = System.monotonic_time() - start
+
+    :telemetry.execute(
+      [:stash_receiver, :process_stash, :done],
+      %{delta: delta}
+    )
+
     Process.send_after(self(), :cycle, state.interval)
   end
 
@@ -160,6 +184,8 @@ defmodule PoeSystem.StashReceiver do
   end
 
   defp insert_stash_data(%Response{} = public_stash_resp, ls, league) do
+    Logger.info("received stash data", id: ls)
+
     {:ok, public_stash} = Native.process_stash_data(public_stash_resp.body)
 
     stash_data =

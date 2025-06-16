@@ -70,7 +70,8 @@ defmodule PoeSystemWeb.PromEx do
       #  event_prefix: [:poe_system, :endpoint],
       #  metric_prefix: [:prom_ex, :endpoint],
       #  routers: [PoeSystemWeb.Router]},
-      AppPlugins.Extra
+      AppPlugins.Extra,
+      AppPlugins.StashReceiver
       # Plugins.PhoenixLiveView,
       # Plugins.Absinthe,
       # Plugins.Broadway,
