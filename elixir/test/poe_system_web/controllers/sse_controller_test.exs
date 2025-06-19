@@ -1,14 +1,11 @@
 defmodule PoeSystemWeb.SseControllerTest do
   use PoeSystemWeb.ConnCase
-  alias Phoenix.PubSub
-  alias Ecto.UUID
-  alias PoeSystem.Testdata
 
   @moduletag timeout: :timer.seconds(1)
 
   # FIXME: somehow get message from conn
   @tag :skip
-  test "subscribe to build notification", %{conn: conn} do
+  test "subscribe to build notification" do
     # topic = "build:#{UUID.load!(UUID.bingenerate())}"
     #
     # t =

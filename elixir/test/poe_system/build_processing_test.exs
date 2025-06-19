@@ -1,5 +1,4 @@
 defmodule PoeSystem.BuildProcessingTest do
-  alias PoeSystem.Items.Item
   alias PoeSystem.Testdata
   alias PoeSystem.BuildProcessing
   use PoeSystem.DataCase

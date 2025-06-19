@@ -61,7 +61,7 @@ defmodule PoeSystem.StashReceiver do
       %{retry_after: false, header: true}
     )
 
-    Logger.debug("ratelimited by internal state", %{interval: state.interval})
+    Logger.info("ratelimited by internal state", %{interval: state.interval})
 
     Process.send_after(self(), :cycle, state.interval)
     {:noreply, state}
@@ -74,7 +74,7 @@ defmodule PoeSystem.StashReceiver do
       %{retry_after: true, header: false}
     )
 
-    Logger.debug("ratelimited by api", %{interval: retry_after})
+    Logger.info("ratelimited by api", %{interval: retry_after})
 
     Process.send_after(self(), :cycle, :timer.seconds(retry_after))
     {:noreply, state}
@@ -193,17 +193,20 @@ defmodule PoeSystem.StashReceiver do
       stash_data =
         for {stash_id, [stash_league, items]} <- public_stash["stashes"],
             item <- items,
-            reduce: %{stashes: [], items: []} do
+            reduce: %{stashes: [], items: [], leagues: MapSet.new()} do
           acc ->
             if length(league) == 0 or stash_league in league do
               sv = %{id: stash_id, item_id: item["id"]}
 
               Map.update(acc, :stashes, [sv], &[sv | &1])
               |> Map.update(:items, [item], &[item | &1])
+              |> Map.update(:leagues, MapSet.new(), &MapSet.put(&1, stash_league))
             else
               acc
             end
         end
+
+      Logger.info(message: "processing leagues", leagues: MapSet.to_list(stash_data.leagues))
 
       {:ok, _} =
         Multi.new()

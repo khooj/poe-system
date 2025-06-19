@@ -5,7 +5,6 @@ end
 defmodule PoeSystem.RustPoe.Native.Test do
   require Logger
   require Ecto.Query
-  alias PoeSystem.Items
   alias PoeSystem.Items.Item
   alias PoeSystem.Repo
   alias PoeSystem.Testdata
