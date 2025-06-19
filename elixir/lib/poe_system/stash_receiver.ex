@@ -61,7 +61,7 @@ defmodule PoeSystem.StashReceiver do
       %{retry_after: false, header: true}
     )
 
-    Logger.info("ratelimited by internal state", %{interval: state.interval})
+    Logger.info(message: "ratelimited by internal state", interval: state.interval)
 
     Process.send_after(self(), :cycle, state.interval)
     {:noreply, state}
@@ -74,7 +74,7 @@ defmodule PoeSystem.StashReceiver do
       %{retry_after: true, header: false}
     )
 
-    Logger.info("ratelimited by api", %{interval: retry_after})
+    Logger.info(message: "ratelimited by api", interval: retry_after)
 
     Process.send_after(self(), :cycle, :timer.seconds(retry_after))
     {:noreply, state}
@@ -183,8 +183,8 @@ defmodule PoeSystem.StashReceiver do
     true
   end
 
-  defp insert_stash_data(%Response{} = public_stash_resp, ls, league) do
-    Logger.info("received stash data", id: ls)
+  defp insert_stash_data(%Response{} = public_stash_resp, ls, allowed_leagues) do
+    Logger.info(message: "received stash data", id: ls)
 
     {:ok, public_stash} = Native.process_stash_data(public_stash_resp.body)
     next_change_id = Map.fetch!(public_stash, "next_change_id")
@@ -193,20 +193,29 @@ defmodule PoeSystem.StashReceiver do
       stash_data =
         for {stash_id, [stash_league, items]} <- public_stash["stashes"],
             item <- items,
-            reduce: %{stashes: [], items: [], leagues: MapSet.new()} do
+            reduce: %{
+              stashes: [],
+              items: [],
+              incoming_leagues: MapSet.new(),
+              processed_leagues: MapSet.new()
+            } do
           acc ->
-            if length(league) == 0 or stash_league in league do
+            if length(allowed_leagues) == 0 or stash_league in allowed_leagues do
               sv = %{id: stash_id, item_id: item["id"]}
 
               Map.update(acc, :stashes, [sv], &[sv | &1])
               |> Map.update(:items, [item], &[item | &1])
-              |> Map.update(:leagues, MapSet.new(), &MapSet.put(&1, stash_league))
+              |> Map.update(:processed_leagues, MapSet.new(), &MapSet.put(&1, stash_league))
             else
               acc
+              |> Map.update(:incoming_leagues, MapSet.new(), &MapSet.put(&1, stash_league))
             end
         end
 
-      Logger.info(message: "processing leagues", leagues: MapSet.to_list(stash_data.leagues))
+      Logger.info(
+        incoming_leagues: MapSet.to_list(stash_data.incoming_leagues),
+        processed_leagues: MapSet.to_list(stash_data.processed_leagues)
+      )
 
       {:ok, _} =
         Multi.new()

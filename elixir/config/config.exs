@@ -10,8 +10,7 @@ import Config
 config :poe_system,
   ecto_repos: [PoeSystem.Repo],
   generators: [timestamp_type: :utc_datetime],
-  mode: config_env(),
-  stash_receiver_producer: {PoeSystem.StashReceiver.Producer, []}
+  mode: config_env()
 
 # Configures the endpoint
 config :poe_system, PoeSystemWeb.Endpoint,
@@ -26,7 +25,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: :all
+  metadata: [:request_id]
 
 config :inertia,
   endpoint: PoeSystemWeb.Endpoint,
