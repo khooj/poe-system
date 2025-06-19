@@ -12,11 +12,11 @@ import useSSE from '../../utils/useSSE.ts';
 import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
-type RenderConfigProps = {
+export type RenderConfigProps = {
   cf: ModConfig | null,
 };
 
-const RenderConfig = ({ cf }: RenderConfigProps) => {
+export const RenderConfig = ({ cf }: RenderConfigProps) => {
   if (!cf) {
     return <></>
   }

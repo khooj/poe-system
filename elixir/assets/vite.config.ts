@@ -2,12 +2,14 @@ import { defineConfig, UserConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import wasm from 'vite-plugin-wasm';
 import * as path from 'path';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export const conf: UserConfig = {
   publicDir: "public",
   plugins: [
     react(),
     wasm(),
+    tsconfigPaths(),
     // topLevelAwait(),
   ],
   base: "/",
@@ -30,11 +32,6 @@ export const conf: UserConfig = {
       input: {
         main: "src/main.tsx",
       },
-      // output: {
-      //   entryFileNames: "[name]-[hash].js",
-      //   chunkFileNames: "[name]-[hash].js",
-      //   assetFileNames: "[name]-[hash][extname]",
-      // }
     },
   },
   resolve: {
@@ -52,6 +49,11 @@ export const conf: UserConfig = {
       }
     },
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './vitest.setup.mjs'
+  }
 };
 
 // https://vite.dev/config/
