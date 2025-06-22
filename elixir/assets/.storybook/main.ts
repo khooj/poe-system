@@ -15,6 +15,7 @@ const config: StorybookConfig = {
     "@storybook/addon-docs",
     "@storybook/addon-onboarding",
     "@storybook/addon-a11y",
+    "@vueless/storybook-dark-mode",
     // "@storybook/addon-vitest"
   ],
   "framework": {

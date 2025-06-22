@@ -1,34 +1,41 @@
 import { TypedLink } from '@/components/TypedLink';
 import { usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
-import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
+import { Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import Alert from '@/components/Alert';
 
-type Props = {
-  children: ReactNode
+import { AppShell, Container, Burger, Title, Flex, Text } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+
+export type Props = {
+  children: ReactNode,
 };
 
 export default function Layout({ children }: Props) {
-  const { flash } = usePage().props;
+  // FIXME: inertia page contexts for storybook
+  // const { flash } = usePage().props;
 
   return (
     <>
-      <Navbar expand='lg' className=''>
-        <Container>
-          <TypedLink to='index' className='navbar-brand'>Home</TypedLink>
-          <Navbar.Toggle aria-controls='basic-navbar-nav' />
-          <Navbar.Collapse id='basic-navbar-nav'>
-            <Nav className='me-auto'>
-              <NavDropdown title='Path of Exile 1' id='poe1-nav-dropdown'>
-                <NavDropdown.Item disabled>Build price calculator</NavDropdown.Item>
-                <TypedLink to='poe1.index' className='dropdown-item'>New build</TypedLink>
-              </NavDropdown>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
-      {flash?.info && <Alert>{flash.info}</Alert>}
-      {children}
+      <AppShell
+        padding="md"
+        header={{
+          height: 60
+        }}
+        footer={{
+          height: 60
+        }}
+      >
+        <AppShell.Header>
+          <Title order={2} mt={10} ml={10}>SomePoeTools</Title>
+        </AppShell.Header>
+        <AppShell.Main>
+          {children}
+        </AppShell.Main>
+        <AppShell.Footer withBorder={false}>
+          <p>somepoetools.xyz isn't affiliated with or endorsed by Grinding Gear Games in any way.</p>
+        </AppShell.Footer>
+      </AppShell>
     </>
   )
 }

@@ -45,7 +45,9 @@ export const conf: UserConfig = {
   css: {
     preprocessorOptions: {
       scss: {
-        silenceDeprecations: ['color-functions', 'global-builtin', 'import', 'mixed-decls']
+        silenceDeprecations: ['color-functions', 'global-builtin', 'import', 'mixed-decls'],
+        api: 'modern-compiler',
+        additionalData: `@use "${path.join(process.cwd(), 'src/_mantine').replace(/\\/g, '/')}" as mantine;`,
       }
     },
   },

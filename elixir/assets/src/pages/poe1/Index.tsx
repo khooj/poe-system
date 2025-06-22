@@ -9,11 +9,11 @@ import axios from 'axios';
 
 const wasmLoader = async () => await import('wasm');
 
-type Props = {
+export type Props = {
   build_ids: string[],
 };
 
-const Index = ({ build_ids }: Props) => {
+export const Index = ({ build_ids }: Props) => {
   const { data: formData, setData, post } = useForm({
     pobData: null,
     itemset: null,

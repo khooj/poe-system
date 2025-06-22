@@ -11,7 +11,7 @@ import { ToggleButton } from 'react-bootstrap';
 import { createItemsStore, ItemsContext } from '@states/preview';
 import { useStore } from 'zustand';
 
-type BuildPreviewData = {
+export type BuildPreviewData = {
   itemset: string,
   skillset: string,
   pobData: string,
@@ -25,11 +25,11 @@ type InertiaFormType = {
   pobData: string,
 };
 
-type Props = {
+export type Props = {
   build_data: BuildPreviewData
 };
 
-const Preview = ({ build_data }: Props) => {
+export const Preview = ({ build_data }: Props) => {
   const store = useRef(createItemsStore({ data: build_data.data, enabled: true })).current;
 
   const { setDefaults, post, setData, data, isDirty, errors, processing } = useForm({

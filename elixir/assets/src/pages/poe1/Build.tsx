@@ -34,7 +34,7 @@ export const RenderConfig = ({ cf }: RenderConfigProps) => {
   }
 };
 
-type Props = {
+export type Props = {
   id: string,
   provided: BuildItemsWithConfig,
   found: FoundBuildItems,
@@ -58,7 +58,7 @@ const priceCurrency = (x: Price) => {
   }
 };
 
-const Build = ({ id, provided, found, processed }: Props) => {
+export const Build = ({ id, provided, found, processed }: Props) => {
   // TODO: render info that build processing still in progress
   // with spinner 
   const sub = useSSE('/poe1/sse', {
