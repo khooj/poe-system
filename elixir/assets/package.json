@@ -12,12 +12,13 @@
     "tsc_watch": "tsc -b -w --noEmit",
     "vite_ssr_watch": "vite build -w --ssr src/ssr.tsx -c vite.config.ssr.ts",
     "vite_ssr_build": "bunx -b vite build --ssr src/ssr.tsx -c vite.config.ssr.ts",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "bunx -b storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
   "dependencies": {
     "@inertiajs/react": "^2.0.5",
     "@mantine/core": "^8.1.1",
+    "@mantine/form": "^8.1.1",
     "@mantine/hooks": "^8.1.1",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@popperjs/core": "^2.11.8",
@@ -38,6 +39,7 @@
     "@storybook/addon-a11y": "^9.0.12",
     "@storybook/addon-docs": "^9.0.12",
     "@storybook/addon-onboarding": "^9.0.12",
+    "@storybook/addon-vitest": "^9.0.12",
     "@storybook/react": "^9",
     "@storybook/react-vite": "^9",
     "@types/bootstrap": "^5.2.10",
@@ -49,6 +51,7 @@
     "@vitejs/plugin-react-swc": "^3.5.0",
     "@vitest/browser": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "@vueless/storybook-dark-mode": "^9.0.5",
     "eslint": "^9.19.0",
     "eslint-plugin-react-hooks": "^5.0.0",
@@ -57,7 +60,9 @@
     "globals": "^15.14.0",
     "jsdom": "^26.1.0",
     "lodash": "^4.17.21",
-    "playwright": "^1.53.1",
+    "msw": "^2.10.2",
+    "msw-storybook-addon": "^2.0.5",
+    "playwright": "1.50.0",
     "rolldown": "^1.0.0-beta.7",
     "sass": "^1.85.0",
     "sass-embedded": "^1.89.2",
@@ -71,5 +76,15 @@
     "vite-plugin-wasm-esm": "^1.0.3",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
+  },
+  "imports": {
+    "#wasm": {
+      "default": "wasm"
+    }
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

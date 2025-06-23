@@ -51,14 +51,7 @@ export const conf: UserConfig = {
       }
     },
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './vitest.setup.mjs'
-  }
 };
 
 // https://vite.dev/config/
-export default defineConfig(() => {
-  return conf;
-})
+export default defineConfig(conf);

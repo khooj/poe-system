@@ -1,11 +1,6 @@
-import { TypedLink } from '@/components/TypedLink';
 import { usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
-import { Nav, Navbar, NavDropdown } from 'react-bootstrap';
-import Alert from '@/components/Alert';
-
-import { AppShell, Container, Burger, Title, Flex, Text } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { AppShell, Title } from '@mantine/core';
 
 export type Props = {
   children: ReactNode,
