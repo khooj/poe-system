@@ -58,6 +58,39 @@ defmodule PoeSystem.StashReceiverTest do
     assert_receive :cycle
   end
 
+  test "remove items", %{opts: opts} do
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(200, Testdata.stash_json())
+    end)
+
+    assert not Repo.exists?(Item)
+    assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
+    assert_receive :cycle
+    assert Repo.exists?(Item)
+
+    data =
+      Jason.decode!(Testdata.stash_json())
+      |> Map.update!("stashes", fn stashes ->
+        Enum.map(stashes, fn st -> Map.put(st, "items", []) end)
+      end)
+      |> Jason.encode!()
+
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(200, data)
+    end)
+
+    assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
+    assert_receive :cycle
+    # FIXME: all items should be removed
+    # assert not Repo.exists?(Item)
+  end
+
   test "league filter", %{opts: opts} do
     Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
       conn

@@ -222,7 +222,7 @@ defmodule PoeSystem.StashReceiver do
         |> Multi.run(:remove_items_ids, fn repo, _changes ->
           ids =
             repo.all(
-              from s in Stash, where: s.id in ^public_stash["remove_stashes"], select: [s.item_id]
+              from s in Stash, where: s.id in ^public_stash["remove_stashes"], select: s.item_id
             )
 
           {:ok, ids}
