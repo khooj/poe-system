@@ -1,4 +1,4 @@
-import { Container } from 'react-bootstrap'
+import { Container, Flex } from "@mantine/core";
 
 type Props = {
   build_ids: string[],
@@ -7,9 +7,9 @@ type Props = {
 const Index = ({ build_ids }: Props) => {
   return (
     <Container className="d-flex flex-column align-items-center justify-content-center">
-      <div className='d-flex flex-column'>
+      <Flex align='center' justify='center' direction='column'>
         <div>Welcome to website with tools for Path of Exile videogames.<br />At this moment we don't have many tools. You can select them in top navigation menu.</div>
-      </div>
+      </Flex>
     </Container>
   )
 }

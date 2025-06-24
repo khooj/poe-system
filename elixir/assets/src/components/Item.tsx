@@ -6,6 +6,8 @@ import { StoredItem } from '@bindings/domain/bindings/StoredItem'
 import { StoredMod } from '@bindings/domain/bindings/StoredMod'
 import { Flex, Stack } from '@mantine/core'
 import { JSX } from 'react'
+import classes from './Item.module.css';
+import cx from 'clsx';
 
 type PropItem = RequiredItem | StoredItem;
 type Props = {
@@ -24,7 +26,7 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
   };
 
   const renderMods = (mods: [Mod, ModConfig | null][] | StoredMod[]) => {
-    return mods.map((m, idx) => <Flex align='center'>
+    return mods.map((m, idx) => <Flex key={idx} align='center'>
       <div>{renderText(m)}</div>
       {Array.isArray(m) && modConfigComponent && modConfigComponent(m, idx)}
     </Flex>);
@@ -41,8 +43,10 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
 
   rarityColor = `border-${rarityColor}`;
 
+  console.log(classes);
+
   if (isNotGem(item.info)) {
-    return <Stack className={`border ${rarityColor}`}>
+    return <Stack className={cx(classes.border, classes[rarityColor])}>
       <Flex justify='space-between' className='border-bottom'>
         <span>{item.name}<br />{item.basetype}</span>
         {itemNameComponent && itemNameComponent(item)}

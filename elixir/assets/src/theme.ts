@@ -1,3 +1,4 @@
 import { createTheme } from '@mantine/core';
 
-export const theme = createTheme({});
+export const theme = createTheme({
+});

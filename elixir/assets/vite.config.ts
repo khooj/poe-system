@@ -42,15 +42,18 @@ export const conf: UserConfig = {
       { find: '@', replacement: path.resolve(__dirname, 'src') },
     ],
   },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        silenceDeprecations: ['color-functions', 'global-builtin', 'import', 'mixed-decls'],
-        api: 'modern-compiler',
-        additionalData: `@use "${path.join(process.cwd(), 'src/_mantine').replace(/\\/g, '/')}" as mantine;`,
-      }
-    },
-  },
+  optimizeDeps: {
+    include: ['@tabler/icons-react']
+  }
+  // css: {
+  //   preprocessorOptions: {
+  //     scss: {
+  //       silenceDeprecations: ['color-functions', 'global-builtin', 'import', 'mixed-decls'],
+  //       api: 'modern-compiler',
+  //       additionalData: `@use "${path.join(process.cwd(), 'src/_mantine').replace(/\\/g, '/')}" as mantine;`,
+  //     }
+  //   },
+  // },
 };
 
 // https://vite.dev/config/

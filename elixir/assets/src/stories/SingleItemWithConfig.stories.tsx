@@ -1,4 +1,3 @@
-import '../index.scss';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useRef } from 'react';
 import { createItemsStore, ItemsContext } from '@states/preview';

@@ -13,6 +13,7 @@ const config: StorybookConfig = {
     return {
       ...config,
       plugins: [...(config.plugins || []), wasm(), tsconfigPaths()],
+      optimizeDeps: { include: ['@tabler/icons-react'] },
     }
   },
   "stories": [
