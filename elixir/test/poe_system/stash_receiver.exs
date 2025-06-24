@@ -91,6 +91,25 @@ defmodule PoeSystem.StashReceiverTest do
     # assert not Repo.exists?(Item)
   end
 
+  test "stash with whitespaces name", %{opts: opts} do
+    data =
+      Jason.decode!(Testdata.stash_json())
+      |> Map.update!("stashes", fn stashes ->
+        Enum.map(stashes, fn st -> Map.put(st, "stash", "     ") end)
+      end)
+      |> Jason.encode!()
+
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(200, data)
+    end)
+
+    assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
+    assert_receive :cycle
+  end
+
   test "league filter", %{opts: opts} do
     Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
       conn

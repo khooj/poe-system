@@ -10,7 +10,9 @@ defmodule PoeSystem.Stash do
 
   def changeset(stash, attrs \\ %{}) do
     stash
-    |> cast(attrs, [:id, :item_id])
+    |> cast(attrs, [:id, :item_id], empty_values: [:id])
     |> validate_required([:id, :item_id])
+    |> validate_length(:id, min: 1)
+    |> validate_length(:item_id, min: 1)
   end
 end
