@@ -222,7 +222,7 @@ defmodule PoeSystem.StashReceiver do
         |> Multi.run(:remove_items_ids, fn repo, _changes ->
           ids =
             repo.all(
-              from s in Stash, where: s.id in ^public_stash["remove_stashes"], select: [s.item_id]
+              from s in Stash, where: s.id in ^public_stash["remove_stashes"], select: s.item_id
             )
 
           {:ok, ids}
@@ -235,11 +235,6 @@ defmodule PoeSystem.StashReceiver do
         end)
         |> then(
           &Enum.reduce(Enum.with_index(stash_data.stashes), &1, fn
-            # some entries can be with empty stash id
-            # probably private stashes somehow made it into response
-            {%{id: ""}, _}, acc ->
-              acc
-
             {el, idx}, acc ->
               Multi.insert(acc, {:insert_stash_id, idx}, Stash.changeset(%Stash{}, el))
           end)
