@@ -235,11 +235,6 @@ defmodule PoeSystem.StashReceiver do
         end)
         |> then(
           &Enum.reduce(Enum.with_index(stash_data.stashes), &1, fn
-            # some entries can be with empty stash id
-            # probably private stashes somehow made it into response
-            {%{id: ""}, _}, acc ->
-              acc
-
             {el, idx}, acc ->
               Multi.insert(acc, {:insert_stash_id, idx}, Stash.changeset(%Stash{}, el))
           end)

@@ -109,10 +109,10 @@ fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, Serde
         if d.account_name.is_none() || d.stash.is_none() {
             continue;
         }
-        let stash = d.stash.as_ref().unwrap();
+        let stash_name = d.stash.as_ref().unwrap();
 
         if d.items.is_empty() {
-            result.remove_stashes.push(stash.clone());
+            result.remove_stashes.push(d.id.clone());
             continue;
         }
 
@@ -122,7 +122,7 @@ fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, Serde
             .filter_map(|i| Item::try_from(i).ok())
             .map(|mut i| {
                 if i.note.is_none() {
-                    i.note = Some(stash.clone());
+                    i.note = Some(stash_name.clone());
                 }
                 if i.id.is_empty() {
                     i.id = Uuid::new_v4().to_string();
@@ -134,7 +134,7 @@ fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, Serde
             .collect::<Vec<_>>();
         result
             .stashes
-            .insert(stash.clone(), (d.league.unwrap_or(String::new()), items));
+            .insert(d.id.clone(), (d.league.unwrap_or(String::new()), items));
     }
 
     Ok((atoms::ok(), SerdeTerm(encode_config(env, &result).unwrap())))
