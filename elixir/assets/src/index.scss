@@ -1,22 +1,26 @@
 .border-item-rare {
-  --bs-border-color: #e2d15f;
+  border-color: #e2d15f;
 }
 
 .border-item-magic {
-  --bs-border-color: #2d4bb7;
+  border-color: #2d4bb7;
 }
 
 .border-item-normal {
-  --bs-border-color: #9da9b2;
+  border-color: #9da9b2;
 }
 
 .border-item-unique {
-  --bs-border-color: #cc600e;
+  border-color: #cc600e;
 }
 
-[data-bs-theme="poe1"] {
-  --bs-body-bg: #545454;
-  --bs-body-bg-rgb: #{to-rgb(#545454)};
+.border {
+  border-style: solid;
+  border-width: 1px;
 }
 
-@import "bootstrap/scss/bootstrap";
+.border-bottom {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+

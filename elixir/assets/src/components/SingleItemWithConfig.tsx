@@ -1,13 +1,37 @@
 import { ModConfig } from "@bindings/domain/bindings/ModConfig";
-import { Col, Form, Row } from "react-bootstrap";
-import { ChangeEventHandler, useCallback, useContext } from "react";
+import { useCallback, useContext } from "react";
 import { Mod } from "@bindings/domain/bindings/Mod";
 import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
-import _ from "lodash";
 import { ItemsContext } from "@states/preview";
 import { useStore } from "zustand";
 import { ItemWithConfig } from "@bindings/domain/bindings/ItemWithConfig";
 import RequiredItemComponent from "./RequiredItemComponent";
+import { Flex, Grid, Group, RangeSlider, Select } from "@mantine/core";
+import { useDebouncedCallback } from "@mantine/hooks";
+
+const AddRangeSlider = ({ setCfgCb, enabled, origCfg }) => {
+  const debouncedOnChange = (e: [number, number]) => {
+    const start = e[0];
+    const end = e[1];
+    setCfgCb({ Range: { start, end } });
+  };
+  const { start, end } = origCfg.Range;
+
+  return <RangeSlider
+    miw="xs"
+    maw={600}
+    min={0}
+    max={500}
+    defaultValue={[start, end]}
+    onChangeEnd={debouncedOnChange}
+    disabled={!enabled}
+    marks={[
+      { value: 0, label: '0' },
+      { value: 500, label: '500' },
+    ]}
+  />
+
+};
 
 type ItemWithConfigProps = {
   k: keyof BuildItemsWithConfig,
@@ -24,7 +48,10 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
   const setItemConfig = useStore(store, s => s.setItemConfig);
   const enabled = useStore(store, s => s.enabled);
 
-  const defaultConfigValue = (config: ModConfig) => {
+  const defaultConfigValue = (config: ModConfig | null) => {
+    if (!config) {
+      return 'ignore';
+    }
     if (config === "Exist") {
       return "Exist";
     }
@@ -57,102 +84,35 @@ const ItemModWithConfig = ({ k, m, origCfg, multipleIndex }: ItemWithConfigProps
     }
 
     if ("Range" in origCfg) {
-      const debouncedOnChangeMin = _.debounce((e) => {
-        const v = parseInt(e.target.value);
-        setCfgCb({ Range: { ...origCfg.Range, start: v } });
-      }, 300);
-      const debouncedOnChangeMax = _.debounce((e) => setCfgCb({ Range: { ...origCfg.Range, end: parseInt(e.target.value) } }), 300);
-      const { start, end } = origCfg.Range;
-      return <><Col>
-        <Form.Label>Min {start}</Form.Label>
-        <Form.Range
-          min={0}
-          max={1000}
-          defaultValue={start}
-          onChange={debouncedOnChangeMin}
-          disabled={!enabled}
-        />
-      </Col>
-        <Col>
-          <Form.Label>Max {end}</Form.Label>
-          <Form.Range
-            min={0}
-            max={1000}
-            defaultValue={end}
-            onChange={debouncedOnChangeMax}
-            disabled={!enabled}
-          />
-        </Col>
-      </>
+      return <AddRangeSlider origCfg={origCfg} setCfgCb={setCfgCb} enabled={enabled} />
     } else if ("Exact" in origCfg) {
       return <></>
-    } else if ("Min" in origCfg) {
-      const debouncedOnChangeMin = _.debounce((e) => {
-        const v = parseInt(e.target.value);
-        setCfgCb({ Min: v });
-      }, 300);
-      const min = origCfg.Min;
-      return <>
-        <Form.Label>Min {min}</Form.Label>
-        <Form.Range
-          min={0}
-          max={1000}
-          defaultValue={min}
-          onChange={debouncedOnChangeMin}
-          disabled={!enabled}
-        />
-      </>
-    } else if ("Max" in origCfg) {
-      const debouncedOnChangeMax = _.debounce((e) => {
-        const v = parseInt(e.target.value);
-        setCfgCb({ Max: v });
-      }, 300);
-      const max = origCfg.Max;
-      return <>
-        <Form.Label>Max {max}</Form.Label>
-        <Form.Range
-          min={0}
-          max={1000}
-          defaultValue={max}
-          onChange={debouncedOnChangeMax}
-          disabled={!enabled}
-        />
-      </>
     } else {
       return <p>not supported</p>
     }
   };
 
-  const onChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
-    e.preventDefault();
-    if (e.target.value === 'Exist') {
+  const onChange = (e: string | null) => {
+    if (e === 'Exist') {
       setCfgCb('Exist');
-    } else if (e.target.value === 'Exact') {
+    } else if (e === 'Exact') {
       setCfgCb({ Exact: (m.current_value_int && m.current_value_int[0]) || (m.current_value_float && m.current_value_float[0]) || 0 });
-    } else if (e.target.value === 'Range') {
+    } else if (e === 'Range') {
       setCfgCb({ Range: { start: 0, end: 1000 } });
-      // } else if (e.target.value === 'Min') {
-      //   setCfgCb({ Min: 0 });
-      // } else if (e.target.value === 'Max') {
-      //   setCfgCb({ Max: 1000 });
-    } else if (e.target.value === 'ignore') {
+    } else if (e === 'ignore') {
       setCfgCb(null);
     }
   };
 
-  return <div className="d-flex">
-    <Form.Select className='' onChange={onChange} value={origCfg && defaultConfigValue(origCfg) || "ignore"} disabled={!enabled}>
-      <option value="Exist">Exist</option>
-      <option value="Exact">Exact match</option>
-      <option value="Range">Range match</option>
-      {/* <option value="Min">Min</option> */}
-      {/* <option value="Max">Max</option> */}
-      <option value="ignore">Ignore</option>
-    </Form.Select>
-    <Form.Group as={Row}>
-      {renderAdditionalForSelect()}
-    </Form.Group>
-  </div>;
+  return <Group grow>
+    <Select
+      onChange={onChange}
+      defaultValue={defaultConfigValue(origCfg)}
+      disabled={!enabled}
+      data={['Exist', 'Exact', 'Range', 'ignore']}
+    />
+    {renderAdditionalForSelect()}
+  </Group>;
 };
 
 type Props = {

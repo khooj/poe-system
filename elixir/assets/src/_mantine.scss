@@ -62,3 +62,5 @@ $mantine-breakpoint-xl: '88em';
     @content;
   }
 }
+
+@import '@mantine/core/styles.css';

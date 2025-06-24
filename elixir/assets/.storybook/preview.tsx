@@ -1,6 +1,5 @@
-import '@mantine/core/styles.css';
 // import 'bootstrap/dist/css/bootstrap.min.css';
-// import '../src/index.scss';
+import '../src/index.scss';
 import React, { useEffect } from 'react';
 import { addons } from 'storybook/preview-api';
 import { DARK_MODE_EVENT_NAME } from '@vueless/storybook-dark-mode';

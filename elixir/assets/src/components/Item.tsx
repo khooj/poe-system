@@ -4,6 +4,7 @@ import { ModConfig } from '@bindings/domain/bindings/ModConfig'
 import { RequiredItem } from '@bindings/domain/bindings/RequiredItem'
 import { StoredItem } from '@bindings/domain/bindings/StoredItem'
 import { StoredMod } from '@bindings/domain/bindings/StoredMod'
+import { Flex, Stack } from '@mantine/core'
 import { JSX } from 'react'
 
 type PropItem = RequiredItem | StoredItem;
@@ -23,10 +24,10 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
   };
 
   const renderMods = (mods: [Mod, ModConfig | null][] | StoredMod[]) => {
-    return mods.map((m, idx) => <div className='d-flex align-items-center'>
+    return mods.map((m, idx) => <Flex align='center'>
       <div>{renderText(m)}</div>
       {Array.isArray(m) && modConfigComponent && modConfigComponent(m, idx)}
-    </div>);
+    </Flex>);
   };
 
   let rarityColor = 'item-normal';
@@ -41,21 +42,21 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
   rarityColor = `border-${rarityColor}`;
 
   if (isNotGem(item.info)) {
-    return <div className={`border m-2 ${rarityColor}`}>
-      <div className={`border-bottom d-flex justify-content-between`}>
+    return <Stack className={`border ${rarityColor}`}>
+      <Flex justify='space-between' className='border-bottom'>
         <span>{item.name}<br />{item.basetype}</span>
         {itemNameComponent && itemNameComponent(item)}
-      </div>
-      <div className=''>
+      </Flex>
+      <div>
         <div>{renderMods(item.info.mods)}</div>
       </div>
-    </div >;
+    </Stack>;
   } else {
     if (item.subcategory === 'Empty') {
       return <></>
     }
 
-    return <div className={`m-2 border`} style={{ fontSize: '14px' }}>
+    return <div className='border' style={{ fontSize: '14px' }}>
       <p>{item.basetype} {item.info.level}lvl/+{item.info.quality}%</p>
       {itemNameComponent && itemNameComponent(item)}
     </div>;

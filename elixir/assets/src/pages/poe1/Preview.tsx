@@ -1,5 +1,4 @@
 import { BuildInfo } from '@bindings/domain/bindings/BuildInfo';
-import { Button, Container, Spinner } from 'react-bootstrap';
 import { ItemListConfig } from '@/components/ItemListConfig';
 import { useForm, router } from '@inertiajs/react';
 // @ts-expect-error import type check
@@ -7,9 +6,9 @@ import Routes from '@routes';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import _ from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ToggleButton } from 'react-bootstrap';
 import { createItemsStore, ItemsContext } from '@states/preview';
 import { useStore } from 'zustand';
+import { Button, Container, Flex } from '@mantine/core';
 
 export type BuildPreviewData = {
   itemset: string,
@@ -78,16 +77,20 @@ export const Preview = ({ build_data }: Props) => {
   }, [setDefaults, setData, store]);
 
   return (
-    <Container fluid className='d-flex flex-column align-content-center'>
-      <div>itemset: {build_data.itemset} skillset: {build_data.skillset}
-        {errors.config && <p>Error occured: {errors.config}</p>}
-      </div>
-      <div>
-        <Button onClick={patchForm}>Submit build</Button>
-      </div>
-      <ItemsContext.Provider value={store}>
-        <ItemListConfig />
-      </ItemsContext.Provider>
+    <Container fluid>
+      <Flex
+        direction='column'
+      >
+        <div>itemset: {build_data.itemset} skillset: {build_data.skillset}
+          {errors.config && <p>Error occured: {errors.config}</p>}
+        </div>
+        <div>
+          <Button onClick={patchForm} variant='filled'>Submit build</Button>
+        </div>
+        <ItemsContext.Provider value={store}>
+          <ItemListConfig />
+        </ItemsContext.Provider>
+      </Flex>
     </Container>
   )
 }

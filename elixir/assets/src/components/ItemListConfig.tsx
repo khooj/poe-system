@@ -1,10 +1,10 @@
 import { SingleItemWithConfig } from "./SingleItemWithConfig";
-import { Form } from "react-bootstrap";
 import { BuildItemsWithConfig } from "@bindings/domain/bindings/BuildItemsWithConfig";
 import { useContext } from "react";
 import { ItemsContext } from "@states/preview";
 import { useStore } from "zustand";
 import MultipleItems from "./MultipleItems";
+import { Flex } from "@mantine/core";
 
 const itemsOrder: (keyof BuildItemsWithConfig)[] = [
   'helmet', 'body', 'gloves', 'boots',
@@ -18,8 +18,8 @@ export const ItemListConfig = () => {
   if (!store) throw new Error('missing items context');
   const data = useStore(store, s => s.data);
 
-  return <div className="d-flex flex-column">
-    <Form encType="multipart/form-data">
+  return <Flex direction='column'>
+    <form encType="multipart/form-data">
       {itemsOrder.map(k => {
         if (!Array.isArray(data.provided[k])) {
           return <SingleItemWithConfig itemKey={k} />
@@ -29,6 +29,6 @@ export const ItemListConfig = () => {
           </MultipleItems>
         }
       })}
-    </Form>
-  </div>
+    </form>
+  </Flex>
 };
