@@ -25,23 +25,26 @@ export const conf: UserConfig = {
     sourcemap: false,
     manifest: "manifest.json",
     commonjsOptions: {
-      include: [/routes/, /node_modules/, /states/, /bindings/],
+      include: [/node_modules/, /icons-react/],
       strictRequires: "auto"
     },
     rollupOptions: {
       input: {
         main: "src/main.tsx",
       },
+      output: {
+        preserveModules: true
+      }
     },
   },
-  resolve: {
-    alias: [
-      { find: '@bindings', replacement: path.resolve(__dirname, '../../rust/$1.ts') },
-      { find: '@states', replacement: path.resolve(__dirname, 'src/states') },
-      { find: '@routes', replacement: path.resolve(__dirname, 'src/routes.js') },
-      { find: '@', replacement: path.resolve(__dirname, 'src') },
-    ],
-  },
+  // resolve: {
+  //   alias: [
+  //     { find: '@bindings', replacement: path.resolve(__dirname, '../../rust/$1.ts') },
+  //     { find: '@states', replacement: path.resolve(__dirname, 'src/states') },
+  //     { find: '@routes', replacement: path.resolve(__dirname, 'src/routes.js') },
+  //     { find: '@', replacement: path.resolve(__dirname, 'src') },
+  //   ],
+  // },
   optimizeDeps: {
     include: ['@tabler/icons-react']
   }

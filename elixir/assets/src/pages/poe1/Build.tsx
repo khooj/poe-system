@@ -15,21 +15,24 @@ export type RenderConfigProps = {
 };
 
 export const RenderConfig = ({ cf }: RenderConfigProps) => {
-  if (!cf) {
-    return <></>
-  }
+  const content = (() => {
+    if (!cf) {
+      return <></>
+    }
+    if (cf === 'Exist') {
+      return <span>(exist)</span>
+    } else if ('Exact' in cf) {
+      return <span>(exact: {cf.Exact})</span>
+    } else if ('Range' in cf) {
+      return <span>(range: {cf.Range.start}-{cf.Range.end})</span>
+    } else if ('Min' in cf) {
+      return <span>(min: {cf.Min})</span>
+    } else if ('Max' in cf) {
+      return <span>(max: {cf.Max})</span>
+    }
+  })();
 
-  if (cf === 'Exist') {
-    return <span>(exist)</span>
-  } else if ('Exact' in cf) {
-    return <span>(exact: {cf.Exact})</span>
-  } else if ('Range' in cf) {
-    return <span>(range: {cf.Range.start}-{cf.Range.end})</span>
-  } else if ('Min' in cf) {
-    return <span>(min: {cf.Min})</span>
-  } else if ('Max' in cf) {
-    return <span>(max: {cf.Max})</span>
-  }
+  return content;
 };
 
 export type Props = {

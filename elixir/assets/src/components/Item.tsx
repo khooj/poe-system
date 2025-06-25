@@ -26,7 +26,7 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
   };
 
   const renderMods = (mods: [Mod, ModConfig | null][] | StoredMod[]) => {
-    return mods.map((m, idx) => <Flex key={idx} align='center'>
+    return mods.map((m, idx) => <Flex key={idx} align='center' justify='space-between'>
       <div>{renderText(m)}</div>
       {Array.isArray(m) && modConfigComponent && modConfigComponent(m, idx)}
     </Flex>);
@@ -42,8 +42,6 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
   }
 
   rarityColor = `border-${rarityColor}`;
-
-  console.log(classes);
 
   if (isNotGem(item.info)) {
     return <Stack className={cx(classes.border, classes[rarityColor])}>
