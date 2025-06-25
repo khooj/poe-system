@@ -11,6 +11,8 @@ defmodule PoeSystem.BuildProcessing do
   use Oban.Worker, queue: :new_builds
   import Ecto.Query
 
+  @items_per_tx Application.compile_env!(:poe_system, [PoeSystem.BuildProcessing, :items_per_tx])
+
   def queue_processing_build_multi(multi, name, id_fn) do
     multi
     |> Oban.insert(name, &id_fn.(&1))
@@ -135,7 +137,7 @@ defmodule PoeSystem.BuildProcessing do
     {:ok, items} =
       Repo.transaction(fn ->
         query
-        |> limit(500)
+        |> limit(@items_per_tx)
         |> Items.append_id_cursor(last_id)
         |> Repo.stream()
         |> Enum.to_list()
