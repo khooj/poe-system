@@ -10,11 +10,11 @@ defmodule PoeSystem.StashReceiver do
   alias Req.Response
 
   @options NimbleOptions.new!(
-             interval: [required: true, type: :pos_integer],
-             long_interval: [required: true, type: :pos_integer],
+             interval: [type: :pos_integer, default: :timer.seconds(1)],
+             long_interval: [type: :pos_integer, default: :timer.seconds(60)],
              plug: [type: :any, default: nil],
              access_token: [required: true, type: :string],
-             test: [type: :boolean],
+             disabled: [type: :boolean],
              league: [type: {:list, :string}, default: []]
            )
 
@@ -28,7 +28,7 @@ defmodule PoeSystem.StashReceiver do
   def init(init_arg) do
     opts = Enum.into(init_arg, %{})
 
-    if not Map.get(opts, :test, false) do
+    if not Map.get(opts, :disabled, false) do
       Process.send_after(self(), :cycle, opts.interval)
     end
 

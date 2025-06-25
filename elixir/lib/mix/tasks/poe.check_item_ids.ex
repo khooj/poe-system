@@ -3,8 +3,6 @@ defmodule Mix.Tasks.Poe.CheckItemIds do
   alias PoeSystem.Repo
   alias PoeSystem.Items.Item
   import Ecto.Query
-  import Mix.Ecto
-  import Mix.EctoSQL
 
   @requirements ["app.config"]
 

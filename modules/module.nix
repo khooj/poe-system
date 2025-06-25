@@ -39,6 +39,11 @@ in {
       description = "public stash api request interval if external error occured (e.g. HTTP 500)";
       default = 60000;
     };
+    poolSize = mkOption {
+      type = types.int;
+      description = "db connection pool size";
+      default = 10;
+    };
   };
 
   config = mkIf cfg.enable {
@@ -56,6 +61,7 @@ in {
         RELEASE_COOKIE = "none";
         POE_STASH_API_INTERVAL = toString cfg.stashInterval;
         POE_STASH_API_LONG_INTERVAL = toString cfg.stashLongInterval;
+        POOL_SIZE = toString cfg.poolSize;
       };
       serviceConfig = {
         EnvironmentFile = cfg.secretsEnvFile;
