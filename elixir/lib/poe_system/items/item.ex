@@ -27,5 +27,6 @@ defmodule PoeSystem.Items.Item do
       empty_values: []
     )
     |> validate_required([:id, :info, :basetype, :category, :subcategory, :price, :rarity])
+    |> unique_constraint(:id)
   end
 end
