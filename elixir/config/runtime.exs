@@ -42,6 +42,8 @@ if config_env() != :test do
     access_token: env!("POE_STASH_API_TOKEN", :string!),
     interval: env!("POE_STASH_API_INTERVAL", :integer!),
     long_interval: env!("POE_STASH_API_LONG_INTERVAL", :integer!)
+
+  config :logger, level: env!("LOG_LEVEL", :atom!, :info)
 end
 
 if config_env() == :prod do

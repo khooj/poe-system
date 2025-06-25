@@ -44,6 +44,11 @@ in {
       description = "db connection pool size";
       default = 10;
     };
+    logLevel = mkOption {
+      type = types.enum ["info" "warning" "error" "debug"];
+      description = "log level";
+      default = "info";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -62,6 +67,7 @@ in {
         POE_STASH_API_INTERVAL = toString cfg.stashInterval;
         POE_STASH_API_LONG_INTERVAL = toString cfg.stashLongInterval;
         POOL_SIZE = toString cfg.poolSize;
+        LOG_LEVEL = cfg.logLevel;
       };
       serviceConfig = {
         EnvironmentFile = cfg.secretsEnvFile;
