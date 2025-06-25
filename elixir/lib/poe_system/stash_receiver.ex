@@ -241,7 +241,13 @@ defmodule PoeSystem.StashReceiver do
         )
         |> then(
           &Enum.reduce(Enum.with_index(stash_data.items), &1, fn {el, idx}, acc ->
-            Multi.insert(acc, {:insert_item, idx}, Item.changeset(%Item{}, el))
+            Multi.insert(
+              acc,
+              {:insert_item, idx},
+              Item.changeset(%Item{}, el),
+              on_conflict: [set: [price: el["price"]]],
+              conflict_target: :id
+            )
           end)
         )
         |> then(fn

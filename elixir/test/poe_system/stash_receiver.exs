@@ -90,6 +90,31 @@ defmodule PoeSystem.StashReceiverTest do
     assert not Repo.exists?(Item)
   end
 
+  # probably sometimes api does not remove entire stash
+  # and just sends update info about item (maybe it moved or note changed)
+  test "update items", %{opts: opts} do
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(200, Testdata.stash_json())
+    end)
+
+    assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
+    assert_receive :cycle
+    assert Repo.exists?(Item)
+
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(200, Testdata.stash_json())
+    end)
+
+    assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
+    assert_receive :cycle
+  end
+
   test "remove items which not in base", %{opts: opts} do
     assert not Repo.exists?(Item)
 
