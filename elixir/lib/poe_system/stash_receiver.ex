@@ -3,6 +3,7 @@ defmodule PoeSystem.StashReceiver do
   require Logger
   alias PoeSystem.{Repo, LatestStash, Stash, RateLimit, RateLimitParser}
   alias PoeSystem.Items.Item
+  alias PoeSystem.Items
   import Ecto.Query
   alias Ecto.Multi
   alias PoeSystem.StashReceiver.Client
@@ -206,8 +207,13 @@ defmodule PoeSystem.StashReceiver do
 
               item =
                 item
-                |> Map.put("data", item["info"])
-                |> Map.delete("info")
+                |> Items.into_elixir_items()
+                # insert_all requires map with atom keys
+                |> Map.from_struct()
+                |> Map.delete(:__meta__)
+                # does not provide nil id because insert_all wont properly delegate
+                # its autogeneration to adapter/db
+                |> Map.delete(:id)
 
               Map.update(acc, :stashes, [sv], &[sv | &1])
               |> Map.update(:items, [item], &[item | &1])
@@ -234,7 +240,7 @@ defmodule PoeSystem.StashReceiver do
           {:ok, ids}
         end)
         |> Multi.delete_all(:remove_items, fn %{remove_items_ids: ids} ->
-          from(i in Item, where: i.id in ^ids)
+          from(i in Item, where: i.item_id in ^ids)
         end)
         |> Multi.delete_all(:remove_stashes, fn _ ->
           from(i in Stash, where: i.id in ^public_stash["remove_stashes"])
@@ -247,11 +253,11 @@ defmodule PoeSystem.StashReceiver do
         )
         |> Multi.insert_all(
           :insert_items,
-          "items",
+          Item,
           stash_data.items,
           returning: false,
           on_conflict: {:replace, [:price]},
-          conflict_target: :id
+          conflict_target: :item_id
         )
         |> then(fn
           m when is_nil(ls) -> m

@@ -1,21 +1,18 @@
 defmodule RustPoe.NativeWrapper do
   alias RustPoe.Native
+  alias PoeSystem.Items
   require Logger
 
   @spec closest_item(map(), [map()]) :: {:ok, map() | nil} | {:error, any()}
-  def closest_item(req_item, items) do
+  def closest_item(req_item, items) when is_map(req_item) and is_list(items) do
     Logger.debug("NativeWrapper.closest_item: #{req_item["name"]}")
 
-    res =
-      items
-      |> Enum.map(&Utils.to_string_key_map/1)
-
-    case Native.closest_item(req_item, res) do
+    case Native.closest_item(req_item, Items.into_native_items(items)) do
       {:ok, nil} = a ->
         a
 
       {:ok, result} ->
-        {:ok, Utils.unsafe_to_atom_key_map(result)}
+        {:ok, Items.into_elixir_items(result)}
 
       {:error, _} = a ->
         a

@@ -6,6 +6,8 @@ defmodule PoeSystem.StashReceiverTest do
 
   setup do
     {:ok, opts} = StashReceiver.init(Application.fetch_env!(:poe_system, PoeSystem.StashReceiver))
+    # force vm to have atom as existing
+    :rarity
     %{opts: opts}
   end
 

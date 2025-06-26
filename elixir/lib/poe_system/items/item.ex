@@ -3,10 +3,9 @@ defmodule PoeSystem.Items.Item do
   import Ecto.Changeset
   alias __MODULE__
 
-  @primary_key false
   schema "items" do
-    field :id, :string, primary_key: true
-    field :info, :map, source: :data
+    field :item_id, :string
+    field :info, :map
     field :basetype, :string
     field :category, :string
     field :subcategory, :string
@@ -21,12 +20,22 @@ defmodule PoeSystem.Items.Item do
   @type level :: non_neg_integer()
 
   @spec changeset(Item.t(), map()) :: Ecto.Changeset.t()
-  def changeset(item, attrs) do
+  def changeset(item, attrs \\ %{}) do
     item
-    |> cast(attrs, [:id, :info, :basetype, :category, :subcategory, :name, :price, :rarity],
+    |> cast(
+      attrs,
+      [:id, :item_id, :info, :basetype, :category, :subcategory, :name, :price, :rarity],
       empty_values: []
     )
-    |> validate_required([:id, :info, :basetype, :category, :subcategory, :price, :rarity])
-    |> unique_constraint(:id)
+    |> validate_required([
+      :item_id,
+      :info,
+      :basetype,
+      :category,
+      :subcategory,
+      :price,
+      :rarity
+    ])
+    |> unique_constraint(:item_id)
   end
 end

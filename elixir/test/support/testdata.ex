@@ -1,5 +1,6 @@
 defmodule PoeSystem.Testdata do
   alias PoeSystem.Items.Item
+  alias PoeSystem.Items
   alias PoeSystem.Build
   alias PoeSystem.Repo
   alias Ecto.UUID
@@ -38,8 +39,8 @@ defmodule PoeSystem.Testdata do
   end
 
   def insert_items do
-    for item <- items() do
-      Item.changeset(%Item{}, item)
+    for item <- Items.into_elixir_items(items()) do
+      Item.changeset(item)
       |> Repo.insert_or_update!()
     end
   end

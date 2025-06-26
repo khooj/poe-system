@@ -2,6 +2,34 @@ defmodule PoeSystem.Items do
   import Ecto.Query
   alias PoeSystem.Repo
   alias PoeSystem.Items.Item
+  alias Utils
+
+  def into_elixir_items(items) when is_list(items) do
+    items
+    |> Enum.map(&into_elixir_items/1)
+  end
+
+  def into_elixir_items(item) when is_map(item) do
+    res =
+      item
+      |> Map.put("item_id", item["id"])
+      |> Map.delete("id")
+      |> Utils.to_atom_key_map()
+
+    struct(Item, res)
+  end
+
+  def into_native_items(items) when is_list(items) do
+    items
+    |> Enum.map(&into_native_items/1)
+  end
+
+  def into_native_items(item) when is_struct(item) do
+    item
+    |> Utils.to_string_key_map()
+    |> Map.put("id", item.item_id)
+    |> Map.delete("item_id")
+  end
 
   @type search_items_opt() ::
           {:basetype, String.t()}
@@ -32,7 +60,7 @@ defmodule PoeSystem.Items do
     |> opt(basetype, &where(&1, [m], m.basetype == ^basetype))
     |> opt(category, &where(&1, [m], m.category == ^category))
     |> opt(subcategory, &where(&1, [m], m.subcategory == ^subcategory))
-    |> where([m], fragment("? @> ?", m.data, ^mods))
+    |> where([m], fragment("? @> ?", m.info, ^mods))
     |> order_by([m], m.id)
   end
 
@@ -40,8 +68,8 @@ defmodule PoeSystem.Items do
     Item
     |> where([m], ilike(m.basetype, ^name))
     |> where([m], m.subcategory == "Gem")
-    |> where([m], fragment("(?->'level')::int", m.data) >= ^level)
-    |> where([m], fragment("(?->'quality')::int", m.data) >= ^quality)
+    |> where([m], fragment("(?->'level')::int", m.info) >= ^level)
+    |> where([m], fragment("(?->'quality')::int", m.info) >= ^quality)
     |> order_by([m], m.id)
   end
 
@@ -55,6 +83,11 @@ defmodule PoeSystem.Items do
   #   |> where([m], fragment("(?->'quality')::int", m.data) >= ^quality)
   #   |> order_by([m], m.id)
   # end
+
+  def append_flask_quality(q, quality) do
+    q
+    |> where([m], fragment("(?->'quality')::int", m.info) >= ^quality)
+  end
 
   def append_id_cursor(query, nil), do: query
 

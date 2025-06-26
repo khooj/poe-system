@@ -20,4 +20,13 @@ defmodule Utils do
     end)
     |> Enum.into(%{})
   end
+
+  def to_atom_key_map(k) when is_map(k) do
+    k
+    |> Enum.map(fn
+      {k, v} when is_binary(k) -> {String.to_existing_atom(k), v}
+      {k, v} -> {k, v}
+    end)
+    |> Enum.into(%{})
+  end
 end

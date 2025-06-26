@@ -99,7 +99,7 @@ defmodule PoeSystem.BuildProcessing do
         mods,
         basetype: item["basetype"]
       )
-      |> where([m], fragment("(?->'quality')::int", m.data) >= ^quality)
+      |> Items.append_flask_quality(quality)
 
     process_items_stream(items_stream, item)
   end
