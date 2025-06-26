@@ -53,14 +53,13 @@ defmodule PoeSystem.Items do
     mods =
       item_mods
       |> Enum.filter(& &1["stat_id"])
-      |> Enum.map(fn b -> %{stat_id: b["stat_id"]} end)
-      |> then(&%{mods: &1})
+      |> Enum.map(fn b -> b["stat_id"] end)
 
     Item
     |> opt(basetype, &where(&1, [m], m.basetype == ^basetype))
     |> opt(category, &where(&1, [m], m.category == ^category))
     |> opt(subcategory, &where(&1, [m], m.subcategory == ^subcategory))
-    |> where([m], fragment("? @> ?", m.info, ^mods))
+    |> where([m], fragment("?->'mods'->'stat_id' \\?| ?", m.info, ^mods))
     |> order_by([m], m.id)
   end
 
