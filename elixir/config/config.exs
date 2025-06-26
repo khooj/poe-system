@@ -81,7 +81,7 @@ config :poe_system, PoeSystemWeb.PromEx,
 
 config :poe_system, PoeSystem.StashReceiver, league: ["Mercenaries"]
 
-config :poe_system, PoeSystem.BuildProcessing, items_per_tx: 50
+config :poe_system, PoeSystem.BuildProcessing, items_per_tx: 500
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

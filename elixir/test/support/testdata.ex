@@ -9,6 +9,7 @@ defmodule PoeSystem.Testdata do
   @config_skillset "Maps"
 
   def pobdata_file() do
+    :rarity
     String.trim(File.read!(Path.join([@testdata_dir, "pob.txt"])))
   end
 

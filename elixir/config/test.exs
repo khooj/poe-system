@@ -28,7 +28,9 @@ config :inertia,
   raise_on_ssr_failure: config_env() != :prod
 
 # Print only warnings and errors during test
-config :logger, level: :warning
+config :logger,
+  level: :warning,
+  always_evaluate_messages: true
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime

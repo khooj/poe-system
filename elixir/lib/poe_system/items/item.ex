@@ -1,6 +1,7 @@
 defmodule PoeSystem.Items.Item do
   use Ecto.Schema
   import Ecto.Changeset
+  require Protocol
   alias __MODULE__
 
   schema "items" do
@@ -13,6 +14,8 @@ defmodule PoeSystem.Items.Item do
     field :price, :map
     field :rarity, :string
   end
+
+  Protocol.derive(Jason.Encoder, __MODULE__, except: [:__meta__])
 
   @type t :: %__MODULE__{}
   @type item_type :: :accessory | :gem | :armor | :weapon | :jewel | :flask

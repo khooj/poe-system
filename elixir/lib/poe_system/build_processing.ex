@@ -67,14 +67,14 @@ defmodule PoeSystem.BuildProcessing do
       end)
       |> Enum.reject(&is_nil/1)
 
-    Logger.debug("found items for few items: #{List.first(result)["id"]}")
+    Logger.debug("found items for few items")
     result
   end
 
   @spec process_entry(%{String.t() => RequiredItem.t()}) :: Item.t() | nil
   defp process_entry(item) do
     result = find_similar(item["item"], Native.get_req_item_type(item["item"]["info"]))
-    Logger.debug("found item for single item: #{result["id"]}")
+    Logger.debug("found item for single item: #{result && result.id}")
     result
   end
 
