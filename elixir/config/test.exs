@@ -45,7 +45,11 @@ config :poe_system,
   stash_receiver_producer: {Broadway.DummyProducer, []}
 
 config :poe_system, PoeSystem.StashReceiver,
+  interval: 1,
+  long_interval: 10,
+  plug: {Req.Test, PoeSystem.StashReceiver},
   access_token: "empty",
-  disabled: true
+  disabled: true,
+  league: []
 
 config :poe_system, PoeSystemWeb.PromEx, disabled: true

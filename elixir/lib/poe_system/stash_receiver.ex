@@ -20,13 +20,14 @@ defmodule PoeSystem.StashReceiver do
 
   def start_link(_) do
     opts = Application.fetch_env!(:poe_system, __MODULE__)
-    opts = NimbleOptions.validate!(opts, @options)
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl true
   def init(init_arg) do
-    opts = Enum.into(init_arg, %{})
+    opts =
+      NimbleOptions.validate!(init_arg, @options)
+      |> Enum.into(%{})
 
     if not Map.get(opts, :disabled, false) do
       Process.send_after(self(), :cycle, opts.interval)
@@ -203,6 +204,11 @@ defmodule PoeSystem.StashReceiver do
             if length(allowed_leagues) == 0 or stash_league in allowed_leagues do
               sv = %{id: stash_id, item_id: item["id"]}
 
+              item =
+                item
+                |> Map.put("data", item["info"])
+                |> Map.delete("info")
+
               Map.update(acc, :stashes, [sv], &[sv | &1])
               |> Map.update(:items, [item], &[item | &1])
               |> Map.update(:processed_leagues, MapSet.new(), &MapSet.put(&1, stash_league))
@@ -233,22 +239,19 @@ defmodule PoeSystem.StashReceiver do
         |> Multi.delete_all(:remove_stashes, fn _ ->
           from(i in Stash, where: i.id in ^public_stash["remove_stashes"])
         end)
-        |> then(
-          &Enum.reduce(Enum.with_index(stash_data.stashes), &1, fn
-            {el, idx}, acc ->
-              Multi.insert(acc, {:insert_stash_id, idx}, Stash.changeset(%Stash{}, el))
-          end)
+        |> Multi.insert_all(
+          :insert_stashes,
+          "stashes",
+          stash_data.stashes,
+          returning: false
         )
-        |> then(
-          &Enum.reduce(Enum.with_index(stash_data.items), &1, fn {el, idx}, acc ->
-            Multi.insert(
-              acc,
-              {:insert_item, idx},
-              Item.changeset(%Item{}, el),
-              on_conflict: [set: [price: el["price"]]],
-              conflict_target: :id
-            )
-          end)
+        |> Multi.insert_all(
+          :insert_items,
+          "items",
+          stash_data.items,
+          returning: false,
+          on_conflict: {:replace, [:price]},
+          conflict_target: :id
         )
         |> then(fn
           m when is_nil(ls) -> m
