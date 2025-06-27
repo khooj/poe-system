@@ -85,6 +85,7 @@ defmodule PoeSystem.Items do
 
   def append_flask_quality(q, quality) do
     q
+    |> where([m], m.category == "Flasks")
     |> where([m], fragment("(?->>'quality')::int", m.info) >= ^quality)
   end
 
