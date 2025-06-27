@@ -9,6 +9,7 @@ defmodule PoeSystem.BuildProcessing do
   alias PoeSystem.Items.Item
   alias RustPoe.Native
   use Oban.Worker, queue: :new_builds
+  use Telemetria
   import Ecto.Query
 
   @items_per_tx Application.compile_env!(:poe_system, [PoeSystem.BuildProcessing, :items_per_tx])
@@ -24,6 +25,7 @@ defmodule PoeSystem.BuildProcessing do
   end
 
   @impl Oban.Worker
+  @telemetria level: :info, group: :poe1_build_processing
   def perform(%Oban.Job{args: %{"id" => id} = _args}) do
     build = Build.get_build(id)
     build_data = process_single_build(build.data)
@@ -46,6 +48,7 @@ defmodule PoeSystem.BuildProcessing do
   end
 
   @spec process_single_build(BuildInfo.t()) :: BuildInfo.t()
+  @telemetria level: :info, group: :poe1_build_processing
   def process_single_build(build) do
     found =
       build["provided"]
@@ -56,9 +59,11 @@ defmodule PoeSystem.BuildProcessing do
   end
 
   @spec process_entry(nil) :: nil
+  @telemetria level: :info, group: :poe1_build_processing
   defp process_entry(nil), do: nil
 
   @spec process_entry([%{String.t() => RequiredItem.t()}]) :: [Item.t()] | []
+  @telemetria level: :info, group: :poe1_build_processing
   defp process_entry(items) when is_list(items) do
     result =
       items
@@ -72,6 +77,7 @@ defmodule PoeSystem.BuildProcessing do
   end
 
   @spec process_entry(%{String.t() => RequiredItem.t()}) :: Item.t() | nil
+  @telemetria level: :info, group: :poe1_build_processing
   defp process_entry(item) do
     result = find_similar(item["item"], Native.get_req_item_type(item["item"]["info"]))
     Logger.debug("found item for single item: #{result && result.id}")
@@ -79,6 +85,7 @@ defmodule PoeSystem.BuildProcessing do
   end
 
   @spec find_similar(RequiredItem.t(), {:ok, :gem}) :: Item.t() | nil
+  @telemetria level: :info, group: :poe1_build_processing
   def find_similar(item, {:ok, :gem}) do
     name = item["basetype"]
     {:ok, quality, level} = Native.extract_gem_props(item)
@@ -90,6 +97,7 @@ defmodule PoeSystem.BuildProcessing do
   end
 
   @spec find_similar(RequiredItem.t(), {:ok, :flask}) :: Item.t() | nil
+  @telemetria level: :info, group: :poe1_build_processing
   def find_similar(item, {:ok, :flask}) do
     {:ok, mods} = Native.extract_mods_for_search(item)
     {:ok, quality} = Native.extract_flask_props(item)
@@ -105,7 +113,8 @@ defmodule PoeSystem.BuildProcessing do
   end
 
   @spec find_similar(RequiredItem.t(), {:ok, atom()}) :: Item.t() | nil
-  def find_similar(item, {:ok, _}) do
+  @telemetria level: :info, group: :poe1_build_processing
+  def find_similar(item, {:ok, _t}) do
     Logger.debug("extract mods")
     {:ok, mods} = Native.extract_mods_for_search(item)
 
@@ -133,7 +142,10 @@ defmodule PoeSystem.BuildProcessing do
           Item.t() | nil
         ) ::
           Item.t() | nil
-  defp process_items_stream(query, req_item, last_id \\ nil, last_item \\ nil) do
+  @telemetria level: :info, group: :poe1_build_processing
+  defp process_items_stream(query, req_item, last_id \\ nil, last_item \\ nil)
+
+  defp process_items_stream(query, req_item, last_id, last_item) do
     {:ok, items} =
       Repo.transaction(fn ->
         query

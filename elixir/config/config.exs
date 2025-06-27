@@ -52,9 +52,10 @@ config :poe_system, Oban,
 
 config :telemetria,
   backend: Telemetria.Backend.OpenTelemetry,
-  otp_app: :poe_system,
-  purge_level: :debug,
-  level: :info
+  otp_app: :poe_system
+
+# purge_level: :debug,
+# level: :info
 
 config :opentelemetry,
   resource: %{service: %{name: "poe_system"}},
