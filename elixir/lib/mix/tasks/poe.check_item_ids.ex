@@ -6,9 +6,9 @@ defmodule Mix.Tasks.Poe.CheckItemIds do
 
   @requirements ["app.config"]
 
-  def run(args) do
+  def run(_) do
     Application.ensure_all_started([:ecto, :postgrex])
-    {:ok, pid} = Repo.start_link([])
+    {:ok, _pid} = Repo.start_link([])
 
     ids =
       IO.read(:eof)

@@ -1,6 +1,7 @@
 defmodule PoeSystem.RateLimitParserTest do
   use PoeSystemWeb.ConnCase
   alias PoeSystem.RateLimitParser
+  use ExUnit.Case, async: true
 
   test "parse simple limit" do
     assert {:ok, [[1, 2, 3]], _, _, _, _} = RateLimitParser.limits("1:2:3")

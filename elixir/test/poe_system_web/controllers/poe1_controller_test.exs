@@ -1,5 +1,6 @@
 defmodule PoeSystemWeb.Poe1ControllerTest do
   use PoeSystemWeb.ConnCase
+  use ExUnit.Case, async: true
   alias PoeSystem.Testdata
 
   setup do

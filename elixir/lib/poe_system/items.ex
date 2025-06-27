@@ -67,8 +67,8 @@ defmodule PoeSystem.Items do
     Item
     |> where([m], ilike(m.basetype, ^name))
     |> where([m], m.subcategory == "Gem")
-    |> where([m], fragment("(?->'level')::int", m.info) >= ^level)
-    |> where([m], fragment("(?->'quality')::int", m.info) >= ^quality)
+    |> where([m], fragment("(?->>'level')::int", m.info) >= ^level)
+    |> where([m], fragment("(?->>'quality')::int", m.info) >= ^quality)
     |> order_by([m], m.id)
   end
 
@@ -85,7 +85,7 @@ defmodule PoeSystem.Items do
 
   def append_flask_quality(q, quality) do
     q
-    |> where([m], fragment("(?->'quality')::int", m.info) >= ^quality)
+    |> where([m], fragment("(?->>'quality')::int", m.info) >= ^quality)
   end
 
   def append_id_cursor(query, nil), do: query

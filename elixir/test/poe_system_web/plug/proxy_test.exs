@@ -1,5 +1,6 @@
 defmodule PoeSystemWeb.Plug.ProxyTest do
   use PoeSystemWeb.ConnCase
+  use ExUnit.Case, async: true
   import Plug.Test
   alias PoeSystemWeb.Plug.Proxy
 

@@ -9,6 +9,7 @@ defmodule PoeSystem.RustPoe.Native.Test do
   alias PoeSystem.Repo
   alias PoeSystem.Testdata
   use PoeSystem.DataCase
+  use ExUnit.Case, async: true
 
   test "validate and apply" do
     cfg = Testdata.extract_config()

@@ -2,6 +2,7 @@ defmodule PoeSystem.BuildProcessingTest do
   alias PoeSystem.Testdata
   alias PoeSystem.BuildProcessing
   use PoeSystem.DataCase
+  use ExUnit.Case, async: true
 
   setup do
     build = Testdata.extract_config()
