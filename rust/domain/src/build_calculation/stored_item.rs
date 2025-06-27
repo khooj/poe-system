@@ -147,6 +147,16 @@ impl Default for Price {
     }
 }
 
+impl Price {
+    pub fn is_zero(&self) -> bool {
+        match self {
+            Self::Chaos(i) => *i == 0,
+            Self::Divine(i) => *i == 0,
+            Self::Custom(_, i) => *i == 0,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct StoredItem {

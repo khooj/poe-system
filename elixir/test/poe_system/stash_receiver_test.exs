@@ -3,6 +3,7 @@ defmodule PoeSystem.StashReceiverTest do
   use PoeSystemWeb.ConnCase
   alias PoeSystem.{StashReceiver, Testdata, Repo, LatestStash}
   alias PoeSystem.Items.Item
+  import Ecto.Query
 
   setup do
     {:ok, opts} = StashReceiver.init(Application.fetch_env!(:poe_system, PoeSystem.StashReceiver))
@@ -41,6 +42,27 @@ defmodule PoeSystem.StashReceiverTest do
     assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
     assert_receive :cycle
     assert Repo.exists?(Item)
+  end
+
+  test "items without zero prices by default", %{opts: opts} do
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(200, Testdata.stash_json())
+    end)
+
+    assert {:noreply, _} = StashReceiver.handle_info(:cycle, opts)
+    assert_receive :cycle
+    assert Repo.exists?(Item)
+
+    q =
+      from p in Item,
+        where: fragment("(?->>'Divine')::int", p.price) == 0,
+        or_where: fragment("(?->>'Chaos')::int", p.price) == 0,
+        or_where: fragment("(?#>>'{Custom,1}')::int", p.price) == 0
+
+    assert not Repo.exists?(q)
   end
 
   test "end of stream (next_change_id null)", %{opts: opts} do

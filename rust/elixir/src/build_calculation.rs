@@ -97,7 +97,11 @@ struct StashData {
 }
 
 #[rustler::nif]
-fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, SerdeTerm<Value>)> {
+fn process_stash_data<'a>(
+    env: Env<'a>,
+    data: &'a str,
+    without_zero_price: bool,
+) -> NifResult<(Atom, SerdeTerm<Value>)> {
     let k: PublicStashData = serde_json::from_str(data).unwrap();
     let mut result = StashData {
         stashes: HashMap::new(),
@@ -130,6 +134,13 @@ fn process_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<(Atom, Serde
                 i
             })
             .filter_map(|i| StoredItem::try_from(i).ok())
+            .filter_map(|i| {
+                if without_zero_price && i.price.is_zero() {
+                    None
+                } else {
+                    Some(i)
+                }
+            })
             .map(|i| encode_config(env, &i).unwrap())
             .collect::<Vec<_>>();
         result
