@@ -51,7 +51,7 @@ impl<'a> Pob {
     }
 
     pub fn from_pastebin_data(data: String) -> Result<Pob, PobError> {
-        let tmp = decode_config(data, URL_SAFE)?;
+        let tmp = decode_config(data.trim(), URL_SAFE)?;
         let mut decoder = ZlibDecoder::new(&tmp[..]);
         let mut s = String::new();
         decoder.read_to_string(&mut s)?;
@@ -363,7 +363,7 @@ impl<'a> PobDocument<'a> {
                     if sk.is_text() {
                         None
                     } else {
-                        Some(sk.attribute("title").unwrap().to_string())
+                        Some(sk.attribute("title").unwrap_or("Default").to_string())
                     }
                 })
                 .collect()
@@ -380,6 +380,7 @@ mod tests {
     const TESTPOB2: &str = include_str!("pob2.txt");
     const TESTPOB3: &str = include_str!("pob3.txt");
     const TESTPOB_GEMS: &str = include_str!("pob_gems.txt");
+    const TESTPOB_NEW: &str = include_str!("pob_new.txt");
 
     use super::Pob;
 
@@ -414,6 +415,23 @@ mod tests {
         // println!("sets names: {:?}", sets.iter().map(|e| &e.title).collect::<Vec<&String>>());
         let set = doc.get_first_itemset()?;
         println!("first itemset: {:?}", set);
+        for _ in set.items() {}
+        Ok(())
+    }
+
+    #[test]
+    fn parse_pob_new() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
+        let pob = Pob::from_pastebin_data(TESTPOB_NEW.to_owned())?;
+        let doc = pob.as_document()?;
+        let set = doc.get_first_itemset()?;
+        println!("first itemset: {:?}", set);
+        let is = doc.get_item_sets();
+        assert_eq!(is.len(), 7);
+        assert!(doc.get_itemsets_list()?.len() > 0);
+        let sks = doc.get_skillsets();
+        assert_eq!(sks.len(), 6);
+        assert!(doc.get_skillsets_list()?.len() > 0);
         for _ in set.items() {}
         Ok(())
     }

@@ -316,16 +316,16 @@ impl TryFrom<&str> for Rarity {
         match v.to_lowercase().as_str() {
             "magic" => Ok(Rarity::Normal),
             "rare" => Ok(Rarity::Rare),
-            "unique" => Ok(Rarity::Unique),
+            "unique" | "relic" => Ok(Rarity::Unique),
             "normal" | "" => Ok(Rarity::Normal),
             _ => Err(TypeError::RarityParse(v.to_string())),
         }
     }
 }
 
-impl Into<String> for Rarity {
-    fn into(self) -> String {
-        (match self {
+impl From<Rarity> for String {
+    fn from(value: Rarity) -> Self {
+        (match value {
             Rarity::Normal => "normal",
             Rarity::Rare => "rare",
             Rarity::Magic => "magic",
