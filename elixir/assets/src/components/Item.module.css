@@ -1,0 +1,26 @@
+.border-item-rare {
+  border-color: #e2d15f;
+}
+
+.border-item-magic {
+  border-color: #2d4bb7;
+}
+
+.border-item-normal {
+  border-color: #9da9b2;
+}
+
+.border-item-unique {
+  border-color: #cc600e;
+}
+
+.border {
+  border-style: solid;
+  border-width: 1px;
+}
+
+.border-bottom {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+

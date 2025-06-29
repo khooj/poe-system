@@ -11,25 +11,38 @@
     "vite_watch": "bunx -b vite build -w",
     "tsc_watch": "tsc -b -w --noEmit",
     "vite_ssr_watch": "vite build -w --ssr src/ssr.tsx -c vite.config.ssr.ts",
-    "vite_ssr_build": "bunx -b vite build --ssr src/ssr.tsx -c vite.config.ssr.ts"
+    "vite_ssr_build": "bunx -b vite build --ssr src/ssr.tsx -c vite.config.ssr.ts",
+    "storybook": "bunx storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "chromatic": "npx chromatic --project-token=chpt_530e179b7b93555"
   },
   "dependencies": {
     "@inertiajs/react": "^2.0.5",
+    "@mantine/core": "^8.1.1",
+    "@mantine/form": "^8.1.1",
+    "@mantine/hooks": "^8.1.1",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.3",
     "bootstrap-reboot": "^4.5.6",
     "immer": "^10.1.1",
     "react": "^19.0.0",
-    "react-bootstrap": "^2.10.9",
     "react-dom": "^19.0.0",
     "swr": "^2.3.3",
     "wasm": "file:../../rust/wasm/pkg",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^4.0.1",
     "@eslint/js": "^9.19.0",
     "@playwright/test": "1.50.0",
+    "@storybook/addon-a11y": "^9.0.12",
+    "@storybook/addon-docs": "^9.0.12",
+    "@storybook/addon-onboarding": "^9.0.12",
+    "@storybook/addon-vitest": "^9.0.12",
+    "@storybook/react": "^9",
+    "@storybook/react-vite": "^9",
+    "@tabler/icons-react": "^3.34.0",
     "@types/bootstrap": "^5.2.10",
     "@types/lodash": "^4.17.16",
     "@types/node": "^22.13.4",
@@ -37,19 +50,46 @@
     "@types/react-bootstrap": "^0.32.37",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react-swc": "^3.5.0",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "@vueless/storybook-dark-mode": "^9.0.5",
+    "chromatic": "^13.0.1",
+    "clsx": "^2.1.1",
     "eslint": "^9.19.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.18",
+    "eslint-plugin-storybook": "^9.0.12",
     "globals": "^15.14.0",
+    "jsdom": "^26.1.0",
     "lodash": "^4.17.21",
-    "rolldown": "^1.0.0-beta.7",
+    "msw": "^2.10.2",
+    "msw-storybook-addon": "^2.0.5",
+    "playwright": "1.50.0",
+    "postcss": "^8.5.6",
+    "postcss-preset-mantine": "^1.17.0",
+    "postcss-simple-vars": "^7.0.1",
     "sass": "^1.85.0",
+    "sass-embedded": "^1.89.2",
+    "storybook": "^9.0.12",
     "type-fest": "^4.39.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",
     "vite": "^6.1.0",
     "vite-plugin-top-level-await": "^1.5.0",
     "vite-plugin-wasm": "^3.4.1",
-    "vite-plugin-wasm-esm": "^1.0.3"
+    "vite-plugin-wasm-esm": "^1.0.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
+  },
+  "imports": {
+    "#wasm": {
+      "default": "wasm"
+    }
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

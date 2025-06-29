@@ -1,1 +1,35 @@
-{"events":[["poe_system","build_processing","find_similar"],["poe_system","build_processing","perform"],["poe_system","build_processing","process_entry"],["poe_system","build_processing","process_items_stream"],["poe_system","build_processing","process_single_build"],["poe_system_web","poe1_controller","index"]],"otp_app":"poe_system"}
+{
+  "events": [
+    [
+      "poe_system",
+      "build_processing",
+      "find_similar"
+    ],
+    [
+      "poe_system",
+      "build_processing",
+      "perform"
+    ],
+    [
+      "poe_system",
+      "build_processing",
+      "process_entry"
+    ],
+    [
+      "poe_system",
+      "build_processing",
+      "process_items_stream"
+    ],
+    [
+      "poe_system",
+      "build_processing",
+      "process_single_build"
+    ],
+    [
+      "poe_system_web",
+      "poe1_controller",
+      "index"
+    ]
+  ],
+  "otp_app": "poe_system"
+}

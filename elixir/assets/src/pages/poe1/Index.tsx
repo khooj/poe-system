@@ -1,20 +1,19 @@
 // @ts-expect-error type error
 import Routes from '@routes';
-import { Link, router, useForm } from '@inertiajs/react'
-import { ChangeEventHandler, FormEvent, useState } from 'react';
-import { Container, Form, Spinner } from 'react-bootstrap'
-import useSWR, { useSWRConfig } from 'swr';
-import { TypedLink } from '@/components/TypedLink';
+import { router, useForm } from '@inertiajs/react'
+import { ChangeEventHandler, FormEvent, useEffect, useState } from 'react';
+import useSWR from 'swr';
 import axios from 'axios';
+import { Button, Container, Flex, Loader, NativeSelect, TextInput } from '@mantine/core';
 
 const wasmLoader = async () => await import('wasm');
 
-type Props = {
+export type Props = {
   build_ids: string[],
 };
 
-const Index = ({ build_ids }: Props) => {
-  const { data: formData, setData, post } = useForm({
+export const Index = ({ build_ids }: Props) => {
+  const { data: formData, setData } = useForm({
     pobData: null,
     itemset: null,
     skillset: null,
@@ -25,6 +24,22 @@ const Index = ({ build_ids }: Props) => {
   const [parsing, setParsing] = useState(false);
   const [pobFormError, setPobFormError] = useState(null as string | null);
   const { data: wasm, error: wasmError, isLoading: wasmLoading } = useSWR('wasm', wasmLoader);
+
+  // const [wasm, setWasm] = useState();
+  // const [wasmError, setWasmError] = useState();
+  // const [wasmLoading, setWasmLoading] = useState(true);
+
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       setWasm(await wasmLoader());
+  //     } catch (err) {
+  //       setWasmError(err);
+  //     } finally {
+  //       setWasmLoading(false);
+  //     }
+  //   })()
+  // });
 
   const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     e.preventDefault();
@@ -69,38 +84,45 @@ const Index = ({ build_ids }: Props) => {
   };
 
   return (
-    <Container fluid className="d-flex flex-column align-items-center justify-content-center">
-      <span>This tool can calculate price for itemset and skill gems exported from Path of Building app</span>
-      {wasmLoading && <>
-        <Spinner animation='border' role='status'></Spinner>
-        <span>Loading wasm bundle</span>
-      </>}
-      {wasmError && <span>Wasm loading error, try to reload page: {wasmError}</span>}
-      {!wasmLoading && !wasmError && <>
-        <Form onSubmit={itemsetSubmit} encType='multipart/form-data'>
-          <Form.Group className="mb-3" controlId="formBuildFile">
-            <Form.Label>Path of Building data</Form.Label>
-            <Form.Control type="text" required onChange={onChange} />
+    <Container fluid>
+      <Flex
+        justify="center"
+        align="center"
+        direction="column"
+      >
+        <span>This tool can calculate price for itemset and skill gems exported from Path of Building app</span>
+        {wasmLoading && <>
+          <Loader />
+          <span>Loading wasm bundle</span>
+        </>}
+        {wasmError && <span>Wasm loading error, try to reload page</span>}
+        {!wasmLoading && !wasmError && <>
+          <form onSubmit={itemsetSubmit} encType='multipart/form-data'>
+            <TextInput
+              label="Path of Building data"
+              onChange={onChange}
+            />
             {parsing && <div>
               <span>Parsing itemsets...</span>
-              <Spinner animation='border' role='status'>
-              </Spinner>
+              <Loader />
             </div>}
             {pobFormError && <span>Please provide correct path of building encoded in base64<br />(typically provided at export menu or in code blocks)</span>}
-            {itemsets.length > 0 && <><Form.Label>Select desired itemset</Form.Label>
-              <Form.Select aria-label='Itemset selection' onChange={e => setData('itemset', e.target.value)}>
-                {itemsets.map(is => <option>{is}</option>)}
-              </Form.Select>
-            </>}
-            {skillsets.length > 0 && <><Form.Label>Select desired skillset</Form.Label>
-              <Form.Select aria-label='Skillset selection' onChange={e => setData('skillset', e.target.value)}>
-                {skillsets.map(is => <option>{is}</option>)}
-              </Form.Select>
-            </>}
-            <Form.Control type="submit" value="Proceed" disabled={!(formData.pobData && formData.itemset && formData.skillset)} />
-          </Form.Group>
-        </Form>
-      </>}
+            {itemsets.length > 0 && <NativeSelect
+              label="Select desired itemset"
+              data={itemsets}
+              onChange={e => setData('itemset', e.target.value)}
+            />}
+            {skillsets.length > 0 && <NativeSelect
+              label="Select desired skillset"
+              data={skillsets}
+              onChange={e => setData('skillset', e.target.value)}
+            />}
+            <Flex justify="center">
+              <Button type="submit" disabled={!(formData.pobData && formData.itemset && formData.skillset)}>Proceed</Button>
+            </Flex>
+          </form>
+        </>}
+      </Flex>
     </Container>
   )
 }

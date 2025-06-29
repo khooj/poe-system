@@ -1,40 +1,41 @@
-import { Container, Row } from 'react-bootstrap'
-import { type BuildInfo } from '@bindings/domain/bindings/BuildInfo';
 import { BuildItemsWithConfig } from '@bindings/domain/bindings/BuildItemsWithConfig';
 import { FoundBuildItems } from '@bindings/domain/bindings/FoundBuildItems';
 import MultipleItems from '@/components/MultipleItems';
 import RequiredItemComponent from '@/components/RequiredItemComponent';
 import { ModConfig } from '@bindings/domain/bindings/ModConfig';
 import { StoredItemComponent } from '@/components/StoredItemComponent';
-import { Col } from 'react-bootstrap';
 import { Price } from '@bindings/domain/bindings/Price';
 import useSSE from '../../utils/useSSE.ts';
 import { router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { Container, Flex, Grid, Group } from '@mantine/core';
 
-type RenderConfigProps = {
+export type RenderConfigProps = {
   cf: ModConfig | null,
 };
 
-const RenderConfig = ({ cf }: RenderConfigProps) => {
-  if (!cf) {
-    return <></>
-  }
+export const RenderConfig = ({ cf }: RenderConfigProps) => {
+  const content = (() => {
+    if (!cf) {
+      return <></>
+    }
+    if (cf === 'Exist') {
+      return <span>(exist)</span>
+    } else if ('Exact' in cf) {
+      return <span>(exact: {cf.Exact})</span>
+    } else if ('Range' in cf) {
+      return <span>(range: {cf.Range.start}-{cf.Range.end})</span>
+    } else if ('Min' in cf) {
+      return <span>(min: {cf.Min})</span>
+    } else if ('Max' in cf) {
+      return <span>(max: {cf.Max})</span>
+    }
+  })();
 
-  if (cf === 'Exist') {
-    return <span>(exist)</span>
-  } else if ('Exact' in cf) {
-    return <span>(exact: {cf.Exact})</span>
-  } else if ('Range' in cf) {
-    return <span>(range: {cf.Range.start}-{cf.Range.end})</span>
-  } else if ('Min' in cf) {
-    return <span>(min: {cf.Min})</span>
-  } else if ('Max' in cf) {
-    return <span>(max: {cf.Max})</span>
-  }
+  return content;
 };
 
-type Props = {
+export type Props = {
   id: string,
   provided: BuildItemsWithConfig,
   found: FoundBuildItems,
@@ -58,7 +59,7 @@ const priceCurrency = (x: Price) => {
   }
 };
 
-const Build = ({ id, provided, found, processed }: Props) => {
+export const Build = ({ id, provided, found, processed }: Props) => {
   // TODO: render info that build processing still in progress
   // with spinner 
   const sub = useSSE('/poe1/sse', {
@@ -123,17 +124,19 @@ const Build = ({ id, provided, found, processed }: Props) => {
   const costString = Object.entries(cost).reduce((acc, x) => acc + ` ${x[0]}: ${x[1]}`, "");
 
   return (
-    <Container fluid className="d-flex flex-fill flex-row justify-content-evenly">
-      <div className='d-flex flex-column vw-50'>
-        <Row>
-          <Col className='d-flex justify-content-center'>Provided</Col>
-          <Col className='d-flex justify-content-center'>{processed && `Found (with cost: ${costString})` || "Build not processed, please return later"}</Col>
-        </Row>
-        {itemsOrder.map(k => <Row className='border'>
-          <Col>{renderProvided(k)}</Col>
-          <Col>{processed && renderFound(k)}</Col>
-        </Row>)}
-      </div>
+    <Container fluid>
+      <Flex justify='space-evenly'>
+        <Flex direction='column'>
+          <Grid columns={2}>
+            <Grid.Col span={1}><Group>Provided</Group></Grid.Col>
+            <Grid.Col span={1}><Group>{processed && `Found (with cost: ${costString})` || "Build not processed, please return later"}</Group></Grid.Col>
+            {itemsOrder.map(k => <>
+              <Grid.Col span={1}>{renderProvided(k)}</Grid.Col>
+              <Grid.Col span={1}>{processed && renderFound(k)}</Grid.Col>
+            </>)}
+          </Grid>
+        </Flex>
+      </Flex>
     </Container>
   )
 }

@@ -1,6 +1,6 @@
+import { Box, Button, Collapse, Spoiler } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { JSX, useId, useState } from "react";
-import { Collapse } from "react-bootstrap";
-import { Button } from "react-bootstrap";
 
 type MultipleItemsProps = {
   itemKey: string,
@@ -8,17 +8,17 @@ type MultipleItemsProps = {
 };
 
 const MultipleItems = ({ itemKey, children }: MultipleItemsProps) => {
-  const [open, setOpen] = useState(false);
-  const id = useId();
+  const [open, { toggle }] = useDisclosure(false);
 
-  return <div className='m-3'>
-    <Button onClick={() => setOpen(!open)} aria-controls={id} aria-expanded={open}>{itemKey}</Button>
+  return <Box>
+    <Button onClick={toggle}>{itemKey}</Button>
+
     <Collapse in={open}>
-      <div id={id}>
+      <div>
         {children}
       </div>
     </Collapse>
-  </div>
+  </Box>
 };
 
 export default MultipleItems;
