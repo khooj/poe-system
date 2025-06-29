@@ -31,7 +31,7 @@ export default function Layout({ children }: Props) {
         <AppShell.Header>
           <Group mt={10} ml={10}>
             <Title order={2}>SomePoeTools</Title>
-            <Anchor component={TypedLink} to='poe1.index'>Build calculator</Anchor>
+            <Anchor component={TypedLink} to='poe1.build-calc.index'>Build calculator</Anchor>
             <ActionIcon
               onClick={() => setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light')}
               variant='default'

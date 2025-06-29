@@ -14,10 +14,7 @@ defmodule PoeSystemWeb.Poe1Controller do
 
   @telemetria level: :info, group: :poe1_build_cost_calc
   def index(conn, _params) do
-    build_ids = Build.get_ids()
-
     conn
-    |> assign_prop(:build_ids, build_ids)
     |> render_inertia("poe1/Index")
   end
 
@@ -56,7 +53,7 @@ defmodule PoeSystemWeb.Poe1Controller do
           |> PoeSystem.Repo.transaction()
 
         conn
-        |> redirect(to: ~p"/poe1/build/#{ret.bi.id}")
+        |> redirect(to: ~p"/poe1/build-calc/#{ret.bi.id}")
 
       {:deny, _} ->
         conn
@@ -89,7 +86,7 @@ defmodule PoeSystemWeb.Poe1Controller do
       _ ->
         conn
         |> put_flash(:info, "Build does not exist")
-        |> redirect(to: ~p"/poe1")
+        |> redirect(to: ~p"/poe1/build-calc")
     end
   end
 end

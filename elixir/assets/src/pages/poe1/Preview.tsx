@@ -54,7 +54,7 @@ export const Preview = ({ build_data }: Props) => {
 
   const patchForm = useCallback(() => {
     setDisableEdit();
-    post(Routes.path('poe1.new.new'), {
+    post(Routes.path('poe1.build-calc.new.new'), {
       onFinish: () => {
         setEnabledEdit();
       },

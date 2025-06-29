@@ -35,31 +35,35 @@ defmodule PoeSystemWeb.Router do
     plug :fetch_session
   end
 
-  scope "/", PoeSystemWeb do
+  scope "/", PoeSystemWeb, as: :main do
     pipe_through :browser
 
     get "/", IndexController, :index
   end
 
-  scope "/poe1", PoeSystemWeb do
+  scope "/poe1", PoeSystemWeb, as: :poe1 do
     pipe_through :browser
 
-    get "/", Poe1Controller, :index
-    post "/new", Poe1Controller, :new
-    get "/build/:id", Poe1Controller, :get_build
+    scope "/build-calc", as: :build_calc do
+      get "/", Poe1Controller, :index
+      post "/new", Poe1Controller, :new
+      get "/:id", Poe1Controller, :get_build
+    end
   end
 
-  scope "/poe1/sse", PoeSystemWeb do
+  scope "/sse", PoeSystemWeb, as: :sse do
     pipe_through :sse
 
     post "/", SseController, :subscribe
   end
 
   # Other scopes may use custom stacks.
-  scope "/api", PoeSystemWeb do
+  scope "/api", PoeSystemWeb, as: :api do
     pipe_through :api
 
-    post "/extract", Poe1Controller, :extract
+    scope "/v1", as: :v1 do
+      post "/extract", Poe1Controller, :extract
+    end
   end
 
   # Enable LiveDashboard in development

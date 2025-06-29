@@ -9,6 +9,7 @@ import useSSE from '../../utils/useSSE.ts';
 import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { Container, Flex, Grid, Group } from '@mantine/core';
+import Routes from '@routes.js';
 
 export type RenderConfigProps = {
   cf: ModConfig | null,
@@ -62,7 +63,7 @@ const priceCurrency = (x: Price) => {
 export const Build = ({ id, provided, found, processed }: Props) => {
   // TODO: render info that build processing still in progress
   // with spinner 
-  const sub = useSSE('/poe1/sse', {
+  const sub = useSSE(Routes.path('sse.subscribe'), {
     method: 'POST',
     body: `topics=build:${id}`,
     headers: {

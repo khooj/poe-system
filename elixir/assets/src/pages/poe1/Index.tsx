@@ -8,11 +8,9 @@ import { Button, Container, Flex, Loader, NativeSelect, TextInput } from '@manti
 
 const wasmLoader = async () => await import('wasm');
 
-export type Props = {
-  build_ids: string[],
-};
+export type Props = {};
 
-export const Index = ({ build_ids }: Props) => {
+export const Index = ({ }: Props) => {
   const { data: formData, setData } = useForm({
     pobData: null,
     itemset: null,
@@ -24,22 +22,6 @@ export const Index = ({ build_ids }: Props) => {
   const [parsing, setParsing] = useState(false);
   const [pobFormError, setPobFormError] = useState(null as string | null);
   const { data: wasm, error: wasmError, isLoading: wasmLoading } = useSWR('wasm', wasmLoader);
-
-  // const [wasm, setWasm] = useState();
-  // const [wasmError, setWasmError] = useState();
-  // const [wasmLoading, setWasmLoading] = useState(true);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       setWasm(await wasmLoader());
-  //     } catch (err) {
-  //       setWasmError(err);
-  //     } finally {
-  //       setWasmLoading(false);
-  //     }
-  //   })()
-  // });
 
   const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     e.preventDefault();
@@ -67,7 +49,7 @@ export const Index = ({ build_ids }: Props) => {
 
   const itemsetSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const resp = await axios.post(Routes.path('api.extract.extract'), formData);
+    const resp = await axios.post(Routes.path('api.v1.extract.extract'), formData);
     console.log(resp);
     if (resp.status === 200) {
       router.push({

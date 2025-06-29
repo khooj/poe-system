@@ -10,8 +10,8 @@
     "preview": "bunx -b vite preview",
     "vite_watch": "bunx -b vite build -w",
     "tsc_watch": "tsc -b -w --noEmit",
-    "vite_ssr_watch": "vite build -w --ssr src/ssr.tsx -c vite.config.ssr.ts",
-    "vite_ssr_build": "bunx -b vite build --ssr src/ssr.tsx -c vite.config.ssr.ts",
+    "ssr_watch": "vite build -w --ssr src/ssr.tsx -c vite.config.ssr.ts",
+    "ssr_build": "bunx -b vite build --ssr src/ssr.tsx -c vite.config.ssr.ts",
     "storybook": "bunx storybook dev -p 6006",
     "build-storybook": "storybook build",
     "chromatic": "npx chromatic --project-token=chpt_530e179b7b93555"
