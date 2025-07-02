@@ -157,6 +157,7 @@
                 protobuf
                 node2nix
                 websocat
+                npm-lockfile-fix
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config

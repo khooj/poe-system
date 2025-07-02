@@ -15,7 +15,7 @@ in
     singleStep = true;
     buildInputs = [binaryen wasm-bindgen-cli];
     buildPhase = ''
-      RUST_LOG=info ${lib.getExe wasm-pack} build wasm
+      RUST_LOG=info ${lib.getExe wasm-pack} build wasm --target web
     '';
     installPhase = ''
       mkdir -p $out/lib/wasm
