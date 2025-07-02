@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite';
+import { searchForWorkspaceRoot } from 'vite';
 import wasm from 'vite-plugin-wasm';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
@@ -13,7 +14,17 @@ const config: StorybookConfig = {
     return {
       ...config,
       plugins: [...(config.plugins || []), wasm(), tsconfigPaths()],
-      optimizeDeps: { include: ['@tabler/icons-react'] },
+      server: {
+        fs: {
+          allow: [
+            searchForWorkspaceRoot(process.cwd()),
+            '../../rust'
+          ]
+        }
+      },
+      // optimizeDeps: {
+      //   exclude: ['sb-vite']
+      // }
     }
   },
   "stories": [
@@ -21,7 +32,6 @@ const config: StorybookConfig = {
     "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
   ],
   "addons": [
-    "@chromatic-com/storybook",
     "@storybook/addon-docs",
     "@storybook/addon-onboarding",
     "@storybook/addon-a11y",

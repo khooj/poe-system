@@ -22,12 +22,20 @@ defmodule PoeSystemWeb.Endpoint do
   #
   # You should set gzip to true if you are running phx.digest
   # when deploying your static files in production.
-  plug Plug.Static,
-    at: "/",
-    from: :poe_system,
-    gzip: false,
-    only: PoeSystemWeb.static_paths(),
-    cache_control_for_etags: "public,max-age=31536000,immutable"
+  #
+
+  if Application.compile_env!(:poe_system, :mode) == :dev do
+    plug PoeSystemWeb.Plug.Proxy,
+      match_path: "/assets",
+      redirect_to: "http://localhost:5173"
+  else
+    plug Plug.Static,
+      at: "/",
+      from: :poe_system,
+      gzip: false,
+      only: PoeSystemWeb.static_paths(),
+      cache_control_for_etags: "public,max-age=31536000,immutable"
+  end
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

@@ -1,55 +1,64 @@
 // @ts-expect-error type error
 import Routes from '@routes';
-import { router, useForm } from '@inertiajs/react'
-import { ChangeEventHandler, FormEvent, useEffect, useState } from 'react';
+import { router } from '@inertiajs/react'
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
 import { Button, Container, Flex, Loader, NativeSelect, TextInput } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import wasmInit, { get_pob_itemsets, get_pob_skillsets } from 'wasm';
 
-const wasmLoader = async () => await import('wasm');
-
-export type Props = {};
-
-export const Index = ({ }: Props) => {
-  const { data: formData, setData } = useForm({
-    pobData: null,
-    itemset: null,
-    skillset: null,
-  } as { pobData: string | null, itemset: string | null, skillset: string | null });
-
-  const [itemsets, setItemsets] = useState([] as string[]);
-  const [skillsets, setSkillsets] = useState([] as string[]);
+export const Index = () => {
+  const [itemsets, setItemsets] = useState<Array<string>>([]);
+  const [skillsets, setSkillsets] = useState<Array<string>>([]);
   const [parsing, setParsing] = useState(false);
-  const [pobFormError, setPobFormError] = useState(null as string | null);
-  const { data: wasm, error: wasmError, isLoading: wasmLoading } = useSWR('wasm', wasmLoader);
+  const { error: wasmError, isLoading: wasmLoading } = useSWR('wasm', async () => {
+    const ret = await wasmInit();
+    return ret;
+  });
 
-  const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    e.preventDefault();
-    try {
-      setParsing(true);
-      // @ts-expect-error undefined wasm
-      const itemsets = wasm.get_pob_itemsets(e.target.value);
-      setItemsets(itemsets);
-      setData('itemset', itemsets[0]);
-      // @ts-expect-error undefined wasm
-      const skillsets = wasm.get_pob_skillsets(e.target.value);
-      setSkillsets(skillsets);
-      setData('skillset', skillsets[0]);
-      setData('pobData', e.target.value);
-      setPobFormError(null);
-    } catch (e) {
-      setPobFormError(e as string);
-      setItemsets([]);
-      setSkillsets([]);
-      console.log(e);
-    } finally {
-      setParsing(false);
-    }
-  };
+  const form = useForm({
+    mode: 'uncontrolled',
+    initialValues: {
+      pobData: '',
+      itemset: '',
+      skillset: '',
+    },
+    validateInputOnChange: [
+      'pobData',
+    ],
+    validate: {
+      pobData: (d) => {
+        // FIXME: validates only on first time
+        try {
+          console.log('check')
+          get_pob_itemsets(d);
+          return null;
+        } catch (e) {
+          console.log(e);
+          // @ts-expect-error unknown exception from wasm
+          console.log(e.stack);
+          return 'Please provide correct path of building encoded in base64 (typically provided at export menu or in code blocks)';
+        }
+      }
+    },
+  });
 
-  const itemsetSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const resp = await axios.post(Routes.path('api.v1.extract.extract'), formData);
+  form.watch('pobData', ({ value }) => {
+    setParsing(true);
+    const itemsets = get_pob_itemsets(value);
+    setItemsets(itemsets);
+    form.setFieldValue('itemset', itemsets[0]);
+    const skillsets = get_pob_skillsets(value);
+    setSkillsets(skillsets);
+    form.setFieldValue('skillset', skillsets[0]);
+    setParsing(false);
+    form.isValid();
+  });
+
+  const onSubmit = async (values: typeof form.values) => {
+    const resp = await axios.post(Routes.path('api.v1.extract.extract'), values);
+
     console.log(resp);
     if (resp.status === 200) {
       router.push({
@@ -58,7 +67,7 @@ export const Index = ({ }: Props) => {
         props: {
           build_data: {
             data: resp.data.config,
-            ...formData,
+            ...values,
           }
         },
       })
@@ -79,28 +88,31 @@ export const Index = ({ }: Props) => {
         </>}
         {wasmError && <span>Wasm loading error, try to reload page</span>}
         {!wasmLoading && !wasmError && <>
-          <form onSubmit={itemsetSubmit} encType='multipart/form-data'>
+          <form onSubmit={form.onSubmit(onSubmit)} encType='multipart/form-data'>
             <TextInput
               label="Path of Building data"
-              onChange={onChange}
+              placeholder='base64-encoded string'
+              key={form.key('pobData')}
+              {...form.getInputProps('pobData')}
             />
             {parsing && <div>
               <span>Parsing itemsets...</span>
               <Loader />
             </div>}
-            {pobFormError && <span>Please provide correct path of building encoded in base64<br />(typically provided at export menu or in code blocks)</span>}
             {itemsets.length > 0 && <NativeSelect
               label="Select desired itemset"
+              key={form.key('itemset')}
               data={itemsets}
-              onChange={e => setData('itemset', e.target.value)}
+              {...form.getInputProps('itemset')}
             />}
             {skillsets.length > 0 && <NativeSelect
               label="Select desired skillset"
+              key={form.key('skillset')}
               data={skillsets}
-              onChange={e => setData('skillset', e.target.value)}
+              {...form.getInputProps('skillset')}
             />}
             <Flex justify="center">
-              <Button type="submit" disabled={!(formData.pobData && formData.itemset && formData.skillset)}>Proceed</Button>
+              <Button type="submit" disabled={form.isValid()}>Proceed</Button>
             </Flex>
           </form>
         </>}

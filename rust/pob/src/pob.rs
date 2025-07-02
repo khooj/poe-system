@@ -381,6 +381,7 @@ mod tests {
     const TESTPOB3: &str = include_str!("pob3.txt");
     const TESTPOB_GEMS: &str = include_str!("pob_gems.txt");
     const TESTPOB_NEW: &str = include_str!("pob_new.txt");
+    const TESTPOB_NEW2: &str = include_str!("pob_new2.txt");
 
     use super::Pob;
 
@@ -428,11 +429,25 @@ mod tests {
         println!("first itemset: {:?}", set);
         let is = doc.get_item_sets();
         assert_eq!(is.len(), 7);
-        assert!(doc.get_itemsets_list()?.len() > 0);
+        assert!(doc.get_itemsets_list()?.is_empty());
         let sks = doc.get_skillsets();
         assert_eq!(sks.len(), 6);
-        assert!(doc.get_skillsets_list()?.len() > 0);
+        assert!(doc.get_skillsets_list()?.is_empty());
         for _ in set.items() {}
+        Ok(())
+    }
+
+    #[test]
+    fn parse_pob_new2() -> Result<(), anyhow::Error> {
+        dotenv::dotenv().ok();
+        let pob = Pob::from_pastebin_data(TESTPOB_NEW2.to_owned())?;
+        let doc = pob.as_document()?;
+        let is = doc.get_item_sets();
+        assert_eq!(is.len(), 4);
+        assert!(!doc.get_itemsets_list()?.is_empty());
+        let sks = doc.get_skillsets();
+        assert_eq!(sks.len(), 6);
+        assert!(!doc.get_skillsets_list()?.is_empty());
         Ok(())
     }
 

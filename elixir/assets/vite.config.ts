@@ -1,13 +1,11 @@
-import { defineConfig, UserConfig } from 'vite'
+import { defineConfig, UserConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react-swc'
-import wasm from 'vite-plugin-wasm';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export const conf: UserConfig = {
   publicDir: "public",
   plugins: [
     react(),
-    wasm(),
     tsconfigPaths(),
   ],
   base: "/",
@@ -15,6 +13,12 @@ export const conf: UserConfig = {
     hmr: {
       clientPort: 5173,
     },
+    fs: {
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        '../../rust'
+      ]
+    }
   },
   build: {
     target: 'esnext',
@@ -23,7 +27,6 @@ export const conf: UserConfig = {
     sourcemap: false,
     manifest: "manifest.json",
     commonjsOptions: {
-      include: [/node_modules/, /icons-react/],
       strictRequires: "auto"
     },
     rollupOptions: {
@@ -31,11 +34,17 @@ export const conf: UserConfig = {
         main: "src/main.tsx",
       },
     },
-  },
-  optimizeDeps: {
-    include: ['@tabler/icons-react']
   }
 };
 
 // https://vite.dev/config/
-export default defineConfig(conf);
+export default defineConfig(({ command }) => {
+  const isDev = command === "serve";
+
+  const localConf = { ...conf };
+  if (isDev) {
+    localConf.base = "/assets";
+  }
+
+  return localConf;
+});

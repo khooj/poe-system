@@ -16,7 +16,6 @@ const meta = {
     invalidateSWRCache: true,
     reloadFrame: true
   },
-  // decorators: [ReloadFrame]
 } satisfies Meta<typeof Index>;
 
 export default meta;
