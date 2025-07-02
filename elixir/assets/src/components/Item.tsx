@@ -45,7 +45,7 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
 
   if (isNotGem(item.info)) {
     return <Stack className={cx(classes.border, classes[rarityColor])}>
-      <Flex justify='space-between' className='border-bottom'>
+      <Flex justify='space-between' className={cx(classes['border-bottom'], classes[rarityColor])}>
         <span>{item.name}<br />{item.basetype}</span>
         {itemNameComponent && itemNameComponent(item)}
       </Flex>
@@ -58,7 +58,7 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
       return <></>
     }
 
-    return <div className='border' style={{ fontSize: '14px' }}>
+    return <div className={cx(classes.border, classes['font-style'])}>
       <p>{item.basetype} {item.info.level}lvl/+{item.info.quality}%</p>
       {itemNameComponent && itemNameComponent(item)}
     </div>;

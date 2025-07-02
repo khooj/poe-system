@@ -10,9 +10,9 @@ export const conf: UserConfig = {
   ],
   base: "/",
   server: {
-    hmr: {
-      clientPort: 5173,
-    },
+    // hmr: {
+    //   clientPort: 5173,
+    // },
     fs: {
       allow: [
         searchForWorkspaceRoot(process.cwd()),
@@ -39,7 +39,7 @@ export const conf: UserConfig = {
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
-  const isDev = command === "serve";
+  const isDev = command !== "build";
 
   const localConf = { ...conf };
   if (isDev) {

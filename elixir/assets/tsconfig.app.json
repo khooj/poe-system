@@ -30,11 +30,11 @@
       "@states/*": [
         "./src/states/*"
       ],
-      "@*": [
-        "./src/*"
-      ],
       "@routes": [
         "./src/routes.js"
+      ],
+      "@*": [
+        "./src/*"
       ]
     }
   },

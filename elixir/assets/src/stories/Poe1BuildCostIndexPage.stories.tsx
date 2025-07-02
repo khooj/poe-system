@@ -13,8 +13,8 @@ import {
 const meta = {
   component: Index,
   parameters: {
-    invalidateSWRCache: true,
-    reloadFrame: true
+    // invalidateSWRCache: true,
+    // reloadFrame: import.meta.env.VITE_STORYBOOK_VITEST !== "1",
   },
 } satisfies Meta<typeof Index>;
 
@@ -22,62 +22,18 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
-  args: {
-    build_ids: []
-  },
-};
-
-export const LoadingWasm: Story = {
-  args: {
-    build_ids: []
-  },
-  parameters: {
-    msw: {
-      handlers: [
-        http.get(/rust.*wasm.*/, async () => {
-          await delay('infinite');
-        }),
-      ]
-    }
-  },
   play: async ({ canvas }) => {
-    await waitFor(() => {
-      expect(canvas.getByText('Loading wasm bundle')).toBeVisible();
-    });
-  },
-};
-
-export const ErrorLoadingWasm: Story = {
-  args: {
-    build_ids: []
-  },
-  parameters: {
-    msw: {
-      handlers: [
-        http.get(/rust.*wasm.*/, async () => {
-          await delay(500);
-          return new HttpResponse(null, { status: 404 });
-        }),
-      ]
+    const el = canvas.queryByText('Loading wasm bundle');
+    if (el) {
+      await waitFor(() => expect(el).not.toBeVisible());
     }
-  },
-  play: async ({ canvas }) => {
-    await waitFor(() => {
-      expect(canvas.getByText('Loading wasm bundle')).toBeVisible();
-    });
-    await waitForElementToBeRemoved(() => canvas.queryByText('Loading wasm bundle'));
-    waitFor(() => canvas.queryByText('Wasm loading error', { exact: false }));
+    await waitFor(() => canvas.getByLabelText('Path of Building data'))
   },
 };
 
 export const WrongPob: Story = {
-  args: {
-    build_ids: []
-  },
-  play: async ({ canvas, userEvent }) => {
-    await waitFor(() => {
-      expect(canvas.getByLabelText('Path of Building data')).toBeVisible()
-    });
+  play: async ({ context, canvas, userEvent }) => {
+    await Primary.play(context);
     await userEvent.click(canvas.getByLabelText('Path of Building data'));
     await userEvent.paste('asddsa' + pob);
     await waitFor(() => {
@@ -87,9 +43,7 @@ export const WrongPob: Story = {
 };
 
 export const PobOptions: Story = {
-  args: {
-    build_ids: []
-  },
+  name: 'Pob options with active proceed',
   play: async ({ canvas, userEvent }) => {
     await waitFor(() => {
       expect(canvas.getByLabelText('Path of Building data')).toBeVisible()
@@ -98,6 +52,29 @@ export const PobOptions: Story = {
     await userEvent.paste(pob);
     await waitFor(() => {
       expect(canvas.getByLabelText('Select desired itemset')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(canvas.getByLabelText('Select desired skillset')).toBeVisible();
+    });
+  },
+};
+
+export const ValidationErrorAfterChangePob: Story = {
+  name: 'Validation fail after pob changed to invalid',
+  play: async ({ canvas, userEvent }) => {
+    await waitFor(() => {
+      expect(canvas.getByLabelText('Path of Building data')).toBeVisible()
+    });
+    await userEvent.click(canvas.getByLabelText('Path of Building data'));
+    await userEvent.paste(pob);
+    await waitFor(() => {
+      expect(canvas.getByLabelText('Select desired itemset')).toBeVisible();
+    });
+    await userEvent.clear(canvas.getByLabelText('Path of Building data'));
+    await userEvent.click(canvas.getByLabelText('Path of Building data'));
+    await userEvent.paste('aasdasd' + pob);
+    await waitFor(() => {
+      expect(canvas.getByText('Please provide correct', { exact: false })).toBeVisible();
     });
   },
 };

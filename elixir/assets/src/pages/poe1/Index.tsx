@@ -29,15 +29,18 @@ export const Index = () => {
     ],
     validate: {
       pobData: (d) => {
+        // if (d.length === 0) {
+        //   return 'Should not be empty';
+        // }
         // FIXME: validates only on first time
         try {
           console.log('check')
           get_pob_itemsets(d);
           return null;
         } catch (e) {
-          console.log(e);
+          console.log('error', e);
           // @ts-expect-error unknown exception from wasm
-          console.log(e.stack);
+          console.log('error stack', e.stack);
           return 'Please provide correct path of building encoded in base64 (typically provided at export menu or in code blocks)';
         }
       }
@@ -45,15 +48,20 @@ export const Index = () => {
   });
 
   form.watch('pobData', ({ value }) => {
-    setParsing(true);
-    const itemsets = get_pob_itemsets(value);
-    setItemsets(itemsets);
-    form.setFieldValue('itemset', itemsets[0]);
-    const skillsets = get_pob_skillsets(value);
-    setSkillsets(skillsets);
-    form.setFieldValue('skillset', skillsets[0]);
-    setParsing(false);
-    form.isValid();
+    try {
+      setParsing(true);
+      const itemsets = get_pob_itemsets(value);
+      setItemsets(itemsets);
+      form.setFieldValue('itemset', itemsets[0]);
+      const skillsets = get_pob_skillsets(value);
+      setSkillsets(skillsets);
+      form.setFieldValue('skillset', skillsets[0]);
+      form.isValid();
+    } catch (e) {
+      console.log('caught smth i shouldnt', e);
+    } finally {
+      setParsing(false);
+    }
   });
 
   const onSubmit = async (values: typeof form.values) => {
@@ -112,7 +120,7 @@ export const Index = () => {
               {...form.getInputProps('skillset')}
             />}
             <Flex justify="center">
-              <Button type="submit" disabled={form.isValid()}>Proceed</Button>
+              <Button type="submit">Proceed</Button>
             </Flex>
           </form>
         </>}

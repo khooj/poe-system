@@ -11,7 +11,7 @@ import { SWRConfig, mutate } from 'swr';
 
 initialize({
   // onUnhandledRequest: 'bypass',
-  // quiet: true,
+  quiet: true,
 });
 
 const channel = addons.getChannel();

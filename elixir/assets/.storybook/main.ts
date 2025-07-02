@@ -1,7 +1,4 @@
 import type { StorybookConfig } from '@storybook/react-vite';
-import { searchForWorkspaceRoot } from 'vite';
-import wasm from 'vite-plugin-wasm';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 const config: StorybookConfig = {
   core: {
@@ -11,21 +8,14 @@ const config: StorybookConfig = {
     builder: '@storybook/builder-vite',
   },
   async viteFinal(config) {
-    return {
-      ...config,
-      plugins: [...(config.plugins || []), wasm(), tsconfigPaths()],
+    const { mergeConfig } = await import('vite');
+    return mergeConfig(config, {
       server: {
         fs: {
-          allow: [
-            searchForWorkspaceRoot(process.cwd()),
-            '../../rust'
-          ]
-        }
+          strict: false
+        },
       },
-      // optimizeDeps: {
-      //   exclude: ['sb-vite']
-      // }
-    }
+    })
   },
   "stories": [
     "../src/**/*.mdx",
@@ -33,7 +23,7 @@ const config: StorybookConfig = {
   ],
   "addons": [
     "@storybook/addon-docs",
-    "@storybook/addon-onboarding",
+    // "@storybook/addon-onboarding",
     "@storybook/addon-a11y",
     "@vueless/storybook-dark-mode",
     "@storybook/addon-vitest",
