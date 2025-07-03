@@ -6,5 +6,6 @@ multiService: {
     ./jaeger.nix
     ./signoz.nix
     ./openobserve.nix
+    ./pg_activity.nix
   ];
 }

@@ -2,7 +2,7 @@
   inputs,
   multiService,
   packages,
-}: {
+}: {config, ...}: {
   imports = [
     inputs.services-flake.processComposeModules.default
     (import ./flakeModules multiService)
@@ -25,6 +25,22 @@
       enable = true;
       initialEmail = "admin@admin.org";
       initialPassword = "12345678";
+    };
+    pg_activity = {
+      "pgact1_default_db" = let
+        dbName = "default_db";
+      in {
+        enable = true;
+        inherit dbName;
+        dsn = config.services.postgres.pg1.connectionURI {inherit dbName;};
+      };
+      "pgact1_khooj" = let
+        dbName = "khooj";
+      in {
+        enable = true;
+        inherit dbName;
+        dsn = config.services.postgres.pg1.connectionURI {inherit dbName;};
+      };
     };
     otel-collector."otc1" = {
       enable = true;

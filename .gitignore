@@ -15,3 +15,4 @@ slice*
 config.toml
 /result*
 erl_crash.dump
+prod.dump

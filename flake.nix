@@ -158,6 +158,7 @@
                 node2nix
                 websocat
                 npm-lockfile-fix
+                pg_activity
               ];
               nativeBuildInputs = with pkgs; [
                 pkg-config
