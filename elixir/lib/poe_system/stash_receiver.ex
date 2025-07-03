@@ -58,7 +58,7 @@ defmodule PoeSystem.StashReceiver do
 
   def handle_info(:ratelimited, state) do
     :telemetry.execute(
-      {:stash_receiver, :process_stash, :ratelimited},
+      [:stash_receiver, :process_stash, :ratelimited],
       %{value: state.interval},
       %{retry_after: false, header: true}
     )
@@ -71,7 +71,7 @@ defmodule PoeSystem.StashReceiver do
 
   def handle_info({:ratelimited, retry_after}, state) do
     :telemetry.execute(
-      {:stash_receiver, :process_stash, :ratelimited},
+      [:stash_receiver, :process_stash, :ratelimited],
       %{value: retry_after},
       %{retry_after: true, header: false}
     )

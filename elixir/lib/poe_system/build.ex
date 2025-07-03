@@ -11,7 +11,8 @@ defmodule PoeSystem.Build do
 
   schema "builds" do
     field :id, Ecto.UUID, primary_key: true
-    field :data, :map
+    field :provided, :map
+    field :found, :map
     field :processed, :boolean, default: false
     field :itemset, :string
     field :skillset, :string
@@ -29,23 +30,8 @@ defmodule PoeSystem.Build do
   @spec changeset(Build.t(), map()) :: Ecto.Changeset.t()
   def changeset(build_info, attrs \\ %{}) do
     build_info
-    |> cast(attrs, [:id, :processed, :data, :itemset, :skillset, :pob, :fixed])
-    |> validate_required([:id, :data, :itemset, :skillset, :pob])
-  end
-
-  @spec add_build_changeset(String.t(), BuildInfo.t()) :: Ecto.Changeset.t()
-  def add_build_changeset(id, data) do
-    changeset(%__MODULE__{}, %{
-      id: id,
-      data: data
-    })
-  end
-
-  @spec add_build(String.t(), BuildInfo.t()) ::
-          {:ok, Build.t()} | {:error, Ecto.Changeset.t()}
-  def add_build(id, data) do
-    add_build_changeset(id, data)
-    |> Repo.insert()
+    |> cast(attrs, [:id, :processed, :provided, :found, :itemset, :skillset, :pob, :fixed])
+    |> validate_required([:id, :provided, :itemset, :skillset, :pob])
   end
 
   @spec get_build(Ecto.UUID.t()) :: Build.t() | nil
@@ -53,15 +39,13 @@ defmodule PoeSystem.Build do
     Repo.get(__MODULE__, id)
   end
 
-  @spec get_ids() :: [String.t()]
-  def get_ids() do
-    Repo.all(from b in __MODULE__, select: [b.id])
-    |> Enum.flat_map(& &1)
+  @spec get_provided(Ecto.UUID.t()) :: map()
+  def get_provided(id) do
+    Repo.one!(from b in __MODULE__, where: b.id == ^id, select: b.provided)
   end
 
-  @spec update_build(Build.t(), map()) :: {:ok, Build.t()} | {:error, Ecto.Changeset.t()}
-  def update_build(build, attrs) do
-    changeset(build, attrs)
-    |> Repo.update()
+  @spec get_found(Ecto.UUID.t()) :: map() | nil
+  def get_found(id) do
+    Repo.one(from b in __MODULE__, where: b.id == ^id, select: b.found)
   end
 end

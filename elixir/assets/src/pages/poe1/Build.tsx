@@ -8,7 +8,7 @@ import { Price } from '@bindings/domain/bindings/Price';
 import useSSE from '../../utils/useSSE.ts';
 import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { Container, Flex, Grid, Group } from '@mantine/core';
+import { Container, Flex, Grid, Group, Loader } from '@mantine/core';
 import Routes from '@routes.js';
 
 export type RenderConfigProps = {
@@ -39,7 +39,7 @@ export const RenderConfig = ({ cf }: RenderConfigProps) => {
 export type Props = {
   id: string,
   provided: BuildItemsWithConfig,
-  found: FoundBuildItems,
+  found: FoundBuildItems | null,
   processed: boolean,
 }
 
@@ -115,7 +115,7 @@ export const Build = ({ id, provided, found, processed }: Props) => {
     }
   };
 
-  const cost: { [x: string]: number } = Object.entries(found).flatMap(it => it[1]).filter(it => !!it)
+  const cost: { [x: string]: number } = Object.entries(found || {}).flatMap(it => it[1]).filter(it => !!it)
     .reduce((acc, prev) => {
       const { name, value } = priceCurrency(prev.price);
       acc[name] = (acc[name] ?? 0) + value;
@@ -130,7 +130,13 @@ export const Build = ({ id, provided, found, processed }: Props) => {
         <Flex direction='column'>
           <Grid columns={2}>
             <Grid.Col span={1}><Group>Provided</Group></Grid.Col>
-            <Grid.Col span={1}><Group>{processed && `Found (with cost: ${costString})` || "Build not processed, please return later"}</Group></Grid.Col>
+            <Grid.Col span={1}>
+              <Group>{processed && `Found (with cost: ${costString})` || <Group>
+                <Loader />
+                <span>Processing, page should reload automatically</span>
+              </Group>}
+              </Group>
+            </Grid.Col>
             {itemsOrder.map(k => <>
               <Grid.Col span={1}>{renderProvided(k)}</Grid.Col>
               <Grid.Col span={1}>{processed && renderFound(k)}</Grid.Col>

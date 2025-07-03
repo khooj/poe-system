@@ -28,14 +28,15 @@ defmodule PoeSystem.BuildProcessing do
   @telemetria level: :info, group: :poe1_build_processing
   def perform(%Oban.Job{args: %{"id" => id} = _args}) do
     build = Build.get_build(id)
-    build_data = process_single_build(build.data)
+    build_found = process_single_build(build.provided)
 
-    build_attrs =
-      %{}
-      |> Map.put(:processed, true)
-      |> Map.put(:data, build_data)
+    {:ok, _} =
+      Build.changeset(build, %{
+        processed: true,
+        found: build_found
+      })
+      |> Repo.update()
 
-    {:ok, _} = Build.update_build(build, build_attrs)
     PubSub.broadcast!(PoeSystem.PubSub, "build:#{id}", {PoeSystem.PubSub, "done"})
     Logger.debug("end processing")
 
@@ -47,15 +48,12 @@ defmodule PoeSystem.BuildProcessing do
     5
   end
 
-  @spec process_single_build(BuildInfo.t()) :: BuildInfo.t()
+  @spec process_single_build(BuildInfo.t()) :: map()
   @telemetria level: :info, group: :poe1_build_processing
-  def process_single_build(build) do
-    found =
-      build["provided"]
-      |> Enum.map(fn {k, v} -> {k, process_entry(v)} end)
-      |> Enum.into(%{})
-
-    put_in(build["found"], found)
+  def process_single_build(provided) do
+    provided
+    |> Enum.map(fn {k, v} -> {k, process_entry(v)} end)
+    |> Enum.into(%{})
   end
 
   @spec process_entry(nil) :: nil

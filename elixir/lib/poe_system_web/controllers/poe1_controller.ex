@@ -2,7 +2,9 @@ defmodule PoeSystemWeb.Poe1Controller do
   alias Ecto.UUID
   alias PoeSystem.BuildProcessing
   alias PoeSystem.Build
+  alias PoeSystem.Repo
   alias Ecto.Multi
+  import Ecto.Query
   alias PoeSystem.RateLimit
   use PoeSystemWeb, :controller
   use Telemetria
@@ -40,7 +42,7 @@ defmodule PoeSystemWeb.Poe1Controller do
             :bi,
             Build.changeset(%Build{}, %{
               id: UUID.bingenerate(),
-              data: config,
+              provided: config["provided"],
               itemset: itemset,
               skillset: skillset,
               pob: pob_data,
@@ -73,12 +75,16 @@ defmodule PoeSystemWeb.Poe1Controller do
   end
 
   def get_build(conn, %{"id" => id}) do
-    case Build.get_build(id) do
+    build =
+      Repo.one(
+        from b in Build, where: b.id == ^id, select: %{fixed: b.fixed, processed: b.processed}
+      )
+
+    case build do
       %{fixed: true} = data ->
         conn
-        # TODO: maybe use partial reload?
-        |> assign_prop(:provided, data.data["provided"])
-        |> assign_prop(:found, data.data["found"])
+        |> assign_prop(:provided, fn -> Build.get_provided(id) end)
+        |> assign_prop(:found, fn -> Build.get_found(id) end)
         |> assign_prop(:processed, data.processed)
         |> assign_prop(:id, id)
         |> render_inertia("poe1/Build")

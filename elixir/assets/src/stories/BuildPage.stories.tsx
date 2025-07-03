@@ -18,3 +18,12 @@ export const Primary: Story = {
     processed: true
   },
 };
+
+export const Processing: Story = {
+  args: {
+    id: "test id",
+    found: null,
+    provided: build_data.data.provided,
+    processed: false
+  },
+};
