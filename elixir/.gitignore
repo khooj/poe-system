@@ -40,5 +40,4 @@ npm-debug.log
 # Rust binary artifacts
 /target/
 
-/priv/native/
 .env.local

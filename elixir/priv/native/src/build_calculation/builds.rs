@@ -1,8 +1,3 @@
-pub mod comparison;
-pub mod mod_config;
-pub mod required_item;
-pub mod stored_item;
-
 use mod_config::ModConfig;
 use required_item::{Mod, RequiredItem};
 use serde::{Deserialize, Serialize};

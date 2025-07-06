@@ -77,7 +77,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
 config :poe_system,
   dev_routes: true,
   additional_processes: [
-    {Routes.Watcher, []}
+    # {Routes.Watcher, []}
   ]
 
 # Do not include metadata nor timestamps in development logs
