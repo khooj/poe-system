@@ -48,13 +48,14 @@ defmodule PoeSystem.Testdata do
 
   def insert_build do
     {itemset, skillset} = config_info()
+    cfg = extract_config()
 
     Build.changeset(%Build{}, %{
       id: UUID.bingenerate(),
       itemset: itemset,
       skillset: skillset,
       pob: pobdata_file(),
-      data: extract_config()
+      provided: cfg["provided"]
     })
     |> Repo.insert!()
   end

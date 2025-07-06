@@ -20,7 +20,7 @@ defmodule PoeSystemWeb.SseControllerTest do
   end
 
   test "subscribe failure to incorrect or not allowed topic", %{conn: conn} do
-    conn = post(conn, ~p"/poe1/sse", topics: "invalid-topic")
+    conn = post(conn, ~p"/sse", topics: "invalid-topic")
     assert response(conn, 400)
   end
 end

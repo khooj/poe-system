@@ -265,4 +265,15 @@ defmodule PoeSystem.StashReceiverTest do
     long_interval = opts.long_interval
     assert_received {:ratelimited, ^long_interval}
   end
+
+  test "401", %{opts: opts} do
+    Req.Test.stub(PoeSystem.StashReceiver, fn conn ->
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_limit_headers()
+      |> send_resp(401, "Unauthorized")
+    end)
+
+    catch_exit(StashReceiver.handle_info(:cycle, opts))
+  end
 end

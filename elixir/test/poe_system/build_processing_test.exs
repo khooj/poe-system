@@ -33,7 +33,7 @@ defmodule PoeSystem.BuildProcessingTest do
     end
 
     test "w/ items", %{build: build} do
-      assert BuildProcessing.process_single_build(build)
+      assert BuildProcessing.process_single_build(build["provided"])
     end
 
     # TODO: ensure that testdata have required items

@@ -1,12 +1,12 @@
 defmodule PoeSystem.StashReceiver do
   use GenServer
   require Logger
-  alias PoeSystem.{Repo, LatestStash, Stash, RateLimit, RateLimitParser}
+  alias PoeSystem.{Repo, LatestStash, Stash}
   alias PoeSystem.Items.Item
   alias PoeSystem.Items
   import Ecto.Query
   alias Ecto.Multi
-  alias PoeSystem.StashReceiver.Client
+  alias PoeSystem.StashReceiver.{Client, Limits}
   alias RustPoe.Native
   alias Req.Response
 
@@ -39,7 +39,7 @@ defmodule PoeSystem.StashReceiver do
 
   @impl true
   def handle_info(:cycle, state) do
-    if ratelimit_allowed?(state) do
+    if Limits.ratelimit_allowed?(state) do
       ls =
         case Repo.one(from LatestStash, select: [:id]) do
           nil -> nil
@@ -48,7 +48,7 @@ defmodule PoeSystem.StashReceiver do
 
       resp = Client.get_stash_data(ls, state)
       process_stash(resp, ls, state)
-      limits = parse_and_set_ratelimits(resp)
+      limits = Limits.parse_and_set_ratelimits(resp)
       {:noreply, Map.put(state, :limits, limits)}
     else
       send(self(), :ratelimited)
@@ -93,6 +93,10 @@ defmodule PoeSystem.StashReceiver do
     send(self(), {:ratelimited, retry_after})
   end
 
+  defp process_stash(%Response{status: 401}, _, _) do
+    exit(:shutdown)
+  end
+
   defp process_stash(%Response{status: status}, _, state) when status != 200 do
     send(self(), {:ratelimited, state.long_interval})
   end
@@ -108,81 +112,6 @@ defmodule PoeSystem.StashReceiver do
     )
 
     Process.send_after(self(), :cycle, state.interval)
-  end
-
-  defp parse_and_set_ratelimits(resp) do
-    %{
-      "x-rate-limit-policy" => policy,
-      "x-rate-limit-rules" => rules
-    } = resp.headers
-
-    policy = List.first(policy)
-
-    rules =
-      String.split(Enum.join(rules, ","), ",")
-      |> Enum.map(&String.downcase/1)
-
-    for rule <- rules do
-      rules_header = "x-rate-limit-#{rule}"
-      rules_state_header = "x-rate-limit-#{rule}-state"
-
-      %{
-        ^rules_header => limit,
-        ^rules_state_header => limit_state
-      } = resp.headers
-
-      {
-        :ok,
-        limits,
-        _,
-        _,
-        _,
-        _
-      } = RateLimitParser.limits(Enum.join(limit, ","))
-
-      {
-        :ok,
-        limits_states,
-        _,
-        _,
-        _,
-        _
-      } = RateLimitParser.limits(Enum.join(limit_state, ","))
-
-      limits_states
-      |> Enum.with_index()
-      |> Enum.map(fn {ls, idx} -> set_ratelimit_state(policy, rule, idx, ls) end)
-
-      limits
-      |> Enum.with_index()
-      |> Enum.map(fn {[req, sec, _], idx} ->
-        {ratelimit_key(policy, rule, idx), req, sec}
-      end)
-    end
-    |> Enum.flat_map(fn x -> x end)
-  end
-
-  defp ratelimit_key(policy, rule, idx) do
-    "#{policy}_#{rule}_#{idx}"
-  end
-
-  defp set_ratelimit_state(policy, rule, idx, [req, sec, _penalty]) do
-    RateLimit.set(ratelimit_key(policy, rule, idx), :timer.seconds(sec), req)
-  end
-
-  defp ratelimit_allowed?(state)
-
-  defp ratelimit_allowed?(%{limits: limits}) do
-    # just check limit because currect state sent by api and applied already
-    for {key, req, sec} <- limits do
-      count = RateLimit.get(key, :timer.seconds(sec))
-      count < req
-    end
-    |> Enum.all?()
-  end
-
-  defp ratelimit_allowed?(%{}) do
-    true
   end
 
   defp insert_stash_data(%Response{} = public_stash_resp, ls, allowed_leagues) do
