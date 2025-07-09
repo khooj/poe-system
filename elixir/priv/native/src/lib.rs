@@ -1,5 +1,6 @@
 use std::{collections::HashMap, error::Error as StdError};
 
+use build_calculation::build_import_pob::ImportPobError;
 use rustler::{Encoder, Env, Error, SerdeTerm, Term};
 use serde_json::Value;
 use serde_path_to_error::Path;
@@ -30,7 +31,7 @@ pub enum RustError {
     #[error("serde_json error path: {0}: {2} (data: {1})")]
     SerdeJsonPath(Path, String, Box<dyn StdError>),
     #[error("import build from pob: {0}")]
-    ImportPob(#[from] pob::build_import_pob::ImportPobError),
+    ImportPob(#[from] ImportPobError),
     #[error("import pob from pastebin: {0}")]
     ImportPastebin(#[from] pob::PobError),
     #[error("convert u8 to string error: {0}")]

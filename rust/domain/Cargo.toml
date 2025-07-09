@@ -9,7 +9,7 @@ edition = "2021"
 itertools = { version = "0.14.0" }
 serde = { version = "1", features = ["derive"] }
 strsim = { version = "0.11", default-features = false }
-strum = { version = "0.26", features = ["derive"] }
+strum = { version = "0.27", features = ["derive"] }
 thiserror = "2"
 macros = { path = "../macros" }
 lazy_static = "1.5.0"
@@ -22,7 +22,7 @@ bincode = "1.3.3"
 clap = { version = "4.5.27", features = ["derive"] }
 anyhow = "1"
 dashmap = "6.1.0"
-ts-rs = "10.1.0"
+ts-rs = "11.0.1"
 tracing = "0.1.41"
 
 [dev-dependencies]

@@ -1,29 +1,27 @@
-use crate::{ItemSet, Pob, SkillSet};
+use domain::item::{
+    types::{Category, Subcategory},
+    Item as DomainItem,
+};
+use pob::{ItemSet, Pob, PobError, SkillSet};
 
-use domain::{
-    build_calculation::{
-        required_item::{RequiredItem, RequiredItemError},
-        BuildInfo, BuildItemsWithConfig, ItemWithConfig,
-    },
-    item::{
-        types::{Category, Subcategory},
-        Item,
-    },
+use super::{
+    builds::BuildItems,
+    item::{Item, ItemError},
 };
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImportPobError {
     #[error("pob error: {0}")]
-    Pob(#[from] crate::PobError),
-    #[error("domain item convert to required item error: {0}")]
-    Convert(#[from] RequiredItemError),
+    Pob(#[from] PobError),
+    #[error("domain item convert to app item error: {0}")]
+    Convert(#[from] ItemError),
 }
 
 pub fn import_build_from_pob<T: AsRef<str>>(
     pob: &Pob,
     itemset: T,
     skillset: T,
-) -> Result<BuildInfo, ImportPobError> {
+) -> Result<BuildItems, ImportPobError> {
     let doc = pob.as_document()?;
     let itemset = doc.get_itemset(itemset.as_ref())?;
     let skillset = doc
@@ -35,28 +33,26 @@ pub fn import_build_from_pob<T: AsRef<str>>(
     import(itemset, skillset)
 }
 
-pub fn import_build_from_pob_first_itemset(pob: &Pob) -> Result<BuildInfo, ImportPobError> {
+pub fn import_build_from_pob_first_itemset(pob: &Pob) -> Result<BuildItems, ImportPobError> {
     let doc = pob.as_document()?;
     let itemset = doc.get_first_itemset()?;
     let skillset = doc.get_skillsets().first().unwrap().clone();
     import(itemset, skillset)
 }
 
-fn fill(prov_item: &mut ItemWithConfig, it: &Item) -> Result<(), ImportPobError> {
-    *prov_item = ItemWithConfig {
-        item: RequiredItem::try_from(it.clone())?,
-    };
+fn fill(prov_item: &mut Option<Item>, it: &DomainItem) -> Result<(), ImportPobError> {
+    *prov_item = Some(Item::try_from(it.clone())?);
     Ok(())
 }
 
-fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobError> {
-    let mut builditems = BuildItemsWithConfig::default();
+fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildItems, ImportPobError> {
+    let mut builditems = BuildItems::default();
     for it in itemset.items() {
         match it.subcategories {
             Subcategory::Helmets => fill(&mut builditems.helmet, it)?,
             Subcategory::BodyArmour => fill(&mut builditems.body, it)?,
             Subcategory::Ring => {
-                if builditems.ring1 == ItemWithConfig::default() {
+                if builditems.ring1.is_none() {
                     fill(&mut builditems.ring1, it)?
                 } else {
                     fill(&mut builditems.ring2, it)?
@@ -67,7 +63,7 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
             Subcategory::Boots => fill(&mut builditems.boots, it)?,
             Subcategory::Shield => fill(&mut builditems.weapon2, it)?,
             Subcategory::Weapon => {
-                if builditems.weapon1 == ItemWithConfig::default() {
+                if builditems.weapon1.is_none() {
                     fill(&mut builditems.weapon1, it)?
                 } else {
                     fill(&mut builditems.weapon2, it)?
@@ -79,14 +75,20 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
 
         match it.category {
             Category::Flasks => {
-                let mut ic = ItemWithConfig::default();
+                let mut ic = None;
                 fill(&mut ic, it)?;
-                builditems.flasks.push(ic);
+                if builditems.flasks.is_none() {
+                    builditems.flasks = Some(vec![]);
+                }
+                builditems.flasks.as_mut().unwrap().push(ic.unwrap());
             }
             Category::Jewels => {
-                let mut ic = ItemWithConfig::default();
+                let mut ic = None;
                 fill(&mut ic, it)?;
-                builditems.jewels.push(ic);
+                if builditems.jewels.is_none() {
+                    builditems.jewels = Some(vec![]);
+                }
+                builditems.jewels.as_mut().unwrap().push(ic.unwrap());
             }
             _ => {}
         }
@@ -96,23 +98,22 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
         .gems()
         .into_iter()
         .map(|it| {
-            let mut ic = ItemWithConfig::default();
+            let mut ic = None;
             fill(&mut ic, &it).unwrap();
             ic
         })
         .collect();
 
-    Ok(BuildInfo {
-        provided: builditems,
-        ..Default::default()
-    })
+    Ok(builditems)
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::build_calculation::item::ItemInfo;
+
     use super::import_build_from_pob_first_itemset;
-    use crate::Pob;
-    use domain::build_calculation::required_item::ItemInfo;
+    use pob::Pob;
+    // use ::build_calculation::required_item::ItemInfo;
 
     const POB: &str = include_str!("pob.xml");
 
@@ -126,9 +127,9 @@ mod tests {
             .find(|it| it.name == "Cataclysm Mark")
             .unwrap();
         let buildinfo = import_build_from_pob_first_itemset(&pob)?;
-        assert_ne!(buildinfo.provided.weapon1.item.info, ItemInfo::default(),);
+        assert!(!buildinfo.weapon1.is_none());
 
-        match buildinfo.provided.weapon1.item.info {
+        match buildinfo.weapon1.as_ref().unwrap().info {
             ItemInfo::Weapon { quality, .. } => {
                 assert_eq!(quality, 20);
             }
@@ -138,7 +139,7 @@ mod tests {
         }
 
         println!("{:?}", weapon);
-        println!("{:?}", buildinfo.provided.weapon1);
+        println!("{:?}", buildinfo.weapon1);
         Ok(())
     }
 }

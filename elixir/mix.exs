@@ -92,7 +92,8 @@ defmodule PoeSystem.MixProject do
       {:broadway, "~> 1.2"},
       {:flow, "~> 1.2"},
       {:nimble_options, "~> 1.1"},
-      {:nimble_parsec, "~> 1.4"}
+      {:nimble_parsec, "~> 1.4"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 

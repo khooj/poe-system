@@ -1,11 +1,7 @@
-use crate::{
-    data::ModValue as DataModValue,
-    item::{
-        types::{Category, Mod as DomainMod, ModValue, Subcategory, SubcategoryError, TypeError},
-        Item,
-    },
+use domain::item::{
+    types::{Category, Mod as DomainMod, Subcategory, SubcategoryError, TypeError},
+    Item as DomainItem,
 };
-use regex::bytes::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
@@ -25,12 +21,9 @@ pub struct Property {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
-#[ts(export, rename = "StoredMod")]
 pub struct Mod {
     pub stat_id: String,
     pub text: String,
-    pub current_value_int: Option<(i32, Option<i32>)>,
-    pub current_value_float: Option<(f32, Option<f32>)>,
 }
 
 impl From<DomainMod> for Mod {
@@ -38,34 +31,13 @@ impl From<DomainMod> for Mod {
         Mod {
             stat_id: value.stat_id,
             text: value.text,
-            current_value_int: match value.numeric_value {
-                ModValue::Exact(DataModValue::Int(i)) => Some((i, None)),
-                ModValue::DoubleExact {
-                    from: DataModValue::Int(a),
-                    to: DataModValue::Int(b),
-                } => Some((a, Some(b))),
-                _ => None,
-            },
-            current_value_float: match value.numeric_value {
-                ModValue::Exact(DataModValue::Float(i)) => Some((i, None)),
-                ModValue::DoubleExact {
-                    from: DataModValue::Float(a),
-                    to: DataModValue::Float(b),
-                } => Some((a, Some(b))),
-                _ => None,
-            },
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
 #[serde(tag = "type")]
-#[ts(export, rename = "StoredItemInfo")]
 pub enum ItemInfo {
-    Gem {
-        level: u8,
-        quality: u8,
-    },
     Armor {
         quality: u8,
         mods: Vec<Mod>,
@@ -89,15 +61,6 @@ pub enum ItemInfo {
     },
 }
 
-impl Default for ItemInfo {
-    fn default() -> Self {
-        ItemInfo::Gem {
-            level: 0,
-            quality: 0,
-        }
-    }
-}
-
 impl ItemInfo {
     pub fn mod_ids(&self) -> Vec<&str> {
         match self {
@@ -106,7 +69,6 @@ impl ItemInfo {
             ItemInfo::Jewel { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
             ItemInfo::Flask { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
             ItemInfo::Accessory { mods, .. } => mods.iter().map(|m| m.stat_id.as_str()).collect(),
-            ItemInfo::Gem { .. } => panic!("gems have no mods"),
         }
     }
 
@@ -114,7 +76,6 @@ impl ItemInfo {
         match self {
             ItemInfo::Weapon { mods, .. } => &mods[..],
             ItemInfo::Armor { mods, .. } => &mods[..],
-            ItemInfo::Gem { .. } => &[],
             ItemInfo::Flask { mods, .. } => &mods[..],
             ItemInfo::Jewel { mods, .. } => &mods[..],
             ItemInfo::Accessory { mods, .. } => &mods[..],
@@ -125,7 +86,6 @@ impl ItemInfo {
         Some(match self {
             ItemInfo::Weapon { mods, .. } => mods,
             ItemInfo::Armor { mods, .. } => mods,
-            ItemInfo::Gem { .. } => return None,
             ItemInfo::Flask { mods, .. } => mods,
             ItemInfo::Jewel { mods, .. } => mods,
             ItemInfo::Accessory { mods, .. } => mods,
@@ -157,24 +117,24 @@ impl Price {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, TS, PartialEq)]
 #[ts(export)]
-pub struct StoredItem {
+pub struct Item {
     pub id: String,
     pub basetype: String,
     pub category: Category,
     pub subcategory: Subcategory,
     pub info: ItemInfo,
     pub name: String,
-    pub price: Price,
+    pub price: Option<Price>,
     pub rarity: String,
 }
 
 lazy_static::lazy_static! {
-    static ref PRICE_REGEX: regex::bytes::Regex = Regex::new(r#"~(price|b/o) ([0-9\.]+) ([a-z]+)"#).unwrap();
+    static ref PRICE_REGEX: regex::bytes::Regex = regex::bytes::Regex::new(r#"~(price|b/o) ([0-9\.]+) ([a-z]+)"#).unwrap();
 }
 
-impl StoredItem {
+impl Item {
     fn extract_price(s: &str) -> Option<Price> {
         let c = PRICE_REGEX.captures(s.as_bytes())?;
         let count = c.get(2)?;
@@ -191,7 +151,7 @@ impl StoredItem {
 }
 
 #[derive(Error, Debug)]
-pub enum StoredItemError {
+pub enum ItemError {
     #[error("unknown item: {0}")]
     Unknown(String),
     #[error("unknown category: {0}")]
@@ -200,9 +160,9 @@ pub enum StoredItemError {
     UnknownSubcategory(#[from] SubcategoryError),
 }
 
-impl TryFrom<Item> for StoredItem {
-    type Error = StoredItemError;
-    fn try_from(value: Item) -> core::result::Result<Self, Self::Error> {
+impl TryFrom<DomainItem> for Item {
+    type Error = ItemError;
+    fn try_from(value: DomainItem) -> core::result::Result<Self, Self::Error> {
         let cat = value.category;
         if ![
             Category::Weapons,
@@ -214,7 +174,7 @@ impl TryFrom<Item> for StoredItem {
         ]
         .contains(&cat)
         {
-            return Err(StoredItemError::Unknown(format!(
+            return Err(ItemError::Unknown(format!(
                 "at category check: {} {}",
                 value.name, value.base_type
             )));
@@ -240,10 +200,7 @@ impl TryFrom<Item> for StoredItem {
                 }
             })
             .unwrap_or_default();
-        let price = value
-            .note
-            .and_then(|s| StoredItem::extract_price(&s))
-            .unwrap_or_default();
+        let price = value.note.and_then(|s| Item::extract_price(&s));
         let info = match cat {
             t @ (Category::Weapons | Category::Armour) => {
                 let properties = props
@@ -275,24 +232,13 @@ impl TryFrom<Item> for StoredItem {
                     }
                 })
             }
-            Category::Gems => {
-                let level = props
-                    .iter()
-                    .find(|p| p.name == "Level")
-                    .map(|q| q.value.clone().unwrap())
-                    .unwrap_or("0".to_string())
-                    .parse::<u8>()
-                    .unwrap_or(0);
-
-                Some(ItemInfo::Gem { level, quality })
-            }
             Category::Flasks => Some(ItemInfo::Flask { quality, mods }),
             Category::Jewels => Some(ItemInfo::Jewel { mods }),
             Category::Accessories => Some(ItemInfo::Accessory { quality, mods }),
             _ => None,
         };
-        Ok(StoredItem {
-            info: info.ok_or(StoredItemError::Unknown(format!(
+        Ok(Item {
+            info: info.ok_or(ItemError::Unknown(format!(
                 "at info: {} {}",
                 value.name, basetype
             )))?,
@@ -315,27 +261,24 @@ mod tests {
     fn extract_price() {
         assert_eq!(
             Some(Price::Chaos(10)),
-            StoredItem::extract_price("~price 10 chaos")
+            Item::extract_price("~price 10 chaos")
         );
+        assert_eq!(Some(Price::Chaos(10)), Item::extract_price("~b/o 10 chaos"));
         assert_eq!(
-            Some(Price::Chaos(10)),
-            StoredItem::extract_price("~b/o 10 chaos")
+            Some(Price::Divine(10)),
+            Item::extract_price("~b/o 10 divine")
         );
         assert_eq!(
             Some(Price::Divine(10)),
-            StoredItem::extract_price("~b/o 10 divine")
+            Item::extract_price("~b/o 10 divine custom text")
         );
         assert_eq!(
             Some(Price::Divine(10)),
-            StoredItem::extract_price("~b/o 10 divine custom text")
-        );
-        assert_eq!(
-            Some(Price::Divine(10)),
-            StoredItem::extract_price("~b/o 10.99 divine custom text")
+            Item::extract_price("~b/o 10.99 divine custom text")
         );
         assert_eq!(
             Some(Price::Custom("alt".to_string(), 10)),
-            StoredItem::extract_price("~b/o 10.99 alt custom text")
+            Item::extract_price("~b/o 10.99 alt custom text")
         );
     }
 }

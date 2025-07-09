@@ -16,3 +16,4 @@ config.toml
 /result*
 erl_crash.dump
 prod.dump
+.elixir-tools
