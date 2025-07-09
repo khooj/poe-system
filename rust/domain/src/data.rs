@@ -118,6 +118,7 @@ struct ModTmp {
     text: Option<String>,
     domain: String,
     stats: Vec<ModStatsTmp>,
+    implicit_tags: Vec<String>,
 }
 
 #[derive(Debug, serde::Deserialize, Clone)]
@@ -130,16 +131,23 @@ struct ModStatsTmp {
 )]
 pub struct Id(String);
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
-pub enum ModType {
-    Variants(HashSet<Id>),
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Default)]
+pub struct ModType {
+    pub variants: HashSet<Id>,
+    pub tags: Vec<String>,
 }
 
 impl ModType {
     pub fn get_id(&self) -> String {
-        match self {
-            ModType::Variants(hm) => hm.iter().nth(0).map(|v| v.0.clone()).unwrap_or_default(),
-        }
+        self.variants
+            .iter()
+            .nth(0)
+            .map(|v| v.0.clone())
+            .unwrap_or_default()
+    }
+
+    pub fn get_tags(&self) -> &[String] {
+        &self.tags
     }
 }
 
@@ -248,9 +256,12 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
 
                 mods.push((
                     key,
-                    ModType::Variants(hashset! {
-                        Id(id)
-                    }),
+                    ModType {
+                        variants: hashset! {
+                            Id(id)
+                        },
+                        tags: m.implicit_tags.clone(),
+                    },
                 ));
                 continue;
             }
@@ -267,9 +278,12 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
                 });
                 mods.push((
                     key,
-                    ModType::Variants(hashset! {
-                        Id(stat.id.clone())
-                    }),
+                    ModType {
+                        variants: hashset! {
+                            Id(stat.id.clone())
+                        },
+                        tags: m.implicit_tags.clone(),
+                    },
                 ));
                 prev_stat_count1 = Some(stat);
             } else if capture_groups_count == 2 {
@@ -277,10 +291,13 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
                 let stat2 = stats.next().unwrap();
                 mods.push((
                     key,
-                    ModType::Variants(hashset! {
-                        Id(stat1.id),
-                        Id(stat2.id)
-                    }),
+                    ModType {
+                        variants: hashset! {
+                            Id(stat1.id),
+                            Id(stat2.id)
+                        },
+                        tags: m.implicit_tags.clone(),
+                    },
                 ));
             } else {
                 panic!("unknown mod: {} = {:?}", stat_name, m.stats);
@@ -289,14 +306,9 @@ pub fn prepare_data(mods_file: &[u8]) -> SerializedModData {
 
         for (key, modinfo) in mods {
             let _regex = Regex::new(&key).unwrap();
-            let en = acc.entry(key).or_insert(ModType::Variants(HashSet::new()));
-            match modinfo {
-                ModType::Variants(hm) => match en {
-                    ModType::Variants(hm2) => {
-                        hm2.extend(hm.into_iter());
-                    }
-                },
-            };
+            let en = acc.entry(key).or_insert(ModType::default());
+            en.variants.extend(modinfo.variants.into_iter());
+            en.tags = modinfo.tags;
         }
 
         acc
@@ -376,24 +388,18 @@ pub struct ModExtractor<'a> {
 
 impl ModExtractor<'_> {
     pub fn extract_values(&self, value: &str) -> (Option<ModValue>, Option<ModValue>) {
-        match self.m {
-            ModType::Variants(_) => {
-                if let Some((num, num2)) = self
-                    .re
-                    .captures(value.as_bytes())
-                    .map(|c| (c.get(1), c.get(2)))
-                {
-                    let num = num.and_then(|v| {
-                        ModValue::from_str(std::str::from_utf8(v.as_bytes()).unwrap()).ok()
-                    });
-                    let num2 = num2.and_then(|v| {
-                        ModValue::from_str(std::str::from_utf8(v.as_bytes()).unwrap()).ok()
-                    });
-                    (num, num2)
-                } else {
-                    (None, None)
-                }
-            }
+        if let Some((num, num2)) = self
+            .re
+            .captures(value.as_bytes())
+            .map(|c| (c.get(1), c.get(2)))
+        {
+            let num = num
+                .and_then(|v| ModValue::from_str(std::str::from_utf8(v.as_bytes()).unwrap()).ok());
+            let num2 = num2
+                .and_then(|v| ModValue::from_str(std::str::from_utf8(v.as_bytes()).unwrap()).ok());
+            (num, num2)
+        } else {
+            (None, None)
         }
     }
 
@@ -449,9 +455,12 @@ mod tests {
         let (val1, val2) = ext.extract_values(m);
         assert_eq!(
             ext.mod_type(),
-            &ModType::Variants(hashset! {
-                Id("additional_strength".to_string())
-            })
+            &ModType {
+                variants: hashset! {
+                    Id("additional_strength".to_string())
+                },
+                tags: vec!["attribute".to_string()]
+            }
         );
         assert_eq!(val1, Some(ModValue::Int(22)));
         assert_eq!(val2, None);

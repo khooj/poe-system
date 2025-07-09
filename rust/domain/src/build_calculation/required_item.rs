@@ -153,6 +153,25 @@ impl ItemInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
+pub enum GemSearchItem {
+    IgnoreLevel,
+    IgnoreQuality,
+    IgnoreBoth,
+    #[default]
+    Strict,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
+pub enum SearchItem {
+    #[default]
+    None,
+    Basetype,
+    UniqueName,
+    Gem(GemSearchItem),
+    Custom,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct RequiredItem {
     pub id: String,
@@ -161,9 +180,9 @@ pub struct RequiredItem {
     pub subcategory: Subcategory,
     pub info: ItemInfo,
     pub name: String,
-    pub search_basetype: bool,
-    pub search_subcategory: bool,
     pub rarity: String,
+    #[serde(default)]
+    pub search_item: SearchItem,
 }
 
 impl RequiredItem {}
@@ -275,9 +294,8 @@ impl TryFrom<Item> for RequiredItem {
             category,
             subcategory,
             name: value.name,
-            search_basetype: false,
-            search_subcategory: false,
             rarity: value.rarity.into(),
+            ..Default::default()
         })
     }
 }

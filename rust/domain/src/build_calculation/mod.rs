@@ -4,16 +4,25 @@ pub mod required_item;
 pub mod stored_item;
 
 use mod_config::ModConfig;
-use required_item::{Mod, RequiredItem};
+use required_item::{ItemInfo, Mod, RequiredItem, SearchItem};
 use serde::{Deserialize, Serialize};
 use stored_item::StoredItem;
 use ts_rs::TS;
+
+use crate::data::MODS;
 
 #[derive(Serialize, Deserialize, Debug, Default, TS)]
 #[ts(export)]
 pub struct BuildInfo {
     pub provided: BuildItemsWithConfig,
     pub found: FoundBuildItems,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, TS)]
+#[ts(export)]
+pub enum BuildV1 {
+    #[default]
+    V1,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, TS)]
@@ -32,6 +41,7 @@ pub struct BuildItemsWithConfig {
     pub gems: Vec<ItemWithConfig>,
     pub jewels: Vec<ItemWithConfig>,
     pub amulet: ItemWithConfig,
+    pub version: BuildV1,
 }
 
 pub struct UnverifiedBuildItemsWithConfig<'a>(pub &'a mut BuildItemsWithConfig);
@@ -68,6 +78,12 @@ impl<'a> UnverifiedBuildItemsWithConfig<'a> {
 pub enum FillRules {
     AllRanges,
     AllExist,
+    // for all rares set exist every mod,
+    // uniques searched by name
+    SimpleEverything,
+    // for all rares set exist every mod except elemental resistances,
+    // uniques searched by name
+    SimpleNoRes,
 }
 
 impl BuildItemsWithConfig {
@@ -119,6 +135,10 @@ impl BuildItemsWithConfig {
         match rule {
             FillRules::AllRanges => self.fill_all(BuildItemsWithConfig::all_ranges),
             FillRules::AllExist => self.fill_all(BuildItemsWithConfig::all_exist),
+            FillRules::SimpleEverything => {
+                self.fill_all_by_items(BuildItemsWithConfig::simple_everything)
+            }
+            FillRules::SimpleNoRes => self.fill_all_by_items(BuildItemsWithConfig::simple_nores),
         }
     }
 
@@ -131,6 +151,47 @@ impl BuildItemsWithConfig {
         *cf = Some(ModConfig::Exist);
     }
 
+    fn simple_everything(item: &mut ItemWithConfig) {
+        if item.item.rarity == "unique" {
+            item.item.search_item = SearchItem::UniqueName;
+        } else {
+            for (_, cf) in item
+                .item
+                .info
+                .mut_mods()
+                .iter_mut()
+                .flat_map(|x| x.iter_mut())
+            {
+                *cf = Some(ModConfig::Exist);
+            }
+        }
+    }
+
+    fn simple_nores(item: &mut ItemWithConfig) {
+        if item.item.rarity == "unique" {
+            item.item.search_item = SearchItem::UniqueName;
+        } else {
+            for (m, cf) in item
+                .item
+                .info
+                .mut_mods()
+                .iter_mut()
+                .flat_map(|x| x.iter_mut())
+            {
+                if let Some(mt) = MODS::get_mod_data(&m.text) {
+                    let tags = mt.mod_type().get_tags();
+                    let elemental = tags.iter().any(|x| x == "elemental");
+                    let resistance = tags.iter().any(|x| x == "resistance");
+                    if !(elemental && resistance) {
+                        *cf = Some(ModConfig::Exist);
+                    } else {
+                        *cf = None;
+                    }
+                }
+            }
+        }
+    }
+
     fn fill_all<T>(&mut self, func: T)
     where
         for<'a> T: FnMut(&'a mut (Mod, Option<ModConfig>)),
@@ -139,6 +200,13 @@ impl BuildItemsWithConfig {
             .filter_map(|ic| ic.item.info.mut_mods())
             .flat_map(|m| m.iter_mut())
             .for_each(func);
+    }
+
+    fn fill_all_by_items<T>(&mut self, func: T)
+    where
+        for<'a> T: FnMut(&'a mut ItemWithConfig),
+    {
+        self.mut_iter().for_each(func);
     }
 }
 
