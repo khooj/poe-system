@@ -41,7 +41,6 @@ pub struct BuildItemsWithConfig {
     pub gems: Vec<ItemWithConfig>,
     pub jewels: Vec<ItemWithConfig>,
     pub amulet: ItemWithConfig,
-    pub version: BuildV1,
 }
 
 pub struct UnverifiedBuildItemsWithConfig<'a>(pub &'a mut BuildItemsWithConfig);
