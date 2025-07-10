@@ -65,6 +65,7 @@ defmodule PoeSystemWeb.Router do
 
     scope "/v1", as: :v1 do
       post "/extract", Poe1Controller, :extract
+      post "/profile", Poe1Controller, :set_profile
     end
   end
 

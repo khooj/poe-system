@@ -17,6 +17,12 @@ defmodule PoeSystem.RustPoe.Native.Test do
     assert validated == cfg
   end
 
+  test "fill configs by rule" do
+    cfg = Testdata.extract_config()
+    assert {:ok, cfg_filled} = RustPoe.Native.fill_configs_by_rule(cfg, "simplenores")
+    assert cfg_filled != cfg
+  end
+
   describe "closest item" do
     setup do
       Testdata.insert_items()

@@ -66,12 +66,21 @@ defmodule PoeSystemWeb.Poe1Controller do
   def extract(conn, %{
         "itemset" => itemset,
         "pobData" => pob_data,
-        "skillset" => skillset
+        "skillset" => skillset,
+        "profile" => profile
       }) do
-    {:ok, extracted_config} = RustPoe.Native.extract_build_config(pob_data, itemset, skillset)
+    {:ok, extracted_config} =
+      RustPoe.Native.extract_build_config(pob_data, itemset, skillset, profile)
 
     conn
     |> json(%{config: extracted_config})
+  end
+
+  def set_profile(conn, %{"config" => cfg, "profile" => profile}) do
+    {:ok, new_cfg} = RustPoe.Native.fill_configs_by_rule(cfg, profile)
+
+    conn
+    |> json(%{config: new_cfg})
   end
 
   def get_build(conn, %{"id" => id}) do

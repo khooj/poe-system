@@ -16,8 +16,11 @@ fn extract_build_config<'a>(
     pobdata: &'a str,
     itemset: &'a str,
     skillset: &'a str,
+    profile: &'a str,
 ) -> NifResult<Term<'a>> {
-    Ok(extract_build_config_impl(env, pobdata, itemset, skillset)?)
+    Ok(extract_build_config_impl(
+        env, pobdata, itemset, skillset, profile,
+    )?)
 }
 
 fn extract_build_config_impl<'a>(
@@ -25,10 +28,11 @@ fn extract_build_config_impl<'a>(
     pobdata: &'a str,
     itemset: &'a str,
     skillset: &'a str,
+    profile: &'a str,
 ) -> Result<Term<'a>, RustError> {
     let pob = Pob::from_pastebin_data(pobdata.to_string())?;
     let mut info = import_build_from_pob(&pob, itemset, skillset)?;
-    info.provided.fill_configs_by_rule(FillRules::AllExist);
+    info.provided.fill_configs_by_rule_s(profile);
     let term = encode_config(env, &info)?;
     Ok((atoms::ok(), SerdeTerm(term)).encode(env))
 }
@@ -77,4 +81,15 @@ fn validate_config_impl(env: Env<'_>, config: SerdeTermJson) -> Result<Term<'_>,
     #![allow(unused)]
     let user_config: BuildInfo = decode_config(config)?;
     Ok(atoms::ok().encode(env))
+}
+
+#[rustler::nif]
+fn fill_configs_by_rule<'a>(
+    env: Env<'a>,
+    config: SerdeTermJson,
+    profile: &'a str,
+) -> NifResult<Term<'a>> {
+    let mut cfg: BuildInfo = decode_config(config)?;
+    cfg.provided.fill_configs_by_rule_s(profile);
+    Ok((atoms::ok(), SerdeTerm(encode_config(env, &cfg)?)).encode(env))
 }

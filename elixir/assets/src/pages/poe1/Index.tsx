@@ -4,9 +4,18 @@ import { router } from '@inertiajs/react'
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
-import { Button, Container, Flex, Loader, NativeSelect, TextInput } from '@mantine/core';
+import { Button, Container, Flex, Loader, NativeSelect, Text, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import wasmInit, { get_pob_itemsets, get_pob_skillsets } from 'wasm';
+
+export type FillRules = 'simpleeverything' | 'simplenores';
+
+type FormValues = {
+  pobData: string,
+  itemset: string,
+  skillset: string,
+  profile: FillRules
+};
 
 export const Index = () => {
   const [itemsets, setItemsets] = useState<Array<string>>([]);
@@ -17,21 +26,19 @@ export const Index = () => {
     return ret;
   });
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
       pobData: '',
       itemset: '',
       skillset: '',
+      profile: 'simpleeverything'
     },
     validateInputOnChange: [
       'pobData',
     ],
     validate: {
       pobData: (d) => {
-        // if (d.length === 0) {
-        //   return 'Should not be empty';
-        // }
         // FIXME: validates only on first time
         try {
           console.log('check')
@@ -76,7 +83,8 @@ export const Index = () => {
           build_data: {
             data: resp.data.config,
             ...values,
-          }
+          },
+          profile: values.profile
         },
       })
     }
@@ -103,6 +111,21 @@ export const Index = () => {
               key={form.key('pobData')}
               {...form.getInputProps('pobData')}
             />
+            <NativeSelect
+              label="Select profile"
+              key={form.key('profile')}
+              {...form.getInputProps('profile')}
+            >
+              <option value='simpleeverything'>Simple</option>
+              <option value='simplenores'>Simple w/o Elemental resistances</option>
+            </NativeSelect>
+            <Text>
+              Simple profile sets predefined search options such as: <br />
+              - every unique item searched by it's name (ignoring stats) <br />
+              - every non-unique item searched by it's mods with 'exist' option <br />
+              Simple w/o elemental resistances profile sets predefined search options such as: <br />
+              - everything as in simple profile except elemental resistances on non-unique items ignored <br />
+            </Text>
             {parsing && <div>
               <span>Parsing itemsets...</span>
               <Loader />

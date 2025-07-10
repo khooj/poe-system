@@ -23,7 +23,20 @@ defmodule PoeSystemWeb.Poe1ControllerTest do
       post(conn, ~p"/api/v1/extract", %{
         "itemset" => itemset,
         "pobData" => Testdata.pobdata_file(),
-        "skillset" => skillset
+        "skillset" => skillset,
+        "profile" => "simpleeverything"
+      })
+
+    assert %{"config" => _} = json_response(conn, 200)
+  end
+
+  test "POST /profile", %{conn: conn, itemset: itemset, skillset: skillset} do
+    cfg = Testdata.extract_config()
+
+    conn =
+      post(conn, ~p"/api/v1/profile", %{
+        "config" => cfg,
+        "profile" => "simplenores"
       })
 
     assert %{"config" => _} = json_response(conn, 200)

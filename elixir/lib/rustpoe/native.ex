@@ -18,9 +18,10 @@ defmodule RustPoe.Native do
   @type nif_err :: {:error, any()}
   @type item_info :: map()
 
-  @spec extract_build_config(String.t(), String.t(), String.t()) ::
+  @spec extract_build_config(String.t(), String.t(), String.t(), String.t()) ::
           {:ok, build_preview()} | nif_err()
-  def extract_build_config(_pobxml, _itemset, _skillset), do: error()
+  def extract_build_config(_pobxml, _itemset, _skillset, _profile \\ "simpleeverything"),
+    do: error()
 
   @spec validate_and_apply_config(BuildInfo.t(), BuildInfo.t()) ::
           {:ok, BuildInfo.t()} | nif_err()
@@ -52,6 +53,9 @@ defmodule RustPoe.Native do
 
   @spec process_stash_data(String.t(), boolean()) :: {:ok, map()} | nif_err()
   def process_stash_data(_data, _without_zero_price \\ true), do: error()
+
+  @spec fill_configs_by_rule(String.t(), String.t()) :: {:ok, map()} | nif_err()
+  def fill_configs_by_rule(_data, _profile), do: error()
 
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

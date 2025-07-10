@@ -3,10 +3,13 @@ pub mod mod_config;
 pub mod required_item;
 pub mod stored_item;
 
+use std::str::FromStr;
+
 use mod_config::ModConfig;
 use required_item::{ItemInfo, Mod, RequiredItem, SearchItem};
 use serde::{Deserialize, Serialize};
 use stored_item::StoredItem;
+use strum::EnumString;
 use ts_rs::TS;
 
 use crate::data::MODS;
@@ -74,6 +77,8 @@ impl<'a> UnverifiedBuildItemsWithConfig<'a> {
     }
 }
 
+#[derive(EnumString)]
+#[strum(ascii_case_insensitive)]
 pub enum FillRules {
     AllRanges,
     AllExist,
@@ -128,6 +133,14 @@ impl BuildItemsWithConfig {
                 });
             };
         }
+    }
+
+    pub fn fill_configs_by_rule_s<T>(&mut self, rule: T)
+    where
+        T: AsRef<str>,
+    {
+        let rule = FillRules::from_str(rule.as_ref()).unwrap_or(FillRules::SimpleEverything);
+        self.fill_configs_by_rule(rule);
     }
 
     pub fn fill_configs_by_rule(&mut self, rule: FillRules) {

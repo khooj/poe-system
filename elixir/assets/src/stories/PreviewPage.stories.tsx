@@ -13,5 +13,6 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   args: {
     build_data,
+    profile: 'simplenores'
   },
 };

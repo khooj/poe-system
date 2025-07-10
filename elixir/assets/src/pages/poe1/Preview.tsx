@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createItemsStore, ItemsContext } from '@states/preview';
 import { useStore } from 'zustand';
 import { Button, Container, Flex } from '@mantine/core';
+import { FillRules } from './Index';
 
 export type BuildPreviewData = {
   itemset: string,
@@ -25,10 +26,11 @@ type InertiaFormType = {
 };
 
 export type Props = {
-  build_data: BuildPreviewData
+  build_data: BuildPreviewData,
+  profile: FillRules,
 };
 
-export const Preview = ({ build_data }: Props) => {
+export const Preview = ({ build_data, profile }: Props) => {
   const store = useRef(createItemsStore({ data: build_data.data, enabled: true })).current;
 
   const { setDefaults, post, setData, data, isDirty, errors, processing } = useForm({
@@ -81,7 +83,7 @@ export const Preview = ({ build_data }: Props) => {
       <Flex
         direction='column'
       >
-        <div>itemset: {build_data.itemset} skillset: {build_data.skillset}
+        <div>itemset: {build_data.itemset} skillset: {build_data.skillset} profile: {profile}
           {errors.config && <p>Error occured: {errors.config}</p>}
         </div>
         <div>
