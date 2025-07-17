@@ -93,6 +93,8 @@ defmodule PoeSystemWeb do
       # Translation
       use Gettext, backend: PoeSystemWeb.Gettext
 
+      import PoeSystemWeb.Components
+
       # HTML escaping functionality
       import Phoenix.HTML
 

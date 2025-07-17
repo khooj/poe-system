@@ -21,7 +21,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,
-  code_reloader: false,
+  code_reloader: true,
   debug_errors: true,
   secret_key_base: "vMKHgGP1w1R9KH19Kr9ybO7jixqFcTLFXRoj+z1P/WsrqGseIs6ilLLvR+/uO9bL",
   watchers: [
@@ -30,11 +30,16 @@ config :poe_system, PoeSystemWeb.Endpoint,
     #     [
     #       cd: Path.expand("../assets", __DIR__)
     #     ]
-    # bun:
-    #   ~w(run vite_ssr_watch) ++
-    #     [
-    #       cd: Path.expand("../assets", __DIR__)
-    #     ]
+    bun:
+      ~w(run tailwind --watch) ++
+        [
+          cd: Path.expand("../assets-daisy", __DIR__)
+        ],
+    bun:
+      ~w(run build --watch) ++
+        [
+          cd: Path.expand("../assets-daisy", __DIR__)
+        ]
     # npm: ~w(run tsc_watch) ++  [
     #   cd: Path.expand("../assets", __DIR__)
     # ]
@@ -66,12 +71,25 @@ config :poe_system, PoeSystemWeb.Endpoint,
 # Watch static and templates for browser reloading.
 config :poe_system, PoeSystemWeb.Endpoint,
   live_reload: [
+    notify: [
+      live_view: [
+        ~r"lib/poe_system_web/components/components.ex$",
+        ~r"lib/poe_system_web/(live|components)/.*(ex|heex)$",
+      ]
+    ],
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg|wasm)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/poe_system_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/poe_system_web/controllers/.*(ex|heex)$"
     ]
   ]
+
+# config :phoenix_live_reload,
+#   dirs: [
+#     "priv/static",
+#     "priv/gettext",
+#     "lib/poe_system_web/live"
+#   ]
 
 # Enable dev routes for dashboard and mailbox
 config :poe_system,

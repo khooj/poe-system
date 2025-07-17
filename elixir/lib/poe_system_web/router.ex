@@ -41,6 +41,7 @@ defmodule PoeSystemWeb.Router do
     pipe_through :browser
 
     get "/", IndexController, :index
+    live "/test", TestLive
   end
 
   scope "/poe1", PoeSystemWeb, as: :poe1 do

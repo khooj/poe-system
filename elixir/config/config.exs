@@ -20,7 +20,8 @@ config :poe_system, PoeSystemWeb.Endpoint,
     formats: [html: PoeSystemWeb.ErrorHTML, json: PoeSystemWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: PoeSystem.PubSub
+  pubsub_server: PoeSystem.PubSub,
+  live_view: [signing_salt: "GFLjLn2MGB5kpxLE"]
 
 # Configures Elixir's Logger
 config :logger, :console,

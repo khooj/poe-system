@@ -1,0 +1,8 @@
+@import "tailwindcss" source(none);
+@source "./app.css";
+@source "../lib/poe_system_web.ex";
+@source "../lib/poe_system_web/**/*.*ex";
+@plugin "@tailwindcss/forms";
+@plugin "daisyui";
+@plugin "./heroicons-plugin.js";
+@plugin "./phx-liveview.js";

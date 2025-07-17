@@ -1,0 +1,25 @@
+{
+  "name": "assets-daisy",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "tailwind": "bunx tailwindcss -i app.css -o ../priv/static/assets/app.css",
+    "build": "bun build --outfile=../priv/static/assets/app.js ./index.js"
+  },
+  "dependencies": {
+    "daisyui": "^5.0.46",
+    "tailwindcss": "^4.1.11",
+    "@tailwindcss/cli": "^4.1.11",
+    "phoenix": "^1.7.21",
+    "phoenix_html": "^4.2.1",
+    "phoenix_live_view": "^1.0.17"
+  }
+}
