@@ -11,12 +11,6 @@ defmodule PoeSystem.RustPoe.Native.Test do
   use PoeSystem.DataCase
   use ExUnit.Case, async: true
 
-  test "validate and apply" do
-    cfg = Testdata.extract_config()
-    assert {:ok, validated} = RustPoe.Native.validate_and_apply_config(cfg, cfg)
-    assert validated == cfg
-  end
-
   test "fill configs by rule" do
     cfg = Testdata.extract_config()
     assert {:ok, cfg_filled} = RustPoe.Native.fill_configs_by_rule(cfg, "simplenores")

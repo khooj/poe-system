@@ -3,9 +3,7 @@ use std::collections::HashMap;
 use crate::{decode_config, encode_config, RustError, SerdeTermJson};
 
 use super::atoms;
-use domain::build_calculation::{
-    validate_and_apply_config, BuildInfo, FillRules, UnverifiedBuildItemsWithConfig,
-};
+use domain::build_calculation::{BuildInfo, FillRules, UnverifiedBuildItemsWithConfig};
 use pob::{build_import_pob::import_build_from_pob, Pob};
 use rustler::{Binary, Decoder, Encoder, Env, Error, NifResult, SerdeTerm, Term};
 use serde_json::Value;
@@ -35,40 +33,6 @@ fn extract_build_config_impl<'a>(
     info.provided.fill_configs_by_rule_s(profile);
     let term = encode_config(env, &info)?;
     Ok((atoms::ok(), SerdeTerm(term)).encode(env))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-fn validate_and_apply_config(
-    env: Env<'_>,
-    extracted_config: SerdeTermJson,
-    user_config: SerdeTermJson,
-) -> NifResult<Term<'_>> {
-    Ok(validate_and_apply_config_impl(
-        env,
-        extracted_config,
-        user_config,
-    )?)
-}
-
-fn validate_and_apply_config_impl(
-    env: Env<'_>,
-    extracted_config: SerdeTermJson,
-    user_config: SerdeTermJson,
-) -> Result<Term<'_>, RustError> {
-    let mut extracted_config: BuildInfo = decode_config(extracted_config)?;
-    let mut user_config: BuildInfo = decode_config(user_config)?;
-    if validate_and_apply_config(
-        &mut extracted_config.provided,
-        UnverifiedBuildItemsWithConfig(&mut user_config.provided),
-    ) {
-        Ok((
-            atoms::ok(),
-            SerdeTerm(encode_config(env, &extracted_config)?),
-        )
-            .encode(env))
-    } else {
-        Err(RustError::InvalidUserBuildInfo)
-    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

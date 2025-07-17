@@ -1,21 +1,18 @@
 import { isNotGem } from '@/domainutils'
 import { Mod } from '@bindings/domain/bindings/Mod'
-import { ModConfig } from '@bindings/domain/bindings/ModConfig'
-import { RequiredItem } from '@bindings/domain/bindings/RequiredItem'
 import { StoredItem } from '@bindings/domain/bindings/StoredItem'
 import { StoredMod } from '@bindings/domain/bindings/StoredMod'
 import { Flex, Stack } from '@mantine/core'
 import { JSX } from 'react'
 import classes from './Item.module.css';
 import cx from 'clsx';
+import { StoredItemInfo } from '@bindings/domain/bindings/StoredItemInfo'
 
-type PropItem = RequiredItem | StoredItem;
 type Props = {
-  item: PropItem,
+  item: StoredItem,
   modConfigComponent?: ([m, cf]: [Mod, ModConfig | null], idx?: number) => JSX.Element,
   itemNameComponent?: (item: PropItem) => JSX.Element,
 }
-
 const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
   const renderText = (m: [Mod, ModConfig | null] | StoredMod) => {
     if (Array.isArray(m)) {
@@ -25,7 +22,8 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
     }
   };
 
-  const renderMods = (mods: [Mod, ModConfig | null][] | StoredMod[]) => {
+  const renderMods = (info: StoredItemInfo) => {
+    info.
     return mods.map((m, idx) => <Flex key={idx} align='center' justify='space-between'>
       <div>{renderText(m)}</div>
       {Array.isArray(m) && modConfigComponent && modConfigComponent(m, idx)}
@@ -50,7 +48,7 @@ const Item = ({ item, modConfigComponent, itemNameComponent }: Props) => {
         {itemNameComponent && itemNameComponent(item)}
       </Flex>
       <div>
-        <div>{renderMods(item.info.mods)}</div>
+        <div>{renderMods(item.info)}</div>
       </div>
     </Stack>;
   } else {

@@ -3559,6 +3559,7 @@ name = "wasm"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
+ "domain",
  "pob",
  "serde-wasm-bindgen",
  "thiserror 2.0.12",

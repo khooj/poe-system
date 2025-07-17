@@ -1,7 +1,9 @@
 mod utils;
 
+use domain::build_calculation::stored_item::{Mod, StoredItem};
 use pob::Pob;
 use wasm_bindgen::prelude::*;
+use web_sys::js_sys::Array;
 
 #[wasm_bindgen]
 extern "C" {

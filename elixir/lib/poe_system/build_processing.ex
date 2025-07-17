@@ -4,10 +4,11 @@ defmodule PoeSystem.BuildProcessing do
   alias RustPoe.NativeWrapper
   alias PoeSystem.Repo
   alias PoeSystem.Build
-  alias PoeSystem.Build.{BuildInfo, RequiredItem}
+  alias PoeSystem.Build.{BuildInfo}
   alias PoeSystem.Items
   alias PoeSystem.Items.Item
   alias RustPoe.Native
+  alias PoeSystem.BuildProcessing.Mods
   use Oban.Worker, queue: :new_builds
   use Telemetria
   import Ecto.Query
@@ -60,13 +61,13 @@ defmodule PoeSystem.BuildProcessing do
   @telemetria level: :info, group: :poe1_build_processing
   defp process_entry(nil), do: nil
 
-  @spec process_entry([%{String.t() => RequiredItem.t()}]) :: [Item.t()] | []
+  @spec process_entry([Item.item_with_config()]) :: [Item.t()] | []
   @telemetria level: :info, group: :poe1_build_processing
   defp process_entry(items) when is_list(items) do
     result =
       items
       |> Enum.map(fn a ->
-        find_similar(a["item"], Native.get_req_item_type(a["item"]["info"]))
+        find_similar(a, Native.get_stored_item_type(a["item"]["info"]))
       end)
       |> Enum.reject(&is_nil/1)
 
@@ -74,68 +75,25 @@ defmodule PoeSystem.BuildProcessing do
     result
   end
 
-  @spec process_entry(%{String.t() => RequiredItem.t()}) :: Item.t() | nil
+  @spec process_entry(Item.item_with_config()) :: Item.t() | nil
   @telemetria level: :info, group: :poe1_build_processing
   defp process_entry(item) do
-    result = find_similar(item["item"], Native.get_req_item_type(item["item"]["info"]))
+    result = find_similar(item, Native.get_stored_item_type(item["item"]["info"]))
     Logger.debug("found item for single item: #{result && result.id}")
     result
   end
 
-  @spec find_similar(RequiredItem.t(), {:ok, :gem}) :: Item.t() | nil
-  @telemetria level: :info, group: :poe1_build_processing
-  def find_similar(item, {:ok, :gem}) do
-    name = item["basetype"]
-    {:ok, quality, level} = Native.extract_gem_props(item)
-
-    items_stream =
-      Items.search_gems_by_attrs_query(name, quality, level)
-
-    process_items_stream(items_stream, item)
-  end
-
-  @spec find_similar(RequiredItem.t(), {:ok, :flask}) :: Item.t() | nil
-  @telemetria level: :info, group: :poe1_build_processing
-  def find_similar(item, {:ok, :flask}) do
-    {:ok, mods} = Native.extract_mods_for_search(item)
-    {:ok, quality} = Native.extract_flask_props(item)
-
-    items_stream =
-      Items.search_items_by_attrs_query(
-        mods,
-        basetype: item["basetype"]
-      )
-      |> Items.append_flask_quality(quality)
-
-    process_items_stream(items_stream, item)
-  end
-
-  @spec find_similar(RequiredItem.t(), {:ok, atom()}) :: Item.t() | nil
+  @spec find_similar(Item.item_with_config(), {:ok, atom()}) :: Item.t() | nil
   @telemetria level: :info, group: :poe1_build_processing
   def find_similar(item, {:ok, _t}) do
     Logger.debug("extract mods")
-    {:ok, mods} = Native.extract_mods_for_search(item)
-
-    if Enum.empty?(mods) do
-      nil
-    else
-      Logger.debug("search_items")
-
-      items_stream =
-        Items.search_items_by_attrs_query(
-          mods,
-          basetype: opt(item["search_basetype"], item["basetype"]),
-          category: opt(item["search_category"], item["category"]),
-          subcategory: opt(item["search_subcategory"], item["subcategory"])
-        )
-
-      process_items_stream(items_stream, item)
-    end
+    items_stream = Mods.extract_options_for_search(item)
+    process_items_stream(items_stream, item["item"])
   end
 
   @spec process_items_stream(
           Ecto.Query.t(),
-          RequiredItem.t(),
+          Item.t(),
           Ecto.UUID.t() | nil,
           Item.t() | nil
         ) ::
@@ -164,11 +122,11 @@ defmodule PoeSystem.BuildProcessing do
     end
   end
 
-  @spec closest_item(RequiredItem.t(), [Item.t()], nil) ::
+  @spec closest_item(Item.item_with_config(), [Item.t()], nil) ::
           {:ok, Item.t() | nil} | Native.nif_err()
   defp closest_item(req_item, items, nil), do: NativeWrapper.closest_item(req_item, items)
 
-  @spec closest_item(RequiredItem.t(), [Item.t()], Item.t()) ::
+  @spec closest_item(Item.item_with_config(), [Item.t()], Item.t()) ::
           {:ok, Item.t() | nil} | Native.nif_err()
   defp closest_item(req_item, items, last_item),
     do: NativeWrapper.closest_item(req_item, [last_item | items])

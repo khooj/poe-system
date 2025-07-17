@@ -21,6 +21,7 @@ defmodule PoeSystem.Items.Item do
   @type item_type :: :accessory | :gem | :armor | :weapon | :jewel | :flask
   @type quality :: non_neg_integer()
   @type level :: non_neg_integer()
+  @type item_with_config :: map()
 
   @spec changeset(Item.t(), map()) :: Ecto.Changeset.t()
   def changeset(item, attrs \\ %{}) do

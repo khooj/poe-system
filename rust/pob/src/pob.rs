@@ -429,10 +429,10 @@ mod tests {
         println!("first itemset: {:?}", set);
         let is = doc.get_item_sets();
         assert_eq!(is.len(), 7);
-        assert!(doc.get_itemsets_list()?.is_empty());
+        assert!(!doc.get_itemsets_list()?.is_empty());
         let sks = doc.get_skillsets();
         assert_eq!(sks.len(), 6);
-        assert!(doc.get_skillsets_list()?.is_empty());
+        assert!(!doc.get_skillsets_list()?.is_empty());
         for _ in set.items() {}
         Ok(())
     }

@@ -1,14 +1,12 @@
 pub mod comparison;
-pub mod mod_config;
-pub mod required_item;
+pub mod item_config;
 pub mod stored_item;
 
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
-use mod_config::ModConfig;
-use required_item::{ItemInfo, Mod, RequiredItem, SearchItem};
+use item_config::{ItemConfig, ItemConfigOption, ModOption, ModStatId};
 use serde::{Deserialize, Serialize};
-use stored_item::StoredItem;
+use stored_item::{ItemInfo, StoredItem};
 use strum::EnumString;
 use ts_rs::TS;
 
@@ -80,8 +78,6 @@ impl<'a> UnverifiedBuildItemsWithConfig<'a> {
 #[derive(EnumString)]
 #[strum(ascii_case_insensitive)]
 pub enum FillRules {
-    AllRanges,
-    AllExist,
     // for all rares set exist every mod,
     // uniques searched by name
     SimpleEverything,
@@ -118,23 +114,6 @@ impl BuildItemsWithConfig {
         items.into_iter()
     }
 
-    pub fn apply(&mut self, other: &mut BuildItemsWithConfig) {
-        let orig = self.mut_iter();
-        let other = other.mut_iter();
-        for (item, applied_item) in orig.zip(other) {
-            let applied_mods = applied_item.item.info.mods();
-            if let Some(mv) = item.item.info.mut_mods() {
-                mv.iter_mut().for_each(|mc| {
-                    mc.1 = applied_mods
-                        .iter()
-                        .find(|mc2| mc2.0.stat_id == mc.0.stat_id)
-                        .map(|m| m.1.clone())
-                        .unwrap_or_default();
-                });
-            };
-        }
-    }
-
     pub fn fill_configs_by_rule_s<T>(&mut self, rule: T)
     where
         T: AsRef<str>,
@@ -145,76 +124,59 @@ impl BuildItemsWithConfig {
 
     pub fn fill_configs_by_rule(&mut self, rule: FillRules) {
         match rule {
-            FillRules::AllRanges => self.fill_all(BuildItemsWithConfig::all_ranges),
-            FillRules::AllExist => self.fill_all(BuildItemsWithConfig::all_exist),
-            FillRules::SimpleEverything => {
-                self.fill_all_by_items(BuildItemsWithConfig::simple_everything)
-            }
-            FillRules::SimpleNoRes => self.fill_all_by_items(BuildItemsWithConfig::simple_nores),
+            FillRules::SimpleEverything => self.fill_all(BuildItemsWithConfig::simple_everything),
+            FillRules::SimpleNoRes => self.fill_all(BuildItemsWithConfig::simple_nores),
         }
-    }
-
-    fn all_ranges((m, cf): &mut (Mod, Option<ModConfig>)) {
-        let (min, opt_max) = m.current_value_int.unwrap_or((0, Some(100)));
-        *cf = Some(ModConfig::Range(min..=opt_max.unwrap_or(100)));
-    }
-
-    fn all_exist((_, cf): &mut (Mod, Option<ModConfig>)) {
-        *cf = Some(ModConfig::Exist);
     }
 
     fn simple_everything(item: &mut ItemWithConfig) {
         if item.item.rarity == "unique" {
-            item.item.search_item = SearchItem::UniqueName;
+            item.config.option = Some(ItemConfigOption::Unique);
+        } else if matches!(item.item.info, ItemInfo::Gem { .. }) {
+            item.config.basetype = true;
         } else {
-            for (_, cf) in item
+            let mods = item
                 .item
                 .info
                 .mut_mods()
                 .iter_mut()
                 .flat_map(|x| x.iter_mut())
-            {
-                *cf = Some(ModConfig::Exist);
-            }
+                .fold(HashMap::new(), |mut acc, m| {
+                    acc.insert(ModStatId::from(&m.stat_id), ModOption::Exist);
+                    acc
+                });
+            item.config.option = Some(ItemConfigOption::Mods(mods));
         }
     }
 
     fn simple_nores(item: &mut ItemWithConfig) {
         if item.item.rarity == "unique" {
-            item.item.search_item = SearchItem::UniqueName;
+            item.config.option = Some(ItemConfigOption::Unique);
+        } else if matches!(item.item.info, ItemInfo::Gem { .. }) {
+            item.config.basetype = true;
         } else {
-            for (m, cf) in item
+            let mods = item
                 .item
                 .info
                 .mut_mods()
                 .iter_mut()
                 .flat_map(|x| x.iter_mut())
-            {
-                if let Some(mt) = MODS::get_mod_data(&m.text) {
-                    let tags = mt.mod_type().get_tags();
-                    let elemental = tags.iter().any(|x| x == "elemental");
-                    let resistance = tags.iter().any(|x| x == "resistance");
-                    if !(elemental && resistance) {
-                        *cf = Some(ModConfig::Exist);
-                    } else {
-                        *cf = None;
+                .fold(HashMap::new(), |mut acc, m| {
+                    if let Some(mt) = MODS::get_mod_data(&m.text) {
+                        let tags = mt.mod_type().get_tags();
+                        let elemental = tags.iter().any(|x| x == "elemental");
+                        let resistance = tags.iter().any(|x| x == "resistance");
+                        if !(elemental && resistance) {
+                            acc.insert(ModStatId::from(&m.stat_id), ModOption::Exist);
+                        }
                     }
-                }
-            }
+                    acc
+                });
+            item.config.option = Some(ItemConfigOption::Mods(mods));
         }
     }
 
     fn fill_all<T>(&mut self, func: T)
-    where
-        for<'a> T: FnMut(&'a mut (Mod, Option<ModConfig>)),
-    {
-        self.mut_iter()
-            .filter_map(|ic| ic.item.info.mut_mods())
-            .flat_map(|m| m.iter_mut())
-            .for_each(func);
-    }
-
-    fn fill_all_by_items<T>(&mut self, func: T)
     where
         for<'a> T: FnMut(&'a mut ItemWithConfig),
     {
@@ -222,22 +184,11 @@ impl BuildItemsWithConfig {
     }
 }
 
-pub fn validate_and_apply_config(
-    original: &mut BuildItemsWithConfig,
-    unverified: UnverifiedBuildItemsWithConfig,
-) -> bool {
-    if let Some(verified) = unverified.validate() {
-        original.apply(verified);
-        return true;
-    }
-
-    false
-}
-
 #[derive(Serialize, Deserialize, Debug, Default, TS, PartialEq)]
 #[ts(export)]
 pub struct ItemWithConfig {
-    pub item: RequiredItem,
+    pub item: StoredItem,
+    pub config: ItemConfig,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, TS)]

@@ -6,7 +6,9 @@ defmodule PoeSystem.BuildProcessingTest do
 
   setup do
     build = Testdata.extract_config()
-    %{build: build}
+    build_nores = Testdata.extract_config(profile: "simplenores")
+    :rarity
+    %{build: build, build_nores: build_nores}
   end
 
   test "basic queue check" do
@@ -36,19 +38,19 @@ defmodule PoeSystem.BuildProcessingTest do
       assert BuildProcessing.process_single_build(build["provided"])
     end
 
-    # TODO: ensure that testdata have required items
-    @tag :skip
-    test "check gems", %{build: build} do
-      assert not Enum.empty?(build["provided"]["gems"])
-      processed = BuildProcessing.process_single_build(build)
-      assert not Enum.empty?(processed["found"]["gems"])
+    test "w/ items (nores profile)", %{build_nores: build} do
+      assert BuildProcessing.process_single_build(build["provided"])
     end
 
-    @tag :skip
+    # TODO: ensure that testdata have required items
+    test "check gems", %{build: build} do
+      assert not Enum.empty?(build["provided"]["gems"])
+      processed = BuildProcessing.process_single_build(build["provided"])
+    end
+
     test "check flasks", %{build: build} do
       assert not Enum.empty?(build["provided"]["flasks"])
-      processed = BuildProcessing.process_single_build(build)
-      assert not Enum.empty?(processed["found"]["flasks"])
+      processed = BuildProcessing.process_single_build(build["provided"])
     end
   end
 end

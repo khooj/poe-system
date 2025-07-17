@@ -1,7 +1,7 @@
 import { BuildItemsWithConfig } from '@bindings/domain/bindings/BuildItemsWithConfig';
 import { FoundBuildItems } from '@bindings/domain/bindings/FoundBuildItems';
 import MultipleItems from '@/components/MultipleItems';
-import RequiredItemComponent from '@/components/RequiredItemComponent';
+import Item from '@/components/Item';
 import { ModConfig } from '@bindings/domain/bindings/ModConfig';
 import { StoredItemComponent } from '@/components/StoredItemComponent';
 import { Price } from '@bindings/domain/bindings/Price';
@@ -85,13 +85,13 @@ export const Build = ({ id, provided, found, processed }: Props) => {
   const renderProvided = (k: keyof BuildItemsWithConfig) => {
     if (Array.isArray(provided[k])) {
       return <MultipleItems itemKey={k}>
-        {provided[k].map(i => <RequiredItemComponent
+        {provided[k].map(i => <Item
           item={i.item}
           modConfigComponent={(mcf) => <RenderConfig cf={mcf[1]} />}
         />)}
       </MultipleItems>
     } else {
-      return <RequiredItemComponent
+      return <Item
         item={provided[k].item}
         modConfigComponent={(mcf) => <RenderConfig cf={mcf[1]} />}
       />
