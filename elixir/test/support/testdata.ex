@@ -22,7 +22,12 @@ defmodule PoeSystem.Testdata do
       end
 
     {:ok, data} =
-      RustPoe.Native.extract_build_config(pobdata_file(), itemset, @config_skillset, Keyword.get(opts, :profile, "simpleeverything"))
+      RustPoe.Native.extract_build_config(
+        pobdata_file(),
+        itemset,
+        @config_skillset,
+        Keyword.get(opts, :profile, "simpleeverything")
+      )
 
     data
   end

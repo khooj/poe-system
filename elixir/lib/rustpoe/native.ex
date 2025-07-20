@@ -50,5 +50,7 @@ defmodule RustPoe.Native do
   @spec fill_configs_by_rule(String.t(), String.t()) :: {:ok, map()} | nif_err()
   def fill_configs_by_rule(_data, _profile), do: error()
 
+  def get_itemsets_skillsets(_pobdata), do: error()
+
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

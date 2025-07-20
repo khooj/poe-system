@@ -63,7 +63,6 @@ defmodule PoeSystem.MixProject do
       {:bandit, "~> 1.5"},
       {:inertia, "~> 2.2.0"},
       {:rustler, "~> 0.36.1", runtime: false},
-      {:routes, path: "custom/routes"},
       {:nodejs, path: "custom/elixir-nodejs", override: true},
       {:oban, "~> 2.19.4"},
       {:hammer, "~> 7.0"},
@@ -101,6 +100,8 @@ defmodule PoeSystem.MixProject do
        app: false,
        compile: false,
        depth: 1},
+      {:phoenix_storybook, "~> 0.9.0", only: [:dev]},
+      {:daisy_ui_components, "~> 0.8"}
     ]
   end
 

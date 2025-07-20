@@ -38,14 +38,6 @@ config :inertia,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :routes,
-  router: PoeSystemWeb.Router,
-  typescript: true,
-  routes_path: "assets/src"
-
-config :nodejs,
-  executable: "bun"
-
 config :poe_system, Oban,
   repo: PoeSystem.Repo,
   engine: Oban.Engines.Basic,
@@ -84,6 +76,8 @@ config :poe_system, PoeSystemWeb.PromEx,
 config :poe_system, PoeSystem.StashReceiver, league: ["Mercenaries"]
 
 config :poe_system, PoeSystem.BuildProcessing, items_per_tx: 10000
+
+config :daisy_ui_components, translate_function: &PoeSystemWeb.CoreComponents.translate_error/1
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

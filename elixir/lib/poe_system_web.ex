@@ -93,13 +93,13 @@ defmodule PoeSystemWeb do
       # Translation
       use Gettext, backend: PoeSystemWeb.Gettext
 
-      import PoeSystemWeb.Components
-
       # HTML escaping functionality
       import Phoenix.HTML
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
+
+      use DaisyUIComponents
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())

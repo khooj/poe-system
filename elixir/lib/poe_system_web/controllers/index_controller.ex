@@ -3,6 +3,6 @@ defmodule PoeSystemWeb.IndexController do
 
   def index(conn, _props) do
     conn
-    |> render_inertia("Index")
+    |> render(:index)
   end
 end

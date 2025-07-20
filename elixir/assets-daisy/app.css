@@ -2,6 +2,7 @@
 @source "./app.css";
 @source "../lib/poe_system_web.ex";
 @source "../lib/poe_system_web/**/*.*ex";
+@source "../deps/daisy_ui_components/**/*.*ex";
 @plugin "@tailwindcss/forms";
 @plugin "daisyui";
 @plugin "./heroicons-plugin.js";

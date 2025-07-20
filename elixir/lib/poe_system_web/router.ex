@@ -1,6 +1,6 @@
 defmodule PoeSystemWeb.Router do
   use PoeSystemWeb, :router
-  use Routes
+  import PhoenixStorybook.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -37,18 +37,23 @@ defmodule PoeSystemWeb.Router do
     plug :fetch_session
   end
 
+  scope "/" do
+    storybook_assets()
+  end
+
   scope "/", PoeSystemWeb, as: :main do
     pipe_through :browser
 
     get "/", IndexController, :index
     live "/test", TestLive
+    live_storybook("/storybook", backend_module: PoeSystemWeb.Storybook)
   end
 
   scope "/poe1", PoeSystemWeb, as: :poe1 do
     pipe_through :browser
 
     scope "/build-calc", as: :build_calc do
-      get "/", Poe1Controller, :index
+      live "/", Poe1BuildCalcIndexLive
       post "/new", Poe1Controller, :new
       get "/:id", Poe1Controller, :get_build
     end

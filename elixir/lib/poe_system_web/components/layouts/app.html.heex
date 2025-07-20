@@ -1,1 +1,14 @@
-<main>{@inner_content}</main>
+<main>
+  <.header>
+    <.navbar class="bg-base-400 rounded-box">
+      <.menu direction="horizontal">
+        <:item class="disabled"><a>SomePoeTools</a></:item>
+        <:item><.link href={~p"/poe1/build-calc"}>Build calculator</.link></:item>
+      </.menu>
+    </.navbar>
+  </.header>
+  {@inner_content}
+  <.footer class="sm:footer-horizontal p-10">
+    somepoetools.xyz isn't affiliated with or endorsed by Grinding Gear Games in any way.
+  </.footer>
+</main>

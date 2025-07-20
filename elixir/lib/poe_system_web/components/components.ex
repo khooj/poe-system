@@ -1,32 +1,118 @@
 defmodule PoeSystemWeb.Components do
-  use Phoenix.Component
-  use Gettext, backend: PoeSystemWeb.Gettext
-  alias Phoenix.LiveView.JS
+  use PoeSystemWeb, :html
 
-  @doc """
-  Renders a [Heroicon](https://heroicons.com).
+  attr :stat_id, :string, required: true
+  attr :text, :string, required: true
 
-  Heroicons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid and mini may
-  be applied by using the `-solid` and `-mini` suffix.
-
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from the `deps/heroicons` directory and bundled within
-  your compiled app.css by the plugin in your `assets/tailwind.config.js`.
-
-  ## Examples
-
-      <.icon name="hero-x-mark-solid" />
-      <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
-  """
-  attr :name, :string, required: true
-  attr :class, :string, default: nil
-
-  def icon(%{name: "hero-" <> _} = assigns) do
+  def mod_default(assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+      <div>{@text}</div>
     """
+  end
+
+  @rarity_color %{
+    "normal" => "border-neutral-500",
+    "magic" => "border-blue-500",
+    "rare" => "border-yellow-500",
+    "unique" => "border-orange-500"
+  }
+
+  attr :name, :string
+  attr :basetype, :string, required: true
+  attr :rarity, :string, required: true, values: ~w(normal magic rare unique)
+  attr :mods, :list, required: true
+  slot :mods_block
+  slot :name_block
+
+  def item(assigns) do
+    rarity = Map.fetch!(@rarity_color, assigns.rarity)
+
+    ~H"""
+    <div class={["flex flex-col border divide-y", rarity]}>
+      <div>
+        <%= if msg = render_slot(@name_block, %{name: assigns[:name], basetype: @basetype}) do %>
+          {msg}
+        <% else %>
+          <div class="flex flex-col">
+            <p>{assigns[:name] && @name}</p>
+            <p>{@basetype}</p>
+          </div>
+        <% end %>
+      </div>
+      <div>
+        <div :for={mod <- @mods}>
+          <%= if msg = render_slot(@mods_block, mod) do %>
+            {msg}
+          <% else %>
+            <.mod_default {mod} />
+          <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :config, :map, required: true 
+  attr :item, :map, required: true
+
+  def item_config_readonly(assigns) do
+    ~H"""
+      <.item {@item}>
+        <:name_block :let={names}>
+          <div class="flex justify-between items-center">
+            <div class="flex flex-col">
+              <p>{names.name}</p>
+              <p>{names.basetype}</p>
+            </div>
+            <div>
+              <.label position="end" text="basetype" type="label">
+                <.checkbox disabled checked={@config.basetype} />
+              </.label>
+              <.label position="end" text="unique" type="label">
+                <.checkbox disabled checked={@config.option && @config.option == "Unique"} />
+              </.label>
+            </div>
+          </div>
+        </:name_block>
+        <:mods_block :let={mod}>
+          <.mod_config 
+            mod={mod} 
+            cfg={is_map(@config.option) && @config.option["Mods"][mod.stat_id] || nil} 
+          />
+        </:mods_block>
+      </.item>
+    """
+  end
+
+  attr :mod, :map, required: true
+  attr :cfg, :any
+  def mod_config(assigns)
+
+  def mod_config(%{cfg: "Ignore"} = assigns) do
+    ~H"""
+      <p>{@mod.text} Ignore</p>
+    """
+  end
+
+  def mod_config(%{cfg: "Exist"} = assigns) do
+    ~H"""
+      <p>{@mod.text} Exist</p>
+    """
+  end
+
+  def mod_config(%{cfg: %{"Exact" => exact}} = assigns) do
+    ~H"""
+      <p>{@mod.text} Exact: {exact}</p>
+    """
+  end
+
+  def mod_config(%{cfg: %{"Range" => %{"start" => start, "end" => endval}}} = assigns) do
+    ~H"""
+      <p>{@mod.text} Range: from {start} to {endval}</p>
+    """
+  end
+
+  def mod_config(%{cfg: nil} = assigns) do
+    ~H"{@mod.text}"
   end
 end

@@ -36,7 +36,17 @@ config :poe_system, PoeSystemWeb.Endpoint,
           cd: Path.expand("../assets-daisy", __DIR__)
         ],
     bun:
+      ~w(run storybook-css --watch) ++
+        [
+          cd: Path.expand("../assets-daisy", __DIR__)
+        ],
+    bun:
       ~w(run build --watch) ++
+        [
+          cd: Path.expand("../assets-daisy", __DIR__)
+        ],
+    bun:
+      ~w(run storybook --watch) ++
         [
           cd: Path.expand("../assets-daisy", __DIR__)
         ]
@@ -72,15 +82,15 @@ config :poe_system, PoeSystemWeb.Endpoint,
 config :poe_system, PoeSystemWeb.Endpoint,
   live_reload: [
     notify: [
-      live_view: [
-        ~r"lib/poe_system_web/components/components.ex$",
-        ~r"lib/poe_system_web/(live|components)/.*(ex|heex)$",
-      ]
+      live_view: []
     ],
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg|wasm)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/poe_system_web/controllers/.*(ex|heex)$"
+      ~r"lib/poe_system_web/controllers/.*(ex|heex)$",
+      ~r"lib/poe_system_web/components/components.ex$",
+      ~r"lib/poe_system_web/(live|components)/.*(ex|heex)$",
+      ~r"storybook/.*(exs)$"
     ]
   ]
 
@@ -94,9 +104,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :poe_system,
   dev_routes: true,
-  additional_processes: [
-    {Routes.Watcher, []}
-  ]
+  additional_processes: []
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

@@ -12,7 +12,9 @@
   },
   "scripts": {
     "tailwind": "bunx tailwindcss -i app.css -o ../priv/static/assets/app.css",
-    "build": "bun build --outfile=../priv/static/assets/app.js ./index.js"
+    "storybook-css": "bunx tailwindcss -i storybook.css -o ../priv/static/assets/storybook.css",
+    "build": "bun build --outfile=../priv/static/assets/app.js ./index.js",
+    "storybook": "bun build --outfile=../priv/static/assets/storybook.js ./storybook.js"
   },
   "dependencies": {
     "daisyui": "^5.0.46",

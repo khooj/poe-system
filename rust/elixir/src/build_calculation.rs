@@ -10,6 +10,7 @@ use domain::{
     },
     item::Item,
 };
+use pob::Pob;
 use public_stash::models::PublicStashData;
 use rustler::{Atom, Encoder, Env, NifResult, SerdeTerm, Term};
 use serde::Serialize;
@@ -171,4 +172,13 @@ fn extract_flask_props(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<Term<
     } else {
         Err(RustError::InvalidItem.into())
     }
+}
+
+#[rustler::nif]
+fn get_itemsets_skillsets(pobdata: &str) -> NifResult<(Atom, Vec<String>, Vec<String>)> {
+    let p = Pob::from_pastebin_data(pobdata.to_string()).map_err(RustError::from)?;
+    let doc = p.as_document().map_err(RustError::from)?;
+    let itemsets = doc.get_itemsets_list().map_err(RustError::from)?;
+    let skillsets = doc.get_skillsets_list().map_err(RustError::from)?;
+    Ok((atoms::ok(), itemsets, skillsets))
 }

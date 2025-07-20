@@ -47,4 +47,5 @@ pub enum ModOption {
     Exact(i32),
     Range(RangeInclusive<i32>),
     Exist,
+    Ignore,
 }
