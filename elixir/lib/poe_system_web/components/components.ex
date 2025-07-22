@@ -1,5 +1,6 @@
 defmodule PoeSystemWeb.Components do
   use PoeSystemWeb, :html
+  alias PoeSystem.Items.{ItemStruct, ItemConfig}
 
   attr :stat_id, :string, required: true
   attr :text, :string, required: true
@@ -11,6 +12,7 @@ defmodule PoeSystemWeb.Components do
   end
 
   @rarity_color %{
+    nil => "border-neutral-500",
     "normal" => "border-neutral-500",
     "magic" => "border-blue-500",
     "rare" => "border-yellow-500",
@@ -52,12 +54,17 @@ defmodule PoeSystemWeb.Components do
     """
   end
 
-  attr :config, :map, required: true 
-  attr :item, :map, required: true
+  attr :config, ItemConfig, required: true 
+  attr :item, ItemStruct, required: true
 
   def item_config_readonly(assigns) do
     ~H"""
-      <.item {@item}>
+      <.item 
+        name={@item.name}
+        basetype={@item.basetype}
+        rarity={@item.rarity}
+        mods={@item.info.mods}
+      >
         <:name_block :let={names}>
           <div class="flex justify-between items-center">
             <div class="flex flex-col">

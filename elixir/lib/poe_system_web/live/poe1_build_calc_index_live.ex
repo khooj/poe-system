@@ -1,6 +1,7 @@
 defmodule PoeSystemWeb.Poe1BuildCalcIndexLive do
   use PoeSystemWeb, :live_view
   alias RustPoe.Native
+  alias PoeSystemWeb.LiveComponents.{PobReceive, PreviewPob}
   require Logger
 
   @impl true
@@ -11,24 +12,29 @@ defmodule PoeSystemWeb.Poe1BuildCalcIndexLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex justify-center">
-      <.form :let={f} for={%{}} as={:pob} phx-submit="submit" class="w-xl">
-        <.input
-          field={f[:pob]}
-          id="pobdata"
-          label="Path of Building data"
-          placeholder="base64-encoded string"
-          type="textarea"
+      <.live_component module={PobReceive} id="pob-receive" :if={@live_action == :new} />
+      <%= if @live_action == :preview do %>
+        <.live_component 
+          module={PreviewPob} 
+          id="preview-pob" 
+          pobdata={@pobdata}
+          itemsets={@itemsets}
+          skillsets={@skillsets}
         />
-        <.button patch={~p"/poe1/build-calc/preview"} phx-disable-with="Loading items...">Save</.button>
-      </.form>
-    </div>
+      <% end %>
     """
   end
 
-  @impl true
-  def handle_event("submit", %{"pob" => %{"pob" => pobdata}}, socket) do
-    {:ok, itemsets, skillsets} = Native.get_itemsets_skillsets(pobdata)
+  def handle_params(_params, _uri, socket) do
     {:noreply, socket}
+  end
+
+  def handle_info({:new_pob, {pobdata, itemsets, skillsets}}, socket) do
+    socket = socket
+      |> assign(:pobdata, pobdata)
+      |> assign(:itemsets, itemsets)
+      |> assign(:skillsets, skillsets)
+
+    {:noreply, push_patch(socket, to: ~p"/poe1/build-calc/preview")}
   end
 end

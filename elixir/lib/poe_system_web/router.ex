@@ -53,7 +53,8 @@ defmodule PoeSystemWeb.Router do
     pipe_through :browser
 
     scope "/build-calc", as: :build_calc do
-      live "/", Poe1BuildCalcIndexLive
+      live "/", Poe1BuildCalcIndexLive, :new
+      live "/preview", Poe1BuildCalcIndexLive, :preview
       post "/new", Poe1Controller, :new
       get "/:id", Poe1Controller, :get_build
     end

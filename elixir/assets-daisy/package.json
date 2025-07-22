@@ -20,8 +20,8 @@
     "daisyui": "^5.0.46",
     "tailwindcss": "^4.1.11",
     "@tailwindcss/cli": "^4.1.11",
-    "phoenix": "^1.7.21",
-    "phoenix_html": "^4.2.1",
-    "phoenix_live_view": "^1.0.17"
+    "phoenix": "file:../deps/phoenix",
+    "phoenix_html": "file:../deps/phoenix_html",
+    "phoenix_live_view": "file:../deps/phoenix_live_view"
   }
 }

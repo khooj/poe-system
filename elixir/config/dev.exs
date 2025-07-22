@@ -82,14 +82,15 @@ config :poe_system, PoeSystemWeb.Endpoint,
 config :poe_system, PoeSystemWeb.Endpoint,
   live_reload: [
     notify: [
-      live_view: []
+      live_view: [
+        ~r"lib/poe_system_web/(live|live_components)/.*(ex|heex)$",
+      ]
     ],
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg|wasm)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/poe_system_web/controllers/.*(ex|heex)$",
       ~r"lib/poe_system_web/components/components.ex$",
-      ~r"lib/poe_system_web/(live|components)/.*(ex|heex)$",
       ~r"storybook/.*(exs)$"
     ]
   ]
