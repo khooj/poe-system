@@ -29,50 +29,19 @@ pub enum BuildV1 {
 #[derive(Serialize, Deserialize, Debug, Default, TS)]
 #[ts(export)]
 pub struct BuildItemsWithConfig {
-    pub helmet: ItemWithConfig,
-    pub body: ItemWithConfig,
-    pub boots: ItemWithConfig,
-    pub gloves: ItemWithConfig,
-    pub weapon1: ItemWithConfig,
-    pub weapon2: ItemWithConfig,
-    pub ring1: ItemWithConfig,
-    pub ring2: ItemWithConfig,
-    pub belt: ItemWithConfig,
+    pub helmet: Option<ItemWithConfig>,
+    pub body: Option<ItemWithConfig>,
+    pub boots: Option<ItemWithConfig>,
+    pub gloves: Option<ItemWithConfig>,
+    pub weapon1: Option<ItemWithConfig>,
+    pub weapon2: Option<ItemWithConfig>,
+    pub ring1: Option<ItemWithConfig>,
+    pub ring2: Option<ItemWithConfig>,
+    pub belt: Option<ItemWithConfig>,
     pub flasks: Vec<ItemWithConfig>,
     pub gems: Vec<ItemWithConfig>,
     pub jewels: Vec<ItemWithConfig>,
-    pub amulet: ItemWithConfig,
-}
-
-pub struct UnverifiedBuildItemsWithConfig<'a>(pub &'a mut BuildItemsWithConfig);
-
-impl<'a> UnverifiedBuildItemsWithConfig<'a> {
-    pub fn validate(self) -> Option<&'a mut BuildItemsWithConfig> {
-        let mut items = vec![
-            &self.0.helmet,
-            &self.0.body,
-            &self.0.boots,
-            &self.0.gloves,
-            &self.0.weapon1,
-            &self.0.weapon2,
-            &self.0.ring1,
-            &self.0.ring2,
-            &self.0.belt,
-            &self.0.amulet,
-        ];
-
-        items.extend(
-            [
-                self.0.flasks.iter(),
-                self.0.gems.iter(),
-                self.0.jewels.iter(),
-            ]
-            .into_iter()
-            .flatten(),
-        );
-
-        Some(self.0)
-    }
+    pub amulet: Option<ItemWithConfig>,
 }
 
 #[derive(EnumString)]
@@ -88,7 +57,7 @@ pub enum FillRules {
 
 impl BuildItemsWithConfig {
     pub fn mut_iter(&mut self) -> impl Iterator<Item = &mut ItemWithConfig> {
-        let mut items = vec![
+        let mut items = [
             &mut self.helmet,
             &mut self.body,
             &mut self.boots,
@@ -99,7 +68,10 @@ impl BuildItemsWithConfig {
             &mut self.ring2,
             &mut self.belt,
             &mut self.amulet,
-        ];
+        ]
+        .into_iter()
+        .filter_map(|m| m.as_mut())
+        .collect::<Vec<_>>();
 
         items.extend(
             [

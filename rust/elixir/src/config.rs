@@ -1,12 +1,9 @@
-use std::collections::HashMap;
-
 use crate::{decode_config, encode_config, RustError, SerdeTermJson};
 
 use super::atoms;
-use domain::build_calculation::{BuildInfo, FillRules, UnverifiedBuildItemsWithConfig};
+use domain::build_calculation::BuildInfo;
 use pob::{build_import_pob::import_build_from_pob, Pob};
-use rustler::{Binary, Decoder, Encoder, Env, Error, NifResult, SerdeTerm, Term};
-use serde_json::Value;
+use rustler::{Encoder, Env, NifResult, SerdeTerm, Term};
 
 #[rustler::nif(schedule = "DirtyCpu")]
 fn extract_build_config<'a>(

@@ -42,11 +42,11 @@ pub fn import_build_from_pob_first_itemset(pob: &Pob) -> Result<BuildInfo, Impor
     import(itemset, skillset)
 }
 
-fn fill(prov_item: &mut ItemWithConfig, it: &Item) -> Result<(), ImportPobError> {
-    *prov_item = ItemWithConfig {
+fn fill(prov_item: &mut Option<ItemWithConfig>, it: &Item) -> Result<(), ImportPobError> {
+    *prov_item = Some(ItemWithConfig {
         item: StoredItem::try_from(it.clone())?,
         ..Default::default()
-    };
+    });
     Ok(())
 }
 
@@ -57,7 +57,7 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
             Subcategory::Helmets => fill(&mut builditems.helmet, it)?,
             Subcategory::BodyArmour => fill(&mut builditems.body, it)?,
             Subcategory::Ring => {
-                if builditems.ring1 == ItemWithConfig::default() {
+                if builditems.ring1.is_none() {
                     fill(&mut builditems.ring1, it)?
                 } else {
                     fill(&mut builditems.ring2, it)?
@@ -68,7 +68,7 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
             Subcategory::Boots => fill(&mut builditems.boots, it)?,
             Subcategory::Shield => fill(&mut builditems.weapon2, it)?,
             Subcategory::Weapon => {
-                if builditems.weapon1 == ItemWithConfig::default() {
+                if builditems.weapon1.is_none() {
                     fill(&mut builditems.weapon1, it)?
                 } else {
                     fill(&mut builditems.weapon2, it)?
@@ -80,14 +80,14 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
 
         match it.category {
             Category::Flasks => {
-                let mut ic = ItemWithConfig::default();
+                let mut ic = None;
                 fill(&mut ic, it)?;
-                builditems.flasks.push(ic);
+                builditems.flasks.push(ic.unwrap());
             }
             Category::Jewels => {
-                let mut ic = ItemWithConfig::default();
+                let mut ic = None;
                 fill(&mut ic, it)?;
-                builditems.jewels.push(ic);
+                builditems.jewels.push(ic.unwrap());
             }
             _ => {}
         }
@@ -96,8 +96,8 @@ fn import(itemset: ItemSet, skillset: SkillSet) -> Result<BuildInfo, ImportPobEr
     builditems.gems = skillset
         .gems()
         .into_iter()
-        .map(|it| {
-            let mut ic = ItemWithConfig::default();
+        .filter_map(|it| {
+            let mut ic = None;
             fill(&mut ic, &it).unwrap();
             ic
         })
@@ -128,9 +128,9 @@ mod tests {
             .find(|it| it.name == "Cataclysm Mark")
             .unwrap();
         let buildinfo = import_build_from_pob_first_itemset(&pob)?;
-        assert_ne!(buildinfo.provided.weapon1.item.info, ItemInfo::default(),);
+        assert!(buildinfo.provided.weapon1.is_some());
 
-        match buildinfo.provided.weapon1.item.info {
+        match buildinfo.provided.weapon1.as_ref().unwrap().item.info {
             ItemInfo::Weapon { quality, .. } => {
                 assert_eq!(quality, 20);
             }
