@@ -118,11 +118,13 @@ defmodule PoeSystem.StashReceiver do
     Logger.info(message: "received stash data", id: ls)
 
     {:ok, public_stash} = Native.process_stash_data(public_stash_resp.body)
-    next_change_id = Map.fetch!(public_stash, "next_change_id")
+    next_change_id = public_stash.next_change_id
+    # Logger.debug(next_change_id)
+    # Logger.debug(inspect(public_stash.stashes))
 
     if next_change_id != "" do
       stash_data =
-        for {stash_id, [stash_league, items]} <- public_stash["stashes"],
+        for {stash_id, {stash_league, items}} <- public_stash.stashes,
             item <- items,
             reduce: %{
               stashes: [],
@@ -132,19 +134,13 @@ defmodule PoeSystem.StashReceiver do
             } do
           acc ->
             if length(allowed_leagues) == 0 or stash_league in allowed_leagues do
-              sv = %{id: stash_id, item_id: item["id"]}
+              sv = %{id: stash_id, item_id: item.id}
 
-              item =
-                item
-                |> Items.into_elixir_items()
-                # insert_all requires map with atom keys
-                |> Map.from_struct()
-                |> Map.delete(:__meta__)
-                # does not provide nil id because insert_all wont properly delegate
-                # its autogeneration to adapter/db
-                |> Map.delete(:id)
+              item = item
+              |> Map.from_struct()
 
-              Map.update(acc, :stashes, [sv], &[sv | &1])
+              acc
+              |> Map.update(:stashes, [sv], &[sv | &1])
               |> Map.update(:items, [item], &[item | &1])
               |> Map.update(:processed_leagues, MapSet.new(), &MapSet.put(&1, stash_league))
             else
@@ -155,28 +151,31 @@ defmodule PoeSystem.StashReceiver do
 
       Logger.info(
         incoming_leagues: MapSet.to_list(stash_data.incoming_leagues),
-        processed_leagues: MapSet.to_list(stash_data.processed_leagues)
+        processed_leagues: MapSet.to_list(stash_data.processed_leagues),
+        new_items_count: length(stash_data.items),
       )
+
+      Logger.debug(inspect(stash_data.stashes))
 
       {:ok, _} =
         Multi.new()
         |> Multi.run(:remove_items_ids, fn repo, _changes ->
           ids =
             repo.all(
-              from s in Stash, where: s.id in ^public_stash["remove_stashes"], select: s.item_id
+              from s in Stash, where: s.id in ^public_stash.remove_stashes, select: s.item_id
             )
 
           {:ok, ids}
         end)
         |> Multi.delete_all(:remove_items, fn %{remove_items_ids: ids} ->
-          from(i in Item, where: i.item_id in ^ids)
+          from(i in Item, where: i.id in ^ids)
         end)
         |> Multi.delete_all(:remove_stashes, fn _ ->
-          from(i in Stash, where: i.id in ^public_stash["remove_stashes"])
+          from(i in Stash, where: i.id in ^public_stash.remove_stashes)
         end)
         |> Multi.insert_all(
           :insert_stashes,
-          "stashes",
+          Stash,
           stash_data.stashes,
           returning: false
         )
@@ -186,7 +185,7 @@ defmodule PoeSystem.StashReceiver do
           stash_data.items,
           returning: false,
           on_conflict: {:replace, [:price]},
-          conflict_target: :item_id
+          conflict_target: :id
         )
         |> then(fn
           m when is_nil(ls) -> m
