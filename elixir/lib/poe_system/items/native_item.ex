@@ -1,19 +1,32 @@
 defmodule PoeSystem.Items.NativeItem do
   use Ecto.Schema
   import Ecto.Changeset
-  alias PoeSystem.Items.{ItemConfig, ItemStruct}
+  alias PoeSystem.Items.{ItemConfig, Item}
+  alias __MODULE__
+  alias Utils
+
+  @type t :: %__MODULE__{}
 
   @primary_key false
   embedded_schema do
     embeds_one :config, ItemConfig
-    embeds_one :item, ItemStruct
+    embeds_one :item, Item
+  end
+
+  def changeset(struct, data \\ %{}) do
+    struct
+    |> cast(data, [])
+    |> cast_embed(:config)
+    |> cast_embed(:item)
   end
 
   def from_json(data) when is_map(data) do
-    %__MODULE__{}
-      |> cast(data, [])
-      |> cast_embed(:config)
-      |> cast_embed(:item)
-      |> apply_changes()
+    changeset(%__MODULE__{}, data)
+    |> apply_changes()
+  end
+
+  def into_json(struct) when is_struct(struct) do
+    struct
+    |> Utils.to_string_key_map()
   end
 end

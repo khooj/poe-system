@@ -3,33 +3,30 @@ use crate::{decode_config, encode_config, RustError, SerdeTermJson};
 use super::atoms;
 use domain::build_calculation::BuildInfo;
 use pob::{build_import_pob::import_build_from_pob, Pob};
-use rustler::{Encoder, Env, NifResult, SerdeTerm, Term};
+use rustler::{Atom, Encoder, Env, NifResult, NifStruct, SerdeTerm, Term};
 
 #[rustler::nif(schedule = "DirtyCpu")]
 fn extract_build_config<'a>(
-    env: Env<'a>,
     pobdata: &'a str,
     itemset: &'a str,
     skillset: &'a str,
     profile: &'a str,
-) -> NifResult<Term<'a>> {
+) -> NifResult<(Atom, BuildInfo)> {
     Ok(extract_build_config_impl(
-        env, pobdata, itemset, skillset, profile,
+        pobdata, itemset, skillset, profile,
     )?)
 }
 
 fn extract_build_config_impl<'a>(
-    env: Env<'a>,
     pobdata: &'a str,
     itemset: &'a str,
     skillset: &'a str,
     profile: &'a str,
-) -> Result<Term<'a>, RustError> {
+) -> Result<(Atom, BuildInfo), RustError> {
     let pob = Pob::from_pastebin_data(pobdata.to_string())?;
-    let mut info = import_build_from_pob(&pob, itemset, skillset)?;
-    info.provided.fill_configs_by_rule_s(profile);
-    let term = encode_config(env, &info)?;
-    Ok((atoms::ok(), SerdeTerm(term)).encode(env))
+    let mut build = import_build_from_pob(&pob, itemset, skillset)?;
+    build.provided.fill_configs_by_rule_s(profile);
+    Ok((atoms::ok(), build))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -45,12 +42,8 @@ fn validate_config_impl(env: Env<'_>, config: SerdeTermJson) -> Result<Term<'_>,
 }
 
 #[rustler::nif]
-fn fill_configs_by_rule<'a>(
-    env: Env<'a>,
-    config: SerdeTermJson,
-    profile: &'a str,
-) -> NifResult<Term<'a>> {
-    let mut cfg: BuildInfo = decode_config(config)?;
+fn fill_configs_by_rule(cfg: BuildInfo, profile: &str) -> NifResult<(Atom, BuildInfo)> {
+    let mut cfg = cfg;
     cfg.provided.fill_configs_by_rule_s(profile);
-    Ok((atoms::ok(), SerdeTerm(encode_config(env, &cfg)?)).encode(env))
+    Ok((atoms::ok(), cfg))
 }

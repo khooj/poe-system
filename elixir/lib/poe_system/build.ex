@@ -4,15 +4,15 @@ defmodule PoeSystem.Build do
   import Ecto.Query
   alias PoeSystem.Repo
   require Protocol
-  alias PoeSystem.Build.BuildInfo
+  alias PoeSystem.Build.{ProvidedItems, FoundItems}
   alias __MODULE__
 
   @primary_key false
 
   schema "builds" do
     field :id, Ecto.UUID, primary_key: true
-    field :provided, :map
-    field :found, :map
+    embeds_one :provided, ProvidedItems
+    embeds_one :found, FoundItems
     field :processed, :boolean, default: false
     field :itemset, :string
     field :skillset, :string
@@ -30,7 +30,9 @@ defmodule PoeSystem.Build do
   @spec changeset(Build.t(), map()) :: Ecto.Changeset.t()
   def changeset(build_info, attrs \\ %{}) do
     build_info
-    |> cast(attrs, [:id, :processed, :provided, :found, :itemset, :skillset, :pob, :fixed])
+    |> cast(attrs, [:id, :processed, :itemset, :skillset, :pob, :fixed])
+    |> cast_embed(:provided)
+    |> cast_embed(:found)
     |> validate_required([:id, :provided, :itemset, :skillset, :pob])
   end
 

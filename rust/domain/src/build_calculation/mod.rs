@@ -5,6 +5,7 @@ pub mod stored_item;
 use std::{collections::HashMap, str::FromStr};
 
 use item_config::{ItemConfig, ItemConfigOption, ModOption, ModStatId};
+use rustler::NifStruct;
 use serde::{Deserialize, Serialize};
 use stored_item::{ItemInfo, StoredItem};
 use strum::EnumString;
@@ -12,22 +13,15 @@ use ts_rs::TS;
 
 use crate::data::MODS;
 
-#[derive(Serialize, Deserialize, Debug, Default, TS)]
-#[ts(export)]
+#[derive(Serialize, Deserialize, Debug, Default, NifStruct)]
+#[module = "RustPoe.BuildInfo"]
 pub struct BuildInfo {
     pub provided: BuildItemsWithConfig,
     pub found: FoundBuildItems,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, TS)]
-#[ts(export)]
-pub enum BuildV1 {
-    #[default]
-    V1,
-}
-
-#[derive(Serialize, Deserialize, Debug, Default, TS)]
-#[ts(export)]
+#[derive(Serialize, Deserialize, Debug, Default, NifStruct)]
+#[module = "PoeSystem.Build.ProvidedItems"]
 pub struct BuildItemsWithConfig {
     pub helmet: Option<ItemWithConfig>,
     pub body: Option<ItemWithConfig>,
@@ -156,15 +150,15 @@ impl BuildItemsWithConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, TS, PartialEq)]
-#[ts(export)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq, NifStruct)]
+#[module = "PoeSystem.Items.NativeItem"]
 pub struct ItemWithConfig {
     pub item: StoredItem,
     pub config: ItemConfig,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, TS)]
-#[ts(export)]
+#[derive(Serialize, Deserialize, Debug, Default, NifStruct)]
+#[module = "PoeSystem.Build.FoundItems"]
 pub struct FoundBuildItems {
     pub helmet: Option<StoredItem>,
     pub body: Option<StoredItem>,

@@ -3,15 +3,42 @@ defmodule PoeSystem.Items.Item do
   import Ecto.Changeset
   require Protocol
   alias __MODULE__
+  alias PoeSystem.Items.ItemInfo
 
+  @primary_key false
   schema "items" do
-    field :item_id, :string
-    field :info, :map
+    field :item_id, :id, primary_key: true
+    field :id, :string
+    field :info, PoeSystem.EctoTypes.Info
     field :basetype, :string
-    field :category, :string
-    field :subcategory, :string
+    field :category, Ecto.Enum, values: [
+      :weapons, 
+      :gems, 
+      :jewels, 
+      :accessories, 
+      :flasks, 
+      :armour,
+    ]
+    field :subcategory, Ecto.Enum, values: [
+      :weapon, 
+      :gem, 
+      :jewel, 
+      :amulet, 
+      :utility_flask, 
+      :life_flask, 
+      :mana_flask, 
+      :hybrid_flask,
+      :boots,
+      :body_armour,
+      :shield,
+      :gloves,
+      :helmets,
+      :belt,
+      :ring,
+      :quiver,
+    ]
     field :name, :string
-    field :price, :map
+    field :price, PoeSystem.EctoTypes.Price
     field :rarity, :string
   end
 
@@ -28,11 +55,11 @@ defmodule PoeSystem.Items.Item do
     item
     |> cast(
       attrs,
-      [:id, :item_id, :info, :basetype, :category, :subcategory, :name, :price, :rarity],
+      [:id, :item_id, :basetype, :category, :subcategory, :name, :price, :rarity, :info],
       empty_values: []
     )
     |> validate_required([
-      :item_id,
+      :id,
       :info,
       :basetype,
       :category,
@@ -40,6 +67,25 @@ defmodule PoeSystem.Items.Item do
       :price,
       :rarity
     ])
-    |> unique_constraint(:item_id)
+  end
+
+  @spec internal_change(Item.t(), map()) :: Ecto.Changeset.t()
+  def internal_change(item, attrs \\ %{}) do
+    item
+    |> change(attrs)
+    |> validate_required([
+      :id,
+      :info,
+      :basetype,
+      :category,
+      :subcategory,
+      :price,
+      :rarity
+    ])
+  end
+
+  def from_json(data) when is_map(data) do
+    changeset(%__MODULE__{}, data)
+    |> apply_changes()
   end
 end

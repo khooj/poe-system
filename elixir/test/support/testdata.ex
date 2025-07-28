@@ -45,9 +45,12 @@ defmodule PoeSystem.Testdata do
   end
 
   def insert_items do
-    for item <- Items.into_elixir_items(items()) do
-      Item.changeset(item)
-      |> Repo.insert_or_update!()
+    for item <- items() do
+      item
+      # |> IO.inspect()
+      |> then(&Item.internal_change(%Item{}, Map.from_struct(&1)))
+      # |> IO.inspect()
+      |> Repo.insert!()
     end
   end
 
@@ -60,7 +63,7 @@ defmodule PoeSystem.Testdata do
       itemset: itemset,
       skillset: skillset,
       pob: pobdata_file(),
-      provided: cfg["provided"]
+      provided: cfg.provided
     })
     |> Repo.insert!()
   end

@@ -7,12 +7,13 @@ use domain::{
     build_calculation::{
         comparison::Comparator,
         stored_item::{ItemInfo as StoredItemInfo, StoredItem},
+        ItemWithConfig,
     },
     item::Item,
 };
 use pob::Pob;
 use public_stash::models::PublicStashData;
-use rustler::{Atom, Encoder, Env, NifResult, SerdeTerm, Term};
+use rustler::{Atom, Encoder, Env, NifResult, NifStruct, SerdeTerm, Term};
 use serde::Serialize;
 use serde_json::{Map, Value};
 use uuid::Uuid;
@@ -31,21 +32,15 @@ impl<'a> From<WrapperMap<'a>> for HashMap<String, Value> {
 
 #[rustler::nif]
 fn closest_item(
-    env: Env<'_>,
-    req_item: SerdeTermJson,
-    SerdeTerm(items): SerdeTerm<Vec<JsonHashMap>>,
-) -> NifResult<Term<'_>> {
-    let req_item = decode_config(req_item)?;
-    let items = items
-        .into_iter()
-        .map(|i| decode_config(SerdeTerm(i)).expect("cannot decode stored item in vec"))
-        .collect();
-    let result = Comparator::closest_item(&req_item, items);
-    Ok((atoms::ok(), SerdeTerm(encode_config(env, &result)?)).encode(env))
+    req_item: ItemWithConfig,
+    items: Vec<StoredItem>,
+) -> NifResult<(Atom, Option<StoredItem>)> {
+    let result = Comparator::closest_item(&req_item.item, items);
+    Ok((atoms::ok(), result))
 }
 
 #[rustler::nif]
-fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<SerdeTerm<Value>>> {
+fn get_items_from_stash_data(data: &str) -> NifResult<Vec<StoredItem>> {
     let k: PublicStashData = serde_json::from_str(data).unwrap();
     let mut res_items = vec![];
 
@@ -70,7 +65,6 @@ fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<S
                 i
             })
             .filter_map(|i| StoredItem::try_from(i).ok())
-            .map(|i| SerdeTerm(encode_config(env, &i).unwrap()))
             .collect::<Vec<_>>();
         res_items.append(&mut items);
     }
@@ -78,19 +72,16 @@ fn get_items_from_stash_data<'a>(env: Env<'a>, data: &'a str) -> NifResult<Vec<S
     Ok(res_items)
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, NifStruct)]
+#[module = "PoeSystem.StashData"]
 struct StashData {
     remove_stashes: Vec<String>,
-    stashes: HashMap<String, (String, Vec<Value>)>,
+    stashes: HashMap<String, (String, Vec<StoredItem>)>,
     next_change_id: String,
 }
 
 #[rustler::nif]
-fn process_stash_data<'a>(
-    env: Env<'a>,
-    data: &'a str,
-    without_zero_price: bool,
-) -> NifResult<(Atom, SerdeTerm<Value>)> {
+fn process_stash_data(data: &str, without_zero_price: bool) -> NifResult<(Atom, StashData)> {
     let k: PublicStashData = serde_json::from_str(data).unwrap();
     let mut result = StashData {
         stashes: HashMap::new(),
@@ -130,20 +121,18 @@ fn process_stash_data<'a>(
                     Some(i)
                 }
             })
-            .map(|i| encode_config(env, &i).unwrap())
             .collect::<Vec<_>>();
         result
             .stashes
             .insert(d.id.clone(), (d.league.unwrap_or(String::new()), items));
     }
 
-    Ok((atoms::ok(), SerdeTerm(encode_config(env, &result).unwrap())))
+    Ok((atoms::ok(), result))
 }
 
 #[rustler::nif]
-fn get_stored_item_type(info: SerdeTermJson) -> NifResult<(Atom, Atom)> {
-    let info: StoredItemInfo = decode_config(info)?;
-    let atom = match info {
+fn get_stored_item_type(item: StoredItem) -> NifResult<(Atom, Atom)> {
+    let atom = match item.info {
         StoredItemInfo::Accessory { .. } => atoms::accessory(),
         StoredItemInfo::Gem { .. } => atoms::gem(),
         StoredItemInfo::Armor { .. } => atoms::armor(),
@@ -155,20 +144,18 @@ fn get_stored_item_type(info: SerdeTermJson) -> NifResult<(Atom, Atom)> {
 }
 
 #[rustler::nif]
-fn extract_gem_props(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<Term<'_>> {
-    let req_item: StoredItem = decode_config(req_item)?;
+fn extract_gem_props(req_item: StoredItem) -> NifResult<(Atom, u8, u8)> {
     if let StoredItemInfo::Gem { quality, level } = req_item.info {
-        Ok((atoms::ok(), quality, level).encode(env))
+        Ok((atoms::ok(), quality, level))
     } else {
         Err(RustError::InvalidItem.into())
     }
 }
 
 #[rustler::nif]
-fn extract_flask_props(env: Env<'_>, req_item: SerdeTermJson) -> NifResult<Term<'_>> {
-    let req_item: StoredItem = decode_config(req_item)?;
+fn extract_flask_props(req_item: StoredItem) -> NifResult<(Atom, u8)> {
     if let StoredItemInfo::Flask { quality, .. } = req_item.info {
-        Ok((atoms::ok(), quality).encode(env))
+        Ok((atoms::ok(), quality))
     } else {
         Err(RustError::InvalidItem.into())
     }

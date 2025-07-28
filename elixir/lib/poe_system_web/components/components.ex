@@ -1,6 +1,6 @@
 defmodule PoeSystemWeb.Components do
   use PoeSystemWeb, :html
-  alias PoeSystem.Items.{ItemStruct, ItemConfig}
+  alias PoeSystem.Items.{Item, ItemConfig}
 
   attr :stat_id, :string, required: true
   attr :text, :string, required: true
@@ -55,7 +55,7 @@ defmodule PoeSystemWeb.Components do
   end
 
   attr :config, ItemConfig, required: true 
-  attr :item, ItemStruct, required: true
+  attr :item, Item, required: true
 
   def item_config_readonly(assigns) do
     ~H"""

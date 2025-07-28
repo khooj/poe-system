@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use rustler::{NifStruct, NifUnitEnum};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, convert::TryFrom, ops::Deref, str::FromStr};
 use strum::{AsRefStr, EnumString};
@@ -17,9 +18,10 @@ pub enum TypeError {
     Strum(#[from] strum::ParseError),
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq, AsRefStr, TS)]
+#[derive(
+    Deserialize, Serialize, Clone, Debug, EnumString, Default, PartialEq, AsRefStr, NifUnitEnum,
+)]
 #[strum(ascii_case_insensitive)]
-#[ts(export)]
 pub enum Category {
     Flasks,
     #[default]
@@ -158,9 +160,10 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq, AsRefStr, TS)]
+#[derive(
+    Deserialize, Serialize, Clone, Debug, Default, EnumString, PartialEq, AsRefStr, NifUnitEnum,
+)]
 #[strum(ascii_case_insensitive)]
-#[ts(export)]
 pub enum Subcategory {
     #[default]
     Empty,

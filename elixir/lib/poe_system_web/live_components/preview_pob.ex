@@ -1,7 +1,7 @@
 defmodule PoeSystemWeb.LiveComponents.PreviewPob do
   use PoeSystemWeb, :live_component
   import PoeSystemWeb.Components
-  alias RustPoe.Native
+  alias RustPoe.NativeWrapper
   alias Phoenix.LiveView.AsyncResult
   alias PoeSystem.Items.NativeItem
 
@@ -23,17 +23,9 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
   end
 
   defp extract_items(pobdata, itemset, skillset, profile \\ "simpleeverything") do
-    {:ok, build} = Native.extract_build_config(pobdata, itemset, skillset, profile)
+    {:ok, build} = NativeWrapper.extract_build_config(pobdata, itemset, skillset, profile)
 
-    provided = build["provided"]
-    |> Enum.map(fn 
-        {k, v} when is_map(v) -> {k, NativeItem.from_json(v)} 
-        {k, v} when is_list(v) -> {k, v |> Enum.map(&NativeItem.from_json/1)} 
-        a -> a
-      end)
-    |> Enum.into(%{})
-
-    {:ok, %{items: provided}}
+    {:ok, %{items: build.provided}}
   end
 
   @impl true
@@ -72,26 +64,62 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
       <.async_result :let={data} assign={@items}>
         <:failed>Failed to load</:failed>
         <div class="grid grid-cols-3 gap-4">
-          <div :for={{key, d} <- data |> filter_items()}>
-            <h1>{key}</h1>
-            <.item_config_readonly :if={d && is_struct(d)} item={d.item} config={d.config} />
+          <div>
+            <h1>amulet</h1>
+            <.item_config_readonly :if={data.amulet} item={data.amulet.item} config={data.amulet.config} />
+          </div>
+          <div>
+            <h1>helmet</h1>
+            <.item_config_readonly :if={data.helmet} item={data.helmet.item} config={data.helmet.config} />
+          </div>
+          <div>
+            <h1>body</h1>
+            <.item_config_readonly :if={data.body} item={data.body.item} config={data.body.config} />
+          </div>
+          <div>
+            <h1>boots</h1>
+            <.item_config_readonly :if={data.boots} item={data.boots.item} config={data.boots.config} />
+          </div>
+          <div>
+            <h1>gloves</h1>
+            <.item_config_readonly :if={data.gloves} item={data.gloves.item} config={data.gloves.config} />
+          </div>
+          <div>
+            <h1>weapon1</h1>
+            <.item_config_readonly :if={data.weapon1} item={data.weapon1.item} config={data.weapon1.config} />
+          </div>
+          <div>
+            <h1>weapon2</h1>
+            <.item_config_readonly :if={data.weapon2} item={data.weapon2.item} config={data.weapon2.config} />
+          </div>
+          <div>
+            <h1>ring1</h1>
+            <.item_config_readonly :if={data.ring1} item={data.ring1.item} config={data.ring1.config} />
+          </div>
+          <div>
+            <h1>ring2</h1>
+            <.item_config_readonly :if={data.ring2} item={data.ring2.item} config={data.ring2.config} />
+          </div>
+          <div>
+            <h1>belt</h1>
+            <.item_config_readonly :if={data.belt} item={data.belt.item} config={data.belt.config} />
           </div>
         </div>
         <p>gems</p>
         <div class="grid grid-cols-3 gap-4 mt-4">
-          <div :for={d <- data["gems"]}>
+          <div :for={d <- data.gems}>
             <.item_config_readonly item={d.item} config={d.config} />
           </div>
         </div>
         <p>flasks</p>
         <div class="grid grid-cols-3 gap-4 mt-4">
-          <div :for={d <- data["flasks"]}>
+          <div :for={d <- data.flasks}>
             <.item_config_readonly item={d.item} config={d.config} />
           </div>
         </div>
         <p>jewels</p>
         <div class="grid grid-cols-3 gap-4 mt-4">
-          <div :for={d <- data["jewels"]}>
+          <div :for={d <- data.jewels}>
             <.item_config_readonly item={d.item} config={d.config} />
           </div>
         </div>
@@ -100,15 +128,19 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
     """
   end
 
-  defp filter_items(items) do
-    items
-      |> Enum.reject(fn 
-        {k, v} when is_nil(v) -> true
-        {"gems", _} -> true
-        {"flasks", _} -> true
-        {"jewels", _} -> true
-        a -> false
-    end)
+  defp keys() do
+    [
+      :amulet,
+      :helmet,
+      :body,
+      :boots,
+      :gloves,
+      :weapon1,
+      :weapon2,
+      :ring1,
+      :ring2,
+      :belt
+    ]
   end
 
   def handle_event("change-options", params, socket) do

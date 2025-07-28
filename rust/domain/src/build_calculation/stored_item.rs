@@ -6,9 +6,9 @@ use crate::{
     },
 };
 use regex::bytes::Regex;
+use rustler::{NifStruct, NifTaggedEnum};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use ts_rs::TS;
 
 #[derive(Debug)]
 pub struct Stash {
@@ -16,21 +16,19 @@ pub struct Stash {
     pub account: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, TS)]
-#[ts(export)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, NifStruct)]
+#[module = "PoeSystem.Items.Property"]
 pub struct Property {
     pub augmented: bool,
     pub name: String,
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
-#[ts(export, rename = "StoredMod")]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, NifStruct)]
+#[module = "PoeSystem.Items.Mod"]
 pub struct Mod {
     pub stat_id: String,
     pub text: String,
-    pub current_value_int: Option<(i32, Option<i32>)>,
-    pub current_value_float: Option<(f32, Option<f32>)>,
 }
 
 impl From<DomainMod> for Mod {
@@ -38,29 +36,12 @@ impl From<DomainMod> for Mod {
         Mod {
             stat_id: value.stat_id,
             text: value.text,
-            current_value_int: match value.numeric_value {
-                ModValue::Exact(DataModValue::Int(i)) => Some((i, None)),
-                ModValue::DoubleExact {
-                    from: DataModValue::Int(a),
-                    to: DataModValue::Int(b),
-                } => Some((a, Some(b))),
-                _ => None,
-            },
-            current_value_float: match value.numeric_value {
-                ModValue::Exact(DataModValue::Float(i)) => Some((i, None)),
-                ModValue::DoubleExact {
-                    from: DataModValue::Float(a),
-                    to: DataModValue::Float(b),
-                } => Some((a, Some(b))),
-                _ => None,
-            },
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, NifTaggedEnum)]
 #[serde(tag = "type")]
-#[ts(export, rename = "StoredItemInfo")]
 pub enum ItemInfo {
     Gem {
         level: u8,
@@ -133,8 +114,7 @@ impl ItemInfo {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, TS, PartialEq)]
-#[ts(export)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, NifTaggedEnum)]
 pub enum Price {
     Chaos(i32),
     Divine(i32),
@@ -157,8 +137,8 @@ impl Price {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default, TS, PartialEq)]
-#[ts(export)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, NifStruct)]
+#[module = "PoeSystem.Items.Item"]
 pub struct StoredItem {
     pub id: String,
     pub basetype: String,

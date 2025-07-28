@@ -10,13 +10,10 @@ defmodule PoeSystem.Items do
   end
 
   def into_elixir_items(item) when is_map(item) do
-    res =
-      item
-      |> Map.put("item_id", item["id"])
-      |> Map.delete("id")
-      |> Utils.to_atom_key_map()
-
-    struct(Item, res)
+    item
+    |> Map.put("item_id", item["id"])
+    |> Map.delete("id")
+    |> Item.from_json()
   end
 
   def into_native_items(items) when is_list(items) do
