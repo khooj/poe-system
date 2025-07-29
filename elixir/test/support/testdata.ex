@@ -58,8 +58,8 @@ defmodule PoeSystem.Testdata do
     {itemset, skillset} = config_info()
     cfg = extract_config()
 
-    Build.changeset(%Build{}, %{
-      id: UUID.bingenerate(),
+    Build.internal_change(%{
+      id: UUID.generate(),
       itemset: itemset,
       skillset: skillset,
       pob: pobdata_file(),

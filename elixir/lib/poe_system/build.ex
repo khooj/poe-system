@@ -4,6 +4,7 @@ defmodule PoeSystem.Build do
   import Ecto.Query
   alias PoeSystem.Repo
   require Protocol
+  alias PoeSystem.EctoTypes.Binary
   alias PoeSystem.Build.{ProvidedItems, FoundItems}
   alias __MODULE__
 
@@ -11,8 +12,8 @@ defmodule PoeSystem.Build do
 
   schema "builds" do
     field :id, Ecto.UUID, primary_key: true
-    embeds_one :provided, ProvidedItems
-    embeds_one :found, FoundItems
+    field :provided, Binary
+    field :found, Binary
     field :processed, :boolean, default: false
     field :itemset, :string
     field :skillset, :string
@@ -30,10 +31,13 @@ defmodule PoeSystem.Build do
   @spec changeset(Build.t(), map()) :: Ecto.Changeset.t()
   def changeset(build_info, attrs \\ %{}) do
     build_info
-    |> cast(attrs, [:id, :processed, :itemset, :skillset, :pob, :fixed])
-    |> cast_embed(:provided)
-    |> cast_embed(:found)
+    |> cast(attrs, [:id, :processed, :itemset, :skillset, :pob, :fixed, :provided, :found])
     |> validate_required([:id, :provided, :itemset, :skillset, :pob])
+  end
+
+  def internal_change(data) do
+    %__MODULE__{}
+    |> change(data)
   end
 
   @spec get_build(Ecto.UUID.t()) :: Build.t() | nil

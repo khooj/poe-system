@@ -35,22 +35,22 @@ defmodule PoeSystem.BuildProcessingTest do
     end
 
     test "w/ items", %{build: build} do
-      assert BuildProcessing.process_single_build(build["provided"])
+      assert BuildProcessing.process_single_build(build.provided)
     end
 
     test "w/ items (nores profile)", %{build_nores: build} do
-      assert BuildProcessing.process_single_build(build["provided"])
+      assert BuildProcessing.process_single_build(build.provided)
     end
 
     # TODO: ensure that testdata have required items
     test "check gems", %{build: build} do
-      assert not Enum.empty?(build["provided"]["gems"])
-      processed = BuildProcessing.process_single_build(build["provided"])
+      assert not Enum.empty?(build.provided.gems)
+      processed = BuildProcessing.process_single_build(build.provided)
     end
 
     test "check flasks", %{build: build} do
-      assert not Enum.empty?(build["provided"]["flasks"])
-      processed = BuildProcessing.process_single_build(build["provided"])
+      assert not Enum.empty?(build.provided.flasks)
+      processed = BuildProcessing.process_single_build(build.provided)
     end
   end
 end

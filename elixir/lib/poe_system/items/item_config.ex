@@ -1,12 +1,15 @@
 defmodule PoeSystem.Items.ItemConfig do
   use Ecto.Schema
   import Ecto.Changeset
+  import Protocol
 
   @primary_key false
   embedded_schema do
     field :basetype, :boolean
     field :option, :map
   end
+
+  Protocol.derive(Jason.Encoder, __MODULE__)
 
   def changeset(struct, data) do
     struct

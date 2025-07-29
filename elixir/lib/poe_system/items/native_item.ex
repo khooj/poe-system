@@ -24,9 +24,4 @@ defmodule PoeSystem.Items.NativeItem do
     changeset(%__MODULE__{}, data)
     |> apply_changes()
   end
-
-  def into_json(struct) when is_struct(struct) do
-    struct
-    |> Utils.to_string_key_map()
-  end
 end
