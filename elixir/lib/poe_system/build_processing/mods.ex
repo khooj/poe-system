@@ -1,19 +1,15 @@
 defmodule PoeSystem.BuildProcessing.Mods do
   alias PoeSystem.Items.{Item, ModStatId}
   alias PoeSystem.Items
-  import Ecto.Query
 
   defp extract_mods_for_search(mods) do
     mods
       |> Enum.map(fn {%ModStatId{value: value}, _} -> value end)
   end
 
-  defp unique?(:unique), do: true
-  defp unique?(_), do: false
-
   defp append_query(q, %{option: nil}, _), do: q
 
-  defp append_query(q, %{option: {:mods, mods}}, item) do
+  defp append_query(q, %{option: {:mods, mods}}, _) do
     q
     |> Items.append_mods(extract_mods_for_search(mods))
   end

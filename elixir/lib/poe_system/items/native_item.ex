@@ -2,7 +2,6 @@ defmodule PoeSystem.Items.NativeItem do
   use Ecto.Schema
   import Ecto.Changeset
   alias PoeSystem.Items.{ItemConfig, Item}
-  alias __MODULE__
   alias Utils
 
   @type t :: %__MODULE__{}

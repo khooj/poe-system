@@ -1,7 +1,7 @@
 defmodule PoeSystem.Items.ItemConfig do
   use Ecto.Schema
   import Ecto.Changeset
-  import Protocol
+  require Protocol
 
   @primary_key false
   embedded_schema do

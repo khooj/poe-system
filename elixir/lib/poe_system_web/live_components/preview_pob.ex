@@ -1,10 +1,11 @@
 defmodule PoeSystemWeb.LiveComponents.PreviewPob do
   use PoeSystemWeb, :live_component
   import PoeSystemWeb.Components
-  alias RustPoe.NativeWrapper
-  alias Phoenix.LiveView.AsyncResult
-  alias PoeSystem.Items.NativeItem
+  alias RustPoe.Native
+  alias PoeSystem.{Build, Repo, BuildProcessing}
+  alias Ecto.{UUID, Multi}
 
+  @impl true
   def update(assigns, socket) do
     %{
       pobdata: pobdata,
@@ -23,7 +24,7 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
   end
 
   defp extract_items(pobdata, itemset, skillset, profile \\ "simpleeverything") do
-    {:ok, build} = NativeWrapper.extract_build_config(pobdata, itemset, skillset, profile)
+    {:ok, build} = Native.extract_build_config(pobdata, itemset, skillset, profile)
 
     {:ok, %{items: build.provided}}
   end
@@ -57,13 +58,13 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
           />
           <div class="flex gap-4 items-center">
             <.button>Submit</.button>
-            <div :if={@items.loading}><.loading color="primary" />Loading</div>
+            <div :if={@items.loading}><.loading color="primary" shape="spinner" />Loading</div>
           </div>
         </.form>
       </div>
       <.async_result :let={data} assign={@items}>
         <:failed>Failed to load</:failed>
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-3 gap-4 m-4">
           <div>
             <h1>amulet</h1>
             <.item_config_readonly :if={data.amulet} item={data.amulet.item} config={data.amulet.config} />
@@ -106,19 +107,19 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
           </div>
         </div>
         <p>gems</p>
-        <div class="grid grid-cols-3 gap-4 mt-4">
+        <div class="grid grid-cols-3 gap-4 m-4">
           <div :for={d <- data.gems}>
             <.item_config_readonly item={d.item} config={d.config} />
           </div>
         </div>
         <p>flasks</p>
-        <div class="grid grid-cols-3 gap-4 mt-4">
+        <div class="grid grid-cols-3 gap-4 m-4">
           <div :for={d <- data.flasks}>
             <.item_config_readonly item={d.item} config={d.config} />
           </div>
         </div>
         <p>jewels</p>
-        <div class="grid grid-cols-3 gap-4 mt-4">
+        <div class="grid grid-cols-3 gap-4 m-4">
           <div :for={d <- data.jewels}>
             <.item_config_readonly item={d.item} config={d.config} />
           </div>
@@ -128,21 +129,7 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
     """
   end
 
-  defp keys() do
-    [
-      :amulet,
-      :helmet,
-      :body,
-      :boots,
-      :gloves,
-      :weapon1,
-      :weapon2,
-      :ring1,
-      :ring2,
-      :belt
-    ]
-  end
-
+  @impl true
   def handle_event("change-options", params, socket) do
     %{
       pobdata: pobdata,
@@ -162,5 +149,39 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
       end)
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("submit-preview", params, socket) do
+    %{
+      pobdata: pobdata,
+      items: items
+    } = socket.assigns
+
+    %{
+      "profile" => profile,
+      "itemset" => itemset,
+      "skillset" => skillset,
+    } = params 
+
+    {:ok, ret} =
+      Multi.new()
+      |> Multi.insert(
+        :bi,
+        Build.changeset(%Build{}, %{
+          id: UUID.bingenerate(),
+          itemset: itemset,
+          skillset: skillset,
+          pob: pobdata,
+          provided: items.result,
+          fixed: true,
+        })
+      )
+      |> BuildProcessing.queue_processing_build_multi(:new_job, fn %{bi: bi} ->
+        BuildProcessing.new(%{id: bi.id})
+      end)
+      |> Repo.transaction()
+
+    {:noreply, socket |> push_navigate(to: ~p"/poe1/build-calc/#{ret.bi.id}")}
   end
 end

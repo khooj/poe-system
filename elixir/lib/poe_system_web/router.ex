@@ -21,20 +21,11 @@ defmodule PoeSystemWeb.Router do
              img_src: "'self' data:"
            ] ++ Application.compile_env(:poe_system, :additional_csp, [])
     end
-
-    plug Inertia.Plug
   end
 
   pipeline :api do
     plug :accepts, ["json"]
     plug PoeSystemWeb.Plug.RateLimiter
-  end
-
-  # Config.CSRF sse does not receive any msg so should be safe here
-  pipeline :sse do
-    plug :put_format, "text/event-stream"
-    plug PoeSystemWeb.Plug.RateLimiter
-    plug :fetch_session
   end
 
   scope "/" do
@@ -55,25 +46,8 @@ defmodule PoeSystemWeb.Router do
     scope "/build-calc", as: :build_calc do
       live "/", Poe1BuildCalcIndexLive, :new
       live "/preview", Poe1BuildCalcIndexLive, :preview
-      post "/new", Poe1Controller, :new
-      get "/:id", Poe1Controller, :get_build
-    end
-  end
-
-  scope "/sse", PoeSystemWeb, as: :sse do
-    pipe_through :sse
-
-    post "/", SseController, :subscribe
-  end
-
-  # Other scopes may use custom stacks.
-  scope "/api", PoeSystemWeb, as: :api do
-    pipe_through :api
-
-    scope "/v1", as: :v1 do
-      post "/extract", Poe1Controller, :extract
-      post "/profile", Poe1Controller, :set_profile
-    end
+      live "/:id", Poe1BuildCalcBuildLive
+   end
   end
 
   # Enable LiveDashboard in development

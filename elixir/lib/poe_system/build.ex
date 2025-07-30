@@ -5,7 +5,6 @@ defmodule PoeSystem.Build do
   alias PoeSystem.Repo
   require Protocol
   alias PoeSystem.EctoTypes.Binary
-  alias PoeSystem.Build.{ProvidedItems, FoundItems}
   alias __MODULE__
 
   @primary_key false

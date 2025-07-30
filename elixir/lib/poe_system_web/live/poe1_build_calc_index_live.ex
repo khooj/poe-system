@@ -1,6 +1,5 @@
 defmodule PoeSystemWeb.Poe1BuildCalcIndexLive do
   use PoeSystemWeb, :live_view
-  alias RustPoe.Native
   alias PoeSystemWeb.LiveComponents.{PobReceive, PreviewPob}
   require Logger
 
@@ -25,10 +24,12 @@ defmodule PoeSystemWeb.Poe1BuildCalcIndexLive do
     """
   end
 
+  @impl true
   def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info({:new_pob, {pobdata, itemsets, skillsets}}, socket) do
     socket = socket
       |> assign(:pobdata, pobdata)

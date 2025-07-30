@@ -15,7 +15,7 @@ defmodule PoeSystem.EctoTypes.Info do
       |> String.to_atom()
 
     values = info
-      |> Enum.filter(fn {k, v} -> k != "type" end)
+      |> Enum.filter(fn {k, _} -> k != "type" end)
       |> Enum.map(fn 
         {"mods", v} -> {:mods, Enum.map(v, &Mod.from_json/1)}
         {"properties", v} -> {:properties, Enum.map(v, &Property.from_json/1)}
@@ -26,7 +26,7 @@ defmodule PoeSystem.EctoTypes.Info do
     {:ok, {t, values}}
   end
 
-  def dump({a, b} = info) when is_atom(a) and is_map(b) do
+  def dump({a, b}) when is_atom(a) and is_map(b) do
     t = a
       |> Atom.to_string()
       |> String.capitalize()

@@ -3,7 +3,6 @@ defmodule PoeSystem.StashReceiver do
   require Logger
   alias PoeSystem.{Repo, LatestStash, Stash}
   alias PoeSystem.Items.Item
-  alias PoeSystem.Items
   import Ecto.Query
   alias Ecto.Multi
   alias PoeSystem.StashReceiver.{Client, Limits}
@@ -152,7 +151,7 @@ defmodule PoeSystem.StashReceiver do
       Logger.info(
         incoming_leagues: MapSet.to_list(stash_data.incoming_leagues),
         processed_leagues: MapSet.to_list(stash_data.processed_leagues),
-        new_items_count: length(stash_data.items),
+        new_items_count: length(stash_data.items)
       )
 
       Logger.debug(inspect(stash_data.stashes))

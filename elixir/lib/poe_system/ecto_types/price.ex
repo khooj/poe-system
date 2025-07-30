@@ -21,8 +21,8 @@ defmodule PoeSystem.EctoTypes.Price do
   def load(%{"Chaos" => value}), do: {:ok, {:chaos, value}}
   def load(%{"Divine" => value}), do: {:ok, {:divine, value}}
 
-  def dump({:chaos, b} = info) when is_integer(b), do: {:ok, %{"Chaos" => b}}
-  def dump({:divine, b} = info) when is_integer(b), do: {:ok, %{"Divine" => b}}
+  def dump({:chaos, b}) when is_integer(b), do: {:ok, %{"Chaos" => b}}
+  def dump({:divine, b}) when is_integer(b), do: {:ok, %{"Divine" => b}}
   def dump({:custom, b, c}) when is_binary(b) and is_integer(c) do
     {:ok, %{"Custom" => [b, c]}}
   end

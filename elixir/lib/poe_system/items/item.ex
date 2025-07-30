@@ -3,7 +3,6 @@ defmodule PoeSystem.Items.Item do
   import Ecto.Changeset
   require Protocol
   alias __MODULE__
-  alias PoeSystem.Items.ItemInfo
 
   @primary_key false
   schema "items" do

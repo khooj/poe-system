@@ -135,10 +135,6 @@ defmodule PoeSystem.BuildProcessing do
   defp closest_item(req_item, items, last_item),
     do: Native.closest_item(req_item, [last_item | items])
 
-  defp opt(false, _), do: nil
-  defp opt(nil, _), do: nil
-  defp opt(_, v), do: v
-
   def test do
     {:ok, _} = queue_processing_build("cb5bb0be-405a-4328-accc-6e8dadbe6397")
   end
