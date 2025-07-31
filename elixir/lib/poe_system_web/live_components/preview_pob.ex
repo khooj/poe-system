@@ -13,12 +13,23 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
       skillsets: skillsets
     } = assigns
 
-    socket = socket
+    socket =
+      socket
       |> assign(:pobdata, pobdata)
       |> assign(:itemsets, itemsets)
       |> assign(:skillsets, skillsets)
-      |> assign(:form, %{"profile" => "simpleeverything", "itemset" => List.first(itemsets), "skillset" => List.first(skillsets)} |> to_form())
-      |> assign_async(:items, fn -> extract_items(pobdata, List.first(itemsets), List.first(skillsets)) end)
+      |> assign(
+        :form,
+        %{
+          "profile" => "simpleeverything",
+          "itemset" => List.first(itemsets),
+          "skillset" => List.first(skillsets)
+        }
+        |> to_form()
+      )
+      |> assign_async(:items, fn ->
+        extract_items(pobdata, List.first(itemsets), List.first(skillsets))
+      end)
 
     {:ok, socket}
   end
@@ -34,28 +45,23 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
     ~H"""
     <div class="flex flex-col justify-center">
       <div>
-        <.form for={@form} phx-submit="submit-preview" phx-change="change-options" phx-target={@myself}>
-          <.input 
+        <.form
+          for={@form}
+          phx-submit="submit-preview"
+          phx-change="change-options"
+          phx-target={@myself}
+        >
+          <.input
             type="select"
             label="Profile for items"
             field={@form[:profile]}
             options={[
               [key: "Simple", value: "simpleeverything"],
-              [key: "Simple no res", value: "simplenores"],
+              [key: "Simple no res", value: "simplenores"]
             ]}
           />
-          <.input 
-            type="select"
-            label="Itemset"
-            field={@form[:itemset]}
-            options={@itemsets}
-          />
-          <.input 
-            type="select"
-            label="Skillset"
-            field={@form[:skillset]}
-            options={@skillsets}
-          />
+          <.input type="select" label="Itemset" field={@form[:itemset]} options={@itemsets} />
+          <.input type="select" label="Skillset" field={@form[:skillset]} options={@skillsets} />
           <div class="flex gap-4 items-center">
             <.button>Submit</.button>
             <div :if={@items.loading}><.loading color="primary" shape="spinner" />Loading</div>
@@ -67,11 +73,19 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
         <div class="grid grid-cols-3 gap-4 m-4">
           <div>
             <h1>amulet</h1>
-            <.item_config_readonly :if={data.amulet} item={data.amulet.item} config={data.amulet.config} />
+            <.item_config_readonly
+              :if={data.amulet}
+              item={data.amulet.item}
+              config={data.amulet.config}
+            />
           </div>
           <div>
             <h1>helmet</h1>
-            <.item_config_readonly :if={data.helmet} item={data.helmet.item} config={data.helmet.config} />
+            <.item_config_readonly
+              :if={data.helmet}
+              item={data.helmet.item}
+              config={data.helmet.config}
+            />
           </div>
           <div>
             <h1>body</h1>
@@ -83,15 +97,27 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
           </div>
           <div>
             <h1>gloves</h1>
-            <.item_config_readonly :if={data.gloves} item={data.gloves.item} config={data.gloves.config} />
+            <.item_config_readonly
+              :if={data.gloves}
+              item={data.gloves.item}
+              config={data.gloves.config}
+            />
           </div>
           <div>
             <h1>weapon1</h1>
-            <.item_config_readonly :if={data.weapon1} item={data.weapon1.item} config={data.weapon1.config} />
+            <.item_config_readonly
+              :if={data.weapon1}
+              item={data.weapon1.item}
+              config={data.weapon1.config}
+            />
           </div>
           <div>
             <h1>weapon2</h1>
-            <.item_config_readonly :if={data.weapon2} item={data.weapon2.item} config={data.weapon2.config} />
+            <.item_config_readonly
+              :if={data.weapon2}
+              item={data.weapon2.item}
+              config={data.weapon2.config}
+            />
           </div>
           <div>
             <h1>ring1</h1>
@@ -132,20 +158,21 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
   @impl true
   def handle_event("change-options", params, socket) do
     %{
-      pobdata: pobdata,
+      pobdata: pobdata
     } = socket.assigns
 
     %{
       "profile" => profile,
       "itemset" => itemset,
-      "skillset" => skillset,
+      "skillset" => skillset
     } = params
 
-    socket = socket
+    socket =
+      socket
       |> assign(:form, to_form(params))
-      |> assign_async(:items, fn -> 
+      |> assign_async(:items, fn ->
         # Process.sleep(:timer.seconds(1))
-        extract_items(pobdata, itemset, skillset, profile) 
+        extract_items(pobdata, itemset, skillset, profile)
       end)
 
     {:noreply, socket}
@@ -159,10 +186,9 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
     } = socket.assigns
 
     %{
-      "profile" => profile,
       "itemset" => itemset,
-      "skillset" => skillset,
-    } = params 
+      "skillset" => skillset
+    } = params
 
     {:ok, ret} =
       Multi.new()
@@ -174,7 +200,7 @@ defmodule PoeSystemWeb.LiveComponents.PreviewPob do
           skillset: skillset,
           pob: pobdata,
           provided: items.result,
-          fixed: true,
+          fixed: true
         })
       )
       |> BuildProcessing.queue_processing_build_multi(:new_job, fn %{bi: bi} ->

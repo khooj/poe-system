@@ -84,7 +84,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
     notify: [
       live_view: [
         ~r"lib/poe_system_web/(live|live_components)/.*(ex|heex)$",
-        ~r"lib/poe_system_web/components/components.ex$",
+        ~r"lib/poe_system_web/components/components.ex$"
       ]
     ],
     patterns: [

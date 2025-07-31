@@ -7,8 +7,10 @@ defmodule PoeSystem.EctoTypes.Binary do
   end
 
   def load(data) when is_binary(data) do
-    data = data
+    data =
+      data
       |> :erlang.binary_to_term()
+
     {:ok, data}
   end
 

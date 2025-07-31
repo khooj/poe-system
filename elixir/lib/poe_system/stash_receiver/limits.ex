@@ -42,7 +42,7 @@ defmodule PoeSystem.StashReceiver.Limits do
 
       limits_states
       |> Enum.with_index()
-      |> Enum.map(fn {ls, idx} -> set_ratelimit_state(policy, rule, idx, ls) end)
+      |> Enum.each(fn {ls, idx} -> set_ratelimit_state(policy, rule, idx, ls) end)
 
       limits
       |> Enum.with_index()

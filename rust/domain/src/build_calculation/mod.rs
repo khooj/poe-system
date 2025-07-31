@@ -14,7 +14,7 @@ use ts_rs::TS;
 use crate::data::MODS;
 
 #[derive(Serialize, Deserialize, Debug, Default, NifStruct)]
-#[module = "RustPoe.BuildInfo"]
+#[module = "PoeSystem.Build.BuildInfo"]
 pub struct BuildInfo {
     pub provided: BuildItemsWithConfig,
     pub found: FoundBuildItems,

@@ -4,7 +4,7 @@ defmodule PoeSystem.BuildProcessing.Mods do
 
   defp extract_mods_for_search(mods) do
     mods
-      |> Enum.map(fn {%ModStatId{value: value}, _} -> value end)
+    |> Enum.map(fn {%ModStatId{value: value}, _} -> value end)
   end
 
   defp append_query(q, %{option: nil}, _), do: q

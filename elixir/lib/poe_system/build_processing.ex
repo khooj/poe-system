@@ -4,9 +4,10 @@ defmodule PoeSystem.BuildProcessing do
   alias RustPoe.Native
   alias PoeSystem.Repo
   alias PoeSystem.Build
-  alias PoeSystem.Build.{BuildInfo, FoundItems}
+  alias PoeSystem.Build.{FoundItems, ProvidedItems}
   alias PoeSystem.Items
-  alias PoeSystem.Items.Item
+  alias PoeSystem.Items.{Item, NativeItem}
+  alias PoeSystem.PoeNinja
   alias RustPoe.Native
   alias PoeSystem.BuildProcessing.Mods
   use Oban.Worker, queue: :new_builds
@@ -49,25 +50,25 @@ defmodule PoeSystem.BuildProcessing do
     5
   end
 
-  @spec process_single_build(BuildInfo.t()) :: map()
+  @spec process_single_build(ProvidedItems.t()) :: FoundItems.t()
   # FIXME: find out how to exclude func args from span (cannot encode in json)
   # @telemetria level: :info, group: :poe1_build_processing, locals: []
   def process_single_build(provided) do
-    found = provided
-    |> Map.from_struct()
-    |> Enum.map(fn {k, v} -> {k, process_entry(v)} end)
-    |> Enum.into(%{})
+    found =
+      provided
+      |> Map.from_struct()
+      |> Enum.map(fn {k, v} -> {k, process_entry(v)} end)
+      |> Enum.into(%{})
 
     struct!(FoundItems, found)
   end
 
+  @spec process_entry([NativeItem.t()] | NativeItem.t() | nil) :: Item.t() | nil
   # @telemetria level: :info, group: :poe1_build_processing, locals: []
   defp process_entry(data)
 
-  @spec process_entry(nil) :: nil
   defp process_entry(nil), do: nil
 
-  @spec process_entry([Item.item_with_config()]) :: [Item.t()] | []
   defp process_entry(items) when is_list(items) do
     result =
       items
@@ -80,14 +81,23 @@ defmodule PoeSystem.BuildProcessing do
     result
   end
 
-  @spec process_entry(Item.item_with_config()) :: Item.t() | nil
   defp process_entry(item) do
     result = find_similar(item, Native.get_stored_item_type(item.item))
     Logger.debug("found item for single item: #{result && result.id}")
     result
   end
 
-  @spec find_similar(Item.item_with_config(), {:ok, atom()}) :: Item.t() | nil
+  def find_similar(%NativeItem{item: %Item{rarity: "unique"} = item}, {:ok, _}) do
+    case PoeNinja.get_item(item.name) do
+      {:ok, nil} ->
+        nil
+
+      {:ok, val} ->
+        %{item | price: {:chaos, val.chaos}}
+    end
+  end
+
+  @spec find_similar(NativeItem.t(), {:ok, atom()}) :: Item.t() | nil
   # @telemetria level: :info, group: :poe1_build_processing, locals: []
   def find_similar(item, {:ok, _t}) do
     Logger.debug("extract mods")
@@ -97,7 +107,7 @@ defmodule PoeSystem.BuildProcessing do
 
   @spec process_items_stream(
           Ecto.Query.t(),
-          Item.t(),
+          NativeItem.t(),
           Ecto.UUID.t() | nil,
           Item.t() | nil
         ) ::
@@ -126,12 +136,12 @@ defmodule PoeSystem.BuildProcessing do
     end
   end
 
-  @spec closest_item(Item.item_with_config(), [Item.t()], nil) ::
+  @spec closest_item(NativeItem.t(), [Item.t()], Item.t() | nil) ::
           {:ok, Item.t() | nil} | Native.nif_err()
+  defp closest_item(req_item, items, last_item)
+
   defp closest_item(req_item, items, nil), do: Native.closest_item(req_item, items)
 
-  @spec closest_item(Item.item_with_config(), [Item.t()], Item.t()) ::
-          {:ok, Item.t() | nil} | Native.nif_err()
   defp closest_item(req_item, items, last_item),
     do: Native.closest_item(req_item, [last_item | items])
 

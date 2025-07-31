@@ -132,11 +132,12 @@ defmodule PoeSystem.StashReceiver do
               processed_leagues: MapSet.new()
             } do
           acc ->
-            if length(allowed_leagues) == 0 or stash_league in allowed_leagues do
+            if Enum.empty?(allowed_leagues) or stash_league in allowed_leagues do
               sv = %{id: stash_id, item_id: item.id}
 
-              item = item
-              |> Map.from_struct()
+              item =
+                item
+                |> Map.from_struct()
 
               acc
               |> Map.update(:stashes, [sv], &[sv | &1])

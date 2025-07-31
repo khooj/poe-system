@@ -10,32 +10,37 @@ defmodule PoeSystem.Items.Item do
     field :id, :string
     field :info, PoeSystem.EctoTypes.Info
     field :basetype, :string
-    field :category, Ecto.Enum, values: [
-      :weapons, 
-      :gems, 
-      :jewels, 
-      :accessories, 
-      :flasks, 
-      :armour,
-    ]
-    field :subcategory, Ecto.Enum, values: [
-      :weapon, 
-      :gem, 
-      :jewel, 
-      :amulet, 
-      :utility_flask, 
-      :life_flask, 
-      :mana_flask, 
-      :hybrid_flask,
-      :boots,
-      :body_armour,
-      :shield,
-      :gloves,
-      :helmets,
-      :belt,
-      :ring,
-      :quiver,
-    ]
+
+    field :category, Ecto.Enum,
+      values: [
+        :weapons,
+        :gems,
+        :jewels,
+        :accessories,
+        :flasks,
+        :armour
+      ]
+
+    field :subcategory, Ecto.Enum,
+      values: [
+        :weapon,
+        :gem,
+        :jewel,
+        :amulet,
+        :utility_flask,
+        :life_flask,
+        :mana_flask,
+        :hybrid_flask,
+        :boots,
+        :body_armour,
+        :shield,
+        :gloves,
+        :helmets,
+        :belt,
+        :ring,
+        :quiver
+      ]
+
     field :name, :string
     field :price, PoeSystem.EctoTypes.Price
     field :rarity, :string
@@ -47,7 +52,6 @@ defmodule PoeSystem.Items.Item do
   @type item_type :: :accessory | :gem | :armor | :weapon | :jewel | :flask
   @type quality :: non_neg_integer()
   @type level :: non_neg_integer()
-  @type item_with_config :: map()
 
   @spec changeset(Item.t(), map()) :: Ecto.Changeset.t()
   def changeset(item, attrs \\ %{}) do

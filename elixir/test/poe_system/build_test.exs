@@ -18,7 +18,7 @@ defmodule PoeSystem.BuildTest do
       itemset: "test",
       skillset: "test",
       pob: Testdata.pobdata_file(),
-      provided: build.provided,
+      provided: build.provided
     })
     |> Repo.insert!()
   end

@@ -11,16 +11,16 @@ defmodule PoeSystemWeb.Poe1BuildCalcIndexLive do
   @impl true
   def render(assigns) do
     ~H"""
-      <.live_component module={PobReceive} id="pob-receive" :if={@live_action == :new} />
-      <%= if @live_action == :preview do %>
-        <.live_component 
-          module={PreviewPob} 
-          id="preview-pob" 
-          pobdata={@pobdata}
-          itemsets={@itemsets}
-          skillsets={@skillsets}
-        />
-      <% end %>
+    <.live_component :if={@live_action == :new} module={PobReceive} id="pob-receive" />
+    <%= if @live_action == :preview do %>
+      <.live_component
+        module={PreviewPob}
+        id="preview-pob"
+        pobdata={@pobdata}
+        itemsets={@itemsets}
+        skillsets={@skillsets}
+      />
+    <% end %>
     """
   end
 
@@ -31,7 +31,8 @@ defmodule PoeSystemWeb.Poe1BuildCalcIndexLive do
 
   @impl true
   def handle_info({:new_pob, {pobdata, itemsets, skillsets}}, socket) do
-    socket = socket
+    socket =
+      socket
       |> assign(:pobdata, pobdata)
       |> assign(:itemsets, itemsets)
       |> assign(:skillsets, skillsets)

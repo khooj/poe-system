@@ -29,6 +29,8 @@ defmodule PoeSystem.Application do
         {PoeSystem.RateLimit, clean_period: :timer.minutes(10)},
         # Start to serve requests, typically the last entry
         PoeSystem.StashReceiver,
+        {Cachex, [:poeninja]},
+        {PoeSystem.PoeNinja, [interval: :timer.minutes(5)]},
         PoeSystemWeb.Endpoint
       ] ++ Application.get_env(:poe_system, :additional_processes, [])
 

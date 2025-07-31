@@ -55,3 +55,5 @@ config :poe_system, PoeSystem.StashReceiver,
   league: []
 
 config :poe_system, PoeSystemWeb.PromEx, disabled: true
+
+config :poe_system, PoeNinja, disabled: true

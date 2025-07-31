@@ -23,6 +23,5 @@ defmodule Mix.Tasks.Poe.CheckItemIds do
       end
     end
     |> Enum.flat_map(fn x -> x end)
-    |> IO.inspect()
   end
 end

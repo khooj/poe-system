@@ -69,7 +69,7 @@ defmodule PoeSystem.RustPoe.Native.Test do
     [item | _] = Testdata.items()
 
     %Item{}
-      |> Item.internal_change(Map.from_struct(item))
-      |> Repo.insert!()
+    |> Item.internal_change(Map.from_struct(item))
+    |> Repo.insert!()
   end
 end

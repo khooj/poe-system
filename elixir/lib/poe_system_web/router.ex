@@ -47,7 +47,7 @@ defmodule PoeSystemWeb.Router do
       live "/", Poe1BuildCalcIndexLive, :new
       live "/preview", Poe1BuildCalcIndexLive, :preview
       live "/:id", Poe1BuildCalcBuildLive
-   end
+    end
   end
 
   # Enable LiveDashboard in development

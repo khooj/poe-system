@@ -35,13 +35,13 @@ defmodule PoeSystem.Items do
 
   @type mods() :: [String.t()]
 
-  @spec search_items_by_attrs([mods()], [search_items_opt()]) :: [%Item{}]
+  @spec search_items_by_attrs([mods()], [search_items_opt()]) :: [Item.t()]
   def search_items_by_attrs(item_mods, opts \\ []) do
     search_items_by_attrs_query(item_mods, opts)
     |> Repo.all()
   end
 
-  @spec search_items_by_attrs_query([mods()], [search_items_opt()]) :: %Ecto.Query{}
+  @spec search_items_by_attrs_query([mods()], [search_items_opt()]) :: Ecto.Query.t()
   def search_items_by_attrs_query(item_mods, opts \\ []) do
     basetype = Keyword.get(opts, :basetype)
     category = Keyword.get(opts, :category)

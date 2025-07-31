@@ -103,7 +103,8 @@ defmodule PoeSystem.MixProject do
       {:phoenix_storybook, "~> 0.9.0", only: [:dev, :test]},
       {:daisy_ui_components, "~> 0.8"},
       {:boundary, "~> 0.10", runtime: false},
-      {:iteraptor, "~> 1.15"}
+      {:iteraptor, "~> 1.15"},
+      {:cachex, "~> 4.1"}
     ]
   end
 

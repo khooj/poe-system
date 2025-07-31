@@ -7,29 +7,23 @@ defmodule RustPoe.Native do
       ] ++ Application.compile_env(:poe_system, Rustler, [])
 
   alias PoeSystem.Build.{BuildInfo, Mod}
-  alias PoeSystem.Items.Item
+  alias PoeSystem.Items.{Item, NativeItem}
 
-  @type build_preview :: %{
-          itemset: String.t(),
-          skillset: String.t(),
-          pobData: String.t(),
-          data: BuildInfo.t()
-        }
   @type nif_err :: {:error, any()}
   @type item_info :: map()
 
   @spec extract_build_config(String.t(), String.t(), String.t(), String.t()) ::
-          {:ok, build_preview()} | nif_err()
+          {:ok, BuildInfo.t()} | nif_err()
   def extract_build_config(_pobxml, _itemset, _skillset, _profile \\ "simpleeverything"),
     do: error()
 
   @spec validate_config(BuildInfo.t()) :: :ok | nif_err()
   def validate_config(_config), do: error()
 
-  @spec extract_mods_for_search(Item.item_with_config()) :: {:ok, [Mod.t()]} | nif_err()
+  @spec extract_mods_for_search(NativeItem.t()) :: {:ok, [Mod.t()]} | nif_err()
   def extract_mods_for_search(_req_item), do: error()
 
-  @spec closest_item(Item.t(), [Item.t()]) :: {:ok, Item.t() | nil} | nif_err()
+  @spec closest_item(NativeItem.t(), [Item.t()]) :: {:ok, Item.t() | nil} | nif_err()
   def closest_item(_item, _items), do: error()
 
   @spec get_items_from_stash_data(String.t()) :: {:ok, [Item.t()]} | nif_err()

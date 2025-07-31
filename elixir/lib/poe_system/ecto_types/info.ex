@@ -10,13 +10,15 @@ defmodule PoeSystem.EctoTypes.Info do
   def cast(_), do: :error
 
   def load(%{"type" => type} = info) do
-    t = type
+    t =
+      type
       |> String.downcase()
       |> String.to_atom()
 
-    values = info
+    values =
+      info
       |> Enum.filter(fn {k, _} -> k != "type" end)
-      |> Enum.map(fn 
+      |> Enum.map(fn
         {"mods", v} -> {:mods, Enum.map(v, &Mod.from_json/1)}
         {"properties", v} -> {:properties, Enum.map(v, &Property.from_json/1)}
         {k, v} when is_binary(k) -> {String.to_atom(k), v}
@@ -27,11 +29,13 @@ defmodule PoeSystem.EctoTypes.Info do
   end
 
   def dump({a, b}) when is_atom(a) and is_map(b) do
-    t = a
+    t =
+      a
       |> Atom.to_string()
       |> String.capitalize()
 
-    v = Enum.into(b, []) ++ [{"type", t}]
+    v =
+      (Enum.into(b, []) ++ [{"type", t}])
       |> Enum.into(%{})
 
     {:ok, v}
