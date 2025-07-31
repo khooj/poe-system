@@ -1,7 +1,8 @@
 [workspace]
 members = [
   "application",
-  "domain", "elixir",
+  "domain",
+  "elixir",
   "macros",
   "pob",
   "poeninja",
@@ -9,6 +10,5 @@ members = [
   "storage",
   "tradeapi",
   "utils",
-  "wasm",
 ]
 resolver = "2"
