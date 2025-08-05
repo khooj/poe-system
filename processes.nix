@@ -30,14 +30,14 @@
       "pgact1_default_db" = let
         dbName = "default_db";
       in {
-        enable = true;
+        enable = false;
         inherit dbName;
         dsn = config.services.postgres.pg1.connectionURI {inherit dbName;};
       };
       "pgact1_khooj" = let
         dbName = "khooj";
       in {
-        enable = true;
+        enable = false;
         inherit dbName;
         dsn = config.services.postgres.pg1.connectionURI {inherit dbName;};
       };

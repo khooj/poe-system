@@ -16,7 +16,7 @@ defmodule PoeSystem.StashReceiver.Client do
         params: opt(next_stash_id, id: next_stash_id)
       )
 
-    Req.get!(req)
+    Req.get(req)
   end
 
   defp opt(nil, _), do: []

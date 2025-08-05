@@ -14,7 +14,7 @@ defmodule PoeSystem.PoeNinja do
 
   @impl true
   def init(opts) do
-    app_opts = Application.fetch_env!(:poe_system, PoeNinja)
+    app_opts = Application.get_env(:poe_system, PoeNinja, %{disabled: false})
 
     if not app_opts[:disabled] do
       send(self(), :refresh_all)
@@ -30,15 +30,20 @@ defmodule PoeSystem.PoeNinja do
 
   @impl true
   def handle_info({:refresh, type}, state) do
-    resp = Client.get_items("Mercenaries", type, plug: Keyword.get(state, :plug))
+    Logger.debug(message: "request poeninja", type: type)
+    case Client.get_items("Mercenaries", type, plug: Keyword.get(state, :plug)) do
+      {:ok, resp} ->
+        items =
+          resp.body["lines"]
+          |> Enum.map(fn %{"name" => name, "chaosValue" => chaos, "divineValue" => divine} ->
+            {name, %{chaos: chaos, divine: divine}}
+          end)
 
-    items =
-      resp.body["lines"]
-      |> Enum.map(fn %{"name" => name, "chaosValue" => chaos, "divineValue" => divine} ->
-        {name, %{chaos: chaos, divine: divine}}
-      end)
+        {:ok, true} = Cachex.put_many(:poeninja, items)
+      {:error, exc} ->
+        Logger.error(message: "error requesting poeninja", error: exc)
+    end
 
-    {:ok, true} = Cachex.put_many(:poeninja, items)
     {:noreply, state}
   end
 

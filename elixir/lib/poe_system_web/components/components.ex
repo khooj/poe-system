@@ -89,6 +89,26 @@ defmodule PoeSystemWeb.Components do
     """
   end
 
+  attr :item, Item, required: true
+
+  def item_simple(assigns) do
+    ~H"""
+      <.item name={@item.name} basetype={@item.basetype} rarity={@item.rarity} info={@item.info}>
+        <:name_block :let={names}>
+          <div class="flex justify-between">
+            <div class="flex flex-col">
+              <p>{names[:name] && names.name}</p>
+              <p>{names.basetype}</p>
+            </div>
+            <div>
+              <p>Price: {elem(@item.price, 0)} {elem(@item.price, 1)}</p>
+            </div>
+          </div>
+        </:name_block>
+      </.item>
+    """
+  end
+
   attr :mod, :map, required: true
   attr :option, :any, required: true
   def mod_config(assigns)

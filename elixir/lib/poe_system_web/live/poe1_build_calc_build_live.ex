@@ -114,6 +114,93 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
       </div>
       <div>
         <p>Found</p>
+        <.async_result :let={data} assign={@found}>
+          <:failed>Failed to load</:failed>
+          <div class="flex flex-col">
+            <div>
+              <h1>amulet</h1>
+              <.item_simple
+                :if={data.amulet}
+                item={data.amulet}
+              />
+            </div>
+            <div>
+              <h1>helmet</h1>
+              <.item_simple
+                :if={data.helmet}
+                item={data.helmet}
+              />
+            </div>
+            <div>
+              <h1>body</h1>
+              <.item_simple :if={data.body} item={data.body} />
+            </div>
+            <div>
+              <h1>boots</h1>
+              <.item_simple
+                :if={data.boots}
+                item={data.boots}
+              />
+            </div>
+            <div>
+              <h1>gloves</h1>
+              <.item_simple
+                :if={data.gloves}
+                item={data.gloves}
+              />
+            </div>
+            <div>
+              <h1>weapon1</h1>
+              <.item_simple
+                :if={data.weapon1}
+                item={data.weapon1}
+              />
+            </div>
+            <div>
+              <h1>weapon2</h1>
+              <.item_simple
+                :if={data.weapon2}
+                item={data.weapon2}
+              />
+            </div>
+            <div>
+              <h1>ring1</h1>
+              <.item_simple
+                :if={data.ring1}
+                item={data.ring1}
+              />
+            </div>
+            <div>
+              <h1>ring2</h1>
+              <.item_simple
+                :if={data.ring2}
+                item={data.ring2}
+              />
+            </div>
+            <div>
+              <h1>belt</h1>
+              <.item_simple :if={data.belt} item={data.belt} />
+            </div>
+            <p>gems</p>
+            <div>
+              <div :for={d <- data.gems}>
+                <.item_simple item={d} />
+              </div>
+            </div>
+            <p>flasks</p>
+            <div>
+              <div :for={d <- data.flasks}>
+                <.item_simple item={d} />
+              </div>
+            </div>
+            <p>jewels</p>
+            <div>
+              <div :for={d <- data.jewels}>
+                <.item_simple item={d} />
+              </div>
+            </div>
+          </div>
+        </.async_result>
       </div>
     </div>
     """

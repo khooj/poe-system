@@ -32,11 +32,6 @@ if System.get_env("PHX_SERVER") do
   config :poe_system, PoeSystemWeb.Endpoint, server: true
 end
 
-# env variable for inertia ssr (for underlying nodejs supervisor)
-# without it in generated ssr.js on page reload after first request
-# exception occurs "useContext is undefined" (maybe its overwriting itself somehow or does not init properly)
-System.put_env("NODE_ENV", System.get_env("NODE_ENV") || "production")
-
 if config_env() != :test do
   config :poe_system, PoeSystem.StashReceiver,
     access_token: env!("POE_STASH_API_TOKEN", :string!),

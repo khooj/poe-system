@@ -46,7 +46,6 @@ defmodule PoeSystemWeb do
       use Gettext, backend: PoeSystemWeb.Gettext
 
       import Plug.Conn
-      import Inertia.Controller
 
       unquote(verified_routes())
     end
@@ -72,8 +71,6 @@ defmodule PoeSystemWeb do
   def html do
     quote do
       use Phoenix.Component
-
-      import Inertia.HTML
 
       # Import convenience functions from controllers
       import Phoenix.Controller,

@@ -7,27 +7,31 @@ defmodule PoeSystem.BuildProcessing.Mods do
     |> Enum.map(fn {%ModStatId{value: value}, _} -> value end)
   end
 
-  defp append_query(q, %{option: nil}, _), do: q
+  defp append_query_option(q, %{option: nil}, _), do: q
 
-  defp append_query(q, %{option: {:mods, mods}}, _) do
+  defp append_query_option(q, %{option: {:mods, mods}}, _) do
     q
     |> Items.append_mods(extract_mods_for_search(mods))
   end
 
-  defp append_query(q, %{option: :unique}, %{item: item}) do
+  defp append_query_option(q, %{option: :unique}, %{item: item}) do
     q
     |> Items.append_name(item.name)
   end
 
-  defp append_query(q, %{basetype: false}, _), do: q
+  defp append_query_basetype(q, %{basetype: false}, _), do: q
 
-  defp append_query(q, %{basetype: true}, %{item: item}) do
+  defp append_query_basetype(q, %{basetype: true}, %{item: item}) do
     q
     |> Items.append_basetype(item.basetype)
   end
 
   def extract_options_for_search(%{config: config} = item) do
     Item
-    |> append_query(config, item)
+    |> append_query_option(config, item)
+    |> append_query_basetype(config, item)
   end
+
+  def unique?(%Item{rarity: "unique"}), do: true
+  def unique?(%Item{}), do: false
 end

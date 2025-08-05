@@ -8,6 +8,7 @@ defmodule PoeSystem.StashReceiver do
   alias PoeSystem.StashReceiver.{Client, Limits}
   alias RustPoe.Native
   alias Req.Response
+  alias PoeSystem.BuildProcessing.Mods
 
   @options NimbleOptions.new!(
              interval: [type: :pos_integer, default: :timer.seconds(1)],
@@ -45,10 +46,16 @@ defmodule PoeSystem.StashReceiver do
           a -> a.id
         end
 
-      resp = Client.get_stash_data(ls, state)
-      process_stash(resp, ls, state)
-      limits = Limits.parse_and_set_ratelimits(resp)
-      {:noreply, Map.put(state, :limits, limits)}
+      case Client.get_stash_data(ls, state) do
+        {:ok, resp} ->
+          process_stash(resp, ls, state)
+          limits = Limits.parse_and_set_ratelimits(resp)
+          {:noreply, Map.put(state, :limits, limits)}
+        {:error, exc} ->
+          Logger.error(message: "error requesting stash api", error: exc)
+          send(self(), :timeout)
+          {:noreply, state}
+      end
     else
       send(self(), :ratelimited)
       {:noreply, state}
@@ -78,6 +85,11 @@ defmodule PoeSystem.StashReceiver do
     Logger.info(message: "ratelimited by api", interval: retry_after)
 
     Process.send_after(self(), :cycle, :timer.seconds(retry_after))
+    {:noreply, state}
+  end
+
+  def handle_info(:timeout, state) do
+    Process.send_after(self(), :cycle, state.long_interval)
     {:noreply, state}
   end
 
@@ -118,13 +130,12 @@ defmodule PoeSystem.StashReceiver do
 
     {:ok, public_stash} = Native.process_stash_data(public_stash_resp.body)
     next_change_id = public_stash.next_change_id
-    # Logger.debug(next_change_id)
-    # Logger.debug(inspect(public_stash.stashes))
 
     if next_change_id != "" do
       stash_data =
         for {stash_id, {stash_league, items}} <- public_stash.stashes,
             item <- items,
+            not Mods.unique?(item),
             reduce: %{
               stashes: [],
               items: [],
@@ -135,9 +146,8 @@ defmodule PoeSystem.StashReceiver do
             if Enum.empty?(allowed_leagues) or stash_league in allowed_leagues do
               sv = %{id: stash_id, item_id: item.id}
 
-              item =
-                item
-                |> Map.from_struct()
+              item = item
+              |> Map.from_struct()
 
               acc
               |> Map.update(:stashes, [sv], &[sv | &1])

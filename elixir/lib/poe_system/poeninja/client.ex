@@ -1,7 +1,7 @@
 defmodule PoeSystem.PoeNinja.Client do
   @type item_type :: String.t()
 
-  @spec get_items(String.t(), item_type(), list()) :: map()
+  @spec get_items(String.t(), item_type(), list()) :: {:ok, Req.Response.t()} | {:error, any()}
   def get_items(league, type, opts \\ []) do
     plug = Keyword.get(opts, :plug)
 
@@ -17,6 +17,6 @@ defmodule PoeSystem.PoeNinja.Client do
         params: [league: league, type: type]
       )
 
-    Req.get!(req)
+    Req.get(req)
   end
 end

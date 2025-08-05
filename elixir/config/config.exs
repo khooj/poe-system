@@ -28,13 +28,6 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :inertia,
-  endpoint: PoeSystemWeb.Endpoint,
-  static_paths: ["/assets/main.js"],
-  camelize_props: false,
-  ssr: false,
-  raise_on_ssr_failure: config_env() != :prod
-
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

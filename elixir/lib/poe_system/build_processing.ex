@@ -93,7 +93,17 @@ defmodule PoeSystem.BuildProcessing do
         nil
 
       {:ok, val} ->
-        %{item | price: {:chaos, val.chaos}}
+        %{item | price: {:chaos, trunc(val.chaos)}}
+    end
+  end
+
+  def find_similar(%NativeItem{item: %Item{subcategory: :gem} = item}, {:ok, _}) do
+    case PoeNinja.get_item(item.name) do
+      {:ok, nil} ->
+        nil
+
+      {:ok, val} ->
+        %{item | price: {:chaos, trunc(val.chaos)}}
     end
   end
 
@@ -128,7 +138,7 @@ defmodule PoeSystem.BuildProcessing do
     if Enum.empty?(items) do
       last_item
     else
-      new_last_id = List.last(items).id
+      new_last_id = List.last(items).item_id
 
       {:ok, result} = closest_item(req_item, items, last_item)
 

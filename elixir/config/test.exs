@@ -20,13 +20,6 @@ config :poe_system, PoeSystemWeb.Endpoint,
   secret_key_base: "DPqukG08gn2vW7GBXk8Ca6pAV0dvlVcUqnK98/nY1Yqo7LYEfE1sff0EnT1VSLke",
   server: false
 
-config :inertia,
-  endpoint: PoeSystemWeb.Endpoint,
-  static_paths: ["/assets/main.js"],
-  camelize_props: true,
-  ssr: false,
-  raise_on_ssr_failure: config_env() != :prod
-
 # Print only warnings and errors during test
 config :logger,
   level: :warning,
