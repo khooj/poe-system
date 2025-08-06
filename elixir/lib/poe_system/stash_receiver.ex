@@ -136,6 +136,7 @@ defmodule PoeSystem.StashReceiver do
         for {stash_id, {stash_league, items}} <- public_stash.stashes,
             item <- items,
             not Mods.unique?(item),
+            not Mods.gem?(item),
             reduce: %{
               stashes: [],
               items: [],

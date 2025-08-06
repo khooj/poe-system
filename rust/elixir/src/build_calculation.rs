@@ -35,7 +35,7 @@ fn closest_item(
     req_item: ItemWithConfig,
     items: Vec<StoredItem>,
 ) -> NifResult<(Atom, Option<StoredItem>)> {
-    let result = Comparator::closest_item(&req_item.item, items);
+    let result = Comparator::closest_item(&req_item, items);
     Ok((atoms::ok(), result))
 }
 

@@ -87,17 +87,13 @@ defmodule PoeSystem.BuildProcessing do
     result
   end
 
-  def find_similar(%NativeItem{item: %Item{rarity: "unique"} = item}, {:ok, _}) do
-    case PoeNinja.get_item(item.name) do
-      {:ok, nil} ->
-        nil
+  def find_similar(%NativeItem{item: %Item{rarity: "unique"} = item}, {:ok, _}), do:
+    fetch_from_poeninja(item)
 
-      {:ok, val} ->
-        %{item | price: {:chaos, trunc(val.chaos)}}
-    end
-  end
+  def find_similar(%NativeItem{item: %Item{subcategory: :gem} = item}, {:ok, _}), do:
+    fetch_from_poeninja(item)
 
-  def find_similar(%NativeItem{item: %Item{subcategory: :gem} = item}, {:ok, _}) do
+  defp fetch_from_poeninja(item) do
     case PoeNinja.get_item(item.name) do
       {:ok, nil} ->
         nil

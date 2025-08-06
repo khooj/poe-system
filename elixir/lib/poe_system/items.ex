@@ -11,12 +11,8 @@ defmodule PoeSystem.Items do
 
   @type mods() :: [String.t()]
 
-  @spec search_items_by_attrs([mods()], [search_items_opt()]) :: [Item.t()]
-  def search_items_by_attrs(item_mods, opts \\ []) do
-    search_items_by_attrs_query(item_mods, opts)
-    |> Repo.all()
-  end
-
+  # TODO: using limit slows query, probably because of incorrect execution planning
+  # due to using jsonb field
   @spec search_items_by_attrs_query([mods()], [search_items_opt()]) :: Ecto.Query.t()
   def search_items_by_attrs_query(item_mods, opts \\ []) do
     basetype = Keyword.get(opts, :basetype)
@@ -27,16 +23,7 @@ defmodule PoeSystem.Items do
     |> opt(basetype, &where(&1, [m], m.basetype == ^basetype))
     |> opt(category, &where(&1, [m], m.category == ^category))
     |> opt(subcategory, &where(&1, [m], m.subcategory == ^subcategory))
-    |> where([m], fragment("?->'mods'->'stat_id' \\?| ?", m.info, ^item_mods))
-    |> order_by([m], m.id)
-  end
-
-  def search_gems_by_attrs_query(name, quality, level) do
-    Item
-    |> where([m], m.basetype == ^name)
-    |> where([m], m.subcategory == :gem)
-    |> where([m], fragment("(?->>'level')::int", m.info) >= ^level)
-    |> where([m], fragment("(?->>'quality')::int", m.info) >= ^quality)
+    |> append_mods(item_mods)
     |> order_by([m], m.id)
   end
 
@@ -56,7 +43,7 @@ defmodule PoeSystem.Items do
 
   def append_mods(q, mods) do
     q
-    |> where([m], fragment("?->'mods'->'stat_id' \\?| ?", m.info, ^mods))
+    |> where([m], fragment("jsonb_path_query_array(?, '$.mods[*].stat_id') \\?& ?", m.info, ^mods))
   end
 
   def append_name(q, name) do

@@ -1,40 +1,66 @@
+use std::ops::Deref;
+
 use tracing::{instrument, Level};
 
-use super::{
-    stored_item::{Mod, StoredItem},
-    ItemWithConfig,
+use crate::{
+    build_calculation::item_config::{ItemConfigOption, ModOption},
+    data::MODS,
 };
+
+use super::{stored_item::StoredItem, ItemWithConfig};
 
 pub struct Comparator {}
 
 impl Comparator {
     #[instrument(level = Level::TRACE)]
-    pub fn closest_item(required_item: &StoredItem, items: Vec<StoredItem>) -> Option<StoredItem> {
-        let mods = items
-            .iter()
-            .enumerate()
-            .map(|(idx, it)| (idx, it.info.mods()))
-            .collect::<Vec<_>>();
+    pub fn closest_item<'a>(
+        required_item: &'a ItemWithConfig,
+        items: Vec<StoredItem>,
+    ) -> Option<StoredItem> {
+        let mut preds: Vec<Box<dyn Fn(&StoredItem) -> bool>> = vec![];
 
-        let req_mods = required_item.info.mods();
+        if let Some(ic) = &required_item.config.option {
+            match ic {
+                ItemConfigOption::Unique => {
+                    preds.push(Box::new(|it: &StoredItem| {
+                        required_item.item.name == it.name
+                    }));
+                }
+                ItemConfigOption::Mods(mods) => {
+                    mods.iter().for_each(|(k, v)| match v {
+                        ModOption::Exist => preds.push(Box::new(|it| {
+                            it.info.mods().iter().any(|m| &m.stat_id == k.deref())
+                        })),
+                        ModOption::Exact(val) => preds.push(Box::new(|it| {
+                            let m = it.info.mods().iter().find(|m| &m.stat_id == k.deref());
+                            if let Some(mm) = m {
+                                let mod_data =
+                                    MODS::get_mod_data(&mm.text).expect("mod should be found");
+                                let v = mod_data.extract_values(&mm.text);
+                                match v {
+                                    (Some(mv1), None) => mv1 == *val,
+                                    (Some(mv1), Some(mv2)) => mv1 <= *val && mv2 >= *val,
+                                    _ => false,
+                                }
+                            } else {
+                                false
+                            }
+                        })),
+                        _ => {}
+                    });
+                }
+            }
+        }
 
-        let candidates = mods
+        let candidates: Vec<_> = items
             .iter()
-            .map(|(idx, mods)| {
-                let accept = req_mods
-                    .iter()
-                    .all(|req_mc| mods.iter().any(|m| req_mc.stat_id == m.stat_id));
-                (idx, accept)
-            })
-            .collect::<Vec<_>>();
+            .filter(|it| preds.iter().all(|pr| pr(it)))
+            .collect();
 
         if candidates.is_empty() {
             None
         } else {
-            candidates
-                .iter()
-                .find(|(_, accept)| *accept)
-                .map(|s| items[*s.0].clone())
+            candidates.first().cloned().cloned()
         }
     }
 }

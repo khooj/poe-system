@@ -68,7 +68,7 @@ config :poe_system, PoeSystemWeb.PromEx,
 
 config :poe_system, PoeSystem.StashReceiver, league: ["Mercenaries"]
 
-config :poe_system, PoeSystem.BuildProcessing, items_per_tx: 10000
+config :poe_system, PoeSystem.BuildProcessing, items_per_tx: 50000
 
 config :daisy_ui_components, translate_function: &PoeSystemWeb.CoreComponents.translate_error/1
 

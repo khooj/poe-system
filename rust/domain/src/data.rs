@@ -113,6 +113,42 @@ impl FromStr for ModValue {
     }
 }
 
+impl PartialEq<i32> for ModValue {
+    fn eq(&self, other: &i32) -> bool {
+        match self {
+            ModValue::Int(i) => i == other,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<f32> for ModValue {
+    fn eq(&self, other: &f32) -> bool {
+        match self {
+            ModValue::Float(f) => f == other,
+            _ => false,
+        }
+    }
+}
+
+impl PartialOrd<i32> for ModValue {
+    fn partial_cmp(&self, other: &i32) -> Option<std::cmp::Ordering> {
+        match self {
+            ModValue::Int(i) => i.partial_cmp(other),
+            _ => None,
+        }
+    }
+}
+
+impl PartialOrd<f32> for ModValue {
+    fn partial_cmp(&self, other: &f32) -> Option<std::cmp::Ordering> {
+        match self {
+            ModValue::Float(f) => f.partial_cmp(other),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, serde::Deserialize)]
 struct ModTmp {
     text: Option<String>,

@@ -4,6 +4,11 @@ defmodule PoeSystem.BuildProcessing.Mods do
 
   defp extract_mods_for_search(mods) do
     mods
+    |> Enum.filter(fn 
+      {_, :exist} -> true 
+      {_, :exact} -> true 
+      _ -> false
+    end)
     |> Enum.map(fn {%ModStatId{value: value}, _} -> value end)
   end
 
@@ -34,4 +39,7 @@ defmodule PoeSystem.BuildProcessing.Mods do
 
   def unique?(%Item{rarity: "unique"}), do: true
   def unique?(%Item{}), do: false
+
+  def gem?(%Item{category: :gems}), do: true
+  def gem?(%Item{}), do: false
 end
