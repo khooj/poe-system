@@ -29,6 +29,37 @@ defmodule PoeSystem.PoeNinja do
   end
 
   @impl true
+  def handle_info({:refresh, "SkillGem" = type}, state) do
+    Logger.debug(message: "request poeninja", type: type)
+    case Client.get_items("Mercenaries", type, plug: Keyword.get(state, :plug)) do
+      {:ok, resp} ->
+        items =
+          resp.body["lines"]
+          |> Enum.reduce(%{}, fn gem, acc -> 
+            %{
+              "name" => name,
+              "chaosValue" => chaos,
+              "divineValue" => divine,
+              "gemLevel" => level,
+            } = gem
+
+            quality = Map.get(gem, "gemQuality", 0)
+
+              data = %{level: level, quality: quality, chaos: chaos, divine: divine}
+              acc
+              |> Map.update(name, [data], fn el -> Enum.sort_by([data | el], &{&1.level, &1.quality}) end)
+          end)
+          |> Enum.into([])
+
+        {:ok, true} = Cachex.put_many(:poeninja, items)
+      {:error, exc} ->
+        Logger.error(message: "error requesting poeninja", error: exc)
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:refresh, type}, state) do
     Logger.debug(message: "request poeninja", type: type)
     case Client.get_items("Mercenaries", type, plug: Keyword.get(state, :plug)) do

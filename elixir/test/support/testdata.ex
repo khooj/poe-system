@@ -13,6 +13,10 @@ defmodule PoeSystem.Testdata do
     String.trim(File.read!(Path.join([@testdata_dir, "pob.txt"])))
   end
 
+  def poeninja_gems_file() do
+    String.trim(File.read!(Path.join([@testdata_dir, "poeninja-gems.json"])))
+  end
+
   def extract_config(opts \\ []) do
     itemset =
       if Keyword.get(opts, :early_setup, false) do

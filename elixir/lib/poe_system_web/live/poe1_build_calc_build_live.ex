@@ -9,199 +9,56 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
     {:ok, socket}
   end
 
+  def zip_items(%Build{} = build) do
+    found = Map.from_struct(build.found || %{})
+
+    build.provided
+    |> Map.from_struct()
+    |> Enum.map(fn {k, p} -> {k, p, found[k]} end)
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <.button phx-click="recalculate">Recalculate</.button>
     <div class="grid grid-cols-2 gap-4 m-4">
-      <div>
-        <p>Provided</p>
-        <.async_result :let={data} assign={@provided}>
-          <:failed>Failed to load</:failed>
-          <div class="flex flex-col">
-            <div>
-              <h1>amulet</h1>
+      <.async_result :let={build} assign={@build}>
+        <:failed>Failed to load</:failed>
+        <%= for {k, p, f} <- zip_items(build) do %>
+          <div :if={not is_list(p)}>
+            <h1>{k}</h1>
+            <.item_config_readonly
+              :if={p}
+              item={p.item}
+              config={p.config}
+            />
+          </div>
+          <div :if={is_list(p)}>
+            <h1>{k}</h1>
+            <div :for={d <- p} class="mb-2">
               <.item_config_readonly
-                :if={data.amulet}
-                item={data.amulet.item}
-                config={data.amulet.config}
+                item={d.item}
+                config={d.config}
               />
-            </div>
-            <div>
-              <h1>helmet</h1>
-              <.item_config_readonly
-                :if={data.helmet}
-                item={data.helmet.item}
-                config={data.helmet.config}
-              />
-            </div>
-            <div>
-              <h1>body</h1>
-              <.item_config_readonly :if={data.body} item={data.body.item} config={data.body.config} />
-            </div>
-            <div>
-              <h1>boots</h1>
-              <.item_config_readonly
-                :if={data.boots}
-                item={data.boots.item}
-                config={data.boots.config}
-              />
-            </div>
-            <div>
-              <h1>gloves</h1>
-              <.item_config_readonly
-                :if={data.gloves}
-                item={data.gloves.item}
-                config={data.gloves.config}
-              />
-            </div>
-            <div>
-              <h1>weapon1</h1>
-              <.item_config_readonly
-                :if={data.weapon1}
-                item={data.weapon1.item}
-                config={data.weapon1.config}
-              />
-            </div>
-            <div>
-              <h1>weapon2</h1>
-              <.item_config_readonly
-                :if={data.weapon2}
-                item={data.weapon2.item}
-                config={data.weapon2.config}
-              />
-            </div>
-            <div>
-              <h1>ring1</h1>
-              <.item_config_readonly
-                :if={data.ring1}
-                item={data.ring1.item}
-                config={data.ring1.config}
-              />
-            </div>
-            <div>
-              <h1>ring2</h1>
-              <.item_config_readonly
-                :if={data.ring2}
-                item={data.ring2.item}
-                config={data.ring2.config}
-              />
-            </div>
-            <div>
-              <h1>belt</h1>
-              <.item_config_readonly :if={data.belt} item={data.belt.item} config={data.belt.config} />
-            </div>
-            <p>gems</p>
-            <div>
-              <div :for={d <- data.gems}>
-                <.item_config_readonly item={d.item} config={d.config} />
-              </div>
-            </div>
-            <p>flasks</p>
-            <div>
-              <div :for={d <- data.flasks}>
-                <.item_config_readonly item={d.item} config={d.config} />
-              </div>
-            </div>
-            <p>jewels</p>
-            <div>
-              <div :for={d <- data.jewels}>
-                <.item_config_readonly item={d.item} config={d.config} />
-              </div>
             </div>
           </div>
-        </.async_result>
-      </div>
-      <div>
-        <p>Found</p>
-        <.async_result :let={data} assign={@found}>
-          <:failed>Failed to load</:failed>
-          <div class="flex flex-col">
-            <div>
-              <h1>amulet</h1>
+          <div :if={not is_list(f)}>
+            <h1>{k}</h1>
+            <.item_simple
+              :if={f}
+              item={f}
+            />
+          </div>
+          <div :if={is_list(f)}>
+            <h1>{k}</h1>
+            <div :for={d <- f} class="mb-2">
               <.item_simple
-                :if={data.amulet}
-                item={data.amulet}
+                item={d}
               />
-            </div>
-            <div>
-              <h1>helmet</h1>
-              <.item_simple
-                :if={data.helmet}
-                item={data.helmet}
-              />
-            </div>
-            <div>
-              <h1>body</h1>
-              <.item_simple :if={data.body} item={data.body} />
-            </div>
-            <div>
-              <h1>boots</h1>
-              <.item_simple
-                :if={data.boots}
-                item={data.boots}
-              />
-            </div>
-            <div>
-              <h1>gloves</h1>
-              <.item_simple
-                :if={data.gloves}
-                item={data.gloves}
-              />
-            </div>
-            <div>
-              <h1>weapon1</h1>
-              <.item_simple
-                :if={data.weapon1}
-                item={data.weapon1}
-              />
-            </div>
-            <div>
-              <h1>weapon2</h1>
-              <.item_simple
-                :if={data.weapon2}
-                item={data.weapon2}
-              />
-            </div>
-            <div>
-              <h1>ring1</h1>
-              <.item_simple
-                :if={data.ring1}
-                item={data.ring1}
-              />
-            </div>
-            <div>
-              <h1>ring2</h1>
-              <.item_simple
-                :if={data.ring2}
-                item={data.ring2}
-              />
-            </div>
-            <div>
-              <h1>belt</h1>
-              <.item_simple :if={data.belt} item={data.belt} />
-            </div>
-            <p>gems</p>
-            <div>
-              <div :for={d <- data.gems}>
-                <.item_simple item={d} />
-              </div>
-            </div>
-            <p>flasks</p>
-            <div>
-              <div :for={d <- data.flasks}>
-                <.item_simple item={d} />
-              </div>
-            </div>
-            <p>jewels</p>
-            <div>
-              <div :for={d <- data.jewels}>
-                <.item_simple item={d} />
-              </div>
             </div>
           </div>
-        </.async_result>
-      </div>
+        <% end %>
+      </.async_result>
     </div>
     """
   end
@@ -210,9 +67,9 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
   def handle_params(%{"id" => id}, _uri, socket) do
     {:noreply,
      socket
-     |> assign_async([:provided, :found, :build], fn ->
+     |> assign_async(:build, fn ->
        build = Repo.get!(Build, id)
-       {:ok, %{provided: build.provided, found: build.found, build: build}}
+       {:ok, %{build: build}}
      end)
      |> assign(:id, id)}
   end

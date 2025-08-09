@@ -1,7 +1,7 @@
 defmodule PoeSystem.PoeNinjaTest do
   use ExUnit.Case
   use PoeSystemWeb.ConnCase
-  alias PoeSystem.{PoeNinja}
+  alias PoeSystem.{PoeNinja, Testdata}
 
   test "process items from api" do
     Req.Test.stub(Client, fn conn ->
@@ -18,6 +18,19 @@ defmodule PoeSystem.PoeNinjaTest do
 
     assert {:reply, {:ok, v}, _} = PoeNinja.handle_call({:item, "Original Sin"}, self(), [])
     assert %{chaos: 100.0, divine: 1.0} = v
+  end
+
+  test "process gems" do
+    Req.Test.stub(Client, fn conn ->
+      conn
+      |> Req.Test.json(Jason.decode!(Testdata.poeninja_gems_file()))
+    end)
+
+    assert {:noreply, _} =
+             PoeNinja.handle_info({:refresh, "SkillGem"}, plug: {Req.Test, Client})
+
+    assert {:reply, {:ok, v}, _} = PoeNinja.handle_call({:item, "Volatility Support"}, self(), [])
+    assert is_list(v)
   end
 
   test "refresh_all" do

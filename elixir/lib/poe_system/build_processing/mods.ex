@@ -31,10 +31,19 @@ defmodule PoeSystem.BuildProcessing.Mods do
     |> Items.append_basetype(item.basetype)
   end
 
+  defp append_basetype_for_flask(q, %{item: %{category: :flasks} = item}) do
+    q
+    |> Items.append_basetype(item.basetype)
+  end
+
+  defp append_basetype_for_flask(q, _), do: q
+
   def extract_options_for_search(%{config: config} = item) do
     Item
     |> append_query_option(config, item)
     |> append_query_basetype(config, item)
+    |> Items.append_subcategory(item)
+    |> append_basetype_for_flask(item)
   end
 
   def unique?(%Item{rarity: "unique"}), do: true

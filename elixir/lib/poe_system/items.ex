@@ -1,7 +1,7 @@
 defmodule PoeSystem.Items do
   import Ecto.Query
-  alias PoeSystem.Repo
-  alias PoeSystem.Items.Item
+  alias PoeSystem.{Repo, ItemsMods}
+  alias PoeSystem.Items.{Item, NativeItem}
   alias Utils
 
   @type search_items_opt() ::
@@ -24,7 +24,7 @@ defmodule PoeSystem.Items do
     |> opt(category, &where(&1, [m], m.category == ^category))
     |> opt(subcategory, &where(&1, [m], m.subcategory == ^subcategory))
     |> append_mods(item_mods)
-    |> order_by([m], m.id)
+    |> order_by([m], m.item_id)
   end
 
   def append_flask_quality(q, quality) do
@@ -33,7 +33,10 @@ defmodule PoeSystem.Items do
     |> where([m], fragment("(?->>'quality')::int", m.info) >= ^quality)
   end
 
-  def append_id_cursor(query, nil), do: query
+  def append_id_cursor(query, nil) do
+    query
+    |> order_by([m], m.item_id)
+  end
 
   def append_id_cursor(query, id) do
     query
@@ -41,9 +44,10 @@ defmodule PoeSystem.Items do
     |> order_by([m], m.item_id)
   end
 
-  def append_mods(q, mods) do
+  def append_mods(q, mods) when is_list(mods) do
+    mm = Jason.encode!(mods)
     q
-    |> where([m], fragment("jsonb_path_query_array(?, '$.mods[*].stat_id') \\?& ?", m.info, ^mods))
+    |> where([m], fragment("jsonb_path_query_array(?, '$.mods[*].stat_id') @> ?::jsonb", m.info, ^mods))
   end
 
   def append_name(q, name) do
@@ -54,6 +58,16 @@ defmodule PoeSystem.Items do
   def append_basetype(q, basetype) do
     q
     |> where([m], m.basetype == ^basetype)
+  end
+
+  def append_subcategory(q, %NativeItem{} = item) do
+    q
+    |> where([m], m.subcategory == ^item.item.subcategory)
+  end
+
+  def append_category(q, a) when is_atom(a) do
+    q
+    |> where([m], m.category == ^a)
   end
 
   defp opt(q, nil, _), do: q

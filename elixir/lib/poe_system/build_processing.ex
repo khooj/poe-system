@@ -70,6 +70,7 @@ defmodule PoeSystem.BuildProcessing do
   defp process_entry(nil), do: nil
 
   defp process_entry(items) when is_list(items) do
+    Logger.debug("search for several items")
     result =
       items
       |> Enum.map(fn a ->
@@ -77,29 +78,43 @@ defmodule PoeSystem.BuildProcessing do
       end)
       |> Enum.reject(&is_nil/1)
 
-    Logger.debug("found items for few items")
     result
   end
 
   defp process_entry(item) do
-    result = find_similar(item, Native.get_stored_item_type(item.item))
-    Logger.debug("found item for single item: #{result && result.id}")
-    result
+    Logger.debug("searching for item")
+    find_similar(item, Native.get_stored_item_type(item.item))
   end
 
   def find_similar(%NativeItem{item: %Item{rarity: "unique"} = item}, {:ok, _}), do:
     fetch_from_poeninja(item)
 
-  def find_similar(%NativeItem{item: %Item{subcategory: :gem} = item}, {:ok, _}), do:
-    fetch_from_poeninja(item)
-
-  defp fetch_from_poeninja(item) do
+  def find_similar(%NativeItem{item: %Item{subcategory: :gem} = item}, {:ok, _}) do
     case PoeNinja.get_item(item.name) do
       {:ok, nil} ->
         nil
-
       {:ok, val} ->
-        %{item | price: {:chaos, trunc(val.chaos)}}
+        {:gem,
+          %{
+            level: level,
+            quality: quality,
+          }
+        } = item.info
+
+          closest_data = val
+          |> Enum.reduce(List.first(val), fn el, acc ->
+            if abs(acc.level-level) < abs(el.level-level) do
+              acc
+            else
+              el
+            end
+          end)
+
+        gem_info = elem(item.info, 1)
+          |> Map.put(:level, closest_data.level)
+          |> Map.put(:quality, closest_data.quality)
+
+        %{item | price: {:chaos, trunc(closest_data.chaos)}, info: {:gem, gem_info}}
     end
   end
 
@@ -109,6 +124,16 @@ defmodule PoeSystem.BuildProcessing do
     Logger.debug("extract mods")
     items_stream = Mods.extract_options_for_search(item)
     process_items_stream(items_stream, item)
+  end
+
+  defp fetch_from_poeninja(item) do
+    case PoeNinja.get_item(item.name) do
+      {:ok, nil} ->
+        nil
+
+      {:ok, val} ->
+        %{item | price: {:chaos, trunc(val.chaos)}}
+    end
   end
 
   @spec process_items_stream(
@@ -122,23 +147,22 @@ defmodule PoeSystem.BuildProcessing do
   defp process_items_stream(query, req_item, last_id \\ nil, last_item \\ nil)
 
   defp process_items_stream(query, req_item, last_id, last_item) do
-    {:ok, items} =
-      Repo.transaction(fn ->
-        query
-        |> limit(@items_per_tx)
-        |> Items.append_id_cursor(last_id)
-        |> Repo.stream()
-        |> Enum.to_list()
-      end)
+    items = query
+    |> Repo.all()
+
+    # {:ok, items} =
+      # Repo.transaction(fn ->
+      #   query
+      #   # |> Items.append_id_cursor(last_id)
+      #   |> Repo.stream()
+      #   |> Enum.to_list()
+      # end)
 
     if Enum.empty?(items) do
-      last_item
+      nil
     else
-      new_last_id = List.last(items).item_id
-
-      {:ok, result} = closest_item(req_item, items, last_item)
-
-      process_items_stream(query, req_item, new_last_id, result)
+      {:ok, result} = closest_item(req_item, items, nil)
+      result
     end
   end
 
