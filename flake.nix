@@ -74,7 +74,6 @@
             poe-system = pkgs.callPackage ./elixir {
               inherit beamPackages;
               rust-elixir = config.packages.rust-elixir;
-              rust-wasm = config.packages.rust-wasm;
             };
             additionalPackages = import ./packages.nix {
               inherit (pkgs) callPackage;
@@ -83,9 +82,6 @@
             {
               default = config.packages.poe-system;
               rust-elixir = rustNix.workspaceMembers.elixir.build;
-              rust-wasm = pkgs.callPackage ./rust/wasm-pkg.nix {
-                naersk = naersk';
-              };
             }
             // poe-system // additionalPackages;
 

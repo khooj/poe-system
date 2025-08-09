@@ -11,17 +11,19 @@
     "typescript": "^5"
   },
   "scripts": {
-    "tailwind": "bunx tailwindcss -i app.css -o ../priv/static/assets/app.css",
+    "tailwind:watch": "bun run tailwind:build --watch -o ../priv/static/assets/app.css",
+    "tailwind:build": "bunx -b tailwindcss -i app.css",
     "storybook-css": "bunx tailwindcss -i storybook.css -o ../priv/static/assets/storybook.css",
     "build": "bun build --outfile=../priv/static/assets/app.js ./index.js",
     "storybook": "bun build --outfile=../priv/static/assets/storybook.js ./storybook.js"
   },
   "dependencies": {
-    "daisyui": "^5.0.46",
-    "tailwindcss": "^4.1.11",
     "@tailwindcss/cli": "^4.1.11",
-    "phoenix": "file:../deps/phoenix",
-    "phoenix_html": "file:../deps/phoenix_html",
-    "phoenix_live_view": "file:../deps/phoenix_live_view"
+    "daisyui": "^5.0.46",
+    "isolated": "^3.0.25",
+    "phoenix": "^1.8.0",
+    "phoenix_html": "^4.2.1",
+    "phoenix_live_view": "^1.1.3",
+    "tailwindcss": "^4.1.11"
   }
 }

@@ -37,7 +37,10 @@ defmodule PoeSystemWeb.Router do
 
     get "/", IndexController, :index
     live "/test", TestLive
-    live_storybook("/storybook", backend_module: PoeSystemWeb.Storybook)
+
+    if Application.compile_env(:poe_system, :mode) == :dev do
+      live_storybook("/storybook", backend_module: PoeSystemWeb.Storybook)
+    end
   end
 
   scope "/poe1", PoeSystemWeb, as: :poe1 do

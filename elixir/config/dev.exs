@@ -31,7 +31,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
     #       cd: Path.expand("../assets", __DIR__)
     #     ]
     bun:
-      ~w(run tailwind --watch) ++
+      ~w(run tailwind:watch) ++
         [
           cd: Path.expand("../assets-daisy", __DIR__)
         ],

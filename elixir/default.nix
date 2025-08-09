@@ -2,34 +2,34 @@
   beamPackages,
   lib,
   rust-elixir,
-  rust-wasm,
-  buildNpmPackage,
   makeWrapper,
   bun,
+  tailwindcss_4,
+  stdenv,
 }: let
   inherit (beamPackages) mixRelease fetchMixDeps;
-  version = "0.1.0";
+  version = "0.2.0";
   src = lib.cleanSource ./.;
   mixFodDeps = fetchMixDeps {
     inherit version src;
     pname = "poe-system-deps";
-    sha256 = "sha256-Dqwtd98GBWqp2IQ961hFoxzdYuuLvFYlGdcYWi9s/Fo=";
+    sha256 = "sha256-8tAfKSwwJ0TfmiJw3nR2evpMAk5zNdF2VB2U1thM288=";
   };
-  assets = buildNpmPackage {
+  # FIXME: use phoenix/phoenix_html/phoenix_live_view deps from elixir project deps
+  assets = stdenv.mkDerivation {
     pname = "poe-system-assets";
-    inherit version;
-    src = "${src}/assets";
-    npmDepsHash = "sha256-82TdvII3l6se1dAnFIwIT2a9+banuWYHiF23nvVQMVs=";
-    preBuild = ''
-      rm ./node_modules/wasm
-      mkdir -p ./node_modules/wasm
-      cp -r ${rust-wasm}/lib/wasm/* ./node_modules/wasm/
-    '';
-    installPhase = ''
-      runHook preInstall
-      mkdir -p $out
-      cp -r result/* $out/
-      runHook postInstall
+    inherit version src;
+    outputHashMode = "recursive";
+    outputHash = "sha256-yzkRwKLEmatsEaTpLcODiVbSoU6WCklGpFcHldEblog=";
+    buildInputs = [bun tailwindcss_4];
+    buildPhase = ''
+      cp -R ${mixFodDeps} deps
+      cd assets-daisy
+      bun install --cache-dir=bun-cache --frozen-lockfile -p
+      bun build --cache-dir=bun-cache --frozen-lockfile --outfile build/app.js index.js
+      tailwindcss -i app.css -o build/app.css
+      mkdir -p $out/lib
+      mv build/* $out/lib/
     '';
   };
 in {
@@ -39,7 +39,7 @@ in {
     nativeBuildInputs = [makeWrapper];
     postBuild = ''
       mkdir -p _build/prod/lib/poe_system/priv/
-      ln -s ${assets} _build/prod/lib/poe_system/priv/static
+      ln -s ${assets}/lib _build/prod/lib/poe_system/priv/static
       mkdir -p _build/prod/lib/poe_system/priv/native
       ln -s ${rust-elixir.lib}/lib/libelixir.so _build/prod/lib/poe_system/priv/native/libelixir.so
     '';

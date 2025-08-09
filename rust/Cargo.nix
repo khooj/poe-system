@@ -137,16 +137,6 @@ rec {
       # File a bug if you depend on any for non-debug work!
       debug = internal.debugCrate { inherit packageId; };
     };
-    "wasm" = rec {
-      packageId = "wasm";
-      build = internal.buildRustCrateWithFeatures {
-        packageId = "wasm";
-      };
-
-      # Debug support which might change between releases.
-      # File a bug if you depend on any for non-debug work!
-      debug = internal.debugCrate { inherit packageId; };
-    };
   };
 
   # A derivation that joins the outputs of all workspace members together.
@@ -483,11 +473,6 @@ rec {
           {
             name = "search_item";
             path = "src/bin/search_item.rs";
-            requiredFeatures = [ ];
-          }
-          {
-            name = "stash_receiver";
-            path = "src/bin/stash_receiver.rs";
             requiredFeatures = [ ];
           }
           {
@@ -1449,26 +1434,6 @@ rec {
         };
         resolvedDefaultFeatures = [ "toml" ];
       };
-      "console_error_panic_hook" = rec {
-        crateName = "console_error_panic_hook";
-        version = "0.1.7";
-        edition = "2015";
-        sha256 = "1g5v8s0ndycc10mdn6igy914k645pgpcl8vjpz6nvxkhyirynsm0";
-        authors = [
-          "Nick Fitzgerald <fitzgen@gmail.com>"
-        ];
-        dependencies = [
-          {
-            name = "cfg-if";
-            packageId = "cfg-if";
-          }
-          {
-            name = "wasm-bindgen";
-            packageId = "wasm-bindgen";
-          }
-        ];
-
-      };
       "const-oid" = rec {
         crateName = "const-oid";
         version = "0.9.6";
@@ -2114,6 +2079,11 @@ rec {
             packageId = "regex";
             usesDefaultFeatures = false;
             features = [ "std" "perf" ];
+          }
+          {
+            name = "rustler";
+            packageId = "rustler";
+            features = [ "derive" ];
           }
           {
             name = "serde";
@@ -4953,29 +4923,6 @@ rec {
         features = {
           "default" = [ "rev-mappings" ];
         };
-      };
-      "minicov" = rec {
-        crateName = "minicov";
-        version = "0.3.7";
-        edition = "2018";
-        sha256 = "0jsvi62lklfyvdmsiizipkqcfpsc7h4c4illgxlf28iwrkqyjzzj";
-        authors = [
-          "Amanieu d'Antras <amanieu@gmail.com>"
-        ];
-        buildDependencies = [
-          {
-            name = "cc";
-            packageId = "cc";
-          }
-          {
-            name = "walkdir";
-            packageId = "walkdir";
-          }
-        ];
-        features = {
-          "default" = [ "alloc" ];
-        };
-        resolvedDefaultFeatures = [ "alloc" "default" ];
       };
       "minimal-lexical" = rec {
         crateName = "minimal-lexical";
@@ -7963,9 +7910,9 @@ rec {
       };
       "rustler" = rec {
         crateName = "rustler";
-        version = "0.36.1";
+        version = "0.36.2";
         edition = "2021";
-        sha256 = "1472byrd29bfcls2hj7j8x6qcrpky2rv8bhddiflkd9dpxhpnjph";
+        sha256 = "00z0aq23j97rwyq7caz2n9ccb99g0za6gviqvlrrfdww18imbzp3";
         authors = [
           "Hansihe <me@hansihe.com>"
         ];
@@ -8003,13 +7950,13 @@ rec {
           "nif_version_2_17" = [ "nif_version_2_16" ];
           "serde" = [ "dep:serde" ];
         };
-        resolvedDefaultFeatures = [ "default" "nif_version_2_14" "nif_version_2_15" "serde" ];
+        resolvedDefaultFeatures = [ "default" "derive" "nif_version_2_14" "nif_version_2_15" "serde" ];
       };
       "rustler_codegen" = rec {
         crateName = "rustler_codegen";
-        version = "0.36.1";
+        version = "0.36.2";
         edition = "2021";
-        sha256 = "11dkxk0jq72mc5wr35v1scvc1afhgz39fgcm6qqlsfis9sh6b4xz";
+        sha256 = "1vc49rmf66j7622bch2gs2081x8ywhl5s91n42742qdf07lqsfzb";
         procMacro = true;
         authors = [
           "Hansihe <hansihe@hansihe.com>"
@@ -8202,24 +8149,6 @@ rec {
           "no-panic" = [ "dep:no-panic" ];
         };
       };
-      "same-file" = rec {
-        crateName = "same-file";
-        version = "1.0.6";
-        edition = "2018";
-        sha256 = "00h5j1w87dmhnvbv9l8bic3y7xxsnjmssvifw2ayvgx9mb1ivz4k";
-        libName = "same_file";
-        authors = [
-          "Andrew Gallant <jamslam@gmail.com>"
-        ];
-        dependencies = [
-          {
-            name = "winapi-util";
-            packageId = "winapi-util";
-            target = { target, features }: (target."windows" or false);
-          }
-        ];
-
-      };
       "schannel" = rec {
         crateName = "schannel";
         version = "0.1.27";
@@ -8368,32 +8297,6 @@ rec {
           "serde_derive" = [ "dep:serde_derive" ];
         };
         resolvedDefaultFeatures = [ "alloc" "default" "derive" "rc" "serde_derive" "std" ];
-      };
-      "serde-wasm-bindgen" = rec {
-        crateName = "serde-wasm-bindgen";
-        version = "0.6.5";
-        edition = "2018";
-        sha256 = "0sz1l4v8059hiizf5z7r2spm6ws6sqcrs4qgqwww3p7dy1ly20l3";
-        libName = "serde_wasm_bindgen";
-        authors = [
-          "Ingvar Stepanyan <me@rreverser.com>"
-        ];
-        dependencies = [
-          {
-            name = "js-sys";
-            packageId = "js-sys";
-          }
-          {
-            name = "serde";
-            packageId = "serde";
-            features = [ "derive" ];
-          }
-          {
-            name = "wasm-bindgen";
-            packageId = "wasm-bindgen";
-          }
-        ];
-
       };
       "serde_derive" = rec {
         crateName = "serde_derive";
@@ -11869,27 +11772,6 @@ rec {
         ];
 
       };
-      "walkdir" = rec {
-        crateName = "walkdir";
-        version = "2.5.0";
-        edition = "2018";
-        sha256 = "0jsy7a710qv8gld5957ybrnc07gavppp963gs32xk4ag8130jy99";
-        authors = [
-          "Andrew Gallant <jamslam@gmail.com>"
-        ];
-        dependencies = [
-          {
-            name = "same-file";
-            packageId = "same-file";
-          }
-          {
-            name = "winapi-util";
-            packageId = "winapi-util";
-            target = { target, features }: (target."windows" or false);
-          }
-        ];
-
-      };
       "want" = rec {
         crateName = "want";
         version = "0.3.1";
@@ -11952,55 +11834,6 @@ rec {
         edition = "2018";
         sha256 = "0nw5h9nmcl4fyf4j5d4mfdjfgvwi1cakpi349wc4zrr59wxxinmq";
 
-      };
-      "wasm" = rec {
-        crateName = "wasm";
-        version = "0.1.0";
-        edition = "2018";
-        src = lib.cleanSourceWith { filter = sourceFilter;  src = ./wasm; };type = [ "cdylib" "rlib" ];
-        authors = [
-          "Igor Gilmutdinov <bladoff@gmail.com>"
-        ];
-        dependencies = [
-          {
-            name = "console_error_panic_hook";
-            packageId = "console_error_panic_hook";
-            optional = true;
-          }
-          {
-            name = "pob";
-            packageId = "pob";
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "serde-wasm-bindgen";
-            packageId = "serde-wasm-bindgen";
-          }
-          {
-            name = "thiserror";
-            packageId = "thiserror 2.0.12";
-          }
-          {
-            name = "wasm-bindgen";
-            packageId = "wasm-bindgen";
-          }
-          {
-            name = "web-sys";
-            packageId = "web-sys";
-            features = [ "console" ];
-          }
-        ];
-        devDependencies = [
-          {
-            name = "wasm-bindgen-test";
-            packageId = "wasm-bindgen-test";
-          }
-        ];
-        features = {
-          "console_error_panic_hook" = [ "dep:console_error_panic_hook" ];
-          "default" = [ "console_error_panic_hook" ];
-        };
-        resolvedDefaultFeatures = [ "console_error_panic_hook" "default" ];
       };
       "wasm-bindgen" = rec {
         crateName = "wasm-bindgen";
@@ -12209,76 +12042,6 @@ rec {
           {
             name = "unicode-ident";
             packageId = "unicode-ident";
-          }
-        ];
-
-      };
-      "wasm-bindgen-test" = rec {
-        crateName = "wasm-bindgen-test";
-        version = "0.3.50";
-        edition = "2021";
-        sha256 = "1hsjc60wynlhgw02p32pgb93303pqmsdfxj67gxdkdm37kixbj36";
-        libName = "wasm_bindgen_test";
-        authors = [
-          "The wasm-bindgen Developers"
-        ];
-        dependencies = [
-          {
-            name = "js-sys";
-            packageId = "js-sys";
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "minicov";
-            packageId = "minicov";
-            target = { target, features }: (("wasm32" == target."arch" or null) && (target."wasm_bindgen_unstable_test_coverage" or false));
-          }
-          {
-            name = "wasm-bindgen";
-            packageId = "wasm-bindgen";
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "wasm-bindgen-futures";
-            packageId = "wasm-bindgen-futures";
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "wasm-bindgen-test-macro";
-            packageId = "wasm-bindgen-test-macro";
-          }
-        ];
-        features = {
-          "default" = [ "std" ];
-          "gg-alloc" = [ "dep:gg-alloc" ];
-          "std" = [ "wasm-bindgen/std" "js-sys/std" "wasm-bindgen-futures/std" ];
-        };
-        resolvedDefaultFeatures = [ "default" "std" ];
-      };
-      "wasm-bindgen-test-macro" = rec {
-        crateName = "wasm-bindgen-test-macro";
-        version = "0.3.50";
-        edition = "2021";
-        sha256 = "16znd6wz79v2i3b2sf5n4ld2kcci8br3wcx7z5c9c07sqln09m8p";
-        procMacro = true;
-        libName = "wasm_bindgen_test_macro";
-        authors = [
-          "The wasm-bindgen Developers"
-        ];
-        dependencies = [
-          {
-            name = "proc-macro2";
-            packageId = "proc-macro2";
-          }
-          {
-            name = "quote";
-            packageId = "quote";
-          }
-          {
-            name = "syn";
-            packageId = "syn 2.0.101";
-            usesDefaultFeatures = false;
-            features = [ "parsing" "proc-macro" "derive" "printing" ];
           }
         ];
 
@@ -12763,7 +12526,7 @@ rec {
           "default" = [ "std" ];
           "std" = [ "wasm-bindgen/std" "js-sys/std" ];
         };
-        resolvedDefaultFeatures = [ "AbortController" "AbortSignal" "Blob" "BlobPropertyBag" "Event" "EventTarget" "File" "FormData" "Headers" "MessageEvent" "Performance" "ReadableStream" "Request" "RequestCredentials" "RequestInit" "RequestMode" "Response" "ServiceWorkerGlobalScope" "Window" "Worker" "WorkerGlobalScope" "console" "default" "std" ];
+        resolvedDefaultFeatures = [ "AbortController" "AbortSignal" "Blob" "BlobPropertyBag" "Event" "EventTarget" "File" "FormData" "Headers" "MessageEvent" "Performance" "ReadableStream" "Request" "RequestCredentials" "RequestInit" "RequestMode" "Response" "ServiceWorkerGlobalScope" "Window" "Worker" "WorkerGlobalScope" "default" "std" ];
       };
       "web-time" = rec {
         crateName = "web-time";

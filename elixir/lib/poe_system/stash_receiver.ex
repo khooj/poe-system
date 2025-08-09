@@ -166,8 +166,6 @@ defmodule PoeSystem.StashReceiver do
         new_items_count: length(stash_data.items)
       )
 
-      Logger.debug(inspect(stash_data.stashes))
-
       {:ok, _} =
         Multi.new()
         |> Multi.run(:remove_items_ids, fn repo, _changes ->
