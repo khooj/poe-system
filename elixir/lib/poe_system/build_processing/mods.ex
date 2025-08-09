@@ -4,9 +4,9 @@ defmodule PoeSystem.BuildProcessing.Mods do
 
   defp extract_mods_for_search(mods) do
     mods
-    |> Enum.filter(fn 
-      {_, :exist} -> true 
-      {_, :exact} -> true 
+    |> Enum.filter(fn
+      {_, :exist} -> true
+      {_, :exact} -> true
       _ -> false
     end)
     |> Enum.map(fn {%ModStatId{value: value}, _} -> value end)

@@ -96,22 +96,22 @@ defmodule PoeSystemWeb.Components do
 
   def item_simple(assigns) do
     ~H"""
-      <.item name={@item.name} basetype={@item.basetype} rarity={@item.rarity} info={@item.info}>
-        <:name_block :let={names}>
-          <div class="flex justify-between">
-            <div :if={@item.category != :gems} class="flex flex-col">
-              <p>{names[:name] && names.name}</p>
-              <p>{names.basetype}</p>
-            </div>
-            <div :if={@item.category == :gems} class="flex flex-col p-1">
-              <p>{names.name} {elem(@item.info, 1).level}/{elem(@item.info, 1).quality}%</p>
-            </div>
-            <div>
-              <p>Price: {elem(@item.price, 0)} {elem(@item.price, 1)}</p>
-            </div>
+    <.item name={@item.name} basetype={@item.basetype} rarity={@item.rarity} info={@item.info}>
+      <:name_block :let={names}>
+        <div class="flex justify-between">
+          <div :if={@item.category != :gems} class="flex flex-col">
+            <p>{names[:name] && names.name}</p>
+            <p>{names.basetype}</p>
           </div>
-        </:name_block>
-      </.item>
+          <div :if={@item.category == :gems} class="flex flex-col p-1">
+            <p>{names.name} {elem(@item.info, 1).level}/{elem(@item.info, 1).quality}%</p>
+          </div>
+          <div>
+            <p>Price: {elem(@item.price, 0)} {elem(@item.price, 1)}</p>
+          </div>
+        </div>
+      </:name_block>
+    </.item>
     """
   end
 

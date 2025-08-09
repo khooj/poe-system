@@ -51,6 +51,7 @@ defmodule PoeSystem.StashReceiver do
           process_stash(resp, ls, state)
           limits = Limits.parse_and_set_ratelimits(resp)
           {:noreply, Map.put(state, :limits, limits)}
+
         {:error, exc} ->
           Logger.error(message: "error requesting stash api", error: exc)
           send(self(), :timeout)
@@ -147,8 +148,9 @@ defmodule PoeSystem.StashReceiver do
             if Enum.empty?(allowed_leagues) or stash_league in allowed_leagues do
               sv = %{id: stash_id, item_id: item.id}
 
-              item = item
-              |> Map.from_struct()
+              item =
+                item
+                |> Map.from_struct()
 
               acc
               |> Map.update(:stashes, [sv], &[sv | &1])

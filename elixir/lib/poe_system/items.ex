@@ -46,7 +46,10 @@ defmodule PoeSystem.Items do
 
   def append_mods(q, mods) when is_list(mods) do
     q
-    |> where([m], fragment("jsonb_path_query_array(?, '$.mods[*].stat_id') @> ?::jsonb", m.info, ^mods))
+    |> where(
+      [m],
+      fragment("jsonb_path_query_array(?, '$.mods[*].stat_id') @> ?::jsonb", m.info, ^mods)
+    )
   end
 
   def append_name(q, name) do

@@ -3,6 +3,7 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
   import PoeSystemWeb.Components
   require Logger
   alias PoeSystem.{Build, Repo, BuildProcessing}
+  alias Phoenix.PubSub
 
   @impl true
   def mount(_params, _session, socket) do
@@ -27,34 +28,22 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
         <%= for {k, p, f} <- zip_items(build) do %>
           <div :if={not is_list(p)}>
             <h1>{k}</h1>
-            <.item_config_readonly
-              :if={p}
-              item={p.item}
-              config={p.config}
-            />
+            <.item_config_readonly :if={p} item={p.item} config={p.config} />
           </div>
           <div :if={is_list(p)}>
             <h1>{k}</h1>
             <div :for={d <- p} class="mb-2">
-              <.item_config_readonly
-                item={d.item}
-                config={d.config}
-              />
+              <.item_config_readonly item={d.item} config={d.config} />
             </div>
           </div>
           <div :if={not is_list(f)}>
             <h1>{k}</h1>
-            <.item_simple
-              :if={f}
-              item={f}
-            />
+            <.item_simple :if={f} item={f} />
           </div>
           <div :if={is_list(f)}>
             <h1>{k}</h1>
             <div :for={d <- f} class="mb-2">
-              <.item_simple
-                item={d}
-              />
+              <.item_simple item={d} />
             </div>
           </div>
         <% end %>
@@ -69,6 +58,9 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
      socket
      |> assign_async(:build, fn ->
        build = Repo.get!(Build, id)
+        if not build.processed do
+          # PubSub.subscribe(PoeSystem.PubSub, "build:#{id}")
+        end
        {:ok, %{build: build}}
      end)
      |> assign(:id, id)}
@@ -86,8 +78,21 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
   end
 
   @impl true
+  def handle_info(:build_processed, socket) do
+    id = socket.assigns.id
+    PubSub.unsubscribe(PoeSystem.PubSub, "build:#{id}")
+     socket = socket
+     |> assign_async(:build, fn ->
+       build = Repo.get!(Build, id)
+       {:ok, %{build: build}}
+     end)
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("recalculate", _params, socket) do
     {:ok, _} = BuildProcessing.queue_processing_build(socket.assigns.id)
+    PubSub.subscribe(PoeSystem.PubSub, "build:#{socket.assigns.id}")
     {:noreply, socket}
   end
 end

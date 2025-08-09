@@ -39,7 +39,7 @@ defmodule PoeSystem.BuildProcessing do
       })
       |> Repo.update()
 
-    PubSub.broadcast!(PoeSystem.PubSub, "build:#{id}", {PoeSystem.PubSub, "done"})
+    PubSub.broadcast!(PoeSystem.PubSub, "build:#{id}", :build_processed)
     Logger.debug("end processing")
 
     :ok
@@ -71,6 +71,7 @@ defmodule PoeSystem.BuildProcessing do
 
   defp process_entry(items) when is_list(items) do
     Logger.debug("search for several items")
+
     result =
       items
       |> Enum.map(fn a ->
@@ -86,31 +87,33 @@ defmodule PoeSystem.BuildProcessing do
     find_similar(item, Native.get_stored_item_type(item.item))
   end
 
-  def find_similar(%NativeItem{item: %Item{rarity: "unique"} = item}, {:ok, _}), do:
-    fetch_from_poeninja(item)
+  def find_similar(%NativeItem{item: %Item{rarity: "unique"} = item}, {:ok, _}),
+    do: fetch_from_poeninja(item)
 
   def find_similar(%NativeItem{item: %Item{subcategory: :gem} = item}, {:ok, _}) do
     case PoeNinja.get_item(item.name) do
       {:ok, nil} ->
         nil
+
       {:ok, val} ->
         {:gem,
-          %{
-            level: level,
-            quality: quality,
-          }
-        } = item.info
+         %{
+           level: level,
+           quality: quality
+         }} = item.info
 
-          closest_data = val
+        closest_data =
+          val
           |> Enum.reduce(List.first(val), fn el, acc ->
-            if abs(acc.level-level) < abs(el.level-level) do
+            if abs(acc.level - level) < abs(el.level - level) do
               acc
             else
               el
             end
           end)
 
-        gem_info = elem(item.info, 1)
+        gem_info =
+          elem(item.info, 1)
           |> Map.put(:level, closest_data.level)
           |> Map.put(:quality, closest_data.quality)
 
@@ -147,16 +150,17 @@ defmodule PoeSystem.BuildProcessing do
   defp process_items_stream(query, req_item, last_id \\ nil, last_item \\ nil)
 
   defp process_items_stream(query, req_item, last_id, last_item) do
-    items = query
-    |> Repo.all()
+    items =
+      query
+      |> Repo.all()
 
     # {:ok, items} =
-      # Repo.transaction(fn ->
-      #   query
-      #   # |> Items.append_id_cursor(last_id)
-      #   |> Repo.stream()
-      #   |> Enum.to_list()
-      # end)
+    # Repo.transaction(fn ->
+    #   query
+    #   # |> Items.append_id_cursor(last_id)
+    #   |> Repo.stream()
+    #   |> Enum.to_list()
+    # end)
 
     if Enum.empty?(items) do
       nil
