@@ -12,15 +12,15 @@ defmodule PoeSystemWeb.Router do
     # Config.CSP should be in sobelow-skips
     plug :put_secure_browser_headers
 
-    if Application.compile_env!(:poe_system, :mode) == :prod do
+    # if Application.compile_env!(:poe_system, :mode) == :prod do
       plug :put_content_security_policy,
            [
              default_src: "'self'",
-             script_src: "'self' 'wasm-unsafe-eval' 'nonce'",
+             script_src: "'self' 'wasm-unsafe-eval' 'nonce' https://cdn.jsdelivr.net",
              style_src: "'self' 'nonce' https://cdnjs.cloudflare.com",
              img_src: "'self' data:"
            ] ++ Application.compile_env(:poe_system, :additional_csp, [])
-    end
+    # end
   end
 
   pipeline :api do
