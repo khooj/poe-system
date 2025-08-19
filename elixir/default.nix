@@ -38,8 +38,8 @@ in {
     pname = "poe-system";
     nativeBuildInputs = [makeWrapper];
     postBuild = ''
-      mkdir -p _build/prod/lib/poe_system/priv/
-      ln -s ${assets}/lib _build/prod/lib/poe_system/priv/static
+      mkdir -p _build/prod/lib/poe_system/priv/static
+      ln -s ${assets}/lib _build/prod/lib/poe_system/priv/static/assets
       mkdir -p _build/prod/lib/poe_system/priv/native
       ln -s ${rust-elixir.lib}/lib/libelixir.so _build/prod/lib/poe_system/priv/native/libelixir.so
     '';
