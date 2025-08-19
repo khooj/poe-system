@@ -13,12 +13,19 @@ defmodule PoeSystem.Application do
     :ok = OpentelemetryEcto.setup([:poe_system, :repo])
     :ok = OpentelemetryOban.setup()
 
+    topologies = [
+      example: [
+        strategy: LibclusterPostgres.Strategy,
+        config: PoeSystem.Repo.config()
+      ]
+    ]
+
     children =
       [
         PoeSystemWeb.PromEx,
         # PoeSystemWeb.Telemetry,
         PoeSystem.Repo,
-        {DNSCluster, query: Application.get_env(:poe_system, :dns_cluster_query) || :ignore},
+        {Cluster.Supervisor, [topologies, [name: PoeSystem.ClusterSupervisor]]},
         {Phoenix.PubSub, name: PoeSystem.PubSub},
         {Oban, Application.fetch_env!(:poe_system, Oban)},
         # Start a worker by calling: PoeSystem.Worker.start_link(arg)

@@ -6,7 +6,9 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
   alias Phoenix.PubSub
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
+    %{"id" => id} = params
+    PubSub.subscribe(PoeSystem.PubSub, "build:#{id}")
     {:ok, socket}
   end
 
@@ -22,6 +24,7 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
   def render(assigns) do
     ~H"""
     <.button phx-click="recalculate">Recalculate</.button>
+    <p class="text-warning" :if={not @build.ok? || not @build.result.processed}>Waiting for processing</p>
     <div class="grid grid-cols-2 gap-4 m-4">
       <.async_result :let={build} assign={@build}>
         <:failed>Failed to load</:failed>
@@ -63,10 +66,11 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
      |> assign(:id, id)}
   end
 
+  # TODO: probably i should unsubscribe if build already processed
   @impl true
   def handle_info(:build_processed, socket) do
     id = socket.assigns.id
-    # PubSub.unsubscribe(PoeSystem.PubSub, "build:#{id}")
+    #PubSub.unsubscribe(PoeSystem.PubSub, "build:#{id}")
      socket = socket
      |> assign_async(:build, fn ->
        build = Repo.get!(Build, id)
