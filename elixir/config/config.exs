@@ -25,6 +25,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
 
 # Configures Elixir's Logger
 config :logger, :console,
+  # level: :info,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
@@ -34,7 +35,13 @@ config :phoenix, :json_library, Jason
 config :poe_system, Oban,
   repo: PoeSystem.Repo,
   engine: Oban.Engines.Basic,
-  queues: [new_builds: 1]
+  queues: [new_builds: 1, remove_basetypes: 1],
+  plugins: [
+    {Oban.Plugins.Cron,
+    crontab: [
+      {"*/30 * * * *", PoeSystem.RemoveExcessiveBasetypes},
+    ]}
+  ]
 
 config :telemetria,
   backend: Telemetria.Backend.OpenTelemetry,

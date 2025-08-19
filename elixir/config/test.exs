@@ -23,6 +23,7 @@ config :poe_system, PoeSystemWeb.Endpoint,
 # Print only warnings and errors during test
 config :logger,
   level: :warning,
+  # level: :debug,
   always_evaluate_messages: true
 
 # Initialize plugs at runtime for faster test compilation

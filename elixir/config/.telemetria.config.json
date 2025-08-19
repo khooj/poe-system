@@ -1,1 +1,1 @@
-{"events":[["poe_system","build_processing","perform"]],"otp_app":"poe_system"}
+{"events":[["poe_system","remove_excessive_basetypes","remove_items"],["poe_system","build_processing","perform"]],"otp_app":"poe_system"}

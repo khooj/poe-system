@@ -11,7 +11,7 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
   end
 
   def zip_items(%Build{} = build) do
-    found = Map.from_struct(build.found || %{})
+    found = build.found && Map.from_struct(build.found) || %{}
 
     build.provided
     |> Map.from_struct()
@@ -58,29 +58,15 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
      socket
      |> assign_async(:build, fn ->
        build = Repo.get!(Build, id)
-        if not build.processed do
-          # PubSub.subscribe(PoeSystem.PubSub, "build:#{id}")
-        end
        {:ok, %{build: build}}
      end)
      |> assign(:id, id)}
   end
 
   @impl true
-  def handle_info({:new_pob, {pobdata, itemsets, skillsets}}, socket) do
-    socket =
-      socket
-      |> assign(:pobdata, pobdata)
-      |> assign(:itemsets, itemsets)
-      |> assign(:skillsets, skillsets)
-
-    {:noreply, push_patch(socket, to: ~p"/poe1/build-calc/preview")}
-  end
-
-  @impl true
   def handle_info(:build_processed, socket) do
     id = socket.assigns.id
-    PubSub.unsubscribe(PoeSystem.PubSub, "build:#{id}")
+    # PubSub.unsubscribe(PoeSystem.PubSub, "build:#{id}")
      socket = socket
      |> assign_async(:build, fn ->
        build = Repo.get!(Build, id)
@@ -92,7 +78,7 @@ defmodule PoeSystemWeb.Poe1BuildCalcBuildLive do
   @impl true
   def handle_event("recalculate", _params, socket) do
     {:ok, _} = BuildProcessing.queue_processing_build(socket.assigns.id)
-    PubSub.subscribe(PoeSystem.PubSub, "build:#{socket.assigns.id}")
+    # PubSub.subscribe(PoeSystem.PubSub, "build:#{socket.assigns.id}")
     {:noreply, socket}
   end
 end
