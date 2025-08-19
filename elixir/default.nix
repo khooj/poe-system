@@ -13,14 +13,14 @@
   mixFodDeps = fetchMixDeps {
     inherit version src;
     pname = "poe-system-deps";
-    sha256 = "sha256-8tAfKSwwJ0TfmiJw3nR2evpMAk5zNdF2VB2U1thM288=";
+    sha256 = "sha256-mdkamY0pckhrsMmmnzspyFTELxieCwjYQXdRGDx+WdA=";
   };
   # FIXME: use phoenix/phoenix_html/phoenix_live_view deps from elixir project deps
   assets = stdenv.mkDerivation {
     pname = "poe-system-assets";
     inherit version src;
     outputHashMode = "recursive";
-    outputHash = "sha256-yzkRwKLEmatsEaTpLcODiVbSoU6WCklGpFcHldEblog=";
+    outputHash = "sha256-BDANp4SYj+dxFP2TuBmRVn+u5722tcHMj4RjMbGcJWc=";
     buildInputs = [bun tailwindcss_4];
     buildPhase = ''
       cp -R ${mixFodDeps} deps
