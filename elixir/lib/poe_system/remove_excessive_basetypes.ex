@@ -26,6 +26,6 @@ defmodule PoeSystem.RemoveExcessiveBasetypes do
     |> join(:inner, [it], r in "rnk", on: it.basetype == r.basetype and it.item_id == r.item_id)
     |> where([it, r], r.rn > @maximum_items)
 
-    Repo.delete_all(q)
+    Repo.delete_all(q, timeout: :timer.minutes(5))
   end
 end
