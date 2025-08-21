@@ -11,7 +11,12 @@ defmodule PoeSystem.RemoveExcessiveBasetypes do
 
   @impl Oban.Worker
   def perform(job) do
+    start = System.monotonic_time()
     remove_items()
+    delta = System.monotonic_time() - start
+
+    :telemetry.execute([:remove_excessive_basetypes, :done], %{delta: delta})
+
     :ok
   end
 

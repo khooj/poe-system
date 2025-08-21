@@ -71,7 +71,8 @@ defmodule PoeSystemWeb.PromEx do
       #  metric_prefix: [:prom_ex, :endpoint],
       #  routers: [PoeSystemWeb.Router]},
       AppPlugins.Extra,
-      AppPlugins.StashReceiver
+      AppPlugins.StashReceiver,
+      AppPlugins.RemoveExcessiveBasetypes,
       # Plugins.PhoenixLiveView,
       # Plugins.Absinthe,
       # Plugins.Broadway,
